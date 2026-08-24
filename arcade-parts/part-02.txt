@@ -1,0 +1,460 @@
+sy);
+    backdrop(ctx, elapsed, currentDef.rgb, currentDef.variant);
+    game.draw(E, ctx);
+    drawFx(ctx);
+    ctx.restore();
+
+    if (flashAlpha > .004) {
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.fillStyle = rgba(flashColor, flashAlpha);
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    ctx.globalCompositeOperation = 'source-over';
+    const vignette = ctx.createRadialGradient(W * .5, H * .48, U * .16, W * .5, H * .5, U * .84);
+    vignette.addColorStop(0, 'rgba(0,0,0,0)');
+    vignette.addColorStop(1, 'rgba(0,0,0,.5)');
+    ctx.fillStyle = vignette;
+    ctx.fillRect(0, 0, W, H);
+    updateHud(dt);
+  }
+
+  function loop(now) {
+    if (!active) { raf = 0; return; }
+    const raw = Math.max(0, (now - last) / 1000);
+    last = now;
+    const dt = Math.min(raw, 1 / 30);
+    if (!document.hidden && state === 'playing') {
+      elapsed += reduced ? dt * .35 : dt;
+      game?.update?.(E, dt);
+    } else if (state === 'ready' || state === 'over') {
+      elapsed += dt * .18;
+      game?.ambient?.(E, dt);
+    }
+    updateFx(dt);
+    drawFrame(dt);
+    raf = requestAnimationFrame(loop);
+  }
+
+  function canvasPoint(event) {
+    const rect = canvas.getBoundingClientRect();
+    return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+  }
+
+  canvas.addEventListener('pointerdown', (event) => {
+    if (!active) return;
+    const p = canvasPoint(event);
+    pointerX = p.x; pointerY = p.y;
+    if (state === 'ready') { startCurrent(); return; }
+    if (state === 'paused') { pauseCurrent(); return; }
+    if (state === 'over') { startCurrent(); return; }
+    pointerDown = true;
+    pointerId = event.pointerId;
+    canvas.setPointerCapture?.(event.pointerId);
+    game?.pointerDown?.(E, p.x, p.y, event);
+  });
+
+  canvas.addEventListener('pointermove', (event) => {
+    if (!active) return;
+    const p = canvasPoint(event);
+    pointerX = p.x; pointerY = p.y;
+    if (state === 'playing') game?.pointerMove?.(E, p.x, p.y, pointerDown, event);
+  });
+
+  function releasePointer(event) {
+    if (!active || state !== 'playing') { pointerDown = false; return; }
+    const p = canvasPoint(event);
+    pointerX = p.x; pointerY = p.y;
+    game?.pointerUp?.(E, p.x, p.y, event);
+    pointerDown = false;
+    pointerId = null;
+  }
+  canvas.addEventListener('pointerup', releasePointer);
+  canvas.addEventListener('pointercancel', () => { pointerDown = false; pointerId = null; game?.pointerCancel?.(E); });
+
+  addEventListener('keydown', (event) => {
+    if (!active) return;
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'Spacebar'].includes(event.key)) event.preventDefault();
+    if (event.key === 'Escape') { closeGame(); return; }
+    if (event.key.toLowerCase() === 'p') { pauseCurrent(); return; }
+    if (event.key.toLowerCase() === 'r') { startCurrent(); return; }
+    if ((state === 'ready' || state === 'over') && (event.key === ' ' || event.key === 'Enter')) { startCurrent(); return; }
+    keyState.add(event.key.toLowerCase());
+    if (state === 'playing') game?.keyDown?.(E, event.key.toLowerCase(), event);
+  });
+  addEventListener('keyup', (event) => {
+    keyState.delete(event.key.toLowerCase());
+    if (active && state === 'playing') game?.keyUp?.(E, event.key.toLowerCase(), event);
+  });
+
+  gameBack?.addEventListener('click', closeGame);
+  gameStart?.addEventListener('click', startCurrent);
+  gameAgain?.addEventListener('click', () => state === 'paused' ? pauseCurrent() : startCurrent());
+  gamePause?.addEventListener('click', pauseCurrent);
+  gameRestart?.addEventListener('click', startCurrent);
+  gameSound?.addEventListener('click', () => {
+    soundEnabled = !soundEnabled;
+    gameSound.classList.toggle('muted', !soundEnabled);
+    gameSound.textContent = soundEnabled ? '♪' : '×';
+    if (!soundEnabled && audioCtx?.state === 'running') audioCtx.suspend().catch(() => {});
+    else ensureAudio();
+  });
+
+  document.addEventListener('visibilitychange', () => { last = performance.now(); });
+  window.addEventListener('dreamunity:launch-game', (event) => openGame(event.detail || {}));
+
+  // Game definitions are appended below.
+
+  function createSignalVeil() {
+    let nodes = [];
+    let target = 0;
+    let phase = 'reveal';
+    let timer = 0;
+    let level = 1;
+    let lives = 3;
+    let streak = 0;
+    let successes = 0;
+    let resultGood = false;
+
+    function spawn(E) {
+      const count = Math.min(12 + level * 2, coarse ? 24 : 30);
+      nodes = [];
+      const pad = Math.max(34, E.u * .05);
+      const top = E.top + 28;
+      for (let i = 0; i < count; i++) {
+        let x, y, tries = 0;
+        do {
+          x = rand(E.w - pad, pad);
+          y = rand(E.bottom - pad, top + pad);
+          tries++;
+        } while (tries < 20 && nodes.some((n) => dist(x, y, n.x, n.y) < E.u * .075));
+        const speed = 28 + level * 5 + Math.random() * 34;
+        const a = Math.random() * TAU;
+        nodes.push({ x, y, vx: Math.cos(a) * speed, vy: Math.sin(a) * speed, phase: Math.random() * TAU, r: 8 + Math.random() * 5 });
+      }
+      target = (Math.random() * nodes.length) | 0;
+      phase = 'reveal';
+      timer = Math.max(.55, 1.2 - level * .035);
+      resultGood = false;
+      E.setMetric('LIVES', lives);
+    }
+
+    function miss(E, x, y) {
+      if (phase !== 'choose') return;
+      lives--;
+      streak = 0;
+      resultGood = false;
+      phase = 'result';
+      timer = .72;
+      E.setMetric('LIVES', lives);
+      E.shake(9);
+      E.flash([255, 70, 110], .24);
+      E.burst(x, y, [255, 70, 110], 12, 140, 2.6);
+      E.sfx('bad');
+      if (lives <= 0) E.end('SIGNAL LOST');
+    }
+
+    function hit(E, node) {
+      streak++;
+      successes++;
+      const reward = 100 + streak * 24 + Math.floor(timer * 35);
+      E.addScore(reward, node.x, node.y, streak > 2 ? `CHAIN ×${streak}` : `+${reward}`);
+      E.burst(node.x, node.y, E.rgb, 20 + Math.min(streak, 8), 210, 3.2);
+      E.flash(E.rgb, .14);
+      E.sfx('good', 1 + Math.min(streak, 8) * .035);
+      resultGood = true;
+      phase = 'result';
+      timer = .55;
+      if (successes % 4 === 0) {
+        level++;
+        E.level(`VEIL ${level}`);
+      }
+    }
+
+    return {
+      reset(E) {
+        level = 1; lives = 3; streak = 0; successes = 0;
+        spawn(E);
+      },
+      resize(E) { spawn(E); },
+      update(E, dt) {
+        const minY = E.top + 25;
+        const maxY = E.bottom - 18;
+        for (const n of nodes) {
+          n.x += n.vx * dt;
+          n.y += n.vy * dt;
+          if (n.x < 18 || n.x > E.w - 18) { n.vx *= -1; n.x = clamp(n.x, 18, E.w - 18); }
+          if (n.y < minY || n.y > maxY) { n.vy *= -1; n.y = clamp(n.y, minY, maxY); }
+        }
+        timer -= dt;
+        if (timer > 0) return;
+        if (phase === 'reveal') { phase = 'veil'; timer = Math.max(.45, .85 - level * .025); E.toast('VEIL', .45); }
+        else if (phase === 'veil') { phase = 'choose'; timer = Math.max(1.5, 3.15 - level * .075); E.toast('FIND IT', .5); }
+        else if (phase === 'choose') miss(E, E.w * .5, E.h * .5);
+        else if (phase === 'result' && lives > 0) spawn(E);
+      },
+      pointerDown(E, x, y) {
+        if (phase !== 'choose') return;
+        let bestIndex = -1, bestDistance = Infinity;
+        nodes.forEach((n, i) => {
+          const d = dist(x, y, n.x, n.y);
+          if (d < Math.max(24, n.r * 2.4) && d < bestDistance) { bestDistance = d; bestIndex = i; }
+        });
+        if (bestIndex === target) hit(E, nodes[target]);
+        else miss(E, x, y);
+      },
+      draw(E, c) {
+        const targetNode = nodes[target];
+        c.save();
+        c.globalCompositeOperation = 'lighter';
+        for (let i = 0; i < nodes.length; i++) {
+          const n = nodes[i];
+          const isTarget = i === target;
+          const pulse = .5 + .5 * Math.sin(E.t * 4 + n.phase) ** 2;
+          const reveal = isTarget && (phase === 'reveal' || phase === 'result');
+          const radius = n.r * (1 + pulse * .22 + (reveal ? .55 : 0));
+          const alpha = phase === 'veil' ? .28 : .42 + pulse * .2;
+          E.glow(c, n.x, n.y, radius, reveal && resultGood === false && phase === 'result' ? [255, 70, 110] : E.rgb, reveal ? .95 : alpha);
+          c.strokeStyle = rgba(E.rgb, .22 + pulse * .25);
+          c.lineWidth = 1;
+          c.beginPath(); c.arc(n.x, n.y, radius * 1.3, n.phase + E.t, n.phase + E.t + Math.PI * 1.2); c.stroke();
+          c.fillStyle = reveal ? 'rgba(255,255,255,.95)' : rgba(E.rgb, .7);
+          c.beginPath(); c.arc(n.x, n.y, Math.max(1.5, n.r * .22), 0, TAU); c.fill();
+        }
+        if (targetNode && phase === 'reveal') {
+          c.strokeStyle = 'rgba(255,255,255,.78)';
+          c.lineWidth = 1.4;
+          const rr = targetNode.r * (2.1 + .45 * Math.sin(E.t * 7) ** 2);
+          c.beginPath(); c.arc(targetNode.x, targetNode.y, rr, 0, TAU); c.stroke();
+          c.beginPath(); c.arc(targetNode.x, targetNode.y, rr * 1.45, 0, TAU); c.stroke();
+        }
+        c.restore();
+
+        const progress = phase === 'choose' ? clamp(timer / Math.max(1.5, 3.15 - level * .075), 0, 1) : 1;
+        c.strokeStyle = rgba(E.rgb, .14);
+        c.lineWidth = 4;
+        c.beginPath(); c.arc(E.w * .5, E.h * .52, E.u * .41, -Math.PI / 2, -Math.PI / 2 + TAU); c.stroke();
+        if (phase === 'choose') {
+          c.strokeStyle = rgba(E.rgb, .5);
+          c.beginPath(); c.arc(E.w * .5, E.h * .52, E.u * .41, -Math.PI / 2, -Math.PI / 2 + TAU * progress); c.stroke();
+        }
+      }
+    };
+  }
+
+  function createModelForge() {
+    let nodes = [];
+    let targetEdges = new Set();
+    let userEdges = new Set();
+    let phase = 'reveal';
+    let timer = 0;
+    let level = 1;
+    let errors = 3;
+    let selected = -1;
+    let rounds = 0;
+
+    const edgeKey = (a, b) => a < b ? `${a}-${b}` : `${b}-${a}`;
+
+    function generate(E) {
+      const count = Math.min(5 + Math.floor(level / 2), 9);
+      nodes = [];
+      const cx = E.w * .5, cy = E.h * .53;
+      const rx = Math.min(E.w * .34, E.u * .39);
+      const ry = Math.min((E.bottom - E.top) * .36, E.u * .34);
+      for (let i = 0; i < count; i++) {
+        const a = -Math.PI / 2 + i / count * TAU + rand(.16, -.16);
+        nodes.push({
+          x: cx + Math.cos(a) * rx * rand(1.02, .72),
+          y: cy + Math.sin(a) * ry * rand(1.02, .78),
+          r: Math.max(13, E.u * .021),
+          phase: Math.random() * TAU
+        });
+      }
+      targetEdges = new Set();
+      const order = nodes.map((_, i) => i).sort(() => Math.random() - .5);
+      for (let i = 1; i < order.length; i++) {
+        const parent = order[(Math.random() * i) | 0];
+        targetEdges.add(edgeKey(order[i], parent));
+      }
+      const extras = Math.min(1 + Math.floor(level / 2), count - 2);
+      let guard = 0;
+      while (targetEdges.size < count - 1 + extras && guard++ < 80) {
+        const a = (Math.random() * count) | 0;
+        let b = (Math.random() * count) | 0;
+        if (a !== b) targetEdges.add(edgeKey(a, b));
+      }
+      userEdges = new Set();
+      selected = -1;
+      errors = 3;
+      phase = 'reveal';
+      timer = Math.max(1.1, 2.2 - level * .06);
+      E.setMetric('ERRORS', errors);
+    }
+
+    function nodeAt(x, y) {
+      let best = -1, dBest = Infinity;
+      nodes.forEach((n, i) => {
+        const d = dist(x, y, n.x, n.y);
+        if (d < n.r * 2.2 && d < dBest) { dBest = d; best = i; }
+      });
+      return best;
+    }
+
+    function fail(E, x, y) {
+      errors--;
+      E.setMetric('ERRORS', errors);
+      E.shake(7);
+      E.flash([255, 72, 110], .2);
+      E.burst(x, y, [255, 72, 110], 10, 130, 2.4);
+      E.sfx('bad');
+      if (errors <= 0) E.end('MODEL FRACTURED');
+    }
+
+    function complete(E) {
+      rounds++;
+      const reward = 450 + Math.floor(timer * 18) + level * 80;
+      E.addScore(reward, E.w * .5, E.h * .5, `MODEL +${reward}`);
+      nodes.forEach((n) => E.burst(n.x, n.y, E.rgb, 6, 100, 2));
+      phase = 'result';
+      timer = .85;
+      E.sfx('level');
+      if (rounds % 2 === 0) level++;
+      E.level(`MODEL ${level}`);
+    }
+
+    return {
+      reset(E) { level = 1; rounds = 0; generate(E); },
+      resize(E) { generate(E); },
+      update(E, dt) {
+        timer -= dt;
+        if (timer > 0) return;
+        if (phase === 'reveal') {
+          phase = 'play';
+          timer = Math.max(14, 25 - level * 1.1);
+          E.toast('REBUILD', .7);
+        } else if (phase === 'play') {
+          fail(E, E.w * .5, E.h * .5);
+          if (errors > 0) { phase = 'reveal'; timer = .9; userEdges.clear(); selected = -1; }
+        } else if (phase === 'result') generate(E);
+      },
+      pointerDown(E, x, y) {
+        if (phase !== 'play') return;
+        const index = nodeAt(x, y);
+        if (index < 0) { selected = -1; return; }
+        E.sfx('tap', 1 + index * .04);
+        if (selected < 0) {
+          selected = index;
+          E.burst(nodes[index].x, nodes[index].y, E.rgb, 5, 70, 1.8);
+          return;
+        }
+        if (selected === index) { selected = -1; return; }
+        const key = edgeKey(selected, index);
+        const a = nodes[selected], b = nodes[index];
+        if (targetEdges.has(key) && !userEdges.has(key)) {
+          userEdges.add(key);
+          E.addScore(80 + userEdges.size * 12, (a.x + b.x) * .5, (a.y + b.y) * .5);
+          E.burst((a.x + b.x) * .5, (a.y + b.y) * .5, E.rgb, 10, 110, 2.2);
+          E.sfx('good', .8 + userEdges.size * .03);
+          if (userEdges.size === targetEdges.size) complete(E);
+        } else if (!userEdges.has(key)) {
+          fail(E, (a.x + b.x) * .5, (a.y + b.y) * .5);
+        }
+        selected = -1;
+      },
+      draw(E, c) {
+        const showTarget = phase === 'reveal' || phase === 'result';
+        c.save();
+        c.globalCompositeOperation = 'lighter';
+        const drawEdgeSet = (set, alpha, rgb, width) => {
+          for (const key of set) {
+            const [a, b] = key.split('-').map(Number);
+            const A = nodes[a], B = nodes[b];
+            E.line(c, A.x, A.y, B.x, B.y, rgb, alpha, width);
+            const u = (E.t * .32 + (a + b) * .11) % 1;
+            E.glow(c, lerp(A.x, B.x, u), lerp(A.y, B.y, u), 4, rgb, alpha * .8);
+          }
+        };
+        if (showTarget) drawEdgeSet(targetEdges, .48, [235, 250, 255], 1.3);
+        drawEdgeSet(userEdges, .82, E.rgb, 2.1);
+
+        nodes.forEach((n, i) => {
+          const activeNode = selected === i;
+          const pulse = .5 + .5 * Math.sin(E.t * 2.4 + n.phase) ** 2;
+          E.glow(c, n.x, n.y, n.r * (1.2 + (activeNode ? .55 : 0)), E.rgb, .36 + pulse * .16 + (activeNode ? .5 : 0));
+          c.fillStyle = activeNode ? 'rgba(255,255,255,.95)' : rgba(E.rgb, .84);
+          c.beginPath(); c.arc(n.x, n.y, n.r * .33, 0, TAU); c.fill();
+          c.strokeStyle = rgba(E.rgb, activeNode ? .9 : .38);
+          c.lineWidth = activeNode ? 2 : 1;
+          c.beginPath(); c.arc(n.x, n.y, n.r, E.t * .25 + i, E.t * .25 + i + Math.PI * 1.45); c.stroke();
+        });
+        c.restore();
+
+        if (phase === 'play') {
+          const maxTime = Math.max(14, 25 - level * 1.1);
+          const p = clamp(timer / maxTime, 0, 1);
+          c.strokeStyle = rgba(E.rgb, .16); c.lineWidth = 5;
+          c.beginPath(); c.arc(E.w * .5, E.h * .52, E.u * .42, 0, TAU); c.stroke();
+          c.strokeStyle = rgba(E.rgb, .6);
+          c.beginPath(); c.arc(E.w * .5, E.h * .52, E.u * .42, -Math.PI / 2, -Math.PI / 2 + TAU * p); c.stroke();
+        }
+      }
+    };
+  }
+
+  function createOracleGates() {
+    let ball = null;
+    let trail = [];
+    let gateYs = [];
+    let gateX = 0;
+    let veilA = 0, veilB = 0;
+    let selected = -1;
+    let correct = 0;
+    let phase = 'observe';
+    let timer = 0;
+    let level = 1;
+    let lives = 3;
+    let streak = 0;
+    let rounds = 0;
+
+    function reflectY(value, minY, maxY) {
+      const span = maxY - minY;
+      let m = (value - minY) % (span * 2);
+      if (m < 0) m += span * 2;
+      return m <= span ? minY + m : maxY - (m - span);
+    }
+
+    function setup(E) {
+      const minY = E.top + 55;
+      const maxY = E.bottom - 45;
+      gateYs = [minY + (maxY - minY) * .18, minY + (maxY - minY) * .5, minY + (maxY - minY) * .82];
+      veilA = E.w * .34;
+      veilB = E.w * .7;
+      gateX = E.w * .86;
+      const speed = Math.min(520, 210 + level * 24 + E.w * .055);
+      let vy = rand(260 + level * 12, -260 - level * 12);
+      if (Math.abs(vy) < 90) vy = 110 * (Math.random() < .5 ? -1 : 1);
+      ball = { x: Math.max(34, E.w * .06), y: rand(maxY - 25, minY + 25), vx: speed, vy, r: Math.max(7, E.u * .012) };
+      const travel = (gateX - ball.x) / ball.vx;
+      const predictedY = reflectY(ball.y + ball.vy * travel, minY, maxY);
+      correct = predictedY < (gateYs[0] + gateYs[1]) * .5 ? 0 : predictedY < (gateYs[1] + gateYs[2]) * .5 ? 1 : 2;
+      selected = -1;
+      trail = [];
+      phase = 'observe';
+      timer = 0;
+      E.setMetric('LIVES', lives);
+    }
+
+    function resolve(E) {
+      const good = selected === correct;
+      if (good) {
+        streak++;
+        rounds++;
+        const reward = 140 + streak * 32 + level * 18;
+        E.addScore(reward, gateX, gateYs[correct], streak > 2 ? `ORACLE ×${streak}` : `+${reward}`);
+        E.burst(gateX, gateYs[correct], E.rgb, 24, 230, 3);
+        E.flash(E.rgb, .16);
+        E.sfx('good', 1 + streak * .025);
+        if (rounds % 4 === 0) { level++; E.level(`ORBIT ${level}`); }
+      } else {
+        lives--;
+  
