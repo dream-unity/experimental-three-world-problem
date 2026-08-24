@@ -1,0 +1,409 @@
+th[path.length - 1];
+      for (let i = 1; i < path.length; i++) connectMasks(masks, path[i - 1], path[i]);
+      masks[source] |= S;
+      masks[target] |= N;
+
+      const tileShapes = [N | S, E | WBIT, N | E, E | S, S | WBIT, WBIT | N, N | E | S, E | S | WBIT, S | WBIT | N, WBIT | N | E];
+      for (let i = 0; i < masks.length; i++) {
+        if (!masks[i]) masks[i] = choose(tileShapes);
+        else if (Math.random() < .35) {
+          const missing = [N, E, S, WBIT].filter((bit) => !(masks[i] & bit));
+          if (missing.length) masks[i] |= choose(missing);
+        }
+      }
+
+      grid = masks.map((solution, i) => {
+        let mask = solution;
+        const turns = (Math.random() * 4) | 0;
+        for (let t = 0; t < turns; t++) mask = rotateMask(mask);
+        return { mask, solution, pulse: Math.random() * TAU, i };
+      });
+      // Avoid an accidental solved board at spawn.
+      recompute(false);
+      if (powered.has(target) && (grid[target].mask & N)) grid[(source + 1) % grid.length].mask = rotateMask(grid[(source + 1) % grid.length].mask);
+      recompute(false);
+      timer = Math.max(24, 48 - level * 1.8);
+      phase = 'play';
+      resultTimer = 0;
+      E.setMetric('LIVES', lives);
+    }
+
+    function recompute(playSound = false) {
+      powered = new Set();
+      if (!grid[source] || !(grid[source].mask & S)) return false;
+      const queue = [source];
+      powered.add(source);
+      while (queue.length) {
+        const at = queue.shift();
+        const r = Math.floor(at / cols), c = at % cols;
+        const mask = grid[at].mask;
+        for (const d of DIRS) {
+          if (!(mask & d.bit)) continue;
+          const nr = r + d.dr, nc = c + d.dc;
+          if (nr < 0 || nr >= rows || nc < 0 || nc >= cols) continue;
+          const ni = index(nr, nc);
+          if (!(grid[ni].mask & d.opposite) || powered.has(ni)) continue;
+          powered.add(ni);
+          queue.push(ni);
+        }
+      }
+      const solved = powered.has(target) && (grid[target].mask & N);
+      if (playSound) sfx(solved ? 'good' : 'tap', .7 + powered.size / grid.length);
+      return solved;
+    }
+
+    function complete(E) {
+      if (phase !== 'play') return;
+      phase = 'result';
+      resultTimer = .95;
+      const reward = 700 + Math.floor(timer * 25) + level * 90;
+      E.addScore(reward, E.w * .5, E.h * .5, `LOCK +${reward}`);
+      for (const i of powered) {
+        const r = Math.floor(i / cols), c = i % cols;
+        E.burst(board.x + (c + .5) * board.cell, board.y + (r + .5) * board.cell, E.rgb, 3, 80, 1.7);
+      }
+      E.level(`LATTICE ${level + 1}`);
+      level++;
+    }
+
+    function fail(E) {
+      lives--;
+      E.setMetric('LIVES', lives);
+      E.shake(10);
+      E.flash([255, 72, 110], .22);
+      E.sfx('bad');
+      if (lives <= 0) E.end('STRUCTURE FAILED');
+      else build(E);
+    }
+
+    function cellAt(x, y) {
+      const c = Math.floor((x - board.x) / board.cell);
+      const r = Math.floor((y - board.y) / board.cell);
+      if (r < 0 || r >= rows || c < 0 || c >= cols) return -1;
+      return index(r, c);
+    }
+
+    return {
+      reset(E) { level = 1; lives = 3; build(E); },
+      resize(E) { build(E); },
+      update(E, dt) {
+        if (phase === 'result') {
+          resultTimer -= dt;
+          if (resultTimer <= 0) build(E);
+          return;
+        }
+        timer -= dt;
+        if (timer <= 0) fail(E);
+      },
+      pointerDown(E, x, y) {
+        if (phase !== 'play') return;
+        const i = cellAt(x, y);
+        if (i < 0) return;
+        grid[i].mask = rotateMask(grid[i].mask);
+        E.burst(board.x + (i % cols + .5) * board.cell, board.y + (Math.floor(i / cols) + .5) * board.cell, E.rgb, 4, 60, 1.5);
+        if (recompute(true)) complete(E);
+      },
+      draw(E, c) {
+        c.save();
+        c.globalCompositeOperation = 'lighter';
+        const cell = board.cell;
+        const nodeR = Math.max(3, cell * .055);
+        const pad = cell * .12;
+        for (let r = 0; r < rows; r++) {
+          for (let col = 0; col < cols; col++) {
+            const i = index(r, col);
+            const tile = grid[i];
+            const x = board.x + col * cell;
+            const y = board.y + r * cell;
+            const cx = x + cell * .5;
+            const cy = y + cell * .5;
+            const on = powered.has(i);
+            c.fillStyle = on ? rgba(E.rgb, .055) : 'rgba(255,255,255,.012)';
+            c.fillRect(x + pad * .32, y + pad * .32, cell - pad * .64, cell - pad * .64);
+            c.strokeStyle = on ? rgba(E.rgb, .26) : 'rgba(255,255,255,.065)';
+            c.lineWidth = on ? 1.2 : .7;
+            c.strokeRect(x + pad * .32, y + pad * .32, cell - pad * .64, cell - pad * .64);
+
+            const rgb = on ? E.rgb : [118, 132, 164];
+            const alpha = on ? .85 : .3;
+            const width = Math.max(1.5, cell * .055);
+            if (tile.mask & N) E.line(c, cx, cy, cx, y + pad, rgb, alpha, width);
+            if (tile.mask & E) E.line(c, cx, cy, x + cell - pad, cy, rgb, alpha, width);
+            if (tile.mask & S) E.line(c, cx, cy, cx, y + cell - pad, rgb, alpha, width);
+            if (tile.mask & WBIT) E.line(c, cx, cy, x + pad, cy, rgb, alpha, width);
+            E.glow(c, cx, cy, nodeR * (on ? 1.9 : 1.1), rgb, on ? .7 : .22);
+            c.fillStyle = rgba(rgb, on ? .95 : .5);
+            c.beginPath(); c.arc(cx, cy, nodeR, 0, TAU); c.fill();
+          }
+        }
+
+        const sourceX = board.x + (source % cols + .5) * cell;
+        const sourceY = board.y + (Math.floor(source / cols) + 1) * cell + 5;
+        const targetX = board.x + (target % cols + .5) * cell;
+        const targetY = board.y + Math.floor(target / cols) * cell - 5;
+        E.glow(c, sourceX, sourceY, cell * .24, E.rgb, .7);
+        E.glow(c, targetX, targetY, cell * .24, [255, 232, 160], powered.has(target) ? .9 : .4);
+        c.fillStyle = rgba(E.rgb, .9); c.beginPath(); c.arc(sourceX, sourceY, nodeR * 1.4, 0, TAU); c.fill();
+        c.fillStyle = 'rgba(255,232,160,.92)'; c.beginPath(); c.arc(targetX, targetY, nodeR * 1.4, 0, TAU); c.fill();
+
+        const maxTime = Math.max(24, 48 - level * 1.8);
+        const p = clamp(timer / maxTime, 0, 1);
+        c.strokeStyle = rgba(E.rgb, .13); c.lineWidth = 4;
+        c.beginPath(); c.arc(E.w * .5, E.h * .52, Math.min(E.u * .46, board.size * .67), 0, TAU); c.stroke();
+        c.strokeStyle = p < .25 ? 'rgba(255,72,110,.68)' : rgba(E.rgb, .55);
+        c.beginPath(); c.arc(E.w * .5, E.h * .52, Math.min(E.u * .46, board.size * .67), -Math.PI / 2, -Math.PI / 2 + TAU * p); c.stroke();
+        c.restore();
+      }
+    };
+  }
+
+  function createGenesisBloom() {
+    let motes = [];
+    let blooms = [];
+    let seeds = 3;
+    let lives = 3;
+    let level = 1;
+    let converted = 0;
+    let target = 0;
+    let phase = 'play';
+    let resultTimer = 0;
+    let roundPoints = 0;
+    const moteColors = [[189,124,255],[98,239,165],[57,215,255],[255,208,105]];
+
+    function makeMote(E) {
+      const a = Math.random() * TAU;
+      const speed = 24 + Math.random() * (42 + level * 3);
+      return {
+        x: rand(E.w - 22, 22),
+        y: rand(E.bottom - 22, E.top + 22),
+        vx: Math.cos(a) * speed,
+        vy: Math.sin(a) * speed,
+        r: 3.2 + Math.random() * 2.4,
+        color: (Math.random() * moteColors.length) | 0,
+        converted: false,
+        phase: Math.random() * TAU
+      };
+    }
+
+    function build(E) {
+      const count = Math.min(coarse || lowCPU ? 70 : 96, 34 + level * 6);
+      motes = [];
+      for (let i = 0; i < count; i++) motes.push(makeMote(E));
+      blooms = [];
+      seeds = Math.min(5, 3 + Math.floor((level - 1) / 4));
+      converted = 0;
+      target = Math.ceil(count * Math.min(.72, .37 + level * .025));
+      phase = 'play';
+      resultTimer = 0;
+      roundPoints = 0;
+      E.setMetric('SEEDS', `${seeds} · ♥${lives}`);
+      E.toast(`${target} TO BLOOM`, .85);
+    }
+
+    function addBloom(E, x, y, depth = 0, delay = 0) {
+      blooms.push({
+        x, y, r: 1, max: Math.max(24, E.u * (depth === 0 ? .062 : .045)),
+        age: 0, delay, duration: depth === 0 ? 2.25 : 1.75,
+        depth,
+        alive: true,
+        color: moteColors[(depth + level) % moteColors.length]
+      });
+    }
+
+    function convert(E, mote, bloom) {
+      if (mote.converted) return;
+      mote.converted = true;
+      converted++;
+      const depth = bloom.depth + 1;
+      const reward = 18 + Math.min(12, depth) * 9 + Math.floor(converted * .8);
+      roundPoints += reward;
+      E.setScore(E.score + reward);
+      if (converted % 5 === 0) E.floatText(`CHAIN ${converted}`, mote.x, mote.y, bloom.color, converted >= target ? 1.3 : 1);
+      E.burst(mote.x, mote.y, bloom.color, 7 + Math.min(depth, 5), 110 + depth * 8, 2.1);
+      E.sfx('good', .68 + Math.min(depth, 10) * .035);
+      addBloom(E, mote.x, mote.y, depth, .035 + Math.random() * .08);
+      if (converted >= target && phase === 'play') {
+        phase = 'result';
+        resultTimer = 1.3;
+        const bonus = 500 + level * 100 + seeds * 120;
+        E.addScore(bonus, E.w * .5, E.h * .5, `EMERGE +${bonus}`);
+        E.flash([255, 238, 180], .2);
+        E.level(`BLOOM ${level + 1}`);
+        level++;
+      }
+    }
+
+    function fail(E) {
+      lives--;
+      E.shake(9);
+      E.flash([255,72,110], .22);
+      E.sfx('bad');
+      if (lives <= 0) E.end('EMERGENCE CEASED');
+      else build(E);
+    }
+
+    return {
+      reset(E) { level = 1; lives = 3; build(E); },
+      resize(E) { build(E); },
+      update(E, dt) {
+        if (phase === 'result') {
+          resultTimer -= dt;
+          if (resultTimer <= 0) build(E);
+        }
+
+        for (const mote of motes) {
+          mote.x += mote.vx * dt;
+          mote.y += mote.vy * dt;
+          if (mote.x < 8 || mote.x > E.w - 8) { mote.vx *= -1; mote.x = clamp(mote.x, 8, E.w - 8); }
+          if (mote.y < E.top + 8 || mote.y > E.bottom - 8) { mote.vy *= -1; mote.y = clamp(mote.y, E.top + 8, E.bottom - 8); }
+        }
+
+        let activeBlooms = 0;
+        for (const bloom of blooms) {
+          if (!bloom.alive) continue;
+          if (bloom.delay > 0) { bloom.delay -= dt; activeBlooms++; continue; }
+          bloom.age += dt;
+          const p = bloom.age / bloom.duration;
+          if (p >= 1) { bloom.alive = false; continue; }
+          activeBlooms++;
+          bloom.r = bloom.max * (p < .28 ? ease(p / .28) : p < .68 ? 1 : 1 - ease((p - .68) / .32));
+          if (bloom.r <= 1) continue;
+          for (const mote of motes) {
+            if (mote.converted) continue;
+            if (dist(mote.x, mote.y, bloom.x, bloom.y) < bloom.r + mote.r) convert(E, mote, bloom);
+          }
+        }
+        if (phase === 'play' && seeds <= 0 && activeBlooms === 0) fail(E);
+      },
+      pointerDown(E, x, y) {
+        if (phase !== 'play' || seeds <= 0) return;
+        x = clamp(x, 18, E.w - 18);
+        y = clamp(y, E.top + 18, E.bottom - 18);
+        seeds--;
+        addBloom(E, x, y, 0, 0);
+        E.setMetric('SEEDS', `${seeds} · ♥${lives}`);
+        E.burst(x, y, E.rgb, 16, 150, 2.6);
+        E.sfx('launch', .92);
+      },
+      keyDown(E, key) {
+        if (key === ' ') {
+          const p = E.pointer();
+          this.pointerDown(E, p.x || E.w * .5, p.y || E.h * .5);
+        }
+      },
+      draw(E, c) {
+        c.save();
+        c.globalCompositeOperation = 'lighter';
+        for (const mote of motes) {
+          const rgb = moteColors[mote.color];
+          const pulse = .65 + .35 * Math.sin(E.t * 2 + mote.phase) ** 2;
+          if (mote.converted) {
+            c.fillStyle = rgba(rgb, .12);
+            c.beginPath(); c.arc(mote.x, mote.y, mote.r * .7, 0, TAU); c.fill();
+          } else {
+            E.glow(c, mote.x, mote.y, mote.r * 1.5, rgb, .32 * pulse);
+            c.fillStyle = rgba(rgb, .7 * pulse);
+            c.beginPath(); c.arc(mote.x, mote.y, mote.r, 0, TAU); c.fill();
+          }
+        }
+
+        for (const bloom of blooms) {
+          if (!bloom.alive || bloom.delay > 0 || bloom.r <= 1) continue;
+          const alpha = clamp(1 - bloom.age / bloom.duration, 0, 1);
+          E.glow(c, bloom.x, bloom.y, bloom.r * 1.7, bloom.color, .42 * alpha);
+          c.strokeStyle = rgba(bloom.color, .58 * alpha);
+          c.lineWidth = Math.max(1, bloom.r * .035);
+          c.beginPath(); c.arc(bloom.x, bloom.y, bloom.r, 0, TAU); c.stroke();
+          c.strokeStyle = rgba(bloom.color, .24 * alpha);
+          c.beginPath(); c.arc(bloom.x, bloom.y, bloom.r * .7, -E.t - bloom.depth, -E.t - bloom.depth + Math.PI * 1.5); c.stroke();
+          const petals = 6;
+          for (let i = 0; i < petals; i++) {
+            const a = i / petals * TAU + E.t * .15 * (bloom.depth % 2 ? -1 : 1);
+            const px = bloom.x + Math.cos(a) * bloom.r * .62;
+            const py = bloom.y + Math.sin(a) * bloom.r * .62;
+            c.fillStyle = rgba(bloom.color, .09 * alpha);
+            c.beginPath(); c.ellipse(px, py, bloom.r * .28, bloom.r * .11, a, 0, TAU); c.fill();
+          }
+        }
+
+        const progress = clamp(converted / target, 0, 1);
+        const radius = Math.min(E.u * .43, E.w * .42);
+        c.strokeStyle = rgba(E.rgb, .1); c.lineWidth = 5;
+        c.beginPath(); c.arc(E.w * .5, E.h * .52, radius, 0, TAU); c.stroke();
+        c.strokeStyle = rgba(E.rgb, .55); c.lineWidth = 5;
+        c.beginPath(); c.arc(E.w * .5, E.h * .52, radius, -Math.PI / 2, -Math.PI / 2 + TAU * progress); c.stroke();
+        c.restore();
+      }
+    };
+  }
+
+  const GAME_DEFS = [
+    {
+      key: 'machine:0', id: 'signal-veil', worldIndex: '01', worldName: 'DREAM MACHINE', domain: 'PERCEIVE',
+      name: 'SIGNAL VEIL', glyph: '◉', rule: 'Find the signal after the veil.', hint: 'WATCH · REMEMBER · TAP',
+      color: '#39d7ff', rgb: [57, 215, 255], secondary: [116, 236, 255], variant: 0, factory: createSignalVeil
+    },
+    {
+      key: 'machine:1', id: 'model-forge', worldIndex: '01', worldName: 'DREAM MACHINE', domain: 'MODEL',
+      name: 'MODEL FORGE', glyph: '⌬', rule: 'Rebuild the hidden network.', hint: 'TAP TWO NODES TO LINK',
+      color: '#39d7ff', rgb: [57, 215, 255], secondary: [130, 170, 255], variant: 1, factory: createModelForge
+    },
+    {
+      key: 'machine:2', id: 'oracle-gates', worldIndex: '01', worldName: 'DREAM MACHINE', domain: 'PREDICT',
+      name: 'ORACLE GATES', glyph: '⌁', rule: 'Choose the exit before it appears.', hint: 'TAP GATE 1 · 2 · 3',
+      color: '#39d7ff', rgb: [57, 215, 255], secondary: [210, 246, 255], variant: 2, factory: createOracleGates
+    },
+    {
+      key: 'maker:0', id: 'vector-vow', worldIndex: '02', worldName: 'DREAM MAKER', domain: 'INTEND',
+      name: 'VECTOR VOW', glyph: '↗', rule: 'Aim. Charge. Commit.', hint: 'HOLD · AIM · RELEASE',
+      color: '#62efa5', rgb: [98, 239, 165], secondary: [255, 226, 135], variant: 3, factory: createVectorVow
+    },
+    {
+      key: 'maker:1', id: 'impulse-run', worldIndex: '02', worldName: 'DREAM MAKER', domain: 'ACT',
+      name: 'IMPULSE RUN', glyph: '➤', rule: 'Move. Collect. Survive.', hint: 'DRAG OR USE ← →',
+      color: '#62efa5', rgb: [98, 239, 165], secondary: [130, 255, 210], variant: 4, factory: createImpulseRun
+    },
+    {
+      key: 'maker:2', id: 'metamorph', worldIndex: '02', worldName: 'DREAM MAKER', domain: 'BECOME',
+      name: 'METAMORPH', glyph: '△', rule: 'Match form before impact.', hint: 'TAP A FORM · 1 · 2 · 3',
+      color: '#62efa5', rgb: [98, 239, 165], secondary: [189, 124, 255], variant: 5, factory: createMetamorph
+    },
+    {
+      key: 'reality:0', id: 'gravity-foundry', worldIndex: '03', worldName: 'DREAM WORLD', domain: 'MATTER',
+      name: 'GRAVITY FOUNDRY', glyph: '⊙', rule: 'Pull the right matter into a stable core.', hint: 'HOLD + DRAG TO GRAVITATE',
+      color: '#bd7cff', rgb: [189, 124, 255], secondary: [255, 232, 160], variant: 6, factory: createGravityFoundry
+    },
+    {
+      key: 'reality:1', id: 'lattice-lock', worldIndex: '03', worldName: 'DREAM WORLD', domain: 'STRUCTURE',
+      name: 'LATTICE LOCK', glyph: '⌗', rule: 'Rotate the lattice. Complete the flow.', hint: 'TAP TILES TO ROTATE',
+      color: '#bd7cff', rgb: [189, 124, 255], secondary: [120, 218, 255], variant: 7, factory: createLatticeLock
+    },
+    {
+      key: 'reality:2', id: 'genesis-bloom', worldIndex: '03', worldName: 'DREAM WORLD', domain: 'EMERGE',
+      name: 'GENESIS BLOOM', glyph: '✣', rule: 'Seed the one. Awaken the many.', hint: 'TAP TO SEED A CHAIN',
+      color: '#bd7cff', rgb: [189, 124, 255], secondary: [98, 239, 165], variant: 8, factory: createGenesisBloom
+    }
+  ];
+  const GAME_BY_KEY = Object.fromEntries(GAME_DEFS.map((definition) => [definition.key, definition]));
+
+  function inferActiveWorld() {
+    const title = String(detailName?.textContent || '').toUpperCase();
+    if (title.includes('MACHINE')) return 'machine';
+    if (title.includes('MAKER')) return 'maker';
+    return 'reality';
+  }
+
+  // Capture-phase fallback keeps the arcade compatible with the existing
+  // Unity engine as well as the event-driven version. The visible triad title
+  // is always the doorway into its matching game.
+  subButtons.forEach((button, index) => {
+    button?.addEventListener('click', (event) => {
+      if (active) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      openGame({ world: inferActiveWorld(), index });
+    }, true);
+  });
+
+  resize();
+})();
