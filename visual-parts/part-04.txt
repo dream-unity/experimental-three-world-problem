@@ -1,0 +1,148 @@
+          x: Math.cos(angle) * shard.radius,
+          y: shard.y * Math.cos(t * 0.18 + i * 0.1),
+          z: Math.sin(angle) * shard.radius + shard.z * 0.22
+        },
+        detailYaw,
+        detailPitch,
+        detailRoll
+      );
+      const projected = project(rotated, detailZoom * 0.74, 11);
+      const radius = (1.1 + shard.size) * clamp(projected.f, 0.5, 1.5);
+      ctx.fillStyle = rgba(WORLD.maker.rgb, 0.16 + 0.24 * ((i % 7) / 7));
+      ctx.beginPath();
+      ctx.moveTo(projected.x, projected.y - radius * 1.7);
+      ctx.lineTo(projected.x + radius, projected.y + radius);
+      ctx.lineTo(projected.x - radius, projected.y + radius);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    ctx.strokeStyle = rgba(WORLD.maker.rgb, 0.2);
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let i = 0; i <= 90; i++) {
+      const angle = i / 90 * TAU * 3 + t * 0.1;
+      const radius = 1.2 + 0.25 * Math.sin(angle * 2.3 + t * 0.4);
+      const rotated = rotate3(
+        { x: Math.cos(angle) * radius, y: Math.sin(angle * 0.73) * 0.9, z: Math.sin(angle) * radius },
+        detailYaw,
+        detailPitch,
+        detailRoll
+      );
+      const projected = project(rotated, detailZoom * 0.73, 11);
+      i ? ctx.lineTo(projected.x, projected.y) : ctx.moveTo(projected.x, projected.y);
+    }
+    ctx.stroke();
+  }
+
+  function drawRealityField(t, alpha) {
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = alpha;
+    const points = [];
+    realityCells.forEach((cell, index) => {
+      const distance = Math.hypot(cell.x, cell.z);
+      const wave = 0.5 + 0.5 * Math.sin(t * 1.7 - distance * 2.2 + cell.phase + activeSub * 0.8);
+      const rise = 0.18 + wave * 0.75 + impulse * Math.max(0, 1 - distance / 2.6) * 0.8;
+      const rotated = rotate3({ x: cell.x, y: -1.4 + rise, z: cell.z }, detailYaw, detailPitch, detailRoll);
+      points.push({ projected: project(rotated, detailZoom * 0.72, 11), rise, index });
+    });
+    points.sort((a, b) => a.projected.z - b.projected.z);
+    points.forEach(({ projected, rise }) => {
+      const rw = unit * 0.0065 * clamp(projected.f, 0.55, 1.5);
+      const rh = unit * 0.035 * rise * clamp(projected.f, 0.55, 1.5);
+      ctx.fillStyle = rgba(WORLD.reality.rgb, 0.12 + 0.24 * rise);
+      ctx.fillRect(projected.x - rw * 0.5, projected.y - rh, rw, rh);
+      ctx.fillStyle = rgba([236, 220, 255], 0.25 + 0.18 * rise);
+      ctx.fillRect(projected.x - rw * 0.5, projected.y - rh, rw, 0.7);
+    });
+  }
+
+  function drawDetail(t, alpha) {
+    if (!activeWorld || alpha <= 0.002) return;
+    const config = WORLD[activeWorld];
+    ctx.globalAlpha = alpha;
+    drawOrb(width * 0.5, height * 0.5, unit * 0.12, config, activeWorld, t, alpha * 0.5, 0.5, 0);
+
+    if (activeWorld === 'machine') drawMachineField(t, alpha);
+    else if (activeWorld === 'maker') drawMakerField(t, alpha);
+    else drawRealityField(t, alpha);
+
+    const points = detailPoints();
+    points.forEach((point, index) => Object.assign(subScreen[index], point));
+    for (let i = 0; i < 3; i++) {
+      drawCurve(points[i], points[(i + 1) % 3], config.rgb, alpha * 0.9, 20 + i, t);
+    }
+
+    const cycle = (t * 0.2) % 3;
+    const edge = Math.floor(cycle);
+    const u = cycle - edge;
+    const a = points[edge];
+    const b = points[(edge + 1) % 3];
+    const packetX = lerp(a.x, b.x, u);
+    const packetY = lerp(a.y, b.y, u) - Math.sin(u * Math.PI) * unit * 0.025;
+    const packetGradient = ctx.createRadialGradient(packetX, packetY, 0, packetX, packetY, unit * 0.025);
+    packetGradient.addColorStop(0, 'rgba(255,255,255,.9)');
+    packetGradient.addColorStop(0.18, rgba(config.rgb, 0.7));
+    packetGradient.addColorStop(1, rgba(config.rgb, 0));
+    ctx.fillStyle = packetGradient;
+    ctx.fillRect(packetX - unit * 0.025, packetY - unit * 0.025, unit * 0.05, unit * 0.05);
+
+    const depthOrder = [...points].sort((a, b) => a.z - b.z);
+    depthOrder.forEach((point) => {
+      const index = point.index;
+      const selected = index === activeSub;
+      const hover = index === hoverSub;
+      const pulse = selected ? 0.5 + 0.5 * Math.sin(t * 2.6 + index) : 0;
+      const radius = point.r * (1 + (selected ? 0.08 : 0) + (hover ? 0.12 : 0) + impulse * (selected ? 0.2 : 0));
+      drawOrb(point.x, point.y, radius, config, activeWorld, t + index * 0.6, alpha, selected || hover ? 1 : 0, point.z);
+      if (selected) {
+        ctx.strokeStyle = rgba([255, 255, 255], alpha * (0.24 + 0.18 * pulse));
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, radius * 1.5, 0, TAU);
+        ctx.stroke();
+      }
+    });
+    ctx.globalAlpha = 1;
+  }
+
+  function updateLabels() {
+    if (++labelTick % 2) return;
+    const mix = ease(viewMix);
+    worldKeys.forEach((key) => {
+      const element = labels[key];
+      const point = worldScreen[key];
+      if (!element) return;
+      element.style.left = `${point.x}px`;
+      element.style.top = `${point.y - point.r * 1.65}px`;
+      element.style.opacity = String(clamp(1 - mix * 2.1, 0, 1));
+      element.style.pointerEvents = mix < 0.25 ? 'auto' : 'none';
+    });
+    if (unityLabel) {
+      unityLabel.style.left = `${width * 0.5}px`;
+      unityLabel.style.top = `${height * 0.5 + unit * 0.045}px`;
+      unityLabel.style.opacity = String(clamp(1 - mix * 2.2, 0, 1));
+    }
+
+    if (activeWorld && mix > 0.22) {
+      subLabels.forEach((element, index) => {
+        const point = subScreen[index];
+        element.style.left = `${point.x}px`;
+        element.style.top = `${point.y - point.r * 1.55}px`;
+        element.style.opacity = String(ease((mix - 0.22) / 0.5));
+        element.style.pointerEvents = mix > 0.65 ? 'auto' : 'none';
+        element.classList.toggle('active', index === activeSub);
+      });
+    } else {
+      subLabels.forEach((element) => {
+        element.style.opacity = '0';
+        element.style.pointerEvents = 'none';
+      });
+    }
+    app?.classList.toggle('detail', Boolean(activeWorld && mix > 0.05));
+  }
+
+  function setHint() {
+    if (!hint || window.__dreamUnityGameActive) return;
+    hint.textContent = activeWorld
+      ? 'DRAG TO ORBIT · PINCH TO ZOOM · TAP A NODE'
