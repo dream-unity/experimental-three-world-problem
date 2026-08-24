@@ -1,0 +1,492 @@
+(() => {
+  'use strict';
+
+  const $ = (s) => document.querySelector(s);
+  const app = $('#app');
+  const shell = $('#arcade');
+  const canvas = $('#gameCanvas');
+  const worldCanvas = $('#world');
+  const detailName = $('#detailName');
+  const subButtons = [$('#sub-0'), $('#sub-1'), $('#sub-2')];
+  const gameBack = $('#gameBack');
+  const gameSound = $('#gameSound');
+  const gamePause = $('#gamePause');
+  const gameRestart = $('#gameRestart');
+  const gameStart = $('#gameStart');
+  const gameAgain = $('#gameAgain');
+  const gameWorld = $('#gameWorld');
+  const gameName = $('#gameName');
+  const gameScore = $('#gameScore');
+  const gameBest = $('#gameBest');
+  const gameMetricLabel = $('#gameMetricLabel');
+  const gameMetric = $('#gameMetric');
+  const gameCard = $('#gameCard');
+  const gameGlyph = $('#gameGlyph');
+  const gameDomain = $('#gameDomain');
+  const gameCardTitle = $('#gameCardTitle');
+  const gameRule = $('#gameRule');
+  const gameStateTitle = $('#gameStateTitle');
+  const gameStateCopy = $('#gameStateCopy');
+  const gameToast = $('#gameToast');
+  const gameHint = $('#gameHint');
+
+  if (!shell || !canvas) return;
+  const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
+  if (!ctx) return;
+
+  const coarse = matchMedia('(pointer:coarse)').matches;
+  const reduced = matchMedia('(prefers-reduced-motion:reduce)').matches;
+  const lowCPU = (navigator.hardwareConcurrency || 8) <= 6;
+  const TAU = Math.PI * 2;
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const ease = (t) => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); };
+  const rand = (a = 1, b = 0) => b + Math.random() * (a - b);
+  const choose = (arr) => arr[(Math.random() * arr.length) | 0];
+  const dist = (a, b, c, d) => Math.hypot(a - c, b - d);
+  const rgba = (rgb, alpha) => `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${alpha})`;
+
+  let W = 1, H = 1, U = 1, DPR = 1;
+  let active = false;
+  let state = 'ready';
+  let currentDef = null;
+  let game = null;
+  let score = 0;
+  let best = 0;
+  let raf = 0;
+  let last = performance.now();
+  let elapsed = 0;
+  let pointerDown = false;
+  let pointerX = 0;
+  let pointerY = 0;
+  let pointerId = null;
+  let soundEnabled = true;
+  let audioCtx = null;
+  let masterGain = null;
+  let shake = 0;
+  let flashAlpha = 0;
+  let flashColor = [255, 255, 255];
+  let toastTimer = 0;
+  let hudTimer = 0;
+  let scoreDirty = true;
+  let metricValue = '';
+  let metricLabel = '';
+  let worldCanvasWidth = 0;
+  let worldCanvasHeight = 0;
+
+  const particles = [];
+  const floaters = [];
+  const stars = [];
+  const starCount = coarse || lowCPU ? 70 : 120;
+  for (let i = 0; i < starCount; i++) {
+    stars.push({ x: Math.random(), y: Math.random(), z: Math.random(), size: .4 + Math.random() * 1.6, phase: Math.random() * TAU });
+  }
+
+  const keyState = new Set();
+
+  function safeBestKey(id) {
+    return `dream-unity.arcade.best.${id}`;
+  }
+
+  function readBest(id) {
+    try { return Number(localStorage.getItem(safeBestKey(id))) || 0; }
+    catch { return 0; }
+  }
+
+  function writeBest(id, value) {
+    try { localStorage.setItem(safeBestKey(id), String(value)); }
+    catch { /* private storage may be blocked */ }
+  }
+
+  function resize() {
+    W = Math.max(1, innerWidth);
+    H = Math.max(1, innerHeight);
+    U = Math.min(W, H);
+    const cap = coarse || lowCPU ? 1 : 1.25;
+    DPR = Math.min(devicePixelRatio || 1, cap);
+    canvas.width = Math.round(W * DPR);
+    canvas.height = Math.round(H * DPR);
+    canvas.style.width = `${W}px`;
+    canvas.style.height = `${H}px`;
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    E.w = W; E.h = H; E.u = U; E.top = Math.min(76, H * .12); E.bottom = H - Math.min(28, H * .05);
+    game?.resize?.(E);
+  }
+  addEventListener('resize', resize, { passive: true });
+
+  function ensureAudio() {
+    if (!soundEnabled) return null;
+    if (!audioCtx) {
+      const AudioCtor = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtor) return null;
+      audioCtx = new AudioCtor();
+      masterGain = audioCtx.createGain();
+      masterGain.gain.value = .11;
+      masterGain.connect(audioCtx.destination);
+    }
+    if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+    return audioCtx;
+  }
+
+  function tone(freq = 440, duration = .08, type = 'sine', volume = .12, slide = 0) {
+    const ac = ensureAudio();
+    if (!ac || !masterGain) return;
+    const now = ac.currentTime;
+    const osc = ac.createOscillator();
+    const gain = ac.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, now);
+    if (slide) osc.frequency.exponentialRampToValueAtTime(Math.max(30, freq + slide), now + duration);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(Math.max(.0002, volume), now + .008);
+    gain.gain.exponentialRampToValueAtTime(.0001, now + duration);
+    osc.connect(gain);
+    gain.connect(masterGain);
+    osc.start(now);
+    osc.stop(now + duration + .02);
+  }
+
+  function sfx(kind, pitch = 1) {
+    if (!soundEnabled) return;
+    if (kind === 'tap') tone(310 * pitch, .045, 'sine', .055, 50);
+    else if (kind === 'good') { tone(520 * pitch, .07, 'sine', .08, 160); setTimeout(() => tone(780 * pitch, .08, 'triangle', .05, 100), 42); }
+    else if (kind === 'bad') tone(150 * pitch, .13, 'sawtooth', .06, -55);
+    else if (kind === 'level') { tone(390 * pitch, .08, 'triangle', .06, 140); setTimeout(() => tone(650 * pitch, .12, 'sine', .07, 220), 65); }
+    else if (kind === 'launch') tone(220 * pitch, .09, 'triangle', .07, 260);
+    else if (kind === 'tick') tone(680 * pitch, .025, 'sine', .025, 20);
+  }
+
+  function glowCircle(c, x, y, radius, rgb, alpha = 1) {
+    c.save();
+    c.globalCompositeOperation = 'lighter';
+    c.fillStyle = rgba(rgb, alpha * .035);
+    c.beginPath(); c.arc(x, y, radius * 2.5, 0, TAU); c.fill();
+    c.fillStyle = rgba(rgb, alpha * .09);
+    c.beginPath(); c.arc(x, y, radius * 1.65, 0, TAU); c.fill();
+    c.fillStyle = rgba(rgb, alpha * .48);
+    c.beginPath(); c.arc(x, y, radius, 0, TAU); c.fill();
+    c.restore();
+  }
+
+  function line(c, ax, ay, bx, by, rgb, alpha = .4, width = 1) {
+    c.save();
+    c.globalCompositeOperation = 'lighter';
+    c.strokeStyle = rgba(rgb, alpha);
+    c.lineWidth = width;
+    c.beginPath(); c.moveTo(ax, ay); c.lineTo(bx, by); c.stroke();
+    c.restore();
+  }
+
+  function polygon(c, x, y, radius, sides, rotation, fill, stroke, lineWidth = 1) {
+    c.beginPath();
+    for (let i = 0; i < sides; i++) {
+      const a = rotation + i / sides * TAU;
+      const px = x + Math.cos(a) * radius;
+      const py = y + Math.sin(a) * radius;
+      i ? c.lineTo(px, py) : c.moveTo(px, py);
+    }
+    c.closePath();
+    if (fill) { c.fillStyle = fill; c.fill(); }
+    if (stroke) { c.strokeStyle = stroke; c.lineWidth = lineWidth; c.stroke(); }
+  }
+
+  function drawShape(c, type, x, y, radius, rgb, alpha = 1, filled = false, rotation = 0) {
+    c.save();
+    c.globalCompositeOperation = 'lighter';
+    const fill = filled ? rgba(rgb, alpha * .34) : null;
+    const stroke = rgba(rgb, alpha * .9);
+    if (type === 0) {
+      c.beginPath(); c.arc(x, y, radius, 0, TAU);
+      if (fill) { c.fillStyle = fill; c.fill(); }
+      c.strokeStyle = stroke; c.lineWidth = Math.max(1.2, radius * .08); c.stroke();
+    } else if (type === 1) {
+      polygon(c, x, y, radius * 1.12, 3, rotation - Math.PI / 2, fill, stroke, Math.max(1.2, radius * .08));
+    } else {
+      polygon(c, x, y, radius, 4, rotation + Math.PI / 4, fill, stroke, Math.max(1.2, radius * .08));
+    }
+    c.restore();
+  }
+
+  function backdrop(c, t, rgb, variant = 0) {
+    c.globalCompositeOperation = 'source-over';
+    c.fillStyle = '#010309';
+    c.fillRect(0, 0, W, H);
+
+    const gx = W * (.5 + Math.sin(t * .07 + variant) * .12);
+    const gy = H * (.48 + Math.cos(t * .05 + variant * .7) * .1);
+    const grad = c.createRadialGradient(gx, gy, 0, gx, gy, U * .78);
+    grad.addColorStop(0, rgba(rgb, .11));
+    grad.addColorStop(.38, rgba(rgb, .035));
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    c.fillStyle = grad;
+    c.fillRect(0, 0, W, H);
+
+    c.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < stars.length; i++) {
+      const star = stars[i];
+      const drift = (star.z - .5) * t * 2.2;
+      const x = (star.x * W + drift + W * 2) % W;
+      const y = star.y * H;
+      const twinkle = .25 + .75 * Math.sin(t * .9 + star.phase) ** 2;
+      c.fillStyle = `rgba(220,232,255,${.08 + .32 * twinkle * (1 - star.z * .45)})`;
+      const size = star.size * (1 + star.z * .5);
+      c.fillRect(x, y, size, size);
+    }
+
+    c.strokeStyle = rgba(rgb, .035);
+    c.lineWidth = 1;
+    const spacing = Math.max(42, U * .075);
+    const offset = (t * 8) % spacing;
+    for (let x = -spacing + offset; x < W + spacing; x += spacing) {
+      c.beginPath(); c.moveTo(x, E.top); c.lineTo(x, H); c.stroke();
+    }
+    for (let y = E.top + offset; y < H + spacing; y += spacing) {
+      c.beginPath(); c.moveTo(0, y); c.lineTo(W, y); c.stroke();
+    }
+  }
+
+  function burst(x, y, rgb, count = 14, speed = 170, size = 3) {
+    const max = coarse || lowCPU ? 220 : 340;
+    for (let i = 0; i < count && particles.length < max; i++) {
+      const a = Math.random() * TAU;
+      const s = speed * (.3 + Math.random() * .7);
+      particles.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: .45 + Math.random() * .45, max: .9, size: size * (.45 + Math.random()), rgb });
+    }
+  }
+
+  function floatText(text, x, y, rgb, scale = 1) {
+    if (floaters.length > 16) floaters.shift();
+    floaters.push({ text, x, y, vy: -34, life: .9, max: .9, rgb, scale });
+  }
+
+  function updateFx(dt) {
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.life -= dt;
+      if (p.life <= 0) { particles.splice(i, 1); continue; }
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vx *= Math.exp(-dt * 2.4);
+      p.vy *= Math.exp(-dt * 2.4);
+    }
+    for (let i = floaters.length - 1; i >= 0; i--) {
+      const f = floaters[i];
+      f.life -= dt;
+      if (f.life <= 0) { floaters.splice(i, 1); continue; }
+      f.y += f.vy * dt;
+      f.vy *= Math.exp(-dt * 1.8);
+    }
+    shake *= Math.exp(-dt * 8);
+    flashAlpha *= Math.exp(-dt * 5.5);
+    if (toastTimer > 0) {
+      toastTimer -= dt;
+      if (toastTimer <= 0) gameToast?.classList.remove('show');
+    }
+  }
+
+  function drawFx(c) {
+    c.save();
+    c.globalCompositeOperation = 'lighter';
+    for (const p of particles) {
+      const a = clamp(p.life / p.max, 0, 1);
+      c.fillStyle = rgba(p.rgb, a * .75);
+      c.beginPath(); c.arc(p.x, p.y, p.size * (.4 + a), 0, TAU); c.fill();
+    }
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+    c.font = '800 12px Inter,system-ui,sans-serif';
+    for (const f of floaters) {
+      const a = clamp(f.life / f.max, 0, 1);
+      c.fillStyle = rgba(f.rgb, a);
+      c.save(); c.translate(f.x, f.y); c.scale(f.scale, f.scale); c.fillText(f.text, 0, 0); c.restore();
+    }
+    c.restore();
+  }
+
+  function setScore(value) {
+    score = Math.max(0, Math.floor(value));
+    scoreDirty = true;
+  }
+
+  function addScore(value, x = W * .5, y = H * .5, text = null) {
+    setScore(score + value);
+    if (value > 0) floatText(text || `+${Math.floor(value)}`, x, y, currentDef.rgb, value >= 250 ? 1.25 : 1);
+  }
+
+  function setMetric(label, value) {
+    metricLabel = label;
+    metricValue = value;
+    if (gameMetricLabel && gameMetricLabel.textContent !== String(label)) gameMetricLabel.textContent = label;
+    if (gameMetric && gameMetric.textContent !== String(value)) gameMetric.textContent = value;
+  }
+
+  function toast(text, duration = .75) {
+    if (!gameToast) return;
+    gameToast.textContent = text;
+    gameToast.classList.add('show');
+    toastTimer = duration;
+  }
+
+  function doShake(amount = 8) { shake = Math.max(shake, amount); }
+  function doFlash(rgb = [255, 255, 255], alpha = .3) { flashColor = rgb; flashAlpha = Math.max(flashAlpha, alpha); }
+
+  function saveBest() {
+    if (!currentDef) return;
+    if (score > best) {
+      best = score;
+      writeBest(currentDef.id, best);
+      if (gameBest) gameBest.textContent = String(best);
+    }
+  }
+
+  function endGame(copy = 'FIELD COLLAPSED') {
+    if (!active || state === 'over') return;
+    state = 'over';
+    saveBest();
+    shell.classList.remove('ready', 'paused');
+    shell.classList.add('over');
+    if (gameStateTitle) gameStateTitle.textContent = 'RUN COMPLETE';
+    if (gameStateCopy) gameStateCopy.textContent = `${copy} · ${score}`;
+    if (gameAgain) gameAgain.textContent = 'AGAIN';
+    sfx('bad', .8);
+  }
+
+  function levelFlash(text = 'LEVEL UP') {
+    toast(text, 1.05);
+    doFlash(currentDef.rgb, .2);
+    sfx('level');
+  }
+
+  const E = {
+    w: W, h: H, u: U, top: 76, bottom: H - 28,
+    get t() { return elapsed; },
+    get score() { return score; },
+    get rgb() { return currentDef?.rgb || [255, 255, 255]; },
+    get secondary() { return currentDef?.secondary || [255, 255, 255]; },
+    clamp, lerp, ease, rand, choose, dist, rgba,
+    glow: glowCircle, line, polygon, drawShape,
+    addScore, setScore, setMetric, toast, burst, floatText,
+    shake: doShake, flash: doFlash, sfx, end: endGame, level: levelFlash,
+    keys: keyState,
+    isDown: () => pointerDown,
+    pointer: () => ({ x: pointerX, y: pointerY })
+  };
+
+  function updateHud(dt) {
+    hudTimer -= dt;
+    if (scoreDirty || hudTimer <= 0) {
+      hudTimer = .12;
+      scoreDirty = false;
+      if (gameScore && gameScore.textContent !== String(score)) gameScore.textContent = String(score);
+      if (gameBest && gameBest.textContent !== String(best)) gameBest.textContent = String(best);
+      if (gameMetricLabel && gameMetricLabel.textContent !== String(metricLabel)) gameMetricLabel.textContent = metricLabel;
+      if (gameMetric && gameMetric.textContent !== String(metricValue)) gameMetric.textContent = metricValue;
+    }
+  }
+
+  function resetCurrent() {
+    if (!game) return;
+    particles.length = 0;
+    floaters.length = 0;
+    score = 0;
+    scoreDirty = true;
+    elapsed = 0;
+    shake = 0;
+    flashAlpha = 0;
+    game.reset(E);
+    updateHud(0);
+  }
+
+  function startCurrent() {
+    if (!active || !game) return;
+    ensureAudio();
+    resetCurrent();
+    state = 'playing';
+    shell.classList.remove('ready', 'paused', 'over');
+    last = performance.now();
+    sfx('launch');
+  }
+
+  function pauseCurrent() {
+    if (!active) return;
+    if (state === 'playing') {
+      state = 'paused';
+      shell.classList.add('paused');
+      if (gameStateTitle) gameStateTitle.textContent = 'PAUSED';
+      if (gameStateCopy) gameStateCopy.textContent = 'FIELD HELD';
+      if (gameAgain) gameAgain.textContent = 'CONTINUE';
+      if (audioCtx?.state === 'running') audioCtx.suspend().catch(() => {});
+    } else if (state === 'paused') {
+      state = 'playing';
+      shell.classList.remove('paused');
+      ensureAudio();
+      last = performance.now();
+    }
+  }
+
+  function openGame(detail) {
+    const def = GAME_BY_KEY[`${detail.world}:${detail.index}`];
+    if (!def) return;
+    currentDef = def;
+    game = def.factory();
+    best = readBest(def.id);
+    active = true;
+    window.__dreamUnityGameActive = true;
+    app?.classList.add('game-open');
+    if (worldCanvas) {
+      worldCanvasWidth = worldCanvas.width;
+      worldCanvasHeight = worldCanvas.height;
+      worldCanvas.width = 1;
+      worldCanvas.height = 1;
+    }
+    shell.classList.add('open', 'ready');
+    shell.classList.remove('paused', 'over');
+    shell.setAttribute('aria-hidden', 'false');
+    shell.style.setProperty('--game', def.color);
+    shell.style.setProperty('--game-rgb', def.rgb.join(','));
+    if (gameWorld) gameWorld.textContent = `${def.worldIndex} · ${def.worldName}`;
+    if (gameName) gameName.textContent = def.name;
+    if (gameGlyph) gameGlyph.textContent = def.glyph;
+    if (gameDomain) gameDomain.textContent = def.domain;
+    if (gameCardTitle) gameCardTitle.textContent = def.name;
+    if (gameRule) gameRule.textContent = def.rule;
+    if (gameHint) gameHint.textContent = def.hint;
+    if (gameBest) gameBest.textContent = String(best);
+    if (gameStart) gameStart.textContent = 'ENTER';
+    state = 'ready';
+    resize();
+    resetCurrent();
+    last = performance.now();
+    if (!raf) raf = requestAnimationFrame(loop);
+  }
+
+  function closeGame() {
+    if (!active) return;
+    saveBest();
+    active = false;
+    state = 'ready';
+    pointerDown = false;
+    keyState.clear();
+    shell.classList.remove('open', 'ready', 'paused', 'over');
+    shell.setAttribute('aria-hidden', 'true');
+    app?.classList.remove('game-open');
+    window.__dreamUnityGameActive = false;
+    if (worldCanvas) {
+      worldCanvas.width = worldCanvasWidth || Math.max(1, innerWidth);
+      worldCanvas.height = worldCanvasHeight || Math.max(1, innerHeight);
+      window.dispatchEvent(new Event('resize'));
+    }
+    window.dispatchEvent(new CustomEvent('dreamunity:game-closed'));
+    game = null;
+    currentDef = null;
+    particles.length = 0;
+    floaters.length = 0;
+    if (audioCtx?.state === 'running') audioCtx.suspend().catch(() => {});
+  }
+
+  function drawFrame(dt) {
+    if (!game || !currentDef) return;
+    const sx = shake > .1 ? rand(shake, -shake) : 0;
+    const sy = shake > .1 ? rand(shake, -shake) : 0;
+    ctx.save();
+    ctx.translate(sx, 
