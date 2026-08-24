@@ -6,11 +6,7 @@
   <meta name="theme-color" content="#02040a" />
   <meta name="description" content="Dream Unity — three living 3D worlds of mind." />
   <title>Dream Unity</title>
-  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
-  <link rel="stylesheet" href="./styles.css" />
-  <script type="importmap">
-    {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.179.1/build/three.module.js"}}
-  </script>
+  <link rel="stylesheet" href="./styles.css?v=20260824-4" />
 </head>
 <body>
   <main id="app" aria-label="Dream Unity interactive 3D simulation">
@@ -50,6 +46,13 @@
   </main>
 
   <noscript>This simulation requires JavaScript.</noscript>
-  <script type="module" src="./main.js"></script>
+  <script>
+    // Loader fail-safe: the interface can never remain permanently covered.
+    window.setTimeout(function () {
+      var el = document.getElementById('loading');
+      if (el) el.classList.add('hide');
+    }, 1600);
+  </script>
+  <script src="./main.js?v=20260824-4"></script>
 </body>
 </html>
