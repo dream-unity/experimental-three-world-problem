@@ -1,0 +1,182 @@
+      return;
+    }
+
+    if (gestureTravel > 4) {
+      if (activeWorld && viewMix > 0.62) {
+        detailYaw -= dx * 0.0065;
+        detailPitch = clamp(detailPitch - dy * 0.0055, -1.16, 1.16);
+        detailYawVelocity = -dx * 0.0065 / dt;
+        detailPitchVelocity = -dy * 0.0055 / dt;
+        hoverSub = -1;
+      } else if (viewMix < 0.38) {
+        overviewYaw -= dx * 0.0065;
+        overviewPitch = clamp(overviewPitch - dy * 0.0055, -1.18, 1.18);
+        overviewYawVelocity = -dx * 0.0065 / dt;
+        overviewPitchVelocity = -dy * 0.0055 / dt;
+        hoverWorld = null;
+      }
+      canvas.style.cursor = 'grabbing';
+      event.preventDefault();
+    }
+  }, { passive: false });
+
+  function finishPointer(event, cancelled = false) {
+    if (window.__dreamUnityGameActive) return;
+    const pointerCountBefore = pointers.size;
+    pointers.delete(event.pointerId);
+    if (pointers.size >= 2) beginPinch();
+    else pinchState = null;
+    if (pointers.size === 1) {
+      const remaining = [...pointers.values()][0];
+      remaining.startX = remaining.lastX = remaining.x;
+      remaining.startY = remaining.lastY = remaining.y;
+      remaining.lastTime = performance.now();
+    }
+
+    canvas.style.cursor = coarse ? 'default' : 'grab';
+    const moved = cancelled || gestureHadPinch || pointerCountBefore > 1 || gestureTravel > 9;
+    if (moved) return;
+
+    const hit = hitTest(event.clientX, event.clientY);
+    if (hit?.type === 'world') {
+      enterWorld(hit.key);
+      return;
+    }
+    if (hit?.type === 'sub') {
+      triggerSub(hit.index);
+      return;
+    }
+
+    // Double-tap/click empty space restores the canonical orientation.
+    const now = performance.now();
+    if (now - lastTapAt < 330) {
+      if (activeWorld && viewMix > 0.55) {
+        detailYaw = 0;
+        detailPitch = 0;
+        detailRoll = 0;
+        detailZoom = 1;
+      } else {
+        overviewYaw = 0.18;
+        overviewPitch = -0.06;
+        overviewRoll = 0;
+        overviewZoom = 1;
+      }
+    }
+    lastTapAt = now;
+  }
+
+  canvas.addEventListener('pointerup', (event) => finishPointer(event, false), { passive: false });
+  canvas.addEventListener('pointercancel', (event) => finishPointer(event, true), { passive: false });
+
+  canvas.addEventListener('wheel', (event) => {
+    if (window.__dreamUnityGameActive) return;
+    event.preventDefault();
+    const factor = Math.exp(-event.deltaY * 0.0011);
+    if (activeWorld && viewMix > 0.55) detailZoom = clamp(detailZoom * factor, 0.72, 1.55);
+    else if (viewMix < 0.45) overviewZoom = clamp(overviewZoom * factor, 0.66, 1.62);
+    overviewLastInput = time;
+  }, { passive: false });
+
+  function render(t) {
+    drawBackground(t);
+    const mix = ease(viewMix);
+    drawOverview(t, 1 - mix);
+    drawDetail(t, mix);
+    updateLabels();
+
+    ctx.globalCompositeOperation = 'source-over';
+    const vignette = ctx.createRadialGradient(width * 0.5, height * 0.48, unit * 0.2, width * 0.5, height * 0.5, unit * 0.82);
+    vignette.addColorStop(0, 'rgba(0,0,0,0)');
+    vignette.addColorStop(1, 'rgba(0,0,0,.44)');
+    ctx.fillStyle = vignette;
+    ctx.fillRect(0, 0, width, height);
+  }
+
+  function updateMotion(dt) {
+    if (pointers.size === 0) {
+      if (activeWorld && viewMix > 0.55) {
+        detailYaw += detailYawVelocity * dt;
+        detailPitch = clamp(detailPitch + detailPitchVelocity * dt, -1.16, 1.16);
+        detailRoll += detailRollVelocity * dt;
+        const decay = Math.exp(-dt * 5.4);
+        detailYawVelocity *= decay;
+        detailPitchVelocity *= decay;
+        detailRollVelocity *= decay;
+      } else if (viewMix < 0.45) {
+        overviewYaw += overviewYawVelocity * dt;
+        overviewPitch = clamp(overviewPitch + overviewPitchVelocity * dt, -1.18, 1.18);
+        overviewRoll += overviewRollVelocity * dt;
+        const decay = Math.exp(-dt * 5.1);
+        overviewYawVelocity *= decay;
+        overviewPitchVelocity *= decay;
+        overviewRollVelocity *= decay;
+
+        // Subtle autonomous movement resumes only after the user leaves the
+        // object alone. It never fights the direct manipulation gesture.
+        if (!reduced && time - overviewLastInput > 3.2 && Math.abs(overviewYawVelocity) < 0.01) {
+          overviewYaw += dt * 0.026;
+        }
+      }
+    }
+
+    if (Math.abs(overviewYaw) > TAU * 50) overviewYaw %= TAU;
+    if (Math.abs(detailYaw) > TAU * 50) detailYaw %= TAU;
+    if (Math.abs(overviewRoll) > TAU * 50) overviewRoll %= TAU;
+    if (Math.abs(detailRoll) > TAU * 50) detailRoll %= TAU;
+  }
+
+  function governor(rawDt) {
+    fpsFrames++;
+    fpsTime += rawDt;
+    if (fpsTime < 2) return;
+    const fps = fpsFrames / fpsTime;
+    fpsFrames = 0;
+    fpsTime = 0;
+    if (fps < 42) slowWindows++;
+    else slowWindows = Math.max(0, slowWindows - 1);
+    if (slowWindows >= 2 && dpr > 0.78) {
+      dpr = Math.max(0.78, dpr - 0.12);
+      canvas.width = Math.round(width * dpr);
+      canvas.height = Math.round(height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      slowWindows = 0;
+    }
+  }
+
+  function animate(now) {
+    const rawDt = Math.max(0, (now - last) / 1000);
+    last = now;
+    const dt = Math.min(rawDt, 1 / 30);
+
+    if (!document.hidden && !window.__dreamUnityGameActive) {
+      time += reduced ? dt * 0.22 : dt;
+      updateMotion(dt);
+      viewMix = damp(viewMix, targetMix, 4.2, dt);
+      if (targetMix === 0 && viewMix < 0.006 && activeWorld) {
+        activeWorld = null;
+        activeSub = 0;
+        impulse = 0;
+        setHint();
+      }
+      if (activeWorld && activeSubUntil < time) activeSub = Math.floor(time / 3.9) % 3;
+      impulse *= Math.exp(-dt * 2.35);
+      render(time);
+      governor(Math.min(rawDt, 0.1));
+      frame++;
+    }
+    requestAnimationFrame(animate);
+  }
+
+  document.addEventListener('visibilitychange', () => { last = performance.now(); });
+  window.addEventListener('dreamunity:game-closed', () => {
+    resize();
+    last = performance.now();
+    setHint();
+  });
+
+  setHint();
+  canvas.style.cursor = coarse ? 'default' : 'grab';
+  releaseLoader();
+  render(0);
+  requestAnimationFrame(animate);
+})();
