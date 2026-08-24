@@ -1,0 +1,425 @@
+   c.fillStyle = 'rgba(255,72,112,.13)';
+            c.fillRect(entity.x - entity.width * .5, entity.y - entity.r, entity.width, entity.r * 2);
+            c.strokeStyle = 'rgba(255,92,132,.55)'; c.lineWidth = 1.4;
+            c.strokeRect(entity.x - entity.width * .5, entity.y - entity.r, entity.width, entity.r * 2);
+            for (let x = entity.x - entity.width * .5; x < entity.x + entity.width * .5; x += 18) E.line(c, x, entity.y + entity.r, x + entity.r * 1.2, entity.y - entity.r, [255, 72, 112], .25, 1);
+          } else {
+            E.glow(c, entity.x, entity.y, entity.r * 1.6 * scale, [255, 72, 112], .5);
+            E.polygon(c, entity.x, entity.y, entity.r * scale, 3 + (Math.floor(entity.phase) % 3), entity.spin, 'rgba(255,72,112,.15)', 'rgba(255,105,140,.72)', 1.2);
+          }
+        }
+
+        const visible = invulnerable <= 0 || Math.sin(E.t * 18) > 0;
+        if (visible) {
+          E.glow(c, player.x, player.y, player.r * 2.4, E.rgb, .9);
+          c.fillStyle = 'rgba(255,255,255,.92)';
+          c.beginPath(); c.moveTo(player.x, player.y - player.r * 1.3); c.lineTo(player.x + player.r, player.y + player.r); c.lineTo(player.x, player.y + player.r * .55); c.lineTo(player.x - player.r, player.y + player.r); c.closePath(); c.fill();
+          for (let i = 0; i < 5; i++) {
+            const len = player.r * (1.2 + i * .65 + Math.sin(E.t * 10 + i) * .2);
+            E.line(c, player.x + (i - 2) * 2.2, player.y + player.r, player.x + (i - 2) * 3.2, player.y + player.r + len, E.rgb, .25, 1);
+          }
+        }
+        c.restore();
+      }
+    };
+  }
+
+  function createMetamorph() {
+    let form = 0;
+    let incoming = [];
+    let spawnTimer = 0;
+    let level = 1;
+    let lives = 3;
+    let combo = 0;
+    let absorbed = 0;
+    let invulnerable = 0;
+    let pads = [];
+    const formColors = [[98, 239, 165], [255, 210, 110], [189, 124, 255]];
+
+    function layout(E) {
+      const y = E.bottom - Math.max(30, E.u * .045);
+      const gap = Math.min(100, E.w * .18);
+      pads = [
+        { x: E.w * .5 - gap, y, r: Math.max(19, E.u * .031) },
+        { x: E.w * .5, y, r: Math.max(19, E.u * .031) },
+        { x: E.w * .5 + gap, y, r: Math.max(19, E.u * .031) }
+      ];
+    }
+
+    function setForm(E, next) {
+      form = ((next % 3) + 3) % 3;
+      E.sfx('tap', .82 + form * .16);
+      const p = pads[form];
+      if (p) E.burst(p.x, p.y, formColors[form], 7, 90, 2);
+    }
+
+    function spawn(E) {
+      const angle = Math.random() * TAU;
+      const outer = Math.hypot(E.w, E.h) * .56 + 50;
+      const type = (Math.random() * 3) | 0;
+      incoming.push({
+        angle,
+        radius: outer,
+        speed: 58 + level * 8 + Math.random() * 24,
+        spin: rand(1.25, -.9),
+        type,
+        size: Math.max(10, E.u * (.017 + Math.random() * .006)),
+        phase: Math.random() * TAU
+      });
+      spawnTimer = Math.max(.24, .92 - level * .045) * rand(1.18, .82);
+    }
+
+    function resolve(E, entity, x, y) {
+      if (entity.type === form) {
+        combo++;
+        absorbed++;
+        const reward = 95 + combo * 22 + level * 12;
+        E.addScore(reward, x, y, combo > 2 ? `BECOME ×${combo}` : `+${reward}`);
+        E.burst(x, y, formColors[entity.type], 18, 210, 2.8);
+        E.flash(formColors[entity.type], .12);
+        E.sfx('good', .9 + combo * .025);
+        if (absorbed % 10 === 0) {
+          level++;
+          E.level(`FORM ${level}`);
+        }
+      } else if (invulnerable <= 0) {
+        lives--;
+        combo = 0;
+        invulnerable = 1.1;
+        E.setMetric('LIVES', lives);
+        E.shake(10);
+        E.flash([255, 72, 110], .23);
+        E.burst(x, y, [255, 72, 110], 18, 220, 2.8);
+        E.sfx('bad');
+        if (lives <= 0) E.end('FORM DISSOLVED');
+      }
+    }
+
+    return {
+      reset(E) {
+        form = 0; incoming = []; spawnTimer = .55; level = 1; lives = 3; combo = 0; absorbed = 0; invulnerable = 0;
+        layout(E);
+        E.setMetric('LIVES', lives);
+      },
+      resize(E) { layout(E); incoming = []; },
+      update(E, dt) {
+        if (invulnerable > 0) invulnerable -= dt;
+        spawnTimer -= dt;
+        if (spawnTimer <= 0) spawn(E);
+        const cx = E.w * .5, cy = E.h * .48;
+        const playerRadius = Math.max(19, E.u * .032);
+        for (let i = incoming.length - 1; i >= 0; i--) {
+          const e = incoming[i];
+          e.radius -= e.speed * dt;
+          e.angle += e.spin * dt * (.22 + level * .006);
+          const x = cx + Math.cos(e.angle) * e.radius;
+          const y = cy + Math.sin(e.angle) * e.radius * .78;
+          if (e.radius < playerRadius + e.size * 1.2) {
+            resolve(E, e, x, y);
+            incoming.splice(i, 1);
+          }
+        }
+      },
+      pointerDown(E, x, y) {
+        let hit = -1;
+        pads.forEach((p, i) => { if (dist(x, y, p.x, p.y) < p.r * 1.6) hit = i; });
+        if (hit >= 0) setForm(E, hit);
+        else setForm(E, form + (x < E.w * .5 ? -1 : 1));
+      },
+      keyDown(E, key) {
+        if (key === '1') setForm(E, 0);
+        else if (key === '2') setForm(E, 1);
+        else if (key === '3') setForm(E, 2);
+        else if (key === ' ' || key === 'arrowright') setForm(E, form + 1);
+        else if (key === 'arrowleft') setForm(E, form - 1);
+      },
+      draw(E, c) {
+        const cx = E.w * .5, cy = E.h * .48;
+        const playerRadius = Math.max(19, E.u * .032);
+        c.save();
+        c.globalCompositeOperation = 'lighter';
+
+        for (let r = E.u * .11; r < E.u * .45; r += E.u * .08) {
+          c.strokeStyle = rgba(E.rgb, .035 + .02 * Math.sin(E.t + r) ** 2);
+          c.lineWidth = 1;
+          c.beginPath(); c.ellipse(cx, cy, r, r * .78, E.t * .01, 0, TAU); c.stroke();
+        }
+
+        for (const e of incoming) {
+          const x = cx + Math.cos(e.angle) * e.radius;
+          const y = cy + Math.sin(e.angle) * e.radius * .78;
+          const rgb = formColors[e.type];
+          E.glow(c, x, y, e.size * 1.7, rgb, .55);
+          E.drawShape(c, e.type, x, y, e.size, rgb, .9, false, E.t * e.spin + e.phase);
+          const tailX = cx + Math.cos(e.angle - .08) * (e.radius + 28);
+          const tailY = cy + Math.sin(e.angle - .08) * (e.radius + 28) * .78;
+          E.line(c, tailX, tailY, x, y, rgb, .24, 1);
+        }
+
+        const visible = invulnerable <= 0 || Math.sin(E.t * 18) > 0;
+        if (visible) {
+          E.glow(c, cx, cy, playerRadius * 2.5, formColors[form], .92);
+          E.drawShape(c, form, cx, cy, playerRadius, formColors[form], 1, true, E.t * .4);
+          c.strokeStyle = rgba(formColors[form], .55);
+          c.lineWidth = 1.5;
+          c.beginPath(); c.arc(cx, cy, playerRadius * 1.65, E.t * .8, E.t * .8 + Math.PI * 1.45); c.stroke();
+        }
+
+        pads.forEach((p, i) => {
+          const selected = i === form;
+          E.glow(c, p.x, p.y, p.r * (selected ? 1.5 : .9), formColors[i], selected ? .65 : .2);
+          c.fillStyle = selected ? rgba(formColors[i], .12) : 'rgba(255,255,255,.018)';
+          c.beginPath(); c.arc(p.x, p.y, p.r * 1.15, 0, TAU); c.fill();
+          c.strokeStyle = selected ? rgba(formColors[i], .8) : 'rgba(255,255,255,.14)';
+          c.lineWidth = selected ? 2 : 1;
+          c.beginPath(); c.arc(p.x, p.y, p.r * 1.15, 0, TAU); c.stroke();
+          E.drawShape(c, i, p.x, p.y, p.r * .48, formColors[i], selected ? 1 : .5, selected, E.t * .2);
+        });
+        c.restore();
+      }
+    };
+  }
+
+  function createGravityFoundry() {
+    let core = { x: 0, y: 0, tx: 0, ty: 0, r: 20 };
+    let particlesMatter = [];
+    let gravityOn = false;
+    let stability = 100;
+    let mass = 0;
+    let targetMass = 7;
+    let required = 0;
+    let level = 1;
+    let sequence = 0;
+    const matterColors = [[92, 222, 255], [98, 239, 165], [210, 142, 255], [255, 72, 110]];
+
+    function makeParticle(E, atEdge = false) {
+      const typeRoll = Math.random();
+      const type = typeRoll < .14 ? 3 : (Math.random() * 3) | 0;
+      const margin = 18;
+      let x, y;
+      if (atEdge) {
+        const side = (Math.random() * 4) | 0;
+        if (side === 0) { x = margin; y = rand(E.bottom, E.top); }
+        else if (side === 1) { x = E.w - margin; y = rand(E.bottom, E.top); }
+        else if (side === 2) { x = rand(E.w - margin, margin); y = E.top + margin; }
+        else { x = rand(E.w - margin, margin); y = E.bottom - margin; }
+      } else {
+        x = rand(E.w - margin, margin);
+        y = rand(E.bottom - margin, E.top + margin);
+      }
+      const a = Math.random() * TAU;
+      const speed = 18 + Math.random() * 42;
+      return { x, y, vx: Math.cos(a) * speed, vy: Math.sin(a) * speed, type, r: type === 3 ? 5.5 : 4 + Math.random() * 3, phase: Math.random() * TAU, trail: [] };
+    }
+
+    function fill(E) {
+      const count = coarse || lowCPU ? 38 : 58;
+      particlesMatter = [];
+      for (let i = 0; i < count; i++) particlesMatter.push(makeParticle(E));
+    }
+
+    function setCore(E) {
+      core.x = core.tx = E.w * .5;
+      core.y = core.ty = E.h * .52;
+      core.r = Math.max(18, E.u * .03);
+    }
+
+    function nextRequirement(E) {
+      required = (required + 1 + ((Math.random() * 2) | 0)) % 3;
+      sequence++;
+      E.toast(['CYAN', 'GREEN', 'VIOLET'][required], .65);
+    }
+
+    function capture(E, p) {
+      const rgb = matterColors[p.type];
+      if (p.type === required) {
+        mass++;
+        const reward = 65 + mass * 12 + level * 10;
+        E.addScore(reward, core.x, core.y, `MASS ${mass}/${targetMass}`);
+        E.burst(core.x, core.y, rgb, 12, 140, 2.5);
+        E.sfx('good', .78 + p.type * .12);
+        nextRequirement(E);
+        if (mass >= targetMass) {
+          level++;
+          mass = 0;
+          targetMass = Math.min(18, 7 + level * 2);
+          stability = Math.min(100, stability + 18);
+          E.setMetric('STABILITY', Math.round(stability));
+          E.flash([255, 239, 180], .2);
+          E.burst(core.x, core.y, [255, 239, 180], 38, 280, 3.4);
+          E.level(`CORE ${level}`);
+        }
+      } else {
+        const damage = p.type === 3 ? 22 : 8;
+        stability -= damage;
+        E.setMetric('STABILITY', Math.max(0, Math.round(stability)));
+        E.shake(p.type === 3 ? 12 : 5);
+        E.flash([255, 72, 110], p.type === 3 ? .27 : .12);
+        E.burst(core.x, core.y, [255, 72, 110], p.type === 3 ? 20 : 8, 190, 2.8);
+        E.sfx('bad', p.type === 3 ? .7 : 1);
+        if (stability <= 0) E.end('MATTER UNBOUND');
+      }
+    }
+
+    return {
+      reset(E) {
+        level = 1; stability = 100; mass = 0; targetMass = 7; required = (Math.random() * 3) | 0; sequence = 0; gravityOn = false;
+        setCore(E); fill(E);
+        E.setMetric('STABILITY', 100);
+      },
+      resize(E) { setCore(E); fill(E); },
+      update(E, dt) {
+        core.x = lerp(core.x, core.tx, 1 - Math.exp(-dt * 11));
+        core.y = lerp(core.y, core.ty, 1 - Math.exp(-dt * 11));
+        const force = gravityOn ? 115000 : 14000;
+        for (let i = 0; i < particlesMatter.length; i++) {
+          const p = particlesMatter[i];
+          const dx = core.x - p.x, dy = core.y - p.y;
+          const d2 = dx * dx + dy * dy;
+          const d = Math.sqrt(d2) || 1;
+          const accel = force / (d2 + 900);
+          p.vx += dx / d * accel * dt;
+          p.vy += dy / d * accel * dt;
+          const speed = Math.hypot(p.vx, p.vy);
+          const maxSpeed = gravityOn ? 280 : 120;
+          if (speed > maxSpeed) { p.vx = p.vx / speed * maxSpeed; p.vy = p.vy / speed * maxSpeed; }
+          p.x += p.vx * dt;
+          p.y += p.vy * dt;
+          p.vx *= Math.exp(-dt * .08);
+          p.vy *= Math.exp(-dt * .08);
+          if (p.x < 8 || p.x > E.w - 8) { p.vx *= -.85; p.x = clamp(p.x, 8, E.w - 8); }
+          if (p.y < E.top + 8 || p.y > E.bottom - 8) { p.vy *= -.85; p.y = clamp(p.y, E.top + 8, E.bottom - 8); }
+          p.trail.push({ x: p.x, y: p.y });
+          if (p.trail.length > 7) p.trail.shift();
+          if (d < core.r + p.r + 4) {
+            capture(E, p);
+            particlesMatter[i] = makeParticle(E, true);
+          }
+        }
+      },
+      pointerDown(E, x, y) {
+        gravityOn = true;
+        core.tx = clamp(x, 25, E.w - 25);
+        core.ty = clamp(y, E.top + 25, E.bottom - 25);
+        E.sfx('launch', .55);
+      },
+      pointerMove(E, x, y, down) {
+        if (!down) return;
+        gravityOn = true;
+        core.tx = clamp(x, 25, E.w - 25);
+        core.ty = clamp(y, E.top + 25, E.bottom - 25);
+      },
+      pointerUp() { gravityOn = false; },
+      pointerCancel() { gravityOn = false; },
+      draw(E, c) {
+        c.save();
+        c.globalCompositeOperation = 'lighter';
+        const requiredRgb = matterColors[required];
+        for (let r = core.r * 2; r < E.u * .34; r += core.r * 1.35) {
+          const alpha = (gravityOn ? .13 : .045) * (1 - r / (E.u * .38));
+          c.strokeStyle = rgba(requiredRgb, Math.max(.01, alpha));
+          c.lineWidth = gravityOn ? 1.3 : .8;
+          c.beginPath(); c.arc(core.x, core.y, r + Math.sin(E.t * 2 + r) * 3, 0, TAU); c.stroke();
+        }
+
+        for (const p of particlesMatter) {
+          const rgb = matterColors[p.type];
+          for (let i = 1; i < p.trail.length; i++) {
+            const a = i / p.trail.length;
+            E.line(c, p.trail[i - 1].x, p.trail[i - 1].y, p.trail[i].x, p.trail[i].y, rgb, a * .12, 1);
+          }
+          if (gravityOn && dist(p.x, p.y, core.x, core.y) < E.u * .23) E.line(c, p.x, p.y, core.x, core.y, rgb, .055, .7);
+          E.glow(c, p.x, p.y, p.r * (p.type === required ? 1.8 : 1.2), rgb, p.type === required ? .7 : .38);
+          c.fillStyle = p.type === 3 ? 'rgba(255,255,255,.28)' : rgba(rgb, .88);
+          c.beginPath(); c.arc(p.x, p.y, p.r, 0, TAU); c.fill();
+          if (p.type === required) {
+            c.strokeStyle = rgba(rgb, .55); c.lineWidth = 1;
+            c.beginPath(); c.arc(p.x, p.y, p.r * 2.2, E.t + p.phase, E.t + p.phase + Math.PI * 1.25); c.stroke();
+          }
+        }
+
+        E.glow(c, core.x, core.y, core.r * (gravityOn ? 3 : 2.2), requiredRgb, gravityOn ? .92 : .7);
+        const gradient = c.createRadialGradient(core.x - core.r * .25, core.y - core.r * .25, 1, core.x, core.y, core.r);
+        gradient.addColorStop(0, 'rgba(255,255,255,.96)');
+        gradient.addColorStop(.3, rgba(requiredRgb, .86));
+        gradient.addColorStop(1, rgba(requiredRgb, .15));
+        c.fillStyle = gradient;
+        c.beginPath(); c.arc(core.x, core.y, core.r, 0, TAU); c.fill();
+        c.strokeStyle = rgba(requiredRgb, .72); c.lineWidth = 2;
+        c.beginPath(); c.arc(core.x, core.y, core.r * 1.45, -Math.PI / 2, -Math.PI / 2 + TAU * mass / targetMass); c.stroke();
+        E.drawShape(c, required, core.x, core.y, core.r * .38, [255,255,255], .8, false, E.t * .3);
+        c.restore();
+      }
+    };
+  }
+
+  function createLatticeLock() {
+    const N = 1, E = 2, S = 4, WBIT = 8;
+    const DIRS = [
+      { bit: N, opposite: S, dr: -1, dc: 0 },
+      { bit: E, opposite: WBIT, dr: 0, dc: 1 },
+      { bit: S, opposite: N, dr: 1, dc: 0 },
+      { bit: WBIT, opposite: E, dr: 0, dc: -1 }
+    ];
+    let rows = 5, cols = 5, grid = [];
+    let source = 0, target = 0;
+    let powered = new Set();
+    let level = 1, lives = 3, timer = 0, phase = 'play', resultTimer = 0;
+    let board = { x: 0, y: 0, size: 0, cell: 0 };
+
+    const rotateMask = (mask) => ((mask << 1) & 15) | ((mask >> 3) & 1);
+    const index = (r, c) => r * cols + c;
+
+    function connectMasks(masks, a, b) {
+      const ar = Math.floor(a / cols), ac = a % cols;
+      const br = Math.floor(b / cols), bc = b % cols;
+      if (br === ar - 1) { masks[a] |= N; masks[b] |= S; }
+      else if (br === ar + 1) { masks[a] |= S; masks[b] |= N; }
+      else if (bc === ac - 1) { masks[a] |= WBIT; masks[b] |= E; }
+      else if (bc === ac + 1) { masks[a] |= E; masks[b] |= WBIT; }
+    }
+
+    function layout(E) {
+      const availableH = E.bottom - E.top - 38;
+      const maxSize = Math.min(E.w * .86, availableH * .94, E.u * .78);
+      board.size = maxSize;
+      board.cell = maxSize / Math.max(rows, cols);
+      board.x = (E.w - cols * board.cell) * .5;
+      board.y = E.top + (availableH - rows * board.cell) * .5 + 20;
+    }
+
+    function build(E) {
+      rows = cols = Math.min(7, 5 + Math.floor((level - 1) / 3));
+      layout(E);
+      const masks = new Array(rows * cols).fill(0);
+      let r = rows - 1;
+      let c = Math.floor(cols / 2);
+      source = index(r, c);
+      const path = [source];
+      const used = new Set(path);
+      while (r > 0) {
+        if (Math.random() < .72) {
+          const candidates = [];
+          if (c > 0 && !used.has(index(r, c - 1))) candidates.push(c - 1);
+          if (c < cols - 1 && !used.has(index(r, c + 1))) candidates.push(c + 1);
+          if (candidates.length) {
+            c = choose(candidates);
+            path.push(index(r, c));
+            used.add(index(r, c));
+          }
+        }
+        r--;
+        path.push(index(r, c));
+        used.add(index(r, c));
+        if (Math.random() < .35 && r > 0) {
+          const candidates = [];
+          if (c > 0 && !used.has(index(r, c - 1))) candidates.push(c - 1);
+          if (c < cols - 1 && !used.has(index(r, c + 1))) candidates.push(c + 1);
+          if (candidates.length) {
+            c = choose(candidates);
+            path.push(index(r, c));
+            used.add(index(r, c));
+          }
+        }
+      }
+      target = pa
