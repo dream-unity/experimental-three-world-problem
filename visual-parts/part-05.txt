@@ -1,0 +1,192 @@
+      : 'DRAG TO ORBIT · PINCH TO ZOOM · TAP A WORLD';
+  }
+
+  function enterWorld(key) {
+    if (!WORLD[key]) return;
+    activeWorld = key;
+    targetMix = 1;
+    detailYaw = 0;
+    detailPitch = 0;
+    detailRoll = 0;
+    detailZoom = 1;
+    detailYawVelocity = 0;
+    detailPitchVelocity = 0;
+    detailRollVelocity = 0;
+    activeSub = 0;
+    activeSubUntil = 0;
+    impulse = 0.55;
+    const config = WORLD[key];
+    if (detailNumber) detailNumber.textContent = config.index;
+    if (detailName) {
+      detailName.textContent = config.name;
+      detailName.style.color = config.css;
+    }
+    subLabels.forEach((element, index) => {
+      if (!element) return;
+      element.querySelector('strong').textContent = config.triad[index];
+      element.style.color = config.css;
+    });
+    setHint();
+  }
+
+  function exitWorld() {
+    targetMix = 0;
+    hoverSub = -1;
+    setHint();
+  }
+
+  function triggerSub(index) {
+    if (!activeWorld) return;
+    activeSub = index;
+    activeSubUntil = time + 4.5;
+    impulse = 1;
+    subLabels.forEach((element, i) => element?.classList.toggle('active', index === i));
+  }
+
+  back?.addEventListener('click', exitWorld);
+  Object.entries(labels).forEach(([key, element]) => element?.addEventListener('click', () => enterWorld(key)));
+  subLabels.forEach((element, index) => element?.addEventListener('click', () => triggerSub(index)));
+
+  function hitTest(x, y) {
+    if (activeWorld && viewMix > 0.58) {
+      let best = null;
+      let bestDistance = Infinity;
+      subScreen.forEach((point, index) => {
+        const distance = Math.hypot(x - point.x, y - point.y);
+        if (distance < point.r * 1.55 && distance < bestDistance) {
+          bestDistance = distance;
+          best = { type: 'sub', index };
+        }
+      });
+      return best;
+    }
+
+    let best = null;
+    let bestDistance = Infinity;
+    // Nearer projected objects win when their touch regions overlap.
+    const depthOrder = [...worldKeys].sort((a, b) => worldScreen[b].z - worldScreen[a].z);
+    depthOrder.forEach((key) => {
+      const point = worldScreen[key];
+      const distance = Math.hypot(x - point.x, y - point.y);
+      if (distance < point.r * 1.55 && distance < bestDistance) {
+        bestDistance = distance;
+        best = { type: 'world', key };
+      }
+    });
+    return best;
+  }
+
+  function pointerDistance(a, b) {
+    return Math.hypot(a.x - b.x, a.y - b.y);
+  }
+
+  function pointerAngle(a, b) {
+    return Math.atan2(b.y - a.y, b.x - a.x);
+  }
+
+  function pointerMidpoint(a, b) {
+    return { x: (a.x + b.x) * 0.5, y: (a.y + b.y) * 0.5 };
+  }
+
+  function beginPinch() {
+    const list = [...pointers.values()];
+    if (list.length < 2) {
+      pinchState = null;
+      return;
+    }
+    const a = list[0];
+    const b = list[1];
+    pinchState = {
+      distance: Math.max(1, pointerDistance(a, b)),
+      angle: pointerAngle(a, b),
+      midpoint: pointerMidpoint(a, b),
+      overviewZoom,
+      overviewRoll,
+      overviewYaw,
+      overviewPitch,
+      detailZoom,
+      detailRoll,
+      detailYaw,
+      detailPitch
+    };
+    gestureHadPinch = true;
+  }
+
+  function recordPointer(event) {
+    const now = performance.now();
+    return {
+      x: event.clientX,
+      y: event.clientY,
+      lastX: event.clientX,
+      lastY: event.clientY,
+      startX: event.clientX,
+      startY: event.clientY,
+      lastTime: now,
+      type: event.pointerType
+    };
+  }
+
+  canvas.addEventListener('pointerdown', (event) => {
+    if (window.__dreamUnityGameActive) return;
+    pointers.set(event.pointerId, recordPointer(event));
+    canvas.setPointerCapture?.(event.pointerId);
+    gestureTravel = 0;
+    if (pointers.size === 1) gestureHadPinch = false;
+    if (pointers.size >= 2) beginPinch();
+    overviewLastInput = time;
+    overviewYawVelocity = overviewPitchVelocity = overviewRollVelocity = 0;
+    detailYawVelocity = detailPitchVelocity = detailRollVelocity = 0;
+  }, { passive: false });
+
+  canvas.addEventListener('pointermove', (event) => {
+    if (window.__dreamUnityGameActive) return;
+    const pointer = pointers.get(event.pointerId);
+    if (!pointer) {
+      if (!coarse && frame % 3 === 0) {
+        const hit = hitTest(event.clientX, event.clientY);
+        hoverWorld = hit?.type === 'world' ? hit.key : null;
+        hoverSub = hit?.type === 'sub' ? hit.index : -1;
+        canvas.style.cursor = hit ? 'pointer' : 'grab';
+      }
+      return;
+    }
+
+    const now = performance.now();
+    const dx = event.clientX - pointer.lastX;
+    const dy = event.clientY - pointer.lastY;
+    const dt = Math.max(0.008, (now - pointer.lastTime) / 1000);
+    pointer.x = event.clientX;
+    pointer.y = event.clientY;
+    pointer.lastX = event.clientX;
+    pointer.lastY = event.clientY;
+    pointer.lastTime = now;
+    gestureTravel += Math.hypot(dx, dy);
+    overviewLastInput = time;
+
+    if (pointers.size >= 2) {
+      const list = [...pointers.values()];
+      const a = list[0];
+      const b = list[1];
+      if (!pinchState) beginPinch();
+      const distance = Math.max(1, pointerDistance(a, b));
+      const angle = pointerAngle(a, b);
+      const midpoint = pointerMidpoint(a, b);
+      const ratio = distance / Math.max(1, pinchState.distance);
+      const rotationDelta = angle - pinchState.angle;
+      const midDx = midpoint.x - pinchState.midpoint.x;
+      const midDy = midpoint.y - pinchState.midpoint.y;
+
+      if (activeWorld && viewMix > 0.55) {
+        detailZoom = clamp(pinchState.detailZoom * ratio, 0.72, 1.55);
+        detailRoll = pinchState.detailRoll + rotationDelta;
+        detailYaw = pinchState.detailYaw - midDx * 0.0032;
+        detailPitch = clamp(pinchState.detailPitch - midDy * 0.0032, -1.16, 1.16);
+      } else {
+        overviewZoom = clamp(pinchState.overviewZoom * ratio, 0.66, 1.62);
+        overviewRoll = pinchState.overviewRoll + rotationDelta;
+        overviewYaw = pinchState.overviewYaw - midDx * 0.0035;
+        overviewPitch = clamp(pinchState.overviewPitch - midDy * 0.0035, -1.18, 1.18);
+      }
+      gestureHadPinch = true;
+      canvas.style.cursor = 'grabbing';
+      event.preventDefault();
