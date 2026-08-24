@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#02030a" />
-  <meta name="description" content="An experimental 3D simulation of the Dream Machine, the Dream Maker, and the World That Makes Dreams Real." />
+  <meta name="description" content="A live autonomous 3D simulation of the Dream Machine, Dream Maker, and the World That Makes Dreams Real." />
   <title>Experimental Three-World Problem</title>
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet" href="./styles.css" />
@@ -19,25 +19,20 @@
 </head>
 <body>
   <main id="app">
-    <canvas id="world" aria-label="Interactive three-dimensional simulation of the three worlds of the mind"></canvas>
-    <div class="aurora aurora-a" aria-hidden="true"></div>
-    <div class="aurora aurora-b" aria-hidden="true"></div>
-    <div class="grain" aria-hidden="true"></div>
+    <canvas id="world" aria-label="Live autonomous three-dimensional simulation of the three worlds of the mind"></canvas>
     <div class="vignette" aria-hidden="true"></div>
 
     <header class="hero">
       <div class="eyebrow"><span></span> EXPERIMENTAL THREE-WORLD PROBLEM</div>
       <h1>THE MIND<br><em>MAKES WORLDS</em></h1>
-      <p>Three causal realms — <b>mechanism</b>, <b>authorship</b>, and <b>consequence</b> — collide until imagination becomes a force capable of reorganising reality.</p>
+      <p><b>Dream Machine</b> generates possibility. <b>Dream Maker</b> gives possibility direction. <b>Reality</b> converts direction into consequence — then feeds the changed world back into mind.</p>
+      <div class="live-pill"><i></i> AUTONOMOUS 3D FIELD · NO VIDEO · NO LOOP RESET</div>
     </header>
 
-    <section class="phase-panel" aria-live="polite">
-      <div class="phase-index" id="phaseIndex">01 / 06</div>
-      <div class="phase-content">
-        <div class="phase-kicker" id="phaseKicker">SEPARATION</div>
-        <h2 id="phaseTitle">Three worlds awaken.</h2>
-        <p id="phaseCopy">Mechanism generates possibilities. The self gives them meaning. Reality waits outside as the test of consequence.</p>
-      </div>
+    <section class="field-story" aria-live="polite">
+      <div class="story-kicker" id="storyKicker">LIVE FIELD</div>
+      <h2 id="storyTitle">Three worlds, one causal circuit.</h2>
+      <p id="storyCopy">The system continuously converges, separates and exchanges information. Nothing is waiting for a timeline cue.</p>
     </section>
 
     <button class="world-label" id="label-machine" data-world="machine" type="button">
@@ -53,22 +48,23 @@
       <span class="words"><strong>WORLD MADE REAL</strong><small>action · resistance · consequence</small></span>
     </button>
 
-    <div class="status" id="status"><span class="status-dot"></span><span id="statusText">INITIALISING CAUSAL FIELD</span></div>
+    <div class="status ready" id="status"><span class="status-dot"></span><span id="statusText">AUTONOMOUS FIELD RUNNING</span></div>
 
     <aside class="field-readout" aria-label="Live simulation values">
-      <div><span>COHERENCE</span><b id="coherence">0.08</b></div>
+      <div><span>COHERENCE</span><b id="coherence">0.00</b></div>
       <div><span>RECURSION</span><b id="recursion">0.00</b></div>
-      <div><span>WORLD-COUPLING</span><b id="coupling">0.03</b></div>
+      <div><span>WORLD-COUPLING</span><b id="coupling">0.00</b></div>
+      <div><span>PERFORMANCE</span><b id="performance">—</b></div>
     </aside>
 
     <nav class="controls" aria-label="Simulation controls">
-      <button id="play" type="button">PAUSE</button>
       <button id="mode" type="button">FREE ORBIT</button>
       <button id="sound" type="button">SOUND OFF</button>
-      <button id="reset" type="button">RESET</button>
-      <div class="timeline-wrap">
-        <input id="timeline" aria-label="Simulation timeline" type="range" min="0" max="60" value="0" step="0.01" />
-        <div class="time"><span id="timeNow">00:00</span><span>01:00</span></div>
+      <button id="quality" type="button">QUALITY AUTO</button>
+      <button id="reset" type="button">RECENTER</button>
+      <div class="flow-meter" aria-hidden="true">
+        <span>CAUSAL FLOW</span>
+        <div><i id="flowFill"></i></div>
       </div>
     </nav>
 
@@ -79,8 +75,8 @@
       <span><i class="unity-dot"></i> recursion</span>
     </aside>
 
-    <div class="hint" id="hint">Select a world to enter it · Free Orbit unlocks drag + zoom</div>
-    <div class="loading" id="loading"><span></span><b>CONSTRUCTING WORLDS</b></div>
+    <div class="hint" id="hint">Select a world to enter it · Free Orbit unlocks drag + pinch/zoom · double-tap the field to recenter</div>
+    <div class="loading" id="loading"><span></span><b>BOOTING AUTONOMOUS FIELD</b></div>
   </main>
 
   <noscript>This simulation requires JavaScript.</noscript>
