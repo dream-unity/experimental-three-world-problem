@@ -1,1 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#02030a" />
+  <meta name="description" content="An experimental 3D simulation of the Dream Machine, the Dream Maker, and the World That Makes Dreams Real." />
+  <title>Experimental Three-World Problem</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <link rel="stylesheet" href="./styles.css" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.179.1/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.179.1/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <main id="app">
+    <canvas id="world" aria-label="Interactive three-dimensional simulation of the three worlds of the mind"></canvas>
+    <div class="aurora aurora-a" aria-hidden="true"></div>
+    <div class="aurora aurora-b" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+    <div class="vignette" aria-hidden="true"></div>
 
+    <header class="hero">
+      <div class="eyebrow"><span></span> EXPERIMENTAL THREE-WORLD PROBLEM</div>
+      <h1>THE MIND<br><em>MAKES WORLDS</em></h1>
+      <p>Three causal realms — <b>mechanism</b>, <b>authorship</b>, and <b>consequence</b> — collide until imagination becomes a force capable of reorganising reality.</p>
+    </header>
+
+    <section class="phase-panel" aria-live="polite">
+      <div class="phase-index" id="phaseIndex">01 / 06</div>
+      <div class="phase-content">
+        <div class="phase-kicker" id="phaseKicker">SEPARATION</div>
+        <h2 id="phaseTitle">Three worlds awaken.</h2>
+        <p id="phaseCopy">Mechanism generates possibilities. The self gives them meaning. Reality waits outside as the test of consequence.</p>
+      </div>
+    </section>
+
+    <button class="world-label" id="label-machine" data-world="machine" type="button">
+      <span class="number">01</span>
+      <span class="words"><strong>DREAM MACHINE</strong><small>mechanism · memory · simulation</small></span>
+    </button>
+    <button class="world-label" id="label-maker" data-world="maker" type="button">
+      <span class="number">02</span>
+      <span class="words"><strong>DREAM MAKER</strong><small>self · value · intention</small></span>
+    </button>
+    <button class="world-label" id="label-reality" data-world="reality" type="button">
+      <span class="number">03</span>
+      <span class="words"><strong>WORLD MADE REAL</strong><small>action · resistance · consequence</small></span>
+    </button>
+
+    <div class="status" id="status"><span class="status-dot"></span><span id="statusText">INITIALISING CAUSAL FIELD</span></div>
+
+    <aside class="field-readout" aria-label="Live simulation values">
+      <div><span>COHERENCE</span><b id="coherence">0.08</b></div>
+      <div><span>RECURSION</span><b id="recursion">0.00</b></div>
+      <div><span>WORLD-COUPLING</span><b id="coupling">0.03</b></div>
+    </aside>
+
+    <nav class="controls" aria-label="Simulation controls">
+      <button id="play" type="button">PAUSE</button>
+      <button id="mode" type="button">FREE ORBIT</button>
+      <button id="sound" type="button">SOUND OFF</button>
+      <button id="reset" type="button">RESET</button>
+      <div class="timeline-wrap">
+        <input id="timeline" aria-label="Simulation timeline" type="range" min="0" max="60" value="0" step="0.01" />
+        <div class="time"><span id="timeNow">00:00</span><span>01:00</span></div>
+      </div>
+    </nav>
+
+    <aside class="legend">
+      <span><i class="machine-dot"></i> substrate</span>
+      <span><i class="maker-dot"></i> authorship</span>
+      <span><i class="reality-dot"></i> consequence</span>
+      <span><i class="unity-dot"></i> recursion</span>
+    </aside>
+
+    <div class="hint" id="hint">Select a world to enter it · Free Orbit unlocks drag + zoom</div>
+    <div class="loading" id="loading"><span></span><b>CONSTRUCTING WORLDS</b></div>
+  </main>
+
+  <noscript>This simulation requires JavaScript.</noscript>
+  <script type="module" src="./main.js"></script>
+</body>
+</html>
