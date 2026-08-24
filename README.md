@@ -1,64 +1,45 @@
-# Experimental Three-World Problem
+# Dream Unity — Experimental Three-World Problem
 
-A live, autonomous WebGL experiment about three mutually coupled worlds of mind:
+A visual-first autonomous WebGL simulation of three mutually coupled worlds:
 
-1. **Dream Machine** — mechanism, memory, prediction and simulation.
-2. **Dream Maker** — self, value, imagination, selection and intention.
-3. **The World That Makes Dreams Real** — action, resistance, tools, other minds and consequence.
+1. **Dream Machine** — perception, modelling, prediction.
+2. **Dream Maker** — intention, action, becoming.
+3. **Dream World** — matter, structure, emergence.
 
-The point is not that the three worlds collapse into one substance. Their **causal loop** becomes one system:
+The main scene is the interface. There is no video player, timeline, dashboard, or scripted loop.
 
-> perceive → simulate → value → intend → act → transform → perceive again
+## Interaction
 
-## Autonomous field
+- Tap/click any of the three worlds to enter it.
+- Each world opens into its own three-node 3D micro-simulation.
+- Tap the internal nodes to inject an impulse into that world's dynamics.
+- Drag inside a world to orbit it.
+- Scroll on desktop to move closer/farther away.
+- Use **← UNITY** to return to the three-world field.
 
-The current version is **not a video and no longer runs on a one-minute scripted timeline**. It is a continuous dynamical system. Coupling, coherence, recursion and convergence evolve indefinitely from overlapping oscillatory fields, so the three worlds continuously approach, separate, exchange information and reorganise around a recursive attractor without a hard loop reset.
+## Three nested simulations
 
-## Performance architecture
+### Dream Machine
+A rotating neural lattice connecting **Perceive → Model → Predict**.
 
-The simulation is designed to remain visually rich without depending on expensive full-screen post-processing:
+### Dream Maker
+A fluid field of shards and nonlinear geometry connecting **Intend → Act → Become**.
 
-- direct WebGL rendering rather than EffectComposer/UnrealBloom
-- additive sprite glows instead of full-screen bloom
-- instanced geometry for neural nodes, thought fragments and physical structures
-- GPU-driven recursive vortex shader
-- reduced CPU geometry updates
-- link geometry updated at half-rate
-- HUD/DOM updates throttled independently from rendering
-- adaptive device-pixel-ratio and particle counts
-- automatic quality downgrade when sustained FPS drops
-- lower-cost defaults on coarse-pointer/mobile-class hardware
-- capped simulation delta after stalls so motion slows gracefully instead of jumping forward
-- no animated CSS blur fields or noise filters
-- simulation time stops advancing while the page is hidden
+### Dream World
+An evolving spatial lattice connecting **Matter → Structure → Emerge**.
 
-## Controls
+## Performance
 
-- **Free Orbit** — unlock drag/orbit/pinch-zoom navigation.
-- **Auto Camera** — return to the autonomous camera.
-- **Sound** — enable the procedural Web Audio field.
-- **Quality** — cycle Auto → Low → Medium → High → Auto.
-- **Recenter** — leave focused/orbit views and return to the whole system.
-- **World labels** — enter or leave a close view of a particular world.
-- **Double-click/tap the field** — recenter.
-
-## Run
-
-This is a zero-build static Three.js project. Serve it over HTTP so browser ES modules work correctly.
-
-```bash
-python -m http.server 8000
-```
-
-Then open `http://localhost:8000`.
-
-The project can also be hosted directly with GitHub Pages.
+The experience uses direct Three.js rendering without full-screen post-processing. Repeated geometry is instanced, connection geometry updates at reduced frequency, expensive detail fields are hidden outside their selected world, frame delta is capped after stalls, and device pixel ratio adapts downward automatically if sustained FPS drops.
 
 ## Stack
 
 - Three.js
-- OrbitControls
-- GLSL ShaderMaterial
+- WebGL
 - InstancedMesh
-- Web Audio API
-- No framework, build step, texture pack, video asset, or 3D asset dependency
+- Pointer/raycast interaction
+- Zero build step
+- No video assets
+- No external 3D assets
+
+Serve over HTTP or host directly with GitHub Pages.
