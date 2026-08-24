@@ -1,0 +1,177 @@
+        ctx.lineTo(x + radius * 0.55, y + i * radius * 0.18);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x + i * radius * 0.18, y - radius * 0.55);
+        ctx.lineTo(x + i * radius * 0.18, y + radius * 0.55);
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+
+  function overviewBasePositions() {
+    const portrait = height > width * 1.15;
+    return portrait
+      ? {
+          machine: { x: -2.45, y: 2.25, z: 0.15 },
+          maker: { x: 2.45, y: 2.25, z: -0.15 },
+          reality: { x: 0, y: -3.0, z: 0.1 }
+        }
+      : {
+          machine: { x: -4.15, y: 1.5, z: 0.15 },
+          maker: { x: 4.15, y: 1.5, z: -0.15 },
+          reality: { x: 0, y: -3.15, z: 0.1 }
+        };
+  }
+
+  function overviewPositions(t) {
+    const portrait = height > width * 1.15;
+    const base = overviewBasePositions();
+    const positions = {};
+    worldKeys.forEach((key, index) => {
+      const point = base[key];
+      const wobble = reduced ? 0 : 0.08 * Math.sin(t * 0.38 + index * 2.2);
+      const rotated = rotate3(
+        { x: point.x, y: point.y + wobble, z: point.z },
+        overviewYaw,
+        overviewPitch,
+        overviewRoll
+      );
+      const projected = project(rotated, overviewZoom, 12.3);
+      positions[key] = {
+        x: projected.x,
+        y: projected.y,
+        r: unit * (portrait ? 0.095 : 0.102) * projected.f,
+        f: projected.f,
+        z: rotated.z,
+        world: rotated
+      };
+    });
+    return positions;
+  }
+
+  function drawOverview(t, alpha) {
+    const positions = overviewPositions(t);
+    worldKeys.forEach((key) => Object.assign(worldScreen[key], positions[key]));
+    const unity = { x: width * 0.5, y: height * 0.5, r: unit * 0.022, z: 0 };
+
+    // A faint projected plane makes rotation and depth readable without adding
+    // heavy geometry or post-processing.
+    const orderedTriangle = worldKeys.map((key) => positions[key]);
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = 'rgba(255,242,205,.012)';
+    ctx.strokeStyle = `rgba(255,240,205,${0.065 * alpha})`;
+    ctx.lineWidth = 0.7;
+    ctx.beginPath();
+    ctx.moveTo(orderedTriangle[0].x, orderedTriangle[0].y);
+    ctx.lineTo(orderedTriangle[1].x, orderedTriangle[1].y);
+    ctx.lineTo(orderedTriangle[2].x, orderedTriangle[2].y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    const pairs = [['machine', 'maker'], ['maker', 'reality'], ['reality', 'machine']];
+    pairs.forEach((pair, index) => {
+      drawCurve(positions[pair[0]], positions[pair[1]], WORLD[pair[0]].rgb, alpha * 0.7, index + 1, t);
+    });
+    worldKeys.forEach((key, index) => {
+      drawCurve(unity, positions[key], WORLD[key].rgb, alpha * 0.9, 5 + index, t);
+    });
+
+    const unityRadius = unit * 0.075;
+    const gradient = ctx.createRadialGradient(unity.x, unity.y, 0, unity.x, unity.y, unityRadius);
+    gradient.addColorStop(0, 'rgba(255,245,205,.95)');
+    gradient.addColorStop(0.18, 'rgba(255,220,140,.45)');
+    gradient.addColorStop(1, 'rgba(255,220,140,0)');
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = gradient;
+    ctx.fillRect(unity.x - unityRadius, unity.y - unityRadius, unityRadius * 2, unityRadius * 2);
+    ctx.strokeStyle = `rgba(255,230,175,${0.3 * alpha})`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.ellipse(unity.x, unity.y, unit * 0.055 * overviewZoom, unit * 0.017 * overviewZoom, t * 0.08 + overviewRoll, 0, TAU);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.ellipse(unity.x, unity.y, unit * 0.072 * overviewZoom, unit * 0.024 * overviewZoom, -t * 0.06 - overviewRoll, 0, TAU);
+    ctx.stroke();
+
+    // Far worlds are painted first, so crossing depth produces genuine visual
+    // occlusion instead of the appearance of a flat translated screen.
+    const depthOrder = [...worldKeys].sort((a, b) => positions[a].z - positions[b].z);
+    depthOrder.forEach((key) => {
+      const position = positions[key];
+      drawOrb(
+        position.x,
+        position.y,
+        position.r,
+        WORLD[key],
+        key,
+        t,
+        alpha,
+        hoverWorld === key ? 1 : 0,
+        position.z
+      );
+    });
+    ctx.globalAlpha = 1;
+  }
+
+  const DETAIL_BASE = [
+    { x: 0, y: 2.45, z: 0.2 },
+    { x: -2.18, y: -1.25, z: 0.1 },
+    { x: 2.18, y: -1.25, z: -0.1 }
+  ];
+
+  function detailPoints() {
+    return DETAIL_BASE.map((point, index) => {
+      const rotated = rotate3(point, detailYaw, detailPitch, detailRoll);
+      const projected = project(rotated, detailZoom, 10.5);
+      return {
+        x: projected.x,
+        y: projected.y,
+        r: unit * 0.062 * projected.f,
+        index,
+        z: rotated.z,
+        f: projected.f
+      };
+    });
+  }
+
+  function drawMachineField(t, alpha) {
+    const points = [];
+    const fieldYaw = detailYaw + t * 0.055;
+    const fieldPitch = detailPitch + t * 0.012;
+    for (let i = 0; i < machineNodes.length; i++) {
+      const rotated = rotate3(machineNodes[i], fieldYaw, fieldPitch, detailRoll);
+      points.push(project(rotated, detailZoom * 0.78, 11));
+    }
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = rgba(WORLD.machine.rgb, 0.115);
+    ctx.lineWidth = 0.65;
+    for (let i = 0; i < points.length; i++) {
+      const a = points[i];
+      const b = points[(i + 7) % points.length];
+      const c = points[(i + 17) % points.length];
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.lineTo(c.x, c.y);
+      ctx.stroke();
+    }
+    ctx.fillStyle = 'rgba(190,247,255,.6)';
+    for (let i = 0; i < points.length; i++) {
+      const point = points[i];
+      const radius = (i % 9 === 0 ? 1.8 : 0.85) * clamp(point.f, 0.5, 1.6);
+      ctx.fillRect(point.x - radius * 0.5, point.y - radius * 0.5, radius, radius);
+    }
+  }
+
+  function drawMakerField(t, alpha) {
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = alpha;
+    for (let i = 0; i < makerShards.length; i++) {
+      const shard = makerShards[i];
+      const angle = shard.angle + t * (0.08 + (i % 5) * 0.004);
+      const rotated = rotate3(
+        {
