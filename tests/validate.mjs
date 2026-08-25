@@ -15,9 +15,10 @@ const roleLogicPath = 'arcade-parts/perceive-role-logic.txt';
 const perceivePaths = [1,2,3,4,5,6,7,8].map(n => `arcade-parts/perceive-aerial-${String(n).padStart(2,'0')}.txt`);
 const becomeCorePath = 'arcade-parts/become-lab-01.txt';
 const becomeLivePath = 'arcade-parts/become-live-02.txt';
+const apiPath = 'api/become-scenario.js';
 const required = [
   'index.html','styles.css','become.css','main.js','arcade.js','README.md','package.json','.nojekyll',
-  roleLogicPath,...basePaths,...perceivePaths,becomeCorePath,becomeLivePath,
+  roleLogicPath,...basePaths,...perceivePaths,becomeCorePath,becomeLivePath,apiPath,
   'tests/role-drift.test.mjs','tests/validate.mjs','.github/workflows/validate-and-verify.yml'
 ];
 for (const path of required) assert.ok(exists(path), `${path} must exist`);
@@ -27,6 +28,7 @@ const roleLogicSource = read(roleLogicPath);
 const perceiveSource = perceivePaths.map(read).join('');
 const becomeCoreSource = read(becomeCorePath);
 const becomeLiveSource = read(becomeLivePath);
+const apiSource = read(apiPath);
 const loader = read('arcade.js');
 const index = read('index.html');
 const readme = read('README.md');
@@ -39,13 +41,13 @@ const completeSource = `${baseSource.slice(0,closeIndex)}\n${roleLogicSource}\n$
 const temp = mkdtempSync(join(tmpdir(),'dream-unity-validate-'));
 const completePath = join(temp,'arcade-complete.js');
 writeFileSync(completePath,completeSource);
-for (const path of [completePath,fileURLToPath(new URL('arcade.js',root)),fileURLToPath(new URL('main.js',root))]) {
+for (const path of [completePath,fileURLToPath(new URL('arcade.js',root)),fileURLToPath(new URL('main.js',root)),fileURLToPath(new URL(apiPath,root))]) {
   execFileSync(process.execPath,['--check',path],{stdio:'inherit'});
 }
 
 // Loader and public surface.
 assert.match(loader,/VERSION = '20260825-role-drift-become-1'/);
-assert.match(loader,/LIVE_VERSION = '20260826-become-zero-key-live-5'/);
+assert.match(loader,/LIVE_VERSION = '20260826-become-zero-key-proxy-6'/);
 assert.match(loader,/perceive-role-logic\.txt/);
 assert.match(loader,/become-live-02\.txt/);
 assert.doesNotMatch(loader,/become-local-cpu-03\.txt/);
@@ -55,7 +57,7 @@ assert.match(index,/PARALLAX WING/);
 assert.match(index,/nearest escort on the outside/i);
 assert.match(index,/id="becomeLab"/);
 assert.match(index,/id="becomeScreen"/);
-assert.match(index,/arcade\.js\?v=20260826-become-zero-key-live-5/);
+assert.match(index,/arcade\.js\?v=20260826-become-zero-key-proxy-6/);
 assert.doesNotMatch(index,/SIGNAL VEIL/);
 
 // Nine-portal compatibility remains intact.
@@ -79,22 +81,31 @@ for (const marker of [
 ]) assert.ok(becomeCoreSource.includes(marker),`missing Become core marker: ${marker}`);
 assert.doesNotMatch(becomeCoreSource,/\bfetch\s*\(|XMLHttpRequest|WebSocket|sendBeacon/);
 
-// Live Become must be zero-key, internet-only, genuinely generative and novelty checked.
+// Browser-side Become: zero-key, internet-only, no direct provider call and no local model.
 for (const marker of [
-  'DREAM MAKER · BECOME · LIVE AI','https://blockrun.ai/api/v1/chat/completions','nvidia/gpt-oss-120b',
-  'nvidia/step-3.7-flash','NO API KEY','NO ACCOUNT','LIVE CLOUD','INTERNET GENERATED','NO MODEL DOWNLOAD','NO STORED FALLBACK',
-  'response_format:{type:\'json_object\'}','mode:\'cors\'','async function bLiveCallModel','async function bLiveCallWithFailover',
-  'async function bCloudGenerate','function bLiveTooSimilar','bLiveJaccard','BECOME_DIMENSION_KEYS','function bLivePrefetch',
-  'bBeginSession=async function','bNext=async function','recentScenarios','currentPerformance','dimensions'
-]) assert.ok(becomeLiveSource.includes(marker),`missing Become live marker: ${marker}`);
+  'DREAM MAKER · BECOME · LIVE AI','https://dream-unity-become-live.vercel.app/api/become-scenario',
+  'NO API KEY','NO ACCOUNT','LIVE CLOUD','INTERNET GENERATED','NO MODEL DOWNLOAD','NO STORED FALLBACK',
+  'async function bCloudGenerate','async function bLiveGenerate','function bLivePrefetch','bBeginSession=async function','bNext=async function',
+  'recentScenarios','currentPerformance','dimensions','mode:\'cors\''
+]) assert.ok(becomeLiveSource.includes(marker),`missing Become browser marker: ${marker}`);
 assert.match(becomeLiveSource,/fetch\(BECOME_LIVE_API/);
 assert.match(becomeLiveSource,/Array\.from\(\{length:becomeState\.count\},\(\)=>null\)/);
 assert.doesNotMatch(becomeLiveSource,/bShuffle\(BECOME_SCENARIOS\)/);
 for (const forbidden of [
-  'GROQ','Groq','groq','X-Groq-Api-Key','sessionStorage','dream-unity-become-live.vercel.app',
+  'X-Groq-Api-Key','sessionStorage','console.groq.com','api.groq.com','blockrun.ai/api/v1/chat/completions',
   '@mlc-ai/web-llm','SmolLM2-360M-Instruct','navigator.gpu','bLocalEngine','bLocalGenerate',
-  '@huggingface/transformers',"device:'wasm'",'bCpuGenerate','CPU/WASM','OPTIONAL CLOUD KEY','API KEY REQUIRED'
-]) assert.ok(!becomeLiveSource.includes(forbidden),`zero-key Become must not include ${forbidden}`);
+  '@huggingface/transformers',"device:'wasm'",'bCpuGenerate','CPU/WASM','OPTIONAL CLOUD KEY','OPTIONAL GROQ KEY'
+]) assert.ok(!becomeLiveSource.includes(forbidden),`browser Become must not include ${forbidden}`);
+
+// Remote proxy: no secret required, BlockRun inference, failover, structured validation, novelty rejection and CORS.
+for (const marker of [
+  'https://blockrun.ai/api/v1/chat/completions','nvidia/gpt-oss-120b','nvidia/step-3.7-flash','nvidia/mistral-nemotron',
+  'credentialMode:\'none\'','accountRequired:false','localModel:false','Access-Control-Allow-Origin','https://dream-unity.github.io',
+  'function tooSimilar','function jaccard','DIMENSION_KEYS','const MAX_ATTEMPTS = 3','async function callWithFailover','async function produce',
+  "provider:'blockrun'",'generationNonce:randomUUID()','stored','recentScenarios'
+]) assert.ok(apiSource.includes(marker),`missing Become proxy marker: ${marker}`);
+assert.match(apiSource,/fetch\(BLOCKRUN_URL/);
+assert.doesNotMatch(apiSource,/GROQ_API_KEY|X-Groq-Api-Key|Authorization.*Bearer|api\.groq\.com|api\.openai\.com/);
 
 // Core Become can still instantiate independently; live generation remains layered above it.
 const classList = () => ({add(){},remove(){},contains(){return false;}});
@@ -113,18 +124,19 @@ const becomeGame = becomeRuntime.definition.factory();
 becomeGame.reset({setScore(){},setMetric(){}});
 assert.match(becomeScreen.innerHTML,/REALITY<br>TRAINING LAB/);
 
-// Documentation/deployment verification must describe the zero-key internet layer and actually probe it.
+// Documentation/deployment verification must describe and actually probe the zero-key proxy.
 assert.match(readme,/Dream Maker → BECOME/);
 assert.match(readme,/controlled as-if/i);
 assert.match(readme,/zero-key/i);
-assert.match(readme,/blockrun/i);
+assert.match(readme,/BlockRun/i);
+assert.match(readme,/proxy/i);
 assert.match(workflow,/become-live-02\.txt/);
 assert.doesNotMatch(workflow,/become-local-cpu-03\.txt/);
-assert.match(workflow,/blockrun\.ai\/api\/v1\/chat\/completions/);
+assert.match(workflow,/dream-unity-become-live\.vercel\.app\/api\/become-scenario/);
 assert.match(workflow,/nvidia\/gpt-oss-120b/);
-assert.match(workflow,/Access-Control-Request-Method/);
+assert.match(workflow,/credentialMode/);
 assert.match(workflow,/NO MODEL DOWNLOAD/);
 assert.equal(packageJson.version,'1.6.0');
 assert.equal(packageJson.dependencies,undefined);
 
-console.log('Validated: nine portals, Relational Identity Drift, Become zero-key internet generation, live novelty rejection, and no local model download or stored live fallback.');
+console.log('Validated: nine portals, Relational Identity Drift, Become zero-key proxy generation, remote novelty rejection, and no browser model download or stored live fallback.');
