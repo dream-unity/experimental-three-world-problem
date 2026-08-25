@@ -1,31 +1,32 @@
 {
   "project": "Dream Unity \u2014 Experimental Three-World Problem",
   "deployment": "verified-live",
-  "source_sha": "c94a15fcc960b3db79244c6bec9c5a059fe6f697",
+  "source_sha": "a77d9afa8c07b53263331589baa27f6e886f6377",
   "page_url": "https://dream-unity.github.io/experimental-three-world-problem/",
   "nine_portal_compatibility": "validated",
   "become": {
-    "generation": "cloud_ai_first_relational_synthesis_guaranteed",
-    "cloud_provider": "blockrun",
-    "cloud_model": "nvidia/gpt-oss-120b",
-    "cloud_status_http": "502",
-    "cloud_request_timeout_ms": 20000,
-    "browser_cloud_timeout_ms": 12000,
-    "cloud_cooldown_ms": 180000,
-    "generative_synthesis_fallback": true,
-    "synthesis_runtime_tested_with_network_disabled": true,
-    "synthesis_families": 10,
-    "novelty_rejection": true,
+    "scenario_source": "instant_max_distance_runtime_synthesis",
+    "cloud_on_critical_path": false,
+    "queue_precomputed_before_scenario_one": true,
+    "between_scenario_network_wait": false,
+    "world_family_count": 26,
+    "candidate_variants_per_family": 8,
+    "structural_novelty_axes": 13,
+    "selection_objective": "maximin_worst_case_distance",
+    "cross_session_signature_memory": true,
+    "same_family_allowed_within_session": false,
+    "lexical_overlap_penalized": true,
+    "recent_family_reuse_heavily_penalized": true,
     "original_scenario_bank_used_as_fallback": false,
-    "indefinite_spinner_possible": false,
-    "personal_transfer_text_sent_to_cloud": false
+    "personal_transfer_text_stored_in_novelty_memory": false
   },
   "sha256": [
-    "fd9c577da9c663345b5e3349249c6b34e40d11c07e714bc276b2dca1f40f6234  /tmp/dream-unity-live/index.html",
+    "41ee12971175bd777deb47c7a69cdfdfb9ef338f104dda8e8b787fa7d5617107  /tmp/dream-unity-live/index.html",
     "008f907be470e8b387badb2534fa4df0c55b5bfc1c71c75d1beb9ef9ed963191  /tmp/dream-unity-live/styles.css",
     "ad8dc6788a87c34201b132b88d8e5eb3ed439a0644f54a9610d2398d1b877536  /tmp/dream-unity-live/become.css",
     "2107036b6397210444b31df52260fffb6a62d0447fefbc262beb3ee45f5b2d65  /tmp/dream-unity-live/main.js",
-    "ee5c5fcb08f0ccc0d965367953d55549ca7269c839b859aef7fe69d4f8cca2ca  /tmp/dream-unity-live/arcade.js",
+    "47426cf41c62b14aab3b36c745f8618126af7ff49dd7d1522dad32c51e47dd04  /tmp/dream-unity-live/arcade.js",
+    "ddc1eae5b9d4b4d92c6b2548be18a77a9ae944a84890c1c4bf6a9d788f054848  /tmp/dream-unity-live/arcade-parts/become-diversity-09.txt",
     "5ea7269b5c3158bbbb8fd520439c3bd3b45176537aa018beebb6a36fe68190c1  /tmp/dream-unity-live/arcade-parts/become-lab-01.txt",
     "f18d92847141b4e1d58120d702d07e886f8a360045f3a1820b7ed859bf089bcb  /tmp/dream-unity-live/arcade-parts/become-live-02.txt",
     "4d7006d17cf3ae67cfd39516fe8df857bd44d82a6cb7aad4b81067484d7e2da7  /tmp/dream-unity-live/arcade-parts/part-01.txt",
@@ -43,5 +44,5 @@
     "b675b4a09a5fae66938b1b5b83889357dcc45d08641f11901f80fe46aa9f12b7  /tmp/dream-unity-live/arcade-parts/perceive-aerial-08.txt",
     "08b62c2248bed6690890881f12d4e9a157690329aaff6f3a253a3723aaa69245  /tmp/dream-unity-live/arcade-parts/perceive-role-logic.txt"
   ],
-  "verified_at": "2026-08-25T23:44:21.153351+00:00"
+  "verified_at": "2026-08-25T23:46:34.091357+00:00"
 }
