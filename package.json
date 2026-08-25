@@ -1,11 +1,11 @@
 {
   "name": "dream-unity-experimental-three-world-problem",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "type": "module",
-  "description": "Nine compatible Dream Unity arcade games with Parallax Wing relational perception in Dream Machine / Perceive.",
+  "description": "Nine compatible Dream Unity games with Parallax Wing relational identity drift in Dream Machine / Perceive.",
   "scripts": {
-    "test": "node tests/validate.mjs"
+    "test": "node tests/role-drift.test.mjs && node tests/validate.mjs"
   },
   "engines": {
     "node": ">=20"

@@ -1,0 +1,58 @@
+
+  // Pure relational geometry used by Parallax Wing and its deterministic tests.
+  function roleDriftGeometry(escorts, outsideAxis, options = {}) {
+    const threshold = Number.isFinite(options.threshold) ? options.threshold : 0.018;
+    const yScale = Number.isFinite(options.yScale) ? options.yScale : 0.84;
+    const active = (escorts || []).filter((escort) => escort && escort.alive !== false);
+    const rawAxis = [Number(outsideAxis?.[0]) || 0, (Number(outsideAxis?.[1]) || 0) * yScale];
+    const axisLength = Math.max(0.000001, Math.hypot(rawAxis[0], rawAxis[1]));
+    const axis = [rawAxis[0] / axisLength, rawAxis[1] / axisLength];
+    const metrics = active.map((escort) => {
+      const relative = [Number(escort.rx) || 0, (Number(escort.ry) || 0) * yScale];
+      return {
+        id: escort.id,
+        escort,
+        projection: relative[0] * axis[0] + relative[1] * axis[1],
+        distance: Math.hypot(relative[0], relative[1]),
+      };
+    });
+    let outside = metrics.filter((metric) => metric.projection > threshold);
+    if (!outside.length && metrics.length) {
+      const maximumProjection = Math.max(...metrics.map((metric) => metric.projection));
+      outside = metrics.filter((metric) => metric.projection >= maximumProjection - 0.012);
+    }
+    outside.sort((a, b) => a.distance - b.distance || b.projection - a.projection || String(a.id).localeCompare(String(b.id)));
+    const inside = metrics
+      .filter((metric) => metric.projection <= threshold)
+      .sort((a, b) => a.distance - b.distance || a.projection - b.projection || String(a.id).localeCompare(String(b.id)));
+    return {
+      axis,
+      threshold,
+      yScale,
+      metrics,
+      metricsById: new Map(metrics.map((metric) => [metric.id, metric])),
+      outside,
+      inside,
+      targetId: outside[0]?.id || null,
+      insideNearestId: inside[0]?.id || null,
+      margin: outside.length > 1 ? outside[1].distance - outside[0].distance : 1,
+    };
+  }
+
+  function roleDriftClassifyShot({
+    shotId,
+    leaderId = 'leader',
+    currentTargetId,
+    previousTargetId,
+    secondsSinceSwitch = Number.POSITIVE_INFINITY,
+    geometry,
+  } = {}) {
+    if (!shotId) return 'empty-space-shot';
+    if (shotId === leaderId) return 'reference-object-substitution';
+    if (shotId === currentTargetId) return null;
+    if (shotId === previousTargetId && secondsSinceSwitch < 1.35) return 'stale-role-perseveration';
+    if (shotId === geometry?.insideNearestId) return 'inside-outside-reversal';
+    const metric = geometry?.metricsById?.get?.(shotId);
+    if (metric && metric.projection > (geometry?.threshold ?? 0.018)) return 'outside-distance-substitution';
+    return 'screen-position-substitution';
+  }

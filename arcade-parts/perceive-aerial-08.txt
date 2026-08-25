@@ -1,0 +1,105 @@
+          player.targetY = clamp(y + E.u * 0.17, E.h * 0.59, E.bottom - 20);
+        }
+        if (pointerGesture && down) {
+          if (dist(pointerGesture.x, pointerGesture.y, x, y) > 12) pointerGesture.moved = true;
+          pointerGesture.lastX = x;
+          pointerGesture.lastY = y;
+        }
+      },
+
+      pointerUp(E) {
+        if (pointerGesture) {
+          const duration = performance.now() - pointerGesture.startedAt;
+          const tap = !pointerGesture.moved && duration < 420;
+          reticle.x = pointerGesture.lastX;
+          reticle.y = pointerGesture.lastY;
+          if (tap) fire(E);
+        }
+        pointerGesture = null;
+      },
+
+      pointerCancel() { pointerGesture = null; },
+
+      keyDown(E, key) {
+        if (key === ' ') fire(E);
+      },
+
+      draw(E, c) {
+        drawFlightField(E, c);
+        drawLeaderTrail(E, c);
+        drawFormationRelations(E, c);
+
+        c.save();
+        c.globalCompositeOperation = 'lighter';
+        for (const escort of activeEscorts()) {
+          for (let i = 1; i < escort.trail.length; i++) {
+            const alpha = i / escort.trail.length;
+            E.line(c, escort.trail[i - 1][0], escort.trail[i - 1][1], escort.trail[i][0], escort.trail[i][1], E.rgb, 0.018 + alpha * 0.055, 0.5 + alpha * 0.6);
+          }
+          const color = escort.hitFlash > 0 ? [255, 78, 120] : E.rgb;
+          drawFighter(c, escort.sx, escort.sy, escort.size, escort.heading, escort.bank, color, 'escort', 0.95, escort.pulse);
+        }
+
+        if (leader?.alive) drawFighter(c, leader.sx, leader.sy, leader.size, leader.heading, leader.bank, [255, 220, 145], 'leader', 1, leader.pulse);
+
+        for (const shot of enemyShots) {
+          E.glow(c, shot.x, shot.y, shot.r * 2.1, [255, 105, 76], 0.66);
+          c.fillStyle = 'rgba(255,188,126,.9)';
+          c.beginPath(); c.arc(shot.x, shot.y, shot.r, 0, TAU); c.fill();
+          E.line(c, shot.x, shot.y, shot.x - shot.vx * 0.052, shot.y - shot.vy * 0.052, [255, 88, 72], 0.4, shot.r * 0.72);
+        }
+
+        for (const tracer of tracers) {
+          const alpha = clamp(tracer.life / tracer.max, 0, 1);
+          E.line(c, tracer.x1, tracer.y1, tracer.x2, tracer.y2, E.secondary, 0.74 * alpha, 1.35 + alpha * 1.35);
+          E.glow(c, tracer.x2, tracer.y2, 4 + alpha * 5, E.secondary, 0.32 * alpha);
+        }
+
+        const blink = player.invulnerable > 0 && Math.floor(player.invulnerable * 18) % 2 === 0;
+        if (!blink) drawFighter(c, player.x, player.y, player.size, 0, player.bank, E.secondary, 'player', 1, 0.86 + player.heat * 0.14);
+
+        const lock = nearestAimObject();
+        const lockColor = lock ? E.secondary : E.rgb;
+        const radius = lock ? 15 : 11;
+        c.strokeStyle = rgba(lockColor, lock ? 0.88 : 0.48);
+        c.lineWidth = lock ? 1.6 : 1;
+        c.beginPath(); c.arc(reticle.x, reticle.y, radius + Math.sin(E.t * 5) * 1.2, 0, TAU); c.stroke();
+        E.line(c, reticle.x - radius - 7, reticle.y, reticle.x - radius + 1, reticle.y, lockColor, 0.58, 1);
+        E.line(c, reticle.x + radius - 1, reticle.y, reticle.x + radius + 7, reticle.y, lockColor, 0.58, 1);
+        E.line(c, reticle.x, reticle.y - radius - 7, reticle.x, reticle.y - radius + 1, lockColor, 0.58, 1);
+        E.line(c, reticle.x, reticle.y + radius - 1, reticle.x, reticle.y + radius + 7, lockColor, 0.58, 1);
+
+        const meterX = Math.max(18, E.w * 0.035);
+        const meterY = E.bottom - 14;
+        const meterW = Math.min(E.w * 0.26, 180);
+        c.fillStyle = 'rgba(255,255,255,.065)';
+        c.fillRect(meterX, meterY - 5, meterW, 4);
+        c.fillStyle = player.heat > 0.82 ? 'rgba(255,88,110,.82)' : rgba(E.rgb, 0.7);
+        c.fillRect(meterX, meterY - 5, meterW * player.heat, 4);
+        c.fillStyle = 'rgba(220,238,255,.52)';
+        c.font = '700 9px Inter,system-ui,sans-serif';
+        c.textAlign = 'left';
+        c.fillText('CANNON HEAT', meterX, meterY - 10);
+
+        c.textAlign = 'right';
+        c.font = '800 10px Inter,system-ui,sans-serif';
+        c.fillStyle = rgba(E.rgb, 0.7);
+        c.fillText(`WAVE ${wave} · PERCEIVE ${level}`, E.w - 18, E.bottom - 16);
+        c.fillStyle = 'rgba(255,220,145,.68)';
+        c.fillText(`RELAYS ${encounter.hits}/${encounter.config.hitsRequired}`, E.w - 18, E.bottom - 31);
+        c.restore();
+      },
+    };
+  }
+
+  const perceiveAerialDefinition = GAME_BY_KEY['machine:0'];
+  if (perceiveAerialDefinition) {
+    Object.assign(perceiveAerialDefinition, {
+      id: 'parallax-wing-role-drift',
+      name: 'PARALLAX WING',
+      glyph: '✦',
+      rule: "Shoot the escort nearest the leader on the outside of its turn. The role moves when the formation crosses.",
+      hint: 'MOVE / AIM · TAP OR SPACE TO FIRE',
+      factory: createPerceptionAerialGame,
+    });
+  }
