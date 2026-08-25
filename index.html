@@ -13,90 +13,40 @@
   <main id="app" aria-label="Dream Unity interactive simulation">
     <canvas id="world" aria-label="Interactive Dream Unity field"></canvas>
     <div class="vignette" aria-hidden="true"></div>
-
     <div class="brand"><i></i><span>DREAM UNITY</span></div>
     <div class="live"><i></i><span>LIVE</span></div>
-
-    <button class="back" id="back" type="button" aria-label="Return to Dream Unity overview">
-      <span>←</span><b>UNITY</b>
-    </button>
-
-    <div class="detail-title" id="detailTitle" aria-live="polite">
-      <small id="detailNumber">01</small>
-      <strong id="detailName">DREAM MACHINE</strong>
-    </div>
-    <button class="world-label" id="label-machine" data-world="machine" type="button">
-      <span>01</span><strong>DREAM MACHINE</strong>
-    </button>
-    <button class="world-label" id="label-maker" data-world="maker" type="button">
-      <span>02</span><strong>DREAM MAKER</strong>
-    </button>
-    <button class="world-label" id="label-reality" data-world="reality" type="button">
-      <span>03</span><strong>DREAM WORLD</strong>
-    </button>
-
+    <button class="back" id="back" type="button" aria-label="Return to Dream Unity overview"><span>←</span><b>UNITY</b></button>
+    <div class="detail-title" id="detailTitle" aria-live="polite"><small id="detailNumber">01</small><strong id="detailName">DREAM MACHINE</strong></div>
+    <button class="world-label" id="label-machine" data-world="machine" type="button"><span>01</span><strong>DREAM MACHINE</strong></button>
+    <button class="world-label" id="label-maker" data-world="maker" type="button"><span>02</span><strong>DREAM MAKER</strong></button>
+    <button class="world-label" id="label-reality" data-world="reality" type="button"><span>03</span><strong>DREAM WORLD</strong></button>
     <div class="unity-label" id="unityLabel"><span></span><b>UNITY</b></div>
-
     <button class="sub-label" id="sub-0" type="button"><strong>PERCEIVE</strong></button>
     <button class="sub-label" id="sub-1" type="button"><strong>MODEL</strong></button>
     <button class="sub-label" id="sub-2" type="button"><strong>PREDICT</strong></button>
-
     <div class="hint" id="hint">DRAG TO ORBIT · PINCH TO ZOOM · TAP A WORLD</div>
     <div class="loading" id="loading"><span></span></div>
-
     <section class="arcade" id="arcade" aria-hidden="true" aria-label="Dream Unity arcade">
       <canvas id="gameCanvas" aria-label="Playable Dream Unity game"></canvas>
       <div class="game-vignette" aria-hidden="true"></div>
-
       <header class="game-bar">
         <button class="game-icon" id="gameBack" type="button" aria-label="Return to triad">←</button>
-        <div class="game-heading">
-          <small id="gameWorld">01 · DREAM MACHINE</small>
-          <strong id="gameName">PARALLAX WING</strong>
-        </div>
-        <div class="game-readout">
-          <span><small>SCORE</small><b id="gameScore">0</b></span>
-          <span><small>BEST</small><b id="gameBest">0</b></span>
-          <span class="game-metric"><small id="gameMetricLabel">SHIELD</small><b id="gameMetric">5 · ×0</b></span>
-        </div>
+        <div class="game-heading"><small id="gameWorld">01 · DREAM MACHINE</small><strong id="gameName">PARALLAX WING</strong></div>
+        <div class="game-readout"><span><small>SCORE</small><b id="gameScore">0</b></span><span><small>BEST</small><b id="gameBest">0</b></span><span class="game-metric"><small id="gameMetricLabel">SHIELD</small><b id="gameMetric">5 · ×0</b></span></div>
         <button class="game-icon" id="gameSound" type="button" aria-label="Toggle sound">♪</button>
         <button class="game-icon" id="gamePause" type="button" aria-label="Pause game">Ⅱ</button>
         <button class="game-icon" id="gameRestart" type="button" aria-label="Restart game">↻</button>
       </header>
-
-      <div class="game-card" id="gameCard">
-        <div class="game-glyph" id="gameGlyph">✦</div>
-        <small id="gameDomain">PERCEIVE</small>
-        <h1 id="gameCardTitle">PARALLAX WING</h1>
-        <p id="gameRule">Track the leader’s turn. Shoot its nearest escort on the outside; the role changes as they cross.</p>
-        <button id="gameStart" type="button">ENTER</button>
-      </div>
-
-      <div class="game-state" id="gameState" aria-live="polite">
-        <strong id="gameStateTitle">PAUSED</strong>
-        <small id="gameStateCopy">TAP TO CONTINUE</small>
-        <button id="gameAgain" type="button">CONTINUE</button>
-      </div>
-
+      <div class="game-card" id="gameCard"><div class="game-glyph" id="gameGlyph">✦</div><small id="gameDomain">PERCEIVE</small><h1 id="gameCardTitle">PARALLAX WING</h1><p id="gameRule">Track the leader’s turn. Shoot its nearest escort on the outside; the role changes as they cross.</p><button id="gameStart" type="button">ENTER</button></div>
+      <div class="game-state" id="gameState" aria-live="polite"><strong id="gameStateTitle">PAUSED</strong><small id="gameStateCopy">TAP TO CONTINUE</small><button id="gameAgain" type="button">CONTINUE</button></div>
       <div class="game-toast" id="gameToast"></div>
       <div class="game-hint" id="gameHint">MOVE / AIM · TAP OR SPACE TO FIRE</div>
-
-      <section class="become-lab" id="becomeLab" aria-hidden="true" aria-label="Become controlled reality training lab">
-        <div class="become-viewport">
-          <div class="become-screen" id="becomeScreen" aria-live="polite"></div>
-        </div>
-      </section>
+      <section class="become-lab" id="becomeLab" aria-hidden="true" aria-label="Become controlled reality training lab"><div class="become-viewport"><div class="become-screen" id="becomeScreen" aria-live="polite"></div></div></section>
     </section>
   </main>
-
   <noscript>This experience requires JavaScript.</noscript>
-  <script>
-    window.setTimeout(function () {
-      var el = document.getElementById('loading');
-      if (el) el.classList.add('hide');
-    }, 1800);
-  </script>
+  <script>window.setTimeout(function(){var el=document.getElementById('loading');if(el)el.classList.add('hide');},1800);</script>
   <script src="./main.js?v=20260824-11"></script>
-  <script src="./arcade.js?v=20260826-become-zero-key-proxy-7"></script>
+  <script src="./arcade.js?v=20260826-become-guaranteed-generation-8"></script>
 </body>
 </html>
