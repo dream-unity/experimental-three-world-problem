@@ -1,0 +1,330 @@
+        encounter.beacon = [
+          Math.sin(age * 0.84 + encounter.driftSeed) * 0.16,
+          Math.cos(age * 0.58 + encounter.driftSeed) * 0.095,
+        ];
+        for (const enemy of enemies) {
+          let x;
+          let y;
+          if (enemy === encounter.target) {
+            x = encounter.beacon[0] + enemy.anchorOffset[0];
+            y = encounter.beacon[1] + enemy.anchorOffset[1];
+          } else {
+            x = enemy.baseX + Math.sin(age * (0.54 + (enemy.nodeId.length % 3) * 0.12) + enemy.motionSeed) * 0.085;
+            y = enemy.baseY + Math.cos(age * (0.62 + (enemy.nodeId.length % 4) * 0.08) + enemy.motionSeed) * 0.055;
+          }
+          [x, y] = formationTransform(x, y);
+          enemy.rx = x; enemy.ry = y;
+          enemy.bank = Math.sin(age * 1.4 + enemy.motionSeed) * 0.58;
+          enemy.pulse = 0.38 + 0.62 * Math.sin(age * 1.8 + enemy.motionSeed) ** 2;
+        }
+      } else if (encounter.family === 'bridge' || encounter.family === 'mixed') {
+        for (const enemy of enemies) {
+          const groupSign = enemy.baseX < -0.08 ? -1 : enemy.baseX > 0.08 ? 1 : 0;
+          let x = enemy.baseX + Math.sin(age * 0.72 + groupSign * 1.1) * 0.028;
+          let y = enemy.baseY + Math.cos(age * 0.88 + enemy.nodeId.length) * 0.018;
+          [x, y] = formationTransform(x, y);
+          enemy.rx = x; enemy.ry = y;
+          const phaseOffset = enemy.phaseOffset || 0;
+          enemy.bank = Math.sin(age * 2.5 + phaseOffset) * 0.55;
+          enemy.pulse = 0.18 + 0.82 * (0.5 + 0.5 * Math.sin(age * 3.15 + phaseOffset));
+        }
+      } else if (encounter.family === 'rotation') {
+        const theta = age * encounter.angularSpeed;
+        for (const enemy of enemies) {
+          const angle = enemy.slotAngle + theta;
+          let x = Math.cos(angle) * 0.31;
+          let y = Math.sin(angle) * 0.31 * 0.72;
+          [x, y] = formationTransform(x, y);
+          enemy.rx = x; enemy.ry = y;
+          enemy.bank = theta + angle + Math.PI / 2;
+          enemy.pulse = 0.38 + 0.62 * Math.sin(age * 2 + angle) ** 2;
+        }
+        encounter.markerAngle = encounter.markerOffset + theta;
+      } else if (encounter.family === 'convergence') {
+        for (const enemy of enemies) {
+          let x = enemy.baseX + Math.sin(age * 0.66 + enemy.nodeId.length) * 0.025;
+          let y = enemy.baseY + Math.cos(age * 0.52 + enemy.nodeId.length) * 0.015;
+          [x, y] = formationTransform(x, y);
+          enemy.rx = x; enemy.ry = y;
+          enemy.bank = Math.sin(age * 1.45 + enemy.nodeId.length) * 0.46;
+          enemy.pulse = 0.42 + 0.58 * Math.sin(age * 1.9 + enemy.nodeId.length) ** 2;
+        }
+      }
+
+      updateScreenPositions(E);
+    }
+
+    function updateScreenPositions(E) {
+      if (!encounter) return;
+      const depth = encounter.depth;
+      const formationScale = E.u * (0.38 + depth * 0.48);
+      const driftX = Math.sin(encounter.age * 0.29 + encounter.driftSeed) * E.u * 0.045;
+      const centerX = E.w * 0.5 + driftX;
+      const centerY = E.top + E.h * (0.13 + depth * 0.47);
+      for (const enemy of enemies) {
+        enemy.sx = centerX + enemy.rx * formationScale;
+        enemy.sy = centerY + enemy.ry * formationScale * 0.78;
+        enemy.size = Math.max(7, E.u * (0.012 + depth * 0.022));
+        enemy.hitFlash = Math.max(0, enemy.hitFlash - 0.05);
+        enemy.trail.push([enemy.sx, enemy.sy]);
+        if (enemy.trail.length > 9) enemy.trail.shift();
+      }
+    }
+
+    function projectLocal(E, localX, localY) {
+      const [rx, ry] = formationTransform(localX, localY);
+      const depth = encounter.depth;
+      const formationScale = E.u * (0.38 + depth * 0.48);
+      const driftX = Math.sin(encounter.age * 0.29 + encounter.driftSeed) * E.u * 0.045;
+      return [
+        E.w * 0.5 + driftX + rx * formationScale,
+        E.top + E.h * (0.13 + depth * 0.47) + ry * formationScale * 0.78,
+      ];
+    }
+
+    function enemyByNode(nodeId) {
+      return enemies.find((enemy) => enemy.nodeId === nodeId);
+    }
+
+    function drawRelationEvidence(E, c) {
+      if (!encounter) return;
+      const alpha = encounter.assist;
+      c.save();
+      c.globalCompositeOperation = 'lighter';
+
+      if (encounter.family === 'symmetry') {
+        const center = projectLocal(E, 0, 0);
+        const axis = encounter.orientation + encounter.axisAngle;
+        const dx = Math.sin(axis) * E.u * 0.28;
+        const dy = Math.cos(axis) * E.u * 0.28;
+        E.line(c, center[0] - dx, center[1] - dy, center[0] + dx, center[1] + dy, E.rgb, 0.2 * alpha, 1.2);
+        for (const [leftId, rightId] of encounter.pairs) {
+          const left = enemyByNode(leftId);
+          const right = enemyByNode(rightId);
+          if (!left || !right) continue;
+          E.line(c, left.sx, left.sy, right.sx, right.sy, E.rgb, 0.32 * alpha, 1.05);
+          const mx = (left.sx + right.sx) * 0.5;
+          const my = (left.sy + right.sy) * 0.5;
+          E.glow(c, mx, my, 3 + encounter.depth * 4, E.rgb, 0.3 * alpha);
+        }
+      } else if (encounter.family === 'common-fate') {
+        const source = encounter.target;
+        for (const enemy of enemies) {
+          if (enemy === source) continue;
+          E.line(c, source.sx, source.sy, enemy.sx, enemy.sy, E.rgb, 0.11 * alpha, 0.8);
+          const pulse = (encounter.age * 0.72 - enemy.delay * 0.85) % 1;
+          const px = lerp(source.sx, enemy.sx, pulse);
+          const py = lerp(source.sy, enemy.sy, pulse);
+          E.glow(c, px, py, 2.5 + encounter.depth * 3, E.secondary, 0.42 * alpha);
+        }
+      } else if (encounter.family === 'anchor') {
+        const beacon = projectLocal(E, encounter.beacon[0], encounter.beacon[1]);
+        const radius = encounter.anchorRadius * E.u * (0.38 + encounter.depth * 0.48);
+        E.glow(c, beacon[0], beacon[1], 5 + encounter.depth * 7, E.secondary, 0.72 * alpha);
+        c.strokeStyle = rgba(E.secondary, 0.22 * alpha);
+        c.lineWidth = 1.1;
+        c.beginPath(); c.ellipse(beacon[0], beacon[1], radius, radius * 0.78, encounter.orientation, 0, TAU); c.stroke();
+        for (const enemy of enemies) E.line(c, beacon[0], beacon[1], enemy.sx, enemy.sy, E.rgb, 0.075 * alpha, 0.65);
+      } else if (encounter.family === 'bridge' || encounter.family === 'mixed') {
+        for (const [a, b] of encounter.edges) {
+          const first = enemies[a];
+          const second = enemies[b];
+          if (!first || !second) continue;
+          const crossCluster = Math.sign(first.baseX) !== Math.sign(second.baseX);
+          E.line(c, first.sx, first.sy, second.sx, second.sy, crossCluster ? E.secondary : E.rgb, (crossCluster ? 0.42 : 0.18) * alpha, crossCluster ? 1.35 : 0.8);
+        }
+      } else if (encounter.family === 'rotation') {
+        const center = projectLocal(E, 0, 0);
+        const markerLocal = [Math.cos(encounter.markerAngle) * 0.38, Math.sin(encounter.markerAngle) * 0.38 * 0.72];
+        const marker = projectLocal(E, markerLocal[0], markerLocal[1]);
+        E.glow(c, center[0], center[1], 3.5 + encounter.depth * 4, E.rgb, 0.42 * alpha);
+        E.glow(c, marker[0], marker[1], 6 + encounter.depth * 7, E.secondary, 0.8 * alpha);
+        E.line(c, center[0], center[1], marker[0], marker[1], E.secondary, 0.35 * alpha, 1.2);
+        if (alpha > 0.55) {
+          const opposite = projectLocal(E, -markerLocal[0], -markerLocal[1]);
+          E.line(c, center[0], center[1], opposite[0], opposite[1], E.rgb, 0.12 * alpha, 0.85);
+        }
+      } else if (encounter.family === 'convergence') {
+        for (const [aId, bId] of encounter.beams) {
+          const first = enemyByNode(aId);
+          const second = enemyByNode(bId);
+          if (!first || !second) continue;
+          E.line(c, first.sx, first.sy, second.sx, second.sy, E.secondary, 0.34 * alpha, 1.25);
+          const pulse = 0.5 + 0.5 * Math.sin(encounter.age * 4 + first.nodeId.length);
+          const px = lerp(first.sx, second.sx, pulse);
+          const py = lerp(first.sy, second.sy, pulse);
+          E.glow(c, px, py, 2.5 + encounter.depth * 3.5, E.secondary, 0.52 * alpha);
+        }
+      }
+      c.restore();
+    }
+
+    function drawFighter(c, x, y, size, bank, rgb, enemy = true, alpha = 1, pulse = 0.5) {
+      c.save();
+      c.translate(x, y);
+      c.rotate(bank * 0.34 + (enemy ? Math.PI : 0));
+      c.globalCompositeOperation = 'lighter';
+      c.globalAlpha = alpha;
+
+      const glow = c.createRadialGradient(0, 0, 0, 0, 0, size * 2.2);
+      glow.addColorStop(0, rgba(rgb, 0.15 + pulse * 0.08));
+      glow.addColorStop(1, 'rgba(0,0,0,0)');
+      c.fillStyle = glow;
+      c.fillRect(-size * 2.2, -size * 2.2, size * 4.4, size * 4.4);
+
+      c.fillStyle = rgba(rgb, 0.16 + pulse * 0.08);
+      c.strokeStyle = rgba(rgb, 0.82);
+      c.lineWidth = Math.max(1, size * 0.075);
+      c.beginPath();
+      c.moveTo(0, -size * 1.38);
+      c.lineTo(size * 0.22, -size * 0.48);
+      c.lineTo(size * 1.08, size * 0.12);
+      c.lineTo(size * 0.44, size * 0.24);
+      c.lineTo(size * 0.32, size * 1.05);
+      c.lineTo(size * 0.1, size * 0.72);
+      c.lineTo(0, size * 1.23);
+      c.lineTo(-size * 0.1, size * 0.72);
+      c.lineTo(-size * 0.32, size * 1.05);
+      c.lineTo(-size * 0.44, size * 0.24);
+      c.lineTo(-size * 1.08, size * 0.12);
+      c.lineTo(-size * 0.22, -size * 0.48);
+      c.closePath();
+      c.fill();
+      c.stroke();
+
+      c.fillStyle = 'rgba(205,244,255,.72)';
+      c.beginPath();
+      c.ellipse(0, -size * 0.42, size * 0.16, size * 0.38, 0, 0, TAU);
+      c.fill();
+      c.strokeStyle = rgba(rgb, 0.65);
+      c.stroke();
+
+      c.fillStyle = rgba(rgb, 0.6 + pulse * 0.28);
+      for (const side of [-1, 1]) {
+        c.beginPath();
+        c.ellipse(side * size * 0.18, size * 0.93, size * 0.095, size * (0.22 + pulse * 0.22), 0, 0, TAU);
+        c.fill();
+      }
+      c.restore();
+    }
+
+    function drawFlightField(E, c) {
+      const horizonY = E.top + E.h * 0.19;
+      const vanishingX = E.w * 0.5 + Math.sin(E.t * 0.17) * E.u * 0.05;
+      c.save();
+      c.globalCompositeOperation = 'lighter';
+      for (let i = -5; i <= 5; i++) {
+        E.line(c, vanishingX, horizonY, E.w * 0.5 + i * E.w * 0.19, E.bottom, E.rgb, 0.035, 0.75);
+      }
+      const flow = (E.t * 0.42) % 1;
+      for (let i = 0; i < 9; i++) {
+        const p = (i / 9 + flow) % 1;
+        const y = lerp(horizonY, E.bottom, p * p);
+        const width = E.w * (0.08 + p * 0.92);
+        E.line(c, vanishingX - width * 0.5, y, vanishingX + width * 0.5, y, E.rgb, 0.025 + p * 0.05, 0.7 + p * 0.7);
+      }
+      for (let i = 0; i < (coarse || lowCPU ? 14 : 24); i++) {
+        const seed = i * 7.31;
+        const p = (E.t * (0.45 + (i % 5) * 0.05) + seed) % 1;
+        const angle = seed * 1.7;
+        const radius = E.u * (0.08 + (i % 7) * 0.045);
+        const x = vanishingX + Math.cos(angle) * radius * p;
+        const y = horizonY + p * p * (E.bottom - horizonY);
+        const length = 3 + p * 19;
+        E.line(c, x, y, x + Math.cos(angle) * length, y + Math.sin(angle) * length, E.secondary, 0.05 + p * 0.17, 0.7 + p * 1.3);
+      }
+      c.restore();
+    }
+
+    function hurt(E, amount, x, y, copy = 'SIGHTLINE HIT') {
+      if (!player || player.invulnerable > 0) return;
+      player.shield = Math.max(0, player.shield - amount);
+      player.invulnerable = 0.72;
+      streak = 0;
+      E.setMetric('SHIELD', `${Math.ceil(player.shield)} · ×${streak}`);
+      E.shake(10);
+      E.flash([255, 72, 110], 0.24);
+      E.burst(x, y, [255, 72, 110], 18, 190, 2.7);
+      E.toast(copy, 0.7);
+      E.sfx('bad');
+      if (player.shield <= 0) {
+        writeProfile({ at: Date.now(), type: 'run', wave, level, ...stats });
+        E.end('PERCEPTION LOST');
+      }
+    }
+
+    function classifyWrong(enemy) {
+      return enemy?.role || 'surface-proximity-lock';
+    }
+
+    function resolveCorrect(E, enemy) {
+      if (!encounter || encounter.solved) return;
+      encounter.solved = true;
+      encounter.outcome = 'correct';
+      streak++;
+      successes++;
+      stats.correct++;
+      const latency = (performance.now() - encounter.startedAt) / 1000;
+      stats.latencies.push(latency);
+      stats.family[encounter.family] ||= { correct: 0, wrong: 0 };
+      stats.family[encounter.family].correct++;
+      const reward = 260 + wave * 34 + streak * 62 + Math.floor((1 - clamp(encounter.depth, 0, 1)) * 300);
+      E.addScore(reward, enemy.sx, enemy.sy, streak > 2 ? `FOCUS ×${streak}` : `+${reward}`);
+      E.flash(E.rgb, 0.2);
+      E.shake(8);
+      E.sfx('good', 1 + Math.min(streak, 8) * 0.035);
+      for (const jet of enemies) {
+        if (!jet.alive) continue;
+        jet.alive = false;
+        E.burst(jet.sx, jet.sy, jet === enemy ? E.secondary : E.rgb, jet === enemy ? 22 : 9, 210, 2.8);
+      }
+      E.toast('RELATION BROKEN', 0.82);
+      resolveTimer = 0.72;
+      writeProfile({
+        at: Date.now(), type: 'encounter', wave, level, family: encounter.family,
+        correct: true, latency, shots: stats.shots, accuracy: stats.shots ? stats.hits / stats.shots : 0,
+      });
+      wave++;
+      const nextLevel = Math.min(10, 1 + Math.floor(successes / 2));
+      if (nextLevel > level) {
+        level = nextLevel;
+        E.level(`PERCEIVE ${level}`);
+      }
+      E.setMetric('SHIELD', `${Math.ceil(player.shield)} · ×${streak}`);
+    }
+
+    function falseLock(E, enemy) {
+      if (wrongLockCooldown > 0 || encounter?.solved) return;
+      wrongLockCooldown = 0.48;
+      stats.wrong++;
+      stats.family[encounter.family] ||= { correct: 0, wrong: 0 };
+      stats.family[encounter.family].wrong++;
+      const errorType = classifyWrong(enemy);
+      stats.errors[errorType] = (stats.errors[errorType] || 0) + 1;
+      enemy.hitFlash = 1;
+      enemy.lockRejected = true;
+      E.burst(enemy.sx, enemy.sy, [255, 86, 130], 10, 130, 2.2);
+      hurt(E, 0.72, enemy.sx, enemy.sy, 'FALSE LOCK');
+      writeProfile({
+        at: Date.now(), type: 'encounter-error', wave, level, family: encounter.family,
+        correct: false, errorType, latency: (performance.now() - encounter.startedAt) / 1000,
+      });
+    }
+
+    function nearestAimTarget(E) {
+      let best = null;
+      let bestDistance = Infinity;
+      for (const enemy of enemies) {
+        if (!enemy.alive || enemy.lockRejected) continue;
+        const d = dist(reticle.x, reticle.y, enemy.sx, enemy.sy);
+        const radius = Math.max(19, enemy.size * 1.35);
+        if (d < radius && d < bestDistance) {
+          bestDistance = d;
+          best = { type: 'enemy', value: enemy };
+        }
+      }
+      if (!best) {
+        for (const shot of enemyShots) {
+          const d = dist(reticle.x, reticle.y, shot.x, shot.y);
+          if (d < 19 && d < bestDistance) {
+            bestDistance = d;
