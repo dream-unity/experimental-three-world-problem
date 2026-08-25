@@ -1,27 +1,27 @@
 
   // Dream Maker / Become — zero-key, internet-only live AI scenario director.
-  // The browser calls Dream Unity's remote proxy; the proxy performs live model inference.
-  // No model weights, AI runtime, account, browser credential or API key are required.
   const BECOME_LIVE_API = 'https://dream-unity-become-live.vercel.app/api/become-scenario';
   const BECOME_LIVE_HISTORY_LIMIT = 8;
   const BECOME_LIVE_VISUALS = new Set(['hockey','stage','mountain','orbit','courtroom','ocean','sprint','conversation','wildfire','contact','future']);
   const BECOME_DIMENSION_KEYS = ['environment','role','goal','pressure','body_dynamics','decision_structure','emotional_tone','social_structure'];
+  const BECOME_BROWSER_TIMEOUT_MS = 45_000;
   const becomeLivePending = new Map();
   let becomeLiveSessionNonce = '';
   let becomeLiveLastError = '';
   let becomeLiveLastModel = 'nvidia/gpt-oss-120b';
+  let becomeLiveProgressTimer = 0;
+  let becomeLiveProgressStartedAt = 0;
 
   const bLiveRequired = ['id','title','tag','visual','premise','sensory','objects','body','atmosphere','motion','stakes','identity','choice','exit'];
   const bLiveNewNonce = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2,10)}`;
   const bLiveScenarioSummary = scenario => ({
     title: String(scenario?.title || '').slice(0,100),
     tag: String(scenario?.tag || '').slice(0,120),
-    premise: String(scenario?.premise || '').slice(0,700),
+    premise: String(scenario?.premise || '').slice(0,500),
     dimensions: scenario?.dimensions && typeof scenario.dimensions === 'object' ? scenario.dimensions : undefined
   });
   const bLivePerformance = () => BECOME_DRILLS.map(metric => ({
     id: metric.id,
-    title: metric.title,
     score: Number.isFinite(becomeState.scores?.[metric.id]) ? becomeState.scores[metric.id] : null
   })).filter(item => item.score !== null);
 
@@ -49,6 +49,24 @@
       .map(bLiveScenarioSummary);
   }
 
+  function bLiveStopProgress(){
+    if(becomeLiveProgressTimer){clearInterval(becomeLiveProgressTimer);becomeLiveProgressTimer=0;}
+  }
+  function bLiveProgressCopy(){
+    const elapsed=Math.max(0,Math.floor((Date.now()-becomeLiveProgressStartedAt)/1000));
+    if(elapsed<4)return `CONTACTING LIVE MODEL · ${elapsed}s`;
+    if(elapsed<12)return `MODEL IS CONSTRUCTING THE WORLD · ${elapsed}s`;
+    if(elapsed<20)return `WRITING + STRUCTURING SCENARIO · ${elapsed}s`;
+    if(elapsed<30)return `UPSTREAM IS SLOW · STILL WAITING · ${elapsed}s`;
+    return `HARD DEADLINE APPROACHING · ${elapsed}s`;
+  }
+  function bLiveStartProgress(){
+    bLiveStopProgress();
+    becomeLiveProgressStartedAt=Date.now();
+    const tick=()=>{const node=document.getElementById('becomeLiveProgress');if(node)node.textContent=bLiveProgressCopy();};
+    tick();becomeLiveProgressTimer=setInterval(tick,1000);
+  }
+
   async function bCloudGenerate(index,sessionNonce){
     const previous=bRead('latest');
     const payload={
@@ -60,7 +78,7 @@
       previousWeakestMetric:previous?.weakest||null
     };
     const controller=new AbortController();
-    const timeout=setTimeout(()=>controller.abort(),95000);
+    const timeout=setTimeout(()=>controller.abort(),BECOME_BROWSER_TIMEOUT_MS);
     try{
       const response=await fetch(BECOME_LIVE_API,{
         method:'POST',
@@ -79,7 +97,7 @@
       if(data?.meta?.model)becomeLiveLastModel=String(data.meta.model);
       return bLiveValidateScenario(data?.scenario);
     }catch(error){
-      if(error?.name==='AbortError')throw new Error('Live internet generation timed out. Retry the session.');
+      if(error?.name==='AbortError')throw new Error('Live generation exceeded 45 seconds and was stopped. Retry now.');
       throw error;
     }finally{clearTimeout(timeout);}
   }
@@ -91,13 +109,15 @@
 
   function bLiveLoading(index,copy){
     becomeState.stage='live-generating';
-    bPanel(`${bHeader(`LIVE CLOUD · SCENARIO ${index+1} OF ${becomeState.count}`,'GENERATING',0)}<p class="become-kicker">REAL-TIME INTERNET GENERATION</p><h2 class="become-title compact">BUILDING A<br>NEW SCENARIO</h2><p class="become-copy">${bEscape(copy||'GPT-OSS 120B is constructing a new world remotely now.')}</p><div class="become-facts"><span class="become-fact">NO API KEY</span><span class="become-fact">NO ACCOUNT</span><span class="become-fact">INTERNET GENERATED</span><span class="become-fact">NOVELTY CHECKED</span><span class="become-fact">NO MODEL DOWNLOAD</span><span class="become-fact">NO STORED FALLBACK</span></div><p class="become-microcopy">The browser sends compact novelty and performance context to Dream Unity's remote live director and receives the generated world. No language model, model weights or AI runtime are installed on this device.</p>`);
+    bPanel(`${bHeader(`LIVE CLOUD · SCENARIO ${index+1} OF ${becomeState.count}`,'GENERATING',0)}<p class="become-kicker">REAL-TIME INTERNET GENERATION</p><h2 class="become-title compact">BUILDING A<br>NEW SCENARIO</h2><p class="become-copy">${bEscape(copy||'A fresh world is being generated remotely now.')}</p><div class="become-facts"><span class="become-fact">NO API KEY</span><span class="become-fact">NO ACCOUNT</span><span class="become-fact">INTERNET GENERATED</span><span class="become-fact">NOVELTY CHECKED</span><span class="become-fact">NO MODEL DOWNLOAD</span><span class="become-fact">NO STORED FALLBACK</span></div><p id="becomeLiveProgress" class="become-microcopy">CONTACTING LIVE MODEL · 0s</p><p class="become-microcopy">The request has a hard deadline. This screen will either advance to a generated world or surface an explicit error; it cannot wait indefinitely.</p>`);
+    bLiveStartProgress();
   }
 
   function bLiveError(error){
+    bLiveStopProgress();
     becomeLiveLastError=error instanceof Error?error.message:String(error||'Live generation failed.');
     becomeState.stage='live-error';
-    bPanel(`${bHeader('LIVE CLOUD','GENERATION ERROR',0)}<p class="become-kicker">REMOTE GENERATION TEMPORARILY UNAVAILABLE</p><h2 class="become-title compact">LIVE WORLD<br>NOT YET GENERATED</h2><p class="become-copy">${bEscape(becomeLiveLastError)}</p><p class="become-rule">There is no credential field to complete and no local model to download. Become only advances after a genuinely live internet-generated world has been received and novelty-checked.</p><div class="become-actions"><button class="become-primary" type="button" data-become-action="begin-session">RETRY LIVE GENERATION</button></div>`);
+    bPanel(`${bHeader('LIVE CLOUD','GENERATION ERROR',0)}<p class="become-kicker">REMOTE GENERATION DID NOT COMPLETE</p><h2 class="become-title compact">RETRY A<br>NEW WORLD</h2><p class="become-copy">${bEscape(becomeLiveLastError)}</p><p class="become-rule">No prewritten scenario was substituted. Retry launches a completely new live request.</p><div class="become-actions"><button class="become-primary" type="button" data-become-action="begin-session">RETRY LIVE GENERATION</button></div>`);
   }
 
   function bLivePrefetch(index){
@@ -114,10 +134,11 @@
   }
 
   bRenderSetup=function(){
+    bLiveStopProgress();
     becomeState.stage='setup';
     const previous=bRead('latest');
     const choices=BECOME_PRESETS.map(value=>`<button class="become-choice ${becomeState.count===value?'active':''}" type="button" data-become-action="set-count" data-value="${value}">${value}</button>`).join('');
-    bPanel(`<p class="become-kicker">DREAM MAKER · BECOME · LIVE AI</p><h1 class="become-title">REALITY<br>TRAINING LAB</h1><p class="become-copy">Every trial is generated live over the internet at the moment it is needed. There is no downloadable browser model, no API-key field and no stored scenario bank supplying the session. The remote director constructs a fresh world, rejects excessive similarity to recent worlds, and only then returns it for the perception, embodiment, consequence, identity and action drills.</p><p class="become-rule"><b>CONTROL RULE:</b> operate as if the scenario is real while retaining awareness that you selected it. Stop if intensity becomes unhelpful. Never use this while driving or during hazardous activity.</p><div class="become-grid three"><div class="become-card"><small>DEFAULT</small><strong>ZERO-KEY LIVE CLOUD</strong><p>Remote generation on demand. No account, credential or browser-model download.</p></div><div class="become-card"><small>PRIMARY MODEL</small><strong>GPT-OSS 120B</strong><p>Cloud-hosted GPT-OSS 120B generates each world, with remote model failover when needed.</p></div><div class="become-card"><small>NOVELTY</small><strong>REJECT + REGENERATE</strong><p>Recent worlds are compared across language and eight relational dimensions before acceptance.</p></div></div><div class="become-facts"><span class="become-fact">NO API KEY</span><span class="become-fact">NO ACCOUNT</span><span class="become-fact">INTERNET ONLY</span><span class="become-fact">NO MODEL DOWNLOAD</span><span class="become-fact">NO STORED FALLBACK</span></div><div class="become-divider"></div><p class="become-label">NUMBER OF LIVE SCENARIOS</p><div class="become-counts">${choices}</div><label class="become-custom">CUSTOM 1–10 <input id="becomeCustomCount" type="number" min="1" max="10" value="${becomeState.count}" inputmode="numeric"></label><div class="become-actions"><button class="become-primary" type="button" data-become-action="begin-session">GENERATE LIVE SESSION</button></div><p class="become-microcopy">${previous?`Previous adaptive-entry score: ${Number(previous.adaptive||0).toFixed(1)}. Its weakest numerical faculty may shape the first trial.`:'No previous numerical session stored.'} Personal life-transfer descriptions are not sent to the live generator.</p>`);
+    bPanel(`<p class="become-kicker">DREAM MAKER · BECOME · LIVE AI</p><h1 class="become-title">REALITY<br>TRAINING LAB</h1><p class="become-copy">Every trial is generated live over the internet when it is needed. The server asks one free hosted model endpoint for a concise structured world and relies on the provider's own failover instead of stacking slow retries.</p><p class="become-rule"><b>CONTROL RULE:</b> operate as if the scenario is real while retaining awareness that you selected it. Stop if intensity becomes unhelpful. Never use this while driving or during hazardous activity.</p><div class="become-grid three"><div class="become-card"><small>DEFAULT</small><strong>ZERO-KEY LIVE CLOUD</strong><p>Remote generation on demand. No account, credential or browser-model download.</p></div><div class="become-card"><small>PRIMARY MODEL</small><strong>GPT-OSS 120B</strong><p>BlockRun manages upstream free-model failover. Dream Unity no longer serially retries three models.</p></div><div class="become-card"><small>LATENCY</small><strong>BOUNDED</strong><p>Generation has explicit server and browser deadlines, with visible elapsed status.</p></div></div><div class="become-facts"><span class="become-fact">NO API KEY</span><span class="become-fact">NO ACCOUNT</span><span class="become-fact">INTERNET ONLY</span><span class="become-fact">NO MODEL DOWNLOAD</span><span class="become-fact">NO STORED FALLBACK</span></div><div class="become-divider"></div><p class="become-label">NUMBER OF LIVE SCENARIOS</p><div class="become-counts">${choices}</div><label class="become-custom">CUSTOM 1–10 <input id="becomeCustomCount" type="number" min="1" max="10" value="${becomeState.count}" inputmode="numeric"></label><div class="become-actions"><button class="become-primary" type="button" data-become-action="begin-session">GENERATE LIVE SESSION</button></div><p class="become-microcopy">${previous?`Previous adaptive-entry score: ${Number(previous.adaptive||0).toFixed(1)}. Its weakest numerical faculty may shape the first trial.`:'No previous numerical session stored.'} Personal life-transfer descriptions are not sent to the live generator.</p>`);
   };
 
   bBeginSession=async function(){
@@ -125,11 +146,11 @@
     becomeLiveSessionNonce=nonce;becomeLivePending.clear();becomeLiveLastError='';becomeLiveLastModel='nvidia/gpt-oss-120b';
     becomeState.queue=Array.from({length:becomeState.count},()=>null);
     becomeState.scenarioIndex=0;becomeState.results=[];becomeState.transferScores={};
-    bLiveLoading(0,'GPT-OSS 120B is generating the first world on remote infrastructure now. No account, API key or local download is involved.');
+    bLiveLoading(0,'Generating the first genuinely new world now.');
     try{
       const first=await bLiveGenerate(0,nonce);
       if(nonce!==becomeLiveSessionNonce)return;
-      becomeState.queue[0]=first;bRenderBrief();
+      bLiveStopProgress();becomeState.queue[0]=first;bRenderBrief();
     }catch(error){if(nonce===becomeLiveSessionNonce)bLiveError(error);}
   };
 
@@ -143,13 +164,13 @@
     const next=becomeState.scenarioIndex+1;
     if(next>=becomeState.queue.length){bRenderTransferForm();return;}
     if(!becomeState.queue[next]){
-      bLiveLoading(next,`The next world is being generated online now${becomeLiveLastModel?` through ${becomeLiveLastModel}`:''}, using recent worlds as explicit novelty exclusions.`);
-      try{const scenario=await bLivePrefetch(next);if(!scenario)throw new Error('The live generator returned no scenario.');}
+      bLiveLoading(next,`Generating the next novelty-checked world${becomeLiveLastModel?` through ${becomeLiveLastModel}`:''}.`);
+      try{const scenario=await bLivePrefetch(next);if(!scenario)throw new Error('The live generator returned no scenario.');bLiveStopProgress();}
       catch(error){bLiveError(error);return;}
     }
     becomeState.scenarioIndex=next;bRenderBrief();
   };
 
   window.addEventListener('dreamunity:game-closed',()=>{
-    becomeLiveSessionNonce='';becomeLivePending.clear();
+    bLiveStopProgress();becomeLiveSessionNonce='';becomeLivePending.clear();
   });
