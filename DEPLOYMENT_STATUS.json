@@ -1,7 +1,7 @@
 {
   "project": "Dream Unity \u2014 Experimental Three-World Problem",
   "deployment": "verified-live",
-  "source_sha": "ae9a1fa1bb03743e5355e1cb00ac04cdb18835b3",
+  "source_sha": "009715cb8fef5313707df55a55f4df415ae8048e",
   "page_url": "https://dream-unity.github.io/experimental-three-world-problem/",
   "nine_portal_compatibility": "validated",
   "perceive": {
@@ -10,28 +10,35 @@
   },
   "become": {
     "game": "Become Reality Lab",
-    "scenario_source": "internet_live_cloud_only",
+    "scenario_source": "zero_key_internet_live_via_proxy",
     "browser_model_download": false,
     "local_generation": false,
-    "cloud_provider": "groq",
-    "cloud_model": "openai/gpt-oss-120b",
-    "backend": "https://dream-unity-become-live.vercel.app/api/become-scenario",
-    "credential_mode": "server_or_browser_session_key",
-    "cloud_novelty_rejection": true,
+    "browser_api_key_required": false,
+    "browser_account_required": false,
+    "proxy": "https://dream-unity-become-live.vercel.app/api/become-scenario",
+    "upstream_gateway": "blockrun",
+    "primary_model": "nvidia/gpt-oss-120b",
+    "failover_models": [
+      "nvidia/step-3.7-flash",
+      "nvidia/mistral-nemotron"
+    ],
+    "credential_mode": "none",
+    "browser_cors_verified": true,
+    "live_inference_verified": true,
+    "server_novelty_rejection": true,
     "stored_live_fallback": false,
     "timed_faculties": 17,
     "state_entry_seconds": 30,
-    "personal_transfer_text_sent_to_generator": false,
-    "groq_key_persisted_to_performance_history": false
+    "personal_transfer_text_sent_to_generator": false
   },
   "sha256": [
-    "0c76490c389861088defee425be7ead59b0dfa9a9429b6385f96b7918d7d46c9  /tmp/dream-unity-live/index.html",
+    "fdbf34449a1114c7e9c97787b2a777cb5f35d6e1ab917def933ca91794df1eba  /tmp/dream-unity-live/index.html",
     "008f907be470e8b387badb2534fa4df0c55b5bfc1c71c75d1beb9ef9ed963191  /tmp/dream-unity-live/styles.css",
     "ad8dc6788a87c34201b132b88d8e5eb3ed439a0644f54a9610d2398d1b877536  /tmp/dream-unity-live/become.css",
     "2107036b6397210444b31df52260fffb6a62d0447fefbc262beb3ee45f5b2d65  /tmp/dream-unity-live/main.js",
-    "62bb8c1722b92961d7abd478e75911e7f36ec8636f7d062ed4ffd175a20d38be  /tmp/dream-unity-live/arcade.js",
+    "c936d88b06960b74166d675003e57bd13adaf631e88bbe7b68cde35ee4a0f610  /tmp/dream-unity-live/arcade.js",
     "5ea7269b5c3158bbbb8fd520439c3bd3b45176537aa018beebb6a36fe68190c1  /tmp/dream-unity-live/arcade-parts/become-lab-01.txt",
-    "5e7e6d531672ed25261567a9aaed8991a663e595814b6a2a04af32991c2eb159  /tmp/dream-unity-live/arcade-parts/become-live-02.txt",
+    "feebc486c4a86859dbb1b1e9017b04c4516ab3685f2b49d4b999084ebf79fb9b  /tmp/dream-unity-live/arcade-parts/become-live-02.txt",
     "4d7006d17cf3ae67cfd39516fe8df857bd44d82a6cb7aad4b81067484d7e2da7  /tmp/dream-unity-live/arcade-parts/part-01.txt",
     "526f14079e2ebf9560a8648a866a7bf70c8ae9f83f6bc2edcc68d861a65e04f2  /tmp/dream-unity-live/arcade-parts/part-02.txt",
     "183630ab3997f38ab5e2f2faf54505e9c4683c5885b3354fbb49e5508347b48c  /tmp/dream-unity-live/arcade-parts/part-03.txt",
@@ -47,5 +54,5 @@
     "b675b4a09a5fae66938b1b5b83889357dcc45d08641f11901f80fe46aa9f12b7  /tmp/dream-unity-live/arcade-parts/perceive-aerial-08.txt",
     "08b62c2248bed6690890881f12d4e9a157690329aaff6f3a253a3723aaa69245  /tmp/dream-unity-live/arcade-parts/perceive-role-logic.txt"
   ],
-  "verified_at": "2026-08-25T16:07:33.793722+00:00"
+  "verified_at": "2026-08-25T16:30:38.060772+00:00"
 }
