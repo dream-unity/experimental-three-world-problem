@@ -1,13 +1,14 @@
 (() => {
   'use strict';
   const VERSION = '20260825-role-drift-become-1';
-  const LIVE_VERSION = '20260826-become-local-ai-2';
+  const LIVE_VERSION = '20260826-become-local-ai-3';
   const basePaths = [1, 2, 3, 4, 5].map((n) => `./arcade-parts/part-${String(n).padStart(2, '0')}.txt?v=${VERSION}`);
   const roleLogicPath = `./arcade-parts/perceive-role-logic.txt?v=${VERSION}`;
   const perceivePaths = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => `./arcade-parts/perceive-aerial-${String(n).padStart(2, '0')}.txt?v=${VERSION}`);
   const becomePaths = [1].map((n) => `./arcade-parts/become-lab-${String(n).padStart(2, '0')}.txt?v=${VERSION}`);
   const becomeLivePath = `./arcade-parts/become-live-02.txt?v=${LIVE_VERSION}`;
-  const paths = [...basePaths, roleLogicPath, ...perceivePaths, ...becomePaths, becomeLivePath];
+  const becomeCpuPath = `./arcade-parts/become-local-cpu-03.txt?v=${LIVE_VERSION}`;
+  const paths = [...basePaths, roleLogicPath, ...perceivePaths, ...becomePaths, becomeLivePath, becomeCpuPath];
 
   Promise.all(paths.map((path) => fetch(path, { cache: 'force-cache' }).then((response) => {
     if (!response.ok) throw new Error(`Arcade chunk failed: ${response.status} ${path}`);
@@ -24,8 +25,8 @@
 
     // The original nine-game engine remains intact. PERCEIVE and BECOME are
     // injected inside its private scope so one lifecycle is preserved.
-    // BECOME's second chunk replaces only scenario sourcing: optional Groq
-    // cloud generation, otherwise zero-credential local WebGPU inference.
+    // BECOME uses optional Groq cloud generation, local WebGPU by default,
+    // and local CPU/WASM as the zero-credential compatibility fallback.
     const completeSource = `${baseSource.slice(0, closeIndex)}\n${roleLogicSource}\n${perceiveSource}\n${becomeSource}\n${baseSource.slice(closeIndex)}`;
     Function(completeSource)();
   }).catch((error) => {
