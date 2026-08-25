@@ -1,0 +1,109 @@
+
+  // Pure geometry for Dream Machine / PERCEIVE — Causal Interposition.
+  // A candidate becomes vulnerable only while it lies between two linked
+  // aircraft, sufficiently close to their segment, and (at advanced levels)
+  // while the linked pair is compressing rather than expanding.
+  function causalInterpositionState(anchorA, anchorB, candidates, options = {}) {
+    const ax = Number(anchorA?.x) || 0;
+    const ay = Number(anchorA?.y) || 0;
+    const bx = Number(anchorB?.x) || 0;
+    const by = Number(anchorB?.y) || 0;
+    const dx = bx - ax;
+    const dy = by - ay;
+    const lengthSq = Math.max(1e-9, dx * dx + dy * dy);
+    const length = Math.sqrt(lengthSq);
+    const edgeMargin = Number.isFinite(options.edgeMargin) ? options.edgeMargin : 0.14;
+    const lineThreshold = Number.isFinite(options.lineThreshold) ? options.lineThreshold : length * 0.095;
+    const compression = Number(options.compression) || 0;
+    const compressionThreshold = Number.isFinite(options.compressionThreshold) ? options.compressionThreshold : 0.002;
+    const requireCompression = Boolean(options.requireCompression);
+
+    const metrics = (candidates || [])
+      .filter((candidate) => candidate && candidate.alive !== false)
+      .map((candidate) => {
+        const px = (Number(candidate.x) || 0) - ax;
+        const py = (Number(candidate.y) || 0) - ay;
+        const projection = (px * dx + py * dy) / lengthSq;
+        const nearestX = ax + dx * projection;
+        const nearestY = ay + dy * projection;
+        const perpendicular = Math.hypot((Number(candidate.x) || 0) - nearestX, (Number(candidate.y) || 0) - nearestY);
+        const between = projection >= edgeMargin && projection <= 1 - edgeMargin;
+        const aligned = perpendicular <= lineThreshold;
+        const endpointDistance = Math.min(
+          Math.hypot((Number(candidate.x) || 0) - ax, (Number(candidate.y) || 0) - ay),
+          Math.hypot((Number(candidate.x) || 0) - bx, (Number(candidate.y) || 0) - by),
+        );
+        return {
+          id: candidate.id,
+          candidate,
+          projection,
+          perpendicular,
+          normalizedPerpendicular: perpendicular / Math.max(lineThreshold, 1e-6),
+          between,
+          aligned,
+          endpointDistance,
+          relationScore: (between ? 0 : 4 + Math.min(Math.abs(projection - 0.5), 2))
+            + perpendicular / Math.max(lineThreshold, 1e-6),
+        };
+      });
+
+    const valid = metrics
+      .filter((metric) => metric.between && metric.aligned)
+      .sort((a, b) => a.perpendicular - b.perpendicular
+        || Math.abs(a.projection - 0.5) - Math.abs(b.projection - 0.5)
+        || String(a.id).localeCompare(String(b.id)));
+    const geometricTarget = valid[0] || null;
+    const compressionGate = !requireCompression || compression >= compressionThreshold;
+    const activeTarget = compressionGate ? geometricTarget : null;
+
+    const collinearOutside = metrics
+      .filter((metric) => metric.aligned && !metric.between)
+      .sort((a, b) => a.perpendicular - b.perpendicular || a.endpointDistance - b.endpointDistance);
+    const betweenOffAxis = metrics
+      .filter((metric) => metric.between && !metric.aligned)
+      .sort((a, b) => a.perpendicular - b.perpendicular);
+    const endpointNearest = [...metrics].sort((a, b) => a.endpointDistance - b.endpointDistance)[0] || null;
+
+    return {
+      anchorIds: [anchorA?.id ?? 'anchor-a', anchorB?.id ?? 'anchor-b'],
+      axis: [dx / length, dy / length],
+      normal: [-dy / length, dx / length],
+      length,
+      edgeMargin,
+      lineThreshold,
+      compression,
+      requireCompression,
+      compressionGate,
+      metrics,
+      metricsById: new Map(metrics.map((metric) => [metric.id, metric])),
+      valid,
+      geometricTargetId: geometricTarget?.id ?? null,
+      activeTargetId: activeTarget?.id ?? null,
+      collinearOutsideId: collinearOutside[0]?.id ?? null,
+      betweenOffAxisId: betweenOffAxis[0]?.id ?? null,
+      endpointNearestId: endpointNearest?.id ?? null,
+      ambiguityMargin: valid.length > 1
+        ? valid[1].perpendicular - valid[0].perpendicular
+        : lineThreshold,
+    };
+  }
+
+  function causalShotClassification({
+    shotId,
+    state,
+    previousTargetId = null,
+    secondsSinceMigration = Number.POSITIVE_INFINITY,
+  } = {}) {
+    if (!shotId) return 'empty-space-shot';
+    if (state?.anchorIds?.includes(shotId)) return 'linked-anchor-substitution';
+    if (shotId === state?.activeTargetId) return null;
+    if (shotId === previousTargetId && secondsSinceMigration < 1.25) return 'stale-vulnerability-perseveration';
+    if (shotId === state?.geometricTargetId && !state?.compressionGate) return 'compression-gate-omission';
+    if (shotId === state?.collinearOutsideId) return 'outside-segment-confusion';
+    if (shotId === state?.betweenOffAxisId) return 'alignment-tolerance-confusion';
+    if (shotId === state?.endpointNearestId) return 'endpoint-proximity-substitution';
+    const metric = state?.metricsById?.get?.(shotId);
+    if (metric?.between) return 'between-without-alignment';
+    if (metric?.aligned) return 'alignment-without-between';
+    return 'surface-proximity-substitution';
+  }
