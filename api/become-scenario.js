@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 
 const BLOCKRUN_URL = 'https://blockrun.ai/api/v1/chat/completions';
 const MODELS = ['nvidia/gpt-oss-120b','nvidia/step-3.7-flash','nvidia/mistral-nemotron'];
-const REQUEST_TIMEOUT_MS = 30_000;
+const REQUEST_TIMEOUT_MS = 40_000;
 const MAX_HISTORY = 8;
 const MAX_ATTEMPTS = 3;
 const RATE_WINDOW_MS = 60_000;
@@ -122,9 +122,10 @@ async function callModel(model,prompt){
           {role:'user',content:prompt}
         ],
         stream:false,
-        temperature:0.94,
+        temperature:0.9,
         top_p:0.95,
-        max_tokens:1800
+        max_tokens:1000,
+        response_format:{type:'json_object'}
       })
     });
     const data=await response.json().catch(()=>null);
@@ -144,7 +145,10 @@ async function callWithFailover(prompt){
   let lastError=null;
   for(const model of MODELS){
     try{return{scenario:await callModel(model,prompt),model};}
-    catch(error){lastError=error;}
+    catch(error){
+      lastError=error;
+      console.warn('Become live model failed',model,error instanceof Error?error.message:String(error));
+    }
   }
   throw lastError||new Error('All zero-key live models are temporarily unavailable.');
 }
@@ -181,8 +185,9 @@ export default async function handler(req,res){
     return res.status(200).json(await produce(body));
   }catch(error){
     const status=Number(error?.status)||0;
-    if(status===429)return res.status(429).json({code:'UPSTREAM_RATE_LIMIT',error:'The zero-key live inference service is temporarily rate-limited. Retry shortly.'});
     const message=error instanceof Error?error.message:'Live internet generation failed.';
+    console.error('Become live generation failed',status||502,message);
+    if(status===429)return res.status(429).json({code:'UPSTREAM_RATE_LIMIT',error:'The zero-key live inference service is temporarily rate-limited. Retry shortly.'});
     return res.status(502).json({code:'LIVE_GENERATION_FAILED',error:message});
   }
 }
