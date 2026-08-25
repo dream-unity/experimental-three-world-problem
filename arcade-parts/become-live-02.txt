@@ -3,7 +3,7 @@
   // Injected after become-lab-01.txt so the original training machinery stays intact.
   const BECOME_LIVE_API = (() => {
     const explicit = typeof window.DREAM_UNITY_BECOME_API === 'string' ? window.DREAM_UNITY_BECOME_API.trim() : '';
-    return explicit || '/api/become-scenario';
+    return explicit || 'https://dream-unity-become-live.vercel.app/api/become-scenario';
   })();
   const BECOME_LIVE_HISTORY_LIMIT = 8;
   const BECOME_LIVE_VISUALS = new Set(['hockey','stage','mountain','orbit','courtroom','ocean','sprint','conversation','wildfire','contact','future']);
@@ -96,7 +96,6 @@
       .finally(() => {
         if(becomeLivePending.get(index) === promise) becomeLivePending.delete(index);
       });
-    // Attach a sink immediately so background prefetch failures never become unhandled.
     promise.catch(() => {});
     becomeLivePending.set(index,promise);
     return promise;
@@ -127,8 +126,6 @@
 
   const bLiveOriginalRun = bRun;
   bRun = function(){
-    // The final 10-second faculty gives GPT a full interval to build the next trial
-    // from the current scenario and nearly complete performance profile.
     if(becomeState.track==='scenario' && becomeState.drillIndex === BECOME_DRILLS.length-1){
       bLivePrefetch(becomeState.scenarioIndex+1);
     }
