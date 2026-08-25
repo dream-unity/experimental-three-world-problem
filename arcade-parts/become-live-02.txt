@@ -1,10 +1,12 @@
 
-  // Dream Maker / Become — live GPT scenario director.
+  // Dream Maker / Become — live Groq scenario director.
   // Injected after become-lab-01.txt so the original training machinery stays intact.
   const BECOME_LIVE_API = (() => {
     const explicit = typeof window.DREAM_UNITY_BECOME_API === 'string' ? window.DREAM_UNITY_BECOME_API.trim() : '';
     return explicit || 'https://dream-unity-become-live.vercel.app/api/become-scenario';
   })();
+  const BECOME_GROQ_KEYS_URL = 'https://console.groq.com/keys';
+  const BECOME_GROQ_SESSION_KEY = 'dream-unity:become:groq-key';
   const BECOME_LIVE_HISTORY_LIMIT = 8;
   const BECOME_LIVE_VISUALS = new Set(['hockey','stage','mountain','orbit','courtroom','ocean','sprint','conversation','wildfire','contact','future']);
   const becomeLivePending = new Map();
@@ -25,11 +27,33 @@
     score: Number.isFinite(becomeState.scores?.[metric.id]) ? becomeState.scores[metric.id] : null
   })).filter(item => item.score !== null);
 
+  function bLiveGetGroqKey(){
+    try{return String(sessionStorage.getItem(BECOME_GROQ_SESSION_KEY)||'').trim();}catch{return '';}
+  }
+  function bLiveSetGroqKey(value){
+    const key=String(value||'').trim();
+    if(key.length < 20)return '';
+    try{sessionStorage.setItem(BECOME_GROQ_SESSION_KEY,key);}catch{}
+    return key;
+  }
+  function bLiveClearGroqKey(){
+    try{sessionStorage.removeItem(BECOME_GROQ_SESSION_KEY);}catch{}
+  }
+  function bLiveResolveGroqKey(){
+    const input=document.getElementById('becomeGroqKey');
+    const entered=String(input?.value||'').trim();
+    if(entered)return bLiveSetGroqKey(entered);
+    return bLiveGetGroqKey();
+  }
+  function bLiveCredentialInput(){
+    return `<div class="become-divider"></div><p class="become-label">FREE GROQ API KEY</p><label class="become-custom">SESSION-ONLY CREDENTIAL <input id="becomeGroqKey" type="password" autocomplete="off" spellcheck="false" placeholder="PASTE GROQ API KEY"></label><p class="become-microcopy">Create a free key at <a href="${BECOME_GROQ_KEYS_URL}" target="_blank" rel="noopener noreferrer">console.groq.com/keys</a>. The key is kept only in this browser tab's session storage and is never committed to GitHub or written into Become performance history.</p>`;
+  }
+
   function bLiveValidateScenario(raw){
-    if(!raw || typeof raw !== 'object') throw new Error('GPT returned an invalid scenario object.');
+    if(!raw || typeof raw !== 'object') throw new Error('The live generator returned an invalid scenario object.');
     const scenario = {...raw};
     for(const key of bLiveRequired){
-      if(typeof scenario[key] !== 'string' || scenario[key].trim().length < 2) throw new Error(`GPT scenario is missing ${key}.`);
+      if(typeof scenario[key] !== 'string' || scenario[key].trim().length < 2) throw new Error(`Live scenario is missing ${key}.`);
       scenario[key] = scenario[key].trim();
     }
     scenario.visual = BECOME_LIVE_VISUALS.has(scenario.visual) ? scenario.visual : 'future';
@@ -47,6 +71,8 @@
   }
 
   async function bLiveGenerate(index, sessionNonce){
+    const groqKey=bLiveGetGroqKey();
+    if(!groqKey)throw new Error('Paste a free Groq API key to enable live scenario generation.');
     const previous = bRead('latest');
     const payload = {
       trialIndex: index,
@@ -58,26 +84,30 @@
     };
     const response = await fetch(BECOME_LIVE_API, {
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers:{'Content-Type':'application/json','X-Groq-Api-Key':groqKey},
       cache:'no-store',
       credentials:'omit',
       body:JSON.stringify(payload)
     });
     let data = null;
     try{data = await response.json();}catch{}
-    if(!response.ok) throw new Error(data?.error || `Live GPT request failed (${response.status}).`);
+    if(!response.ok){
+      if(data?.code==='GROQ_KEY_INVALID'||data?.code==='GROQ_KEY_REQUIRED')bLiveClearGroqKey();
+      throw new Error(data?.error || `Live Groq request failed (${response.status}).`);
+    }
     return bLiveValidateScenario(data?.scenario);
   }
 
-  function bLiveLoading(index, copy='GPT is constructing a new world from zero.'){
+  function bLiveLoading(index, copy='GPT-OSS 120B is constructing a new world from zero.'){
     becomeState.stage='live-generating';
-    bPanel(`${bHeader(`LIVE GPT · SCENARIO ${index+1} OF ${becomeState.count}`,'GENERATING',0)}<p class="become-kicker">REAL-TIME WORLD GENERATION</p><h2 class="become-title compact">BUILDING A<br>NEW SCENARIO</h2><p class="become-copy">${bEscape(copy)}</p><div class="become-facts"><span class="become-fact">NOT A SCENARIO BANK</span><span class="become-fact">NOVELTY CHECKED</span><span class="become-fact">ADAPTIVE</span></div><p class="become-microcopy">Only recent generated scenario summaries and numerical training scores are sent. Your later life-transfer text stays in this page.</p>`);
+    bPanel(`${bHeader(`LIVE GROQ · SCENARIO ${index+1} OF ${becomeState.count}`,'GENERATING',0)}<p class="become-kicker">REAL-TIME WORLD GENERATION</p><h2 class="become-title compact">BUILDING A<br>NEW SCENARIO</h2><p class="become-copy">${bEscape(copy)}</p><div class="become-facts"><span class="become-fact">GPT-OSS 120B</span><span class="become-fact">NOVELTY CHECKED</span><span class="become-fact">NO STORED FALLBACK</span></div><p class="become-microcopy">Only recent generated scenario summaries and numerical training scores are sent. Your later life-transfer text stays in this page.</p>`);
   }
 
   function bLiveError(error){
     becomeLiveLastError = error instanceof Error ? error.message : String(error || 'Live generation failed.');
     becomeState.stage='live-error';
-    bPanel(`${bHeader('LIVE GPT','CONNECTION REQUIRED',0)}<p class="become-kicker">LIVE ENGINE OFFLINE</p><h2 class="become-title compact">NO STORED WORLD<br>WAS SUBSTITUTED</h2><p class="become-copy">${bEscape(becomeLiveLastError)}</p><p class="become-rule">Become will not label a prewritten scenario as live. Configure the secure server endpoint and retry.</p><div class="become-actions"><button class="become-primary" type="button" data-become-action="begin-session">RETRY LIVE GENERATION</button></div>`);
+    const needsKey=!bLiveGetGroqKey();
+    bPanel(`${bHeader('LIVE GROQ','CONNECTION REQUIRED',0)}<p class="become-kicker">LIVE ENGINE OFFLINE</p><h2 class="become-title compact">NO STORED WORLD<br>WAS SUBSTITUTED</h2><p class="become-copy">${bEscape(becomeLiveLastError)}</p>${needsKey?bLiveCredentialInput():''}<p class="become-rule">Become will never label a prewritten scenario as live. Correct the live connection and retry.</p><div class="become-actions"><button class="become-primary" type="button" data-become-action="begin-session">RETRY LIVE GENERATION</button></div>`);
   }
 
   function bLivePrefetch(index){
@@ -105,17 +135,23 @@
     becomeState.stage='setup';
     const previous=bRead('latest');
     const choices=BECOME_PRESETS.map(value=>`<button class="become-choice ${becomeState.count===value?'active':''}" type="button" data-become-action="set-count" data-value="${value}">${value}</button>`).join('');
-    bPanel(`<p class="become-kicker">DREAM MAKER · BECOME · LIVE GPT</p><h1 class="become-title">REALITY<br>TRAINING LAB</h1><p class="become-copy">Every trial is generated on demand by GPT, then passed through the same perception, embodiment, consequence, identity and action training machinery. Recent worlds are supplied back to the generator so the next trial must materially differ.</p><p class="become-rule"><b>CONTROL RULE:</b> operate as if the scenario is real while retaining awareness that you selected it. Stop if intensity becomes unhelpful. Never use this while driving or during hazardous activity.</p><div class="become-grid three"><div class="become-card"><small>SCENARIOS</small><strong>LIVE GPT</strong><p>New world generated for this session rather than selected from the ten-world bank.</p></div><div class="become-card"><small>FACULTIES</small><strong>17 × 10 sec</strong><p>Each capacity remains isolated, timed and self-scored before integration.</p></div><div class="become-card"><small>NOVELTY</small><strong>SERVER CHECK</strong><p>Recent worlds and performance are used to reject repetition and shape the next trial.</p></div></div><div class="become-divider"></div><p class="become-label">NUMBER OF LIVE SCENARIOS</p><div class="become-counts">${choices}</div><label class="become-custom">CUSTOM 1–10 <input id="becomeCustomCount" type="number" min="1" max="10" value="${becomeState.count}" inputmode="numeric"></label><div class="become-actions"><button class="become-primary" type="button" data-become-action="begin-session">GENERATE LIVE SESSION</button></div><p class="become-microcopy">${previous?`Previous adaptive-entry score: ${Number(previous.adaptive||0).toFixed(1)}. Its weakest numerical faculty may shape the first trial.`:'No previous numerical session stored.'} Personal life-transfer descriptions are not sent to the scenario generator.</p>`);
+    const hasKey=Boolean(bLiveGetGroqKey());
+    bPanel(`<p class="become-kicker">DREAM MAKER · BECOME · LIVE GROQ</p><h1 class="become-title">REALITY<br>TRAINING LAB</h1><p class="become-copy">Every trial is generated on demand by GPT-OSS 120B through Groq's free inference tier, then passed through the same perception, embodiment, consequence, identity and action training machinery. Recent worlds are supplied back to the generator so the next trial must materially differ.</p><p class="become-rule"><b>CONTROL RULE:</b> operate as if the scenario is real while retaining awareness that you selected it. Stop if intensity becomes unhelpful. Never use this while driving or during hazardous activity.</p><div class="become-grid three"><div class="become-card"><small>SCENARIOS</small><strong>LIVE AI</strong><p>New world generated for this session rather than selected from the ten-world bank.</p></div><div class="become-card"><small>MODEL</small><strong>GPT-OSS 120B</strong><p>Structured live generation through Groq; no Vercel AI Gateway billing required.</p></div><div class="become-card"><small>NOVELTY</small><strong>SERVER CHECK</strong><p>Recent worlds and performance are used to reject repetition and shape the next trial.</p></div></div><div class="become-divider"></div><p class="become-label">NUMBER OF LIVE SCENARIOS</p><div class="become-counts">${choices}</div><label class="become-custom">CUSTOM 1–10 <input id="becomeCustomCount" type="number" min="1" max="10" value="${becomeState.count}" inputmode="numeric"></label>${hasKey?'<div class="become-facts"><span class="become-fact">GROQ KEY LOADED FOR THIS TAB</span></div>':bLiveCredentialInput()}<div class="become-actions"><button class="become-primary" type="button" data-become-action="begin-session">GENERATE LIVE SESSION</button></div><p class="become-microcopy">${previous?`Previous adaptive-entry score: ${Number(previous.adaptive||0).toFixed(1)}. Its weakest numerical faculty may shape the first trial.`:'No previous numerical session stored.'} Personal life-transfer descriptions are not sent to the scenario generator.</p>`);
   };
 
   bBeginSession = async function(){
+    const groqKey=bLiveResolveGroqKey();
+    if(!groqKey){
+      bLiveError(new Error('A free Groq API key is required. Create one without adding a debit or credit card, paste it above, then retry.'));
+      return;
+    }
     const nonce = bLiveNewNonce();
     becomeLiveSessionNonce = nonce;
     becomeLivePending.clear();
     becomeLiveLastError = '';
     becomeState.queue = Array.from({length:becomeState.count},()=>null);
     becomeState.scenarioIndex=0;becomeState.results=[];becomeState.transferScores={};
-    bLiveLoading(0,'GPT is constructing the first world now. It must differ from recent worlds rather than reskinning one.');
+    bLiveLoading(0,'GPT-OSS 120B is constructing the first world now. It must differ from recent worlds rather than reskinning one.');
     try{
       const first = await bLiveGenerate(0,nonce);
       if(nonce !== becomeLiveSessionNonce) return;
