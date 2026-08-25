@@ -64,6 +64,7 @@ jobs:
             arcade-parts/perceive-aerial-08.txt
             arcade-parts/become-lab-01.txt
             arcade-parts/become-live-02.txt
+            arcade-parts/become-local-cpu-03.txt
           )
           rm -rf /tmp/dream-unity-live
           mkdir -p /tmp/dream-unity-live/arcade-parts
@@ -107,6 +108,13 @@ jobs:
           grep -q 'dream-unity-become-live.vercel.app' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
           grep -q 'NO STORED WORLD' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
           grep -q 'bLivePrefetch' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
+
+          grep -q '@huggingface/transformers@4.2.0' /tmp/dream-unity-live/arcade-parts/become-local-cpu-03.txt
+          grep -q 'onnx-community/SmolLM2-360M-Instruct-ONNX' /tmp/dream-unity-live/arcade-parts/become-local-cpu-03.txt
+          grep -q "device:'wasm'" /tmp/dream-unity-live/arcade-parts/become-local-cpu-03.txt
+          grep -q "dtype:'q4'" /tmp/dream-unity-live/arcade-parts/become-local-cpu-03.txt
+          grep -q 'bCpuGenerate' /tmp/dream-unity-live/arcade-parts/become-local-cpu-03.txt
+          grep -q 'WebGPU local AI failed. Switching to CPU/WASM' /tmp/dream-unity-live/arcade-parts/become-local-cpu-03.txt
 
           sha256sum /tmp/dream-unity-live/index.html /tmp/dream-unity-live/styles.css \
             /tmp/dream-unity-live/become.css /tmp/dream-unity-live/main.js /tmp/dream-unity-live/arcade.js \
@@ -163,10 +171,12 @@ jobs:
               },
               'become': {
                   'game': 'Become Reality Lab',
-                  'scenario_source': 'local_webgpu_default_groq_optional',
+                  'scenario_source': 'local_webgpu_then_cpu_wasm_groq_optional',
                   'zero_credential_default': True,
-                  'local_provider': 'webllm_webgpu',
-                  'local_model': 'SmolLM2-360M-Instruct-q4f32_1-MLC',
+                  'local_webgpu_provider': 'webllm_webgpu',
+                  'local_webgpu_model': 'SmolLM2-360M-Instruct-q4f32_1-MLC',
+                  'local_cpu_provider': 'transformers_js_wasm',
+                  'local_cpu_model': 'onnx-community/SmolLM2-360M-Instruct-ONNX',
                   'optional_cloud_provider': 'groq',
                   'optional_cloud_model': 'openai/gpt-oss-120b',
                   'backend': 'https://dream-unity-become-live.vercel.app/api/become-scenario',
