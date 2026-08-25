@@ -1,0 +1,306 @@
+            best = { type: 'shot', value: shot };
+          }
+        }
+      }
+      return best;
+    }
+
+    function fire(E) {
+      if (!player || player.fireCooldown > 0 || player.heat >= 0.985) return;
+      player.fireCooldown = 0.105;
+      player.heat = Math.min(1, player.heat + 0.115);
+      stats.shots++;
+      const lock = nearestAimTarget(E);
+      const endX = lock ? lock.value.x ?? lock.value.sx : reticle.x;
+      const endY = lock ? lock.value.y ?? lock.value.sy : reticle.y;
+      tracers.push({ x1: player.x - 5, y1: player.y - player.size * 0.8, x2: endX, y2: endY, life: 0.12, max: 0.12 });
+      tracers.push({ x1: player.x + 5, y1: player.y - player.size * 0.8, x2: endX + 2, y2: endY, life: 0.1, max: 0.1 });
+      E.sfx('tap', 1.65);
+      if (!lock) return;
+      stats.hits++;
+      if (lock.type === 'shot') {
+        const index = enemyShots.indexOf(lock.value);
+        if (index >= 0) enemyShots.splice(index, 1);
+        E.addScore(18, endX, endY, '+18');
+        E.burst(endX, endY, E.secondary, 8, 120, 1.8);
+        return;
+      }
+      const enemy = lock.value;
+      if (enemy === encounter.target) resolveCorrect(E, enemy);
+      else falseLock(E, enemy);
+    }
+
+    function spawnEnemyShot(E, enemy) {
+      if (!enemy.alive || enemyShots.length > (coarse || lowCPU ? 26 : 44)) return;
+      const dx = player.x - enemy.sx;
+      const dy = player.y - enemy.sy;
+      const length = Math.max(1, Math.hypot(dx, dy));
+      const speed = 185 + level * 17 + encounter.depth * 90;
+      enemyShots.push({
+        x: enemy.sx,
+        y: enemy.sy,
+        vx: dx / length * speed + rand(18, -18),
+        vy: dy / length * speed + rand(12, -12),
+        r: 3.2 + encounter.depth * 2.1,
+        life: 4.6,
+      });
+      E.sfx('tick', 0.62 + encounter.depth * 0.35);
+    }
+
+    function updatePlayer(E, dt) {
+      const left = E.keys.has('arrowleft') || E.keys.has('a');
+      const right = E.keys.has('arrowright') || E.keys.has('d');
+      const up = E.keys.has('arrowup') || E.keys.has('w');
+      const down = E.keys.has('arrowdown') || E.keys.has('s');
+      const keyboardX = (right ? 1 : 0) - (left ? 1 : 0);
+      const keyboardY = (down ? 1 : 0) - (up ? 1 : 0);
+      if (keyboardX || keyboardY) {
+        reticle.x += keyboardX * E.u * 0.72 * dt;
+        reticle.y += keyboardY * E.u * 0.72 * dt;
+        player.targetX += keyboardX * E.u * 0.62 * dt;
+        player.targetY += keyboardY * E.u * 0.48 * dt;
+      }
+      if (E.isDown()) {
+        const p = E.pointer();
+        reticle.x = p.x;
+        reticle.y = p.y;
+        player.targetX = p.x;
+        player.targetY = clamp(p.y + E.u * 0.17, E.h * 0.59, E.bottom - 24);
+      }
+      reticle.x = clamp(reticle.x, 18, E.w - 18);
+      reticle.y = clamp(reticle.y, E.top + 18, E.bottom - 42);
+      player.targetX = clamp(player.targetX, 30, E.w - 30);
+      player.targetY = clamp(player.targetY, E.h * 0.58, E.bottom - 20);
+
+      const previousX = player.x;
+      const response = 1 - Math.exp(-dt * 8.5);
+      player.x = lerp(player.x, player.targetX, response);
+      player.y = lerp(player.y, player.targetY, response);
+      player.bank = lerp(player.bank, clamp((player.x - previousX) / Math.max(1, dt) * 0.008, -1, 1), 1 - Math.exp(-dt * 10));
+      player.fireCooldown = Math.max(0, player.fireCooldown - dt);
+      player.heat = Math.max(0, player.heat - dt * (player.heat > 0.75 ? 0.2 : 0.31));
+      player.invulnerable = Math.max(0, player.invulnerable - dt);
+
+      if ((pointerFire || E.keys.has(' ')) && player.heat < 0.99) fire(E);
+    }
+
+    function updateCombat(E, dt) {
+      wrongLockCooldown = Math.max(0, wrongLockCooldown - dt);
+      for (const enemy of enemies) {
+        if (!enemy.alive || encounter?.solved) continue;
+        enemy.fireTimer -= dt * (0.75 + encounter.depth * 0.85);
+        if (enemy.fireTimer <= 0 && encounter.age > 1.1) {
+          spawnEnemyShot(E, enemy);
+          const targetBias = enemy === encounter.target ? 0.72 : 1.12;
+          enemy.fireTimer = rand(3.1, 1.65) * targetBias / (1 + level * 0.025);
+        }
+      }
+
+      for (let i = enemyShots.length - 1; i >= 0; i--) {
+        const shot = enemyShots[i];
+        shot.x += shot.vx * dt;
+        shot.y += shot.vy * dt;
+        shot.life -= dt;
+        if (shot.life <= 0 || shot.x < -30 || shot.x > E.w + 30 || shot.y > E.bottom + 40) {
+          enemyShots.splice(i, 1);
+          continue;
+        }
+        if (player.invulnerable <= 0 && dist(shot.x, shot.y, player.x, player.y) < player.size * 0.7 + shot.r) {
+          enemyShots.splice(i, 1);
+          hurt(E, 0.55, player.x, player.y, 'EVASIVE FAILURE');
+        }
+      }
+
+      for (let i = tracers.length - 1; i >= 0; i--) {
+        tracers[i].life -= dt;
+        if (tracers[i].life <= 0) tracers.splice(i, 1);
+      }
+    }
+
+    function failEncounter(E) {
+      if (!encounter || encounter.solved) return;
+      encounter.solved = true;
+      encounter.outcome = 'passed';
+      stats.wrong++;
+      stats.family[encounter.family] ||= { correct: 0, wrong: 0 };
+      stats.family[encounter.family].wrong++;
+      stats.errors['late-relational-acquisition'] = (stats.errors['late-relational-acquisition'] || 0) + 1;
+      hurt(E, 1.05, encounter.target.sx, encounter.target.sy, 'RELATION PASSED');
+      for (const enemy of enemies) enemy.alive = false;
+      resolveTimer = 0.62;
+      wave++;
+      writeProfile({
+        at: Date.now(), type: 'encounter-error', wave, level, family: encounter.family,
+        correct: false, errorType: 'late-relational-acquisition', latency: (performance.now() - encounter.startedAt) / 1000,
+      });
+    }
+
+    function resetUiDefinition() {
+      const definition = GAME_BY_KEY['machine:0'];
+      if (!definition) return;
+      Object.assign(definition, {
+        id: 'parallax-wing',
+        name: 'PARALLAX WING',
+        glyph: '✦',
+        rule: 'Read the moving formation. Fire at the aircraft defined by its relation.',
+        hint: 'DRAG TO FLY + FIRE · SPACE TO FIRE',
+        factory: createPerceptionAerialGame,
+      });
+    }
+
+    resetUiDefinition();
+
+    return {
+      reset(E) {
+        resetUiDefinition();
+        wave = 1;
+        level = 1;
+        streak = 0;
+        successes = 0;
+        stats = { correct: 0, wrong: 0, shots: 0, hits: 0, family: {}, errors: {}, latencies: [] };
+        player = {
+          x: E.w * 0.5,
+          y: E.bottom - Math.max(58, E.u * 0.095),
+          targetX: E.w * 0.5,
+          targetY: E.bottom - Math.max(58, E.u * 0.095),
+          size: Math.max(18, E.u * 0.035),
+          bank: 0,
+          shield: 4,
+          heat: 0,
+          fireCooldown: 0,
+          invulnerable: 0,
+        };
+        reticle = { x: E.w * 0.5, y: E.h * 0.38 };
+        pointerFire = false;
+        E.setMetric('SHIELD', '4 · ×0');
+        buildEncounter(E);
+      },
+      resize(E) {
+        if (!player) return;
+        player.size = Math.max(18, E.u * 0.035);
+        player.x = clamp(player.x, 30, E.w - 30);
+        player.y = clamp(player.y, E.h * 0.58, E.bottom - 20);
+        player.targetX = clamp(player.targetX, 30, E.w - 30);
+        player.targetY = clamp(player.targetY, E.h * 0.58, E.bottom - 20);
+        reticle.x = clamp(reticle.x, 18, E.w - 18);
+        reticle.y = clamp(reticle.y, E.top + 18, E.bottom - 42);
+        updateScreenPositions(E);
+      },
+      ambient(E, dt) {
+        if (!encounter) buildEncounter(E);
+        updateRelation(E, dt * 0.22);
+      },
+      update(E, dt) {
+        if (!player || !encounter) return;
+        updatePlayer(E, dt);
+        updateRelation(E, dt);
+        updateCombat(E, dt);
+        if (!encounter.solved && encounter.depth >= 1.03) failEncounter(E);
+        if (encounter.solved) {
+          resolveTimer -= dt;
+          if (resolveTimer <= 0) buildEncounter(E);
+        }
+      },
+      pointerDown(E, x, y) {
+        pointerFire = true;
+        reticle.x = x;
+        reticle.y = y;
+        if (player) {
+          player.targetX = x;
+          player.targetY = clamp(y + E.u * 0.17, E.h * 0.59, E.bottom - 24);
+        }
+        fire(E);
+      },
+      pointerMove(E, x, y, down) {
+        reticle.x = x;
+        reticle.y = y;
+        if (down && player) {
+          player.targetX = x;
+          player.targetY = clamp(y + E.u * 0.17, E.h * 0.59, E.bottom - 24);
+        }
+      },
+      pointerUp() { pointerFire = false; },
+      pointerCancel() { pointerFire = false; },
+      keyDown(E, key) {
+        if (key === ' ') fire(E);
+      },
+      draw(E, c) {
+        drawFlightField(E, c);
+        drawRelationEvidence(E, c);
+
+        c.save();
+        c.globalCompositeOperation = 'lighter';
+        for (const enemy of enemies) {
+          if (!enemy.alive) continue;
+          for (let i = 1; i < enemy.trail.length; i++) {
+            const a = i / enemy.trail.length;
+            E.line(c, enemy.trail[i - 1][0], enemy.trail[i - 1][1], enemy.trail[i][0], enemy.trail[i][1], E.rgb, 0.025 + a * 0.075, 0.55 + a * 0.75);
+          }
+          const color = enemy.hitFlash > 0 ? [255, 78, 120] : E.rgb;
+          drawFighter(c, enemy.sx, enemy.sy, enemy.size, enemy.bank, color, true, 0.94, enemy.pulse);
+          if (encounter.family === 'counterphase' || encounter.family === 'mixed') {
+            c.strokeStyle = rgba(color, (0.08 + enemy.pulse * 0.3) * encounter.assist);
+            c.lineWidth = 1.1;
+            c.beginPath(); c.arc(enemy.sx, enemy.sy, enemy.size * (1.3 + enemy.pulse * 0.55), 0, TAU); c.stroke();
+          }
+        }
+
+        for (const shot of enemyShots) {
+          E.glow(c, shot.x, shot.y, shot.r * 2.1, [255, 105, 76], 0.72);
+          c.fillStyle = 'rgba(255,188,126,.92)';
+          c.beginPath(); c.arc(shot.x, shot.y, shot.r, 0, TAU); c.fill();
+          E.line(c, shot.x, shot.y, shot.x - shot.vx * 0.055, shot.y - shot.vy * 0.055, [255, 88, 72], 0.48, shot.r * 0.75);
+        }
+
+        for (const tracer of tracers) {
+          const a = clamp(tracer.life / tracer.max, 0, 1);
+          E.line(c, tracer.x1, tracer.y1, tracer.x2, tracer.y2, E.secondary, 0.76 * a, 1.4 + a * 1.4);
+          E.glow(c, tracer.x2, tracer.y2, 4 + a * 5, E.secondary, 0.36 * a);
+        }
+
+        const blink = player.invulnerable > 0 && Math.floor(player.invulnerable * 18) % 2 === 0;
+        if (!blink) drawFighter(c, player.x, player.y, player.size, player.bank, E.secondary, false, 1, 0.88 + player.heat * 0.12);
+
+        const locked = nearestAimTarget(E);
+        const lockColor = locked ? E.secondary : E.rgb;
+        const rr = locked ? 15 : 11;
+        c.strokeStyle = rgba(lockColor, locked ? 0.92 : 0.52);
+        c.lineWidth = locked ? 1.7 : 1.1;
+        c.beginPath(); c.arc(reticle.x, reticle.y, rr + Math.sin(E.t * 5) * 1.5, 0, TAU); c.stroke();
+        E.line(c, reticle.x - rr - 8, reticle.y, reticle.x - rr + 1, reticle.y, lockColor, 0.65, 1.1);
+        E.line(c, reticle.x + rr - 1, reticle.y, reticle.x + rr + 8, reticle.y, lockColor, 0.65, 1.1);
+        E.line(c, reticle.x, reticle.y - rr - 8, reticle.x, reticle.y - rr + 1, lockColor, 0.65, 1.1);
+        E.line(c, reticle.x, reticle.y + rr - 1, reticle.x, reticle.y + rr + 8, lockColor, 0.65, 1.1);
+
+        const meterX = Math.max(18, E.w * 0.035);
+        const meterY = E.bottom - 14;
+        const meterW = Math.min(E.w * 0.28, 190);
+        c.fillStyle = 'rgba(255,255,255,.07)';
+        c.fillRect(meterX, meterY - 5, meterW, 4);
+        c.fillStyle = player.heat > 0.82 ? 'rgba(255,88,110,.82)' : rgba(E.rgb, 0.72);
+        c.fillRect(meterX, meterY - 5, meterW * player.heat, 4);
+        c.fillStyle = 'rgba(220,238,255,.55)';
+        c.font = '700 9px Inter,system-ui,sans-serif';
+        c.textAlign = 'left';
+        c.fillText('CANNON HEAT', meterX, meterY - 10);
+
+        c.textAlign = 'right';
+        c.font = '800 10px Inter,system-ui,sans-serif';
+        c.fillStyle = rgba(E.rgb, 0.72);
+        c.fillText(`WAVE ${wave} · PERCEIVE ${level}`, E.w - 18, E.bottom - 16);
+        c.restore();
+      }
+    };
+  }
+
+  const perceiveAerialDefinition = GAME_BY_KEY['machine:0'];
+  if (perceiveAerialDefinition) {
+    Object.assign(perceiveAerialDefinition, {
+      id: 'parallax-wing',
+      name: 'PARALLAX WING',
+      glyph: '✦',
+      rule: 'Read the moving formation. Fire at the aircraft defined by its relation.',
+      hint: 'DRAG TO FLY + FIRE · SPACE TO FIRE',
+      factory: createPerceptionAerialGame,
+    });
+  }
