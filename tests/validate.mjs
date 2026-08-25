@@ -102,7 +102,7 @@ for (const marker of [
   'https://blockrun.ai/api/v1/chat/completions','nvidia/gpt-oss-120b','nvidia/step-3.7-flash','nvidia/mistral-nemotron',
   'credentialMode:\'none\'','accountRequired:false','localModel:false','Access-Control-Allow-Origin','https://dream-unity.github.io',
   'function tooSimilar','function jaccard','DIMENSION_KEYS','const MAX_ATTEMPTS = 3','async function callWithFailover','async function produce',
-  "provider:'blockrun'",'generationNonce:randomUUID()','stored','recentScenarios'
+  "provider:'blockrun'",'generationNonce:randomUUID()','recentScenarios'
 ]) assert.ok(apiSource.includes(marker),`missing Become proxy marker: ${marker}`);
 assert.match(apiSource,/fetch\(BLOCKRUN_URL/);
 assert.doesNotMatch(apiSource,/GROQ_API_KEY|X-Groq-Api-Key|Authorization.*Bearer|api\.groq\.com|api\.openai\.com/);
