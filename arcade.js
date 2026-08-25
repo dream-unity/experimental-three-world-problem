@@ -1,13 +1,14 @@
 (() => {
   'use strict';
   const VERSION = '20260825-role-drift-become-1';
-  const LIVE_VERSION = '20260826-become-guaranteed-generation-8';
+  const LIVE_VERSION = '20260826-become-max-distance-9';
   const basePaths = [1, 2, 3, 4, 5].map((n) => `./arcade-parts/part-${String(n).padStart(2, '0')}.txt?v=${VERSION}`);
   const roleLogicPath = `./arcade-parts/perceive-role-logic.txt?v=${VERSION}`;
   const perceivePaths = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => `./arcade-parts/perceive-aerial-${String(n).padStart(2, '0')}.txt?v=${VERSION}`);
   const becomePaths = [1].map((n) => `./arcade-parts/become-lab-${String(n).padStart(2, '0')}.txt?v=${VERSION}`);
   const becomeLivePath = `./arcade-parts/become-live-02.txt?v=${LIVE_VERSION}`;
-  const paths = [...basePaths, roleLogicPath, ...perceivePaths, ...becomePaths, becomeLivePath];
+  const becomeDiversityPath = `./arcade-parts/become-diversity-09.txt?v=${LIVE_VERSION}`;
+  const paths = [...basePaths, roleLogicPath, ...perceivePaths, ...becomePaths, becomeLivePath, becomeDiversityPath];
 
   Promise.all(paths.map((path) => fetch(path, { cache: 'force-cache' }).then((response) => {
     if (!response.ok) throw new Error(`Arcade chunk failed: ${response.status} ${path}`);
@@ -22,9 +23,9 @@
     const closeIndex = baseSource.lastIndexOf('})();');
     if (closeIndex < 0) throw new Error('Arcade source terminator was not found.');
 
-    // The original nine-game engine remains intact. PERCEIVE and BECOME are
-    // injected inside its private scope so one lifecycle is preserved.
-    // BECOME prefers cloud AI and guarantees generation with relational synthesis.
+    // BECOME's final diversity layer precomputes the complete scenario queue
+    // locally using max-distance selection; older source layers retain shared
+    // rendering/training machinery but cannot block scenario progression.
     const completeSource = `${baseSource.slice(0, closeIndex)}\n${roleLogicSource}\n${perceiveSource}\n${becomeSource}\n${baseSource.slice(closeIndex)}`;
     Function(completeSource)();
   }).catch((error) => {
