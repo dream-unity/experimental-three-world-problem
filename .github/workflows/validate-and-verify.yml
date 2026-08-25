@@ -1,0 +1,141 @@
+name: Validate Dream Unity and verify live Pages
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'DEPLOYMENT_STATUS.json'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: experimental-three-world-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout complete repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Validate all nine games and Parallax Wing integration
+        run: npm test
+
+  verify-live:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout validated source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Wait for GitHub Pages to match validated source byte-for-byte
+        shell: bash
+        env:
+          PAGE_URL: https://dream-unity.github.io/experimental-three-world-problem
+        run: |
+          set -euo pipefail
+          files=(
+            index.html
+            styles.css
+            main.js
+            arcade.js
+            arcade-parts/part-01.txt
+            arcade-parts/part-02.txt
+            arcade-parts/part-03.txt
+            arcade-parts/part-04.txt
+            arcade-parts/part-05.txt
+            arcade-parts/perceive-aerial-01.txt
+            arcade-parts/perceive-aerial-02.txt
+            arcade-parts/perceive-aerial-03.txt
+          )
+          rm -rf /tmp/dream-unity-live
+          mkdir -p /tmp/dream-unity-live/arcade-parts
+          matched='false'
+          for attempt in $(seq 1 40); do
+            matched='true'
+            for path in "${files[@]}"; do
+              if ! curl --fail --location --silent --show-error \
+                --retry 3 --retry-all-errors --retry-delay 2 \
+                "$PAGE_URL/$path?source=${GITHUB_SHA}" --output "/tmp/dream-unity-live/$path"; then
+                matched='false'
+                break
+              fi
+              if ! cmp --silent "$path" "/tmp/dream-unity-live/$path"; then
+                matched='false'
+                break
+              fi
+            done
+            if [ "$matched" = 'true' ]; then break; fi
+            echo "Pages has not propagated yet (attempt $attempt/40)."
+            sleep 5
+          done
+          test "$matched" = 'true'
+          grep -q 'PARALLAX WING' /tmp/dream-unity-live/index.html
+          grep -q 'perceive-aerial-' /tmp/dream-unity-live/arcade.js
+          grep -q 'createPerceptionAerialGame' /tmp/dream-unity-live/arcade-parts/perceive-aerial-01.txt
+          grep -q "GAME_BY_KEY\['machine:0'\]" /tmp/dream-unity-live/arcade-parts/perceive-aerial-03.txt
+          if grep -q 'SIGNAL VEIL' /tmp/dream-unity-live/index.html; then
+            echo 'The live Perceive portal still exposes the superseded game.' >&2
+            exit 1
+          fi
+          sha256sum \
+            /tmp/dream-unity-live/index.html \
+            /tmp/dream-unity-live/styles.css \
+            /tmp/dream-unity-live/main.js \
+            /tmp/dream-unity-live/arcade.js \
+            /tmp/dream-unity-live/arcade-parts/*.txt > /tmp/live-checksums.txt
+
+      - name: Commit machine-readable live deployment receipt
+        shell: bash
+        env:
+          SOURCE_SHA: ${{ github.sha }}
+          PAGE_URL: https://dream-unity.github.io/experimental-three-world-problem/
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from datetime import datetime, timezone
+          from pathlib import Path
+          import json
+          import os
+
+          receipt = {
+              'project': 'Dream Unity — Experimental Three-World Problem',
+              'deployment': 'verified-live',
+              'source_sha': os.environ['SOURCE_SHA'],
+              'page_url': os.environ['PAGE_URL'],
+              'portal_replaced': 'Dream Machine / Perceive',
+              'game': 'Parallax Wing',
+              'nine_game_compatibility': 'validated',
+              'relation_families': [
+                  'symmetry', 'common-fate', 'counterphase', 'anchor',
+                  'bridge', 'rotation', 'convergence', 'mixed composition',
+              ],
+              'files_compared': [
+                  'index.html', 'styles.css', 'main.js', 'arcade.js',
+                  'arcade-parts/part-01.txt', 'arcade-parts/part-02.txt',
+                  'arcade-parts/part-03.txt', 'arcade-parts/part-04.txt',
+                  'arcade-parts/part-05.txt',
+                  'arcade-parts/perceive-aerial-01.txt',
+                  'arcade-parts/perceive-aerial-02.txt',
+                  'arcade-parts/perceive-aerial-03.txt',
+              ],
+              'sha256': Path('/tmp/live-checksums.txt').read_text(encoding='utf-8').splitlines(),
+              'verified_at': datetime.now(timezone.utc).isoformat(),
+          }
+          Path('DEPLOYMENT_STATUS.json').write_text(json.dumps(receipt, indent=2) + '\n', encoding='utf-8')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add DEPLOYMENT_STATUS.json
+          git diff --cached --quiet && exit 0
+          git commit -m 'Record verified live Parallax Wing deployment [skip ci]'
+          git pull --rebase origin main
+          git push origin HEAD:main
