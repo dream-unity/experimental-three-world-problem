@@ -1,11 +1,16 @@
 {
   "name": "dream-unity-experimental-three-world-problem",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "private": true,
   "type": "module",
-  "description": "Nine compatible Dream Unity games with Parallax Wing relational identity drift and Become controlled reality-simulation training.",
+  "description": "Nine compatible Dream Unity games with Parallax Wing relational identity drift and live GPT-powered Become controlled reality-simulation training.",
   "scripts": {
     "test": "node tests/role-drift.test.mjs && node tests/validate.mjs"
+  },
+  "dependencies": {
+    "@vercel/oidc": "latest",
+    "ai": "latest",
+    "zod": "latest"
   },
   "engines": {
     "node": ">=20"
