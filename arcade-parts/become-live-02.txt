@@ -83,7 +83,8 @@
   function bLivePrefetch(index){
     if(index >= becomeState.count || becomeState.queue[index] || becomeLivePending.has(index)) return becomeLivePending.get(index) || Promise.resolve(becomeState.queue[index]);
     const nonce = becomeLiveSessionNonce;
-    const promise = bLiveGenerate(index, nonce)
+    let promise;
+    promise = bLiveGenerate(index, nonce)
       .then(scenario => {
         if(nonce === becomeLiveSessionNonce && becomeState.queue.length === becomeState.count) becomeState.queue[index] = scenario;
         return scenario;
@@ -92,7 +93,9 @@
         becomeLiveLastError = error instanceof Error ? error.message : String(error);
         throw error;
       })
-      .finally(() => becomeLivePending.delete(index));
+      .finally(() => {
+        if(becomeLivePending.get(index) === promise) becomeLivePending.delete(index);
+      });
     // Attach a sink immediately so background prefetch failures never become unhandled.
     promise.catch(() => {});
     becomeLivePending.set(index,promise);
