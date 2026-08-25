@@ -1,0 +1,141 @@
+      encounter.fireTimer -= dt;
+      if (encounter.fireTimer <= 0 && encounter.age > 1.4 && !encounter.solved && !encounter.failed) {
+        spawnEnemyShot(E);
+        encounter.fireTimer = rand(encounter.config.fireInterval * 1.2, encounter.config.fireInterval * 0.72);
+      }
+
+      for (let i = enemyShots.length - 1; i >= 0; i--) {
+        const shot = enemyShots[i];
+        shot.x += shot.vx * dt;
+        shot.y += shot.vy * dt;
+        shot.life -= dt;
+        if (shot.life <= 0 || shot.x < -30 || shot.x > E.w + 30 || shot.y > E.bottom + 35) {
+          enemyShots.splice(i, 1);
+          continue;
+        }
+        if (player.invulnerable <= 0 && dist(shot.x, shot.y, player.x, player.y) < player.size * 0.7 + shot.r) {
+          enemyShots.splice(i, 1);
+          hurt(E, 0.55, player.x, player.y, 'EVASIVE FAILURE');
+        }
+      }
+
+      for (let i = tracers.length - 1; i >= 0; i--) {
+        tracers[i].life -= dt;
+        if (tracers[i].life <= 0) tracers.splice(i, 1);
+      }
+    }
+
+    function failEncounter(E) {
+      if (!encounter || encounter.solved || encounter.failed) return;
+      encounter.failed = true;
+      stats.errors['late-relational-acquisition'] = (stats.errors['late-relational-acquisition'] || 0) + 1;
+      hurt(E, 1.05, leader.sx, leader.sy, 'FORMATION BROKE THROUGH');
+      E.burst(leader.sx, leader.sy, [255, 82, 105], 22, 210, 3);
+      resolveTimer = 0.72;
+      wave++;
+      writeProfile({
+        at: Date.now(),
+        type: 'formation',
+        completed: false,
+        level,
+        errorType: 'late-relational-acquisition',
+        hits: encounter.hits,
+        required: encounter.config.hitsRequired,
+        roleSwitches: stats.roleSwitches,
+      });
+    }
+
+    function resetUiDefinition() {
+      const definition = GAME_BY_KEY['machine:0'];
+      if (!definition) return;
+      Object.assign(definition, {
+        id: 'parallax-wing-role-drift',
+        name: 'PARALLAX WING',
+        glyph: '✦',
+        rule: "Shoot the escort nearest the leader on the outside of its turn. The role moves when the formation crosses.",
+        hint: 'MOVE / AIM · TAP OR SPACE TO FIRE',
+        factory: createPerceptionAerialGame,
+      });
+    }
+
+    resetUiDefinition();
+
+    return {
+      reset(E) {
+        resetUiDefinition();
+        wave = 1;
+        level = 1;
+        streak = 0;
+        completedFormations = 0;
+        stats = {
+          correct: 0,
+          wrong: 0,
+          shots: 0,
+          hits: 0,
+          roleSwitches: 0,
+          reacquisitions: 0,
+          reacquisitionLatencies: [],
+          errors: {},
+        };
+        player = {
+          x: E.w * 0.5,
+          y: E.bottom - Math.max(58, E.u * 0.092),
+          targetX: E.w * 0.5,
+          targetY: E.bottom - Math.max(58, E.u * 0.092),
+          size: Math.max(18, E.u * 0.035),
+          bank: 0,
+          shield: 5,
+          heat: 0,
+          fireCooldown: 0,
+          invulnerable: 0,
+        };
+        reticle = { x: E.w * 0.5, y: E.top + E.h * 0.38 };
+        pointerGesture = null;
+        E.setMetric('SHIELD', '5 · ×0');
+        createEncounter(E);
+      },
+
+      resize(E) {
+        if (!player) return;
+        player.size = Math.max(18, E.u * 0.035);
+        player.x = clamp(player.x, 28, E.w - 28);
+        player.y = clamp(player.y, E.h * 0.59, E.bottom - 18);
+        player.targetX = clamp(player.targetX, 28, E.w - 28);
+        player.targetY = clamp(player.targetY, E.h * 0.59, E.bottom - 18);
+        reticle.x = clamp(reticle.x, 18, E.w - 18);
+        reticle.y = clamp(reticle.y, E.top + 18, E.bottom - 42);
+        updateFormation(E, 0);
+      },
+
+      ambient(E, dt) {
+        if (!encounter) createEncounter(E);
+        updateFormation(E, dt * 0.2);
+      },
+
+      update(E, dt) {
+        if (!player || !encounter) return;
+        updatePlayer(E, dt);
+        updateFormation(E, dt);
+        updateCombat(E, dt);
+        if (!encounter.solved && !encounter.failed && encounter.depth >= 1.035) failEncounter(E);
+        if (encounter.solved || encounter.failed) {
+          resolveTimer -= dt;
+          if (resolveTimer <= 0 && player.shield > 0) createEncounter(E);
+        }
+      },
+
+      pointerDown(E, x, y) {
+        pointerGesture = { x, y, lastX: x, lastY: y, moved: false, startedAt: performance.now() };
+        reticle.x = x;
+        reticle.y = y;
+        if (player) {
+          player.targetX = x;
+          player.targetY = clamp(y + E.u * 0.17, E.h * 0.59, E.bottom - 20);
+        }
+      },
+
+      pointerMove(E, x, y, down) {
+        reticle.x = x;
+        reticle.y = y;
+        if (down && player) {
+          player.targetX = x;

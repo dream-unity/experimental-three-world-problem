@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#02040a" />
-  <meta name="description" content="Dream Unity — nine living games inside three worlds of mind, including Parallax Wing relational-perception flight." />
+  <meta name="description" content="Dream Unity — nine living games inside three worlds of mind, including Parallax Wing relational-role fighter combat." />
   <title>Dream Unity</title>
   <link rel="stylesheet" href="./styles.css?v=20260824-9" />
 </head>
@@ -56,7 +56,7 @@
         <div class="game-readout">
           <span><small>SCORE</small><b id="gameScore">0</b></span>
           <span><small>BEST</small><b id="gameBest">0</b></span>
-          <span class="game-metric"><small id="gameMetricLabel">SHIELD</small><b id="gameMetric">4 · ×0</b></span>
+          <span class="game-metric"><small id="gameMetricLabel">SHIELD</small><b id="gameMetric">5 · ×0</b></span>
         </div>
         <button class="game-icon" id="gameSound" type="button" aria-label="Toggle sound">♪</button>
         <button class="game-icon" id="gamePause" type="button" aria-label="Pause game">Ⅱ</button>
@@ -67,7 +67,7 @@
         <div class="game-glyph" id="gameGlyph">✦</div>
         <small id="gameDomain">PERCEIVE</small>
         <h1 id="gameCardTitle">PARALLAX WING</h1>
-        <p id="gameRule">Read the moving formation. Fire at the aircraft defined by its relation.</p>
+        <p id="gameRule">Track the leader’s turn. Shoot its nearest escort on the outside; the role changes as they cross.</p>
         <button id="gameStart" type="button">ENTER</button>
       </div>
 
@@ -78,7 +78,7 @@
       </div>
 
       <div class="game-toast" id="gameToast"></div>
-      <div class="game-hint" id="gameHint">DRAG TO FLY + FIRE · SPACE TO FIRE</div>
+      <div class="game-hint" id="gameHint">MOVE / AIM · TAP OR SPACE TO FIRE</div>
     </section>
   </main>
 
@@ -90,6 +90,6 @@
     }, 1800);
   </script>
   <script src="./main.js?v=20260824-11"></script>
-  <script src="./arcade.js?v=20260825-perceive-1"></script>
+  <script src="./arcade.js?v=20260825-role-drift-2"></script>
 </body>
 </html>
