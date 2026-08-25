@@ -1,20 +1,18 @@
 
-  // Dream Maker / Become — live AI scenario director.
-  // Groq is optional. Without a key, a WebGPU model runs locally in the browser.
+  // Dream Maker / Become — internet-only live AI scenario director.
+  // Every scenario is generated remotely on demand. No model weights or AI runtime are downloaded to the browser.
   const BECOME_LIVE_API = (() => {
     const explicit = typeof window.DREAM_UNITY_BECOME_API === 'string' ? window.DREAM_UNITY_BECOME_API.trim() : '';
     return explicit || 'https://dream-unity-become-live.vercel.app/api/become-scenario';
   })();
   const BECOME_GROQ_KEYS_URL = 'https://console.groq.com/keys';
   const BECOME_GROQ_SESSION_KEY = 'dream-unity:become:groq-key';
-  const BECOME_LOCAL_WEBLLM_URL = 'https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm/+esm';
-  const BECOME_LOCAL_MODEL = 'SmolLM2-360M-Instruct-q4f32_1-MLC';
   const BECOME_LIVE_HISTORY_LIMIT = 8;
   const BECOME_LIVE_VISUALS = new Set(['hockey','stage','mountain','orbit','courtroom','ocean','sprint','conversation','wildfire','contact','future']);
   const becomeLivePending = new Map();
   let becomeLiveSessionNonce = '';
   let becomeLiveLastError = '';
-  let becomeLocalEnginePromise = null;
+  let becomeLiveLastErrorCode = '';
 
   const bLiveRequired = ['id','title','tag','visual','premise','sensory','objects','body','atmosphere','motion','stakes','identity','choice','exit'];
   const bLiveNewNonce = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2,10)}`;
@@ -49,7 +47,7 @@
     return bLiveGetGroqKey();
   }
   function bLiveCredentialInput(){
-    return `<div class="become-divider"></div><p class="become-label">OPTIONAL GROQ KEY</p><label class="become-custom">CLOUD QUALITY UPGRADE <input id="becomeGroqKey" type="password" autocomplete="off" spellcheck="false" placeholder="OPTIONAL GROQ API KEY"></label><p class="become-microcopy">No key is required. Without one, Become runs a local WebGPU language model in your browser. If you prefer GPT-OSS 120B through Groq, create a free key at <a href="${BECOME_GROQ_KEYS_URL}" target="_blank" rel="noopener noreferrer">console.groq.com/keys</a>. A pasted key is kept only in this browser tab's session storage.</p>`;
+    return `<div class="become-divider"></div><p class="become-label">OPTIONAL CLOUD KEY</p><label class="become-custom">GROQ BACKUP CREDENTIAL <input id="becomeGroqKey" type="password" autocomplete="off" spellcheck="false" placeholder="OPTIONAL GROQ API KEY"></label><p class="become-microcopy">Generation always stays online. This key is only needed if the remote service is not provisioned with its own server credential. A pasted key is kept only in this browser tab's session storage and is sent only to the remote generation service. Create one at <a href="${BECOME_GROQ_KEYS_URL}" target="_blank" rel="noopener noreferrer">console.groq.com/keys</a>.</p>`;
   }
 
   function bLiveValidateScenario(raw){
@@ -61,7 +59,7 @@
     }
     scenario.visual = BECOME_LIVE_VISUALS.has(scenario.visual) ? scenario.visual : 'future';
     scenario.id = scenario.id.toLowerCase().replace(/[^a-z0-9-]+/g,'-').replace(/^-+|-+$/g,'').slice(0,72) || `live-${bLiveNewNonce()}`;
-    if(!scenario.id.startsWith('live-')&&!scenario.id.startsWith('local-')) scenario.id = `live-${scenario.id}-${Math.random().toString(36).slice(2,6)}`;
+    if(!scenario.id.startsWith('live-')) scenario.id = `live-${scenario.id}-${Math.random().toString(36).slice(2,6)}`;
     if(!scenario.dimensions || typeof scenario.dimensions !== 'object') scenario.dimensions = {};
     return scenario;
   }
@@ -73,125 +71,20 @@
       .map(bLiveScenarioSummary);
   }
 
-  const bLocalStopWords = new Set(['the','and','that','with','from','into','your','you','for','this','then','while','have','has','are','was','were','one','two','three','their','there','when','where','what','through','under','over','before','after','about','only','will','must','can','could','would','should']);
-  function bLocalTokens(text){
-    const tokens=String(text||'').toLowerCase().match(/[a-z0-9]+/g)||[];
-    return new Set(tokens.filter(token=>token.length>2&&!bLocalStopWords.has(token)));
-  }
-  function bLocalJaccard(a,b){
-    if(!a.size||!b.size)return 0;
-    let overlap=0;for(const token of a)if(b.has(token))overlap++;
-    return overlap/(a.size+b.size-overlap);
-  }
-  function bLocalScenarioText(item){
-    const d=item?.dimensions||{};
-    return [item?.title,item?.tag,item?.premise,d.environment,d.role,d.goal,d.pressure,d.body_dynamics,d.decision_structure,d.emotional_tone,d.social_structure].filter(Boolean).join(' ');
-  }
-  function bLocalTooSimilar(candidate,history){
-    const tokens=bLocalTokens(bLocalScenarioText(candidate));
-    for(const prior of history){
-      if(bLocalJaccard(tokens,bLocalTokens(bLocalScenarioText(prior)))>=0.34)return true;
-      let overlap=0;
-      for(const key of ['environment','role','goal','pressure','body_dynamics','decision_structure','emotional_tone','social_structure']){
-        const a=String(candidate?.dimensions?.[key]||'').toLowerCase().trim();
-        const b=String(prior?.dimensions?.[key]||'').toLowerCase().trim();
-        if(a&&b&&(a===b||a.includes(b)||b.includes(a)))overlap++;
-      }
-      if(overlap>=4)return true;
-    }
-    return false;
-  }
-
-  function bLocalProgress(copy){
-    const node=document.getElementById('becomeLocalProgress');
-    if(node)node.textContent=String(copy||'').slice(0,180);
-  }
-  async function bLocalEngine(){
-    if(!navigator.gpu)throw new Error('Zero-key local AI requires WebGPU in this browser. Use current Chrome/Edge/Safari with WebGPU, or optionally use a Groq key.');
-    if(!becomeLocalEnginePromise){
-      becomeLocalEnginePromise=(async()=>{
-        bLocalProgress('Loading local AI runtime…');
-        const webllm=await import(BECOME_LOCAL_WEBLLM_URL);
-        const engine=await webllm.CreateMLCEngine(BECOME_LOCAL_MODEL,{
-          initProgressCallback:report=>{
-            const percent=Number.isFinite(report?.progress)?Math.round(report.progress*100):null;
-            bLocalProgress(percent===null?String(report?.text||'Preparing local model…'):`LOCAL MODEL ${percent}% · ${String(report?.text||'downloading and compiling')}`);
-          },
-          logLevel:'WARN'
-        });
-        bLocalProgress('Local model ready. Generating scenario…');
-        return engine;
-      })().catch(error=>{becomeLocalEnginePromise=null;throw error;});
-    }
-    return becomeLocalEnginePromise;
-  }
-
-  function bLocalParseLines(text){
-    const fields={};
-    for(const raw of String(text||'').split(/\r?\n/)){
-      const line=raw.replace(/^\s*(?:[-*]|\d+[.)])?\s*/,'').trim();
-      const match=line.match(/^([A-Z_]+)\s*:\s*(.+)$/);
-      if(match)fields[match[1]]=match[2].trim().replace(/^['"]|['"]$/g,'');
-    }
-    const need=['TITLE','TAG','PREMISE','SENSORY','OBJECTS','BODY','ATMOSPHERE','MOTION','STAKES','IDENTITY','CHOICE','EXIT','ENVIRONMENT','ROLE','GOAL','PRESSURE','BODY_DYNAMICS','DECISION_STRUCTURE','EMOTIONAL_TONE','SOCIAL_STRUCTURE'];
-    for(const key of need)if(!fields[key]||fields[key].length<2)throw new Error(`Local AI omitted ${key}.`);
-    const visual=String(fields.VISUAL||'future').toLowerCase();
-    return bLiveValidateScenario({
-      id:`local-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}`,
-      title:fields.TITLE,tag:fields.TAG,visual:BECOME_LIVE_VISUALS.has(visual)?visual:'future',premise:fields.PREMISE,
-      sensory:fields.SENSORY,objects:fields.OBJECTS,body:fields.BODY,atmosphere:fields.ATMOSPHERE,motion:fields.MOTION,
-      stakes:fields.STAKES,identity:fields.IDENTITY,choice:fields.CHOICE,exit:fields.EXIT,
-      dimensions:{environment:fields.ENVIRONMENT,role:fields.ROLE,goal:fields.GOAL,pressure:fields.PRESSURE,body_dynamics:fields.BODY_DYNAMICS,decision_structure:fields.DECISION_STRUCTURE,emotional_tone:fields.EMOTIONAL_TONE,social_structure:fields.SOCIAL_STRUCTURE}
-    });
-  }
-
-  function bLocalPrompt(index,attempt,rejected){
-    const history=bLiveHistory(index).map(item=>({title:item.title,dimensions:item.dimensions}));
-    return `Create one novel first-person controlled-imagination training scenario. This is not real operational instruction. Avoid weapons, crime, self-harm, dangerous stunts, medical emergencies, sexual content, graphic violence and trauma bait. Make it concrete, spatially legible, psychologically controllable and easy to inhabit for repeated ten-second sensory/embodiment/agency drills. Identity must be competence-based, choice must be genuine, and EXIT must explicitly dissolve the simulation and reorient to present reality.\n\nRECENT SCENARIOS TO AVOID: ${JSON.stringify(history)}\nREJECTED THIS ATTEMPT: ${JSON.stringify(rejected)}\nATTEMPT: ${attempt}\n\nReturn EXACTLY these 21 labelled lines, one line per label, with no markdown and no commentary:\nTITLE: short title\nTAG: short training tag\nVISUAL: one of hockey, stage, mountain, orbit, courtroom, ocean, sprint, conversation, wildfire, contact, future\nPREMISE: 1-2 concrete first-person sentences\nSENSORY: what I see and hear\nOBJECTS: tactile objects, weight, texture, temperature\nBODY: first-person posture and spatial embodiment\nATMOSPHERE: environmental and emotional texture\nMOTION: kinaesthetic movement and balance\nSTAKES: meaningful but psychologically controllable consequences\nIDENTITY: the competent perspective I inhabit\nCHOICE: a genuine decision with multiple plausible options\nEXIT: dissolve the simulation and orient to real surroundings\nENVIRONMENT: concise setting category\nROLE: concise role category\nGOAL: concise goal category\nPRESSURE: concise pressure category\nBODY_DYNAMICS: concise body-dynamics category\nDECISION_STRUCTURE: concise decision-structure category\nEMOTIONAL_TONE: concise emotional-tone category\nSOCIAL_STRUCTURE: concise social-structure category`;
-  }
-
-  async function bLocalGenerate(index){
-    const engine=await bLocalEngine();
-    const history=bLiveHistory(index);
-    const rejected=[];
-    for(let attempt=1;attempt<=3;attempt++){
-      bLocalProgress(`Generating local scenario · attempt ${attempt}/3`);
-      const reply=await engine.chat.completions.create({
-        messages:[
-          {role:'system',content:'You are a concise scenario designer. Follow requested labelled-line formats exactly.'},
-          {role:'user',content:bLocalPrompt(index,attempt,rejected)}
-        ],
-        stream:false,
-        temperature:0.95,
-        top_p:0.95,
-        presence_penalty:0.45,
-        frequency_penalty:0.2,
-        max_tokens:1100
-      });
-      const text=String(reply?.choices?.[0]?.message?.content||'');
-      try{
-        const scenario=bLocalParseLines(text);
-        if(!bLocalTooSimilar(scenario,history))return scenario;
-        rejected.push({title:scenario.title,dimensions:scenario.dimensions});
-      }catch(error){
-        rejected.push({format_error:error instanceof Error?error.message:'invalid local output'});
-      }
-    }
-    throw new Error('Local AI could not produce a sufficiently distinct structured scenario after three attempts.');
-  }
-
-  async function bGroqGenerate(index,sessionNonce,groqKey){
+  async function bCloudGenerate(index,sessionNonce,groqKey){
     const previous=bRead('latest');
     const payload={
       trialIndex:index,trialCount:becomeState.count,sessionNonce,
       recentScenarios:bLiveHistory(index),currentPerformance:bLivePerformance(),previousWeakestMetric:previous?.weakest||null
     };
+    const headers={'Content-Type':'application/json'};
+    if(groqKey)headers['X-Groq-Api-Key']=groqKey;
     const response=await fetch(BECOME_LIVE_API,{
-      method:'POST',headers:{'Content-Type':'application/json','X-Groq-Api-Key':groqKey},cache:'no-store',credentials:'omit',body:JSON.stringify(payload)
+      method:'POST',headers,cache:'no-store',credentials:'omit',body:JSON.stringify(payload)
     });
     let data=null;try{data=await response.json();}catch{}
     if(!response.ok){
-      const error=new Error(data?.error||`Live Groq request failed (${response.status}).`);
+      const error=new Error(data?.error||`Live cloud request failed (${response.status}).`);
       error.code=data?.code||'';
       throw error;
     }
@@ -200,26 +93,24 @@
 
   async function bLiveGenerate(index,sessionNonce){
     const groqKey=bLiveGetGroqKey();
-    if(groqKey){
-      try{return await bGroqGenerate(index,sessionNonce,groqKey);}
-      catch(error){
-        if(error?.code==='GROQ_KEY_INVALID'||error?.code==='GROQ_KEY_REQUIRED')bLiveClearGroqKey();
-        bLocalProgress('Groq unavailable. Falling back to local AI…');
-      }
+    try{return await bCloudGenerate(index,sessionNonce,groqKey);}
+    catch(error){
+      if(error?.code==='GROQ_KEY_INVALID')bLiveClearGroqKey();
+      throw error;
     }
-    return bLocalGenerate(index);
   }
 
   function bLiveLoading(index,copy){
-    const cloud=Boolean(bLiveGetGroqKey());
     becomeState.stage='live-generating';
-    bPanel(`${bHeader(`${cloud?'LIVE GROQ':'LOCAL AI'} · SCENARIO ${index+1} OF ${becomeState.count}`,'GENERATING',0)}<p class="become-kicker">REAL-TIME WORLD GENERATION</p><h2 class="become-title compact">BUILDING A<br>NEW SCENARIO</h2><p class="become-copy">${bEscape(copy||(cloud?'GPT-OSS 120B is constructing a new world.':'A local browser model is constructing a new world on this device.'))}</p><div class="become-facts"><span class="become-fact">${cloud?'GPT-OSS 120B':'ZERO-CREDENTIAL LOCAL AI'}</span><span class="become-fact">NOVELTY CHECKED</span><span class="become-fact">NO STORED FALLBACK</span></div><p id="becomeLocalProgress" class="become-microcopy">${cloud?'Only scenario summaries and numerical scores are sent to Groq.':'First local use may download model weights; later runs can use the browser cache. No scenario-generation credential is required.'}</p>`);
+    bPanel(`${bHeader(`LIVE CLOUD · SCENARIO ${index+1} OF ${becomeState.count}`,'GENERATING',0)}<p class="become-kicker">REAL-TIME INTERNET GENERATION</p><h2 class="become-title compact">BUILDING A<br>NEW SCENARIO</h2><p class="become-copy">${bEscape(copy||'GPT-OSS 120B is constructing a new world remotely now.')}</p><div class="become-facts"><span class="become-fact">INTERNET GENERATED</span><span class="become-fact">NOVELTY CHECKED</span><span class="become-fact">NO MODEL DOWNLOAD</span><span class="become-fact">NO STORED FALLBACK</span></div><p class="become-microcopy">The browser sends a compact generation request and receives the finished scenario. No language model, model weights or AI runtime are downloaded to this device.</p>`);
   }
 
   function bLiveError(error){
     becomeLiveLastError=error instanceof Error?error.message:String(error||'Live generation failed.');
+    becomeLiveLastErrorCode=String(error?.code||'');
     becomeState.stage='live-error';
-    bPanel(`${bHeader('LIVE AI','GENERATION ERROR',0)}<p class="become-kicker">LIVE ENGINE OFFLINE</p><h2 class="become-title compact">NO STORED WORLD<br>WAS SUBSTITUTED</h2><p class="become-copy">${bEscape(becomeLiveLastError)}</p>${bLiveCredentialInput()}<p class="become-rule">Become will never label a prewritten scenario as live. Retry local AI, or optionally add a Groq key.</p><div class="become-actions"><button class="become-primary" type="button" data-become-action="begin-session">RETRY LIVE GENERATION</button></div>`);
+    const credentialCopy=(becomeLiveLastErrorCode==='GROQ_KEY_REQUIRED'||becomeLiveLastErrorCode==='GROQ_KEY_INVALID')?bLiveCredentialInput():'';
+    bPanel(`${bHeader('LIVE CLOUD','GENERATION ERROR',0)}<p class="become-kicker">REMOTE ENGINE UNAVAILABLE</p><h2 class="become-title compact">NO STORED WORLD<br>WAS SUBSTITUTED</h2><p class="become-copy">${bEscape(becomeLiveLastError)}</p>${credentialCopy}<p class="become-rule">Become uses internet generation only. It will not download a local model and will not substitute a prewritten scenario.</p><div class="become-actions"><button class="become-primary" type="button" data-become-action="begin-session">RETRY LIVE GENERATION</button></div>`);
   }
 
   function bLivePrefetch(index){
@@ -229,7 +120,7 @@
     promise=bLiveGenerate(index,nonce).then(scenario=>{
       if(nonce===becomeLiveSessionNonce&&becomeState.queue.length===becomeState.count)becomeState.queue[index]=scenario;
       return scenario;
-    }).catch(error=>{becomeLiveLastError=error instanceof Error?error.message:String(error);throw error;}).finally(()=>{
+    }).catch(error=>{becomeLiveLastError=error instanceof Error?error.message:String(error);becomeLiveLastErrorCode=String(error?.code||'');throw error;}).finally(()=>{
       if(becomeLivePending.get(index)===promise)becomeLivePending.delete(index);
     });
     promise.catch(()=>{});becomeLivePending.set(index,promise);return promise;
@@ -240,17 +131,16 @@
     const previous=bRead('latest');
     const choices=BECOME_PRESETS.map(value=>`<button class="become-choice ${becomeState.count===value?'active':''}" type="button" data-become-action="set-count" data-value="${value}">${value}</button>`).join('');
     const hasKey=Boolean(bLiveGetGroqKey());
-    const localCapable=Boolean(navigator.gpu);
-    bPanel(`<p class="become-kicker">DREAM MAKER · BECOME · LIVE AI</p><h1 class="become-title">REALITY<br>TRAINING LAB</h1><p class="become-copy">Every trial is generated on demand rather than selected from the ten-world bank. With no credential, Become runs a local WebGPU model on this device. An optional Groq key upgrades generation to GPT-OSS 120B. Both paths feed recent worlds back into novelty rejection before the existing perception, embodiment, consequence, identity and action drills.</p><p class="become-rule"><b>CONTROL RULE:</b> operate as if the scenario is real while retaining awareness that you selected it. Stop if intensity becomes unhelpful. Never use this while driving or during hazardous activity.</p><div class="become-grid three"><div class="become-card"><small>DEFAULT</small><strong>LOCAL AI</strong><p>No account, card or API key. First use downloads a browser model.</p></div><div class="become-card"><small>OPTIONAL CLOUD</small><strong>GPT-OSS 120B</strong><p>Use a free Groq key for higher-capacity generation.</p></div><div class="become-card"><small>NOVELTY</small><strong>REJECT + RETRY</strong><p>Recent worlds are compared and excessive similarity is rejected.</p></div></div><div class="become-facts"><span class="become-fact">${localCapable?'WEBGPU AVAILABLE':'WEBGPU NOT DETECTED'}</span>${hasKey?'<span class="become-fact">GROQ KEY LOADED FOR THIS TAB</span>':''}</div><div class="become-divider"></div><p class="become-label">NUMBER OF LIVE SCENARIOS</p><div class="become-counts">${choices}</div><label class="become-custom">CUSTOM 1–10 <input id="becomeCustomCount" type="number" min="1" max="10" value="${becomeState.count}" inputmode="numeric"></label>${bLiveCredentialInput()}<div class="become-actions"><button class="become-primary" type="button" data-become-action="begin-session">GENERATE LIVE SESSION</button></div><p class="become-microcopy">${previous?`Previous adaptive-entry score: ${Number(previous.adaptive||0).toFixed(1)}. Its weakest numerical faculty may shape the first trial.`:'No previous numerical session stored.'} Personal life-transfer descriptions are not sent to the scenario generator.</p>`);
+    bPanel(`<p class="become-kicker">DREAM MAKER · BECOME · LIVE AI</p><h1 class="become-title">REALITY<br>TRAINING LAB</h1><p class="become-copy">Every trial is generated live over the internet at the moment it is needed. Become does not select from the ten-world bank and does not run an AI model on this device. The remote director generates a fresh world, rejects excessive similarity to recent worlds, then returns it for the existing perception, embodiment, consequence, identity and action drills.</p><p class="become-rule"><b>CONTROL RULE:</b> operate as if the scenario is real while retaining awareness that you selected it. Stop if intensity becomes unhelpful. Never use this while driving or during hazardous activity.</p><div class="become-grid three"><div class="become-card"><small>DEFAULT</small><strong>LIVE CLOUD</strong><p>Generated remotely on demand. No browser model or model-weight download.</p></div><div class="become-card"><small>MODEL</small><strong>GPT-OSS 120B</strong><p>Each world is constructed by the online generation service in real time.</p></div><div class="become-card"><small>NOVELTY</small><strong>REJECT + RETRY</strong><p>Recent worlds are compared and excessive similarity is rejected before delivery.</p></div></div><div class="become-facts"><span class="become-fact">INTERNET ONLY</span><span class="become-fact">NO MODEL DOWNLOAD</span><span class="become-fact">NO STORED FALLBACK</span>${hasKey?'<span class="become-fact">CLOUD KEY LOADED FOR THIS TAB</span>':''}</div><div class="become-divider"></div><p class="become-label">NUMBER OF LIVE SCENARIOS</p><div class="become-counts">${choices}</div><label class="become-custom">CUSTOM 1–10 <input id="becomeCustomCount" type="number" min="1" max="10" value="${becomeState.count}" inputmode="numeric"></label>${bLiveCredentialInput()}<div class="become-actions"><button class="become-primary" type="button" data-become-action="begin-session">GENERATE LIVE SESSION</button></div><p class="become-microcopy">${previous?`Previous adaptive-entry score: ${Number(previous.adaptive||0).toFixed(1)}. Its weakest numerical faculty may shape the first trial.`:'No previous numerical session stored.'} Personal life-transfer descriptions are not sent to the scenario generator.</p>`);
   };
 
   bBeginSession=async function(){
     bLiveResolveGroqKey();
     const nonce=bLiveNewNonce();
-    becomeLiveSessionNonce=nonce;becomeLivePending.clear();becomeLiveLastError='';
+    becomeLiveSessionNonce=nonce;becomeLivePending.clear();becomeLiveLastError='';becomeLiveLastErrorCode='';
     becomeState.queue=Array.from({length:becomeState.count},()=>null);
     becomeState.scenarioIndex=0;becomeState.results=[];becomeState.transferScores={};
-    bLiveLoading(0,bLiveGetGroqKey()?'GPT-OSS 120B is constructing the first world now.':'Local AI is preparing the first world now. The first run may need a one-time model download.');
+    bLiveLoading(0,'The online model is constructing the first world now. Nothing is being generated or downloaded locally.');
     try{
       const first=await bLiveGenerate(0,nonce);
       if(nonce!==becomeLiveSessionNonce)return;
@@ -268,7 +158,7 @@
     const next=becomeState.scenarioIndex+1;
     if(next>=becomeState.queue.length){bRenderTransferForm();return;}
     if(!becomeState.queue[next]){
-      bLiveLoading(next,'The next trial is being generated from the worlds you have already inhabited and the scores you just produced.');
+      bLiveLoading(next,'The next world is being generated online from the worlds you have already inhabited and the scores you just produced.');
       try{const scenario=await bLivePrefetch(next);if(!scenario)throw new Error('The live generator returned no scenario.');}
       catch(error){bLiveError(error);return;}
     }
