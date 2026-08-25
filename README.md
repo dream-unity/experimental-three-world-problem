@@ -54,20 +54,13 @@ False shots are classified as **stale-role perseveration**, inside/outside rever
 
 Become occupies **Dream Maker → BECOME**, replacing Metamorph while leaving the other eight portal positions intact.
 
-The prototype treats vivid imagination as a trainable system rather than one undifferentiated ability. A player chooses **1, 3, 5, 10, or a custom number of scenarios**. Ten first-person environments are included:
+Become is deliberately **internet-only for scenario generation**. A player chooses **1, 3, 5, 10, or a custom number of scenarios**. Each scenario is generated remotely at the moment it is needed; the live path does not select a prewritten world and does not download a language model, model weights, WebGPU runtime or CPU/WASM inference stack into the browser.
 
-- an ice-hockey breakaway;
-- a concert opening;
-- an alpine rescue in a whiteout;
-- an orbital repair;
-- an emergency courtroom submission;
-- a zero-visibility cave dive;
-- the final bend of a championship sprint;
-- a difficult relationship conversation;
-- wildfire command after a wind shift;
-- first contact with a non-human craft.
+The browser sends a compact request to the remote Become director. That request can include summaries of recent generated worlds and numerical training performance. The remote service generates a fresh structured scenario with GPT-OSS 120B, compares it against recent worlds, rejects excessive similarity, and retries before returning the finished scenario. There is **no stored live fallback**: if remote generation fails, the game reports the failure rather than pretending a banked scenario was newly generated.
 
-Each world trains **seventeen 10-second faculties** independently, followed immediately by a 1–10 self-score:
+The remote service may hold its inference credential server-side. If it is not provisioned that way, the interface can accept a Groq key for the current browser tab; that key is used only for remote generation and is not persisted into performance history. Either path remains live internet generation—there is no on-device model fallback.
+
+Each generated world trains **seventeen 10-second faculties** independently, followed immediately by a 1–10 self-score:
 
 1. Sensory Presence
 2. Object Tangibility
@@ -91,7 +84,7 @@ A scenario report separates strong and weak faculties instead of collapsing ever
 
 ### Reality transfer
 
-After the selected fictional scenarios, the player defines:
+After the selected generated scenarios, the player defines:
 
 - the most important current goal, dilemma, fear, decision or opportunity;
 - an observable success point;
@@ -103,7 +96,7 @@ The session finishes with a **30-second state-entry** test. The player taps **EN
 
 The governing distinction is controlled as-if conviction, not literal confusion about reality. The player is repeatedly instructed to retain awareness that the simulation was chosen, include inconvenient constraints, stop if intensity becomes unhelpful, and complete a deliberate exit. It must not be used while driving or during hazardous activity.
 
-Personal descriptions remain in active page memory only. The game stores only aggregate numerical training results and a completion timestamp in local browser storage; it sends no personal scenario text to a server.
+Personal life-transfer descriptions remain in active page memory only and are not sent to the scenario generator. The generator receives only the compact live-generation context required for novelty/adaptation, while local performance history stores aggregate numerical training results and a completion timestamp.
 
 ## Controls
 
@@ -129,7 +122,7 @@ Personal descriptions remain in active page memory only. The game stores only ag
 
 ## Shared architecture
 
-All nine games retain shared navigation, local best scores, responsive layouts, synthesized audio, capped rendering on lower-powered devices and suspension of the 3D overview while a game is active. No external engine, model, font, analytics service or video asset is required.
+The nine games retain shared navigation, local best scores, responsive layouts, synthesized audio, capped rendering on lower-powered devices and suspension of the 3D overview while a game is active. The 3D/game layer requires no external game engine. **Become is the deliberate exception for inference:** its scenario director is a remote internet service so every live trial can be generated on demand without downloading a model to the player’s device.
 
 Key files:
 
@@ -140,9 +133,11 @@ Key files:
 - `arcade-parts/part-01.txt` … `part-05.txt` — original unified nine-game runtime.
 - `arcade-parts/perceive-role-logic.txt` — testable relational-role geometry and diagnostics.
 - `arcade-parts/perceive-aerial-01.txt` … `perceive-aerial-08.txt` — Parallax Wing combat, telemetry and rendering.
-- `arcade-parts/become-lab-01.txt` — Become scenarios, timers, scoring, transfer, entry-latency measurement and rendering.
+- `arcade-parts/become-lab-01.txt` — Become timers, scoring, transfer, entry-latency measurement and core rendering.
+- `arcade-parts/become-live-02.txt` — internet-only live generation dispatcher, novelty context, prefetch and error handling.
+- `api/become-scenario.js` — remote GPT-OSS 120B scenario-generation endpoint with structured output and server-side novelty rejection.
 - `tests/role-drift.test.mjs` — deterministic relational-role and transformation tests.
-- `tests/validate.mjs` — nine-portal compatibility, syntax, static integration and runtime smoke validation.
+- `tests/validate.mjs` — nine-portal compatibility, syntax, internet-only Become integration and runtime smoke validation.
 
 ## Validation and deployment
 
@@ -150,4 +145,4 @@ Key files:
 npm test
 ```
 
-GitHub Actions validates every pull request. After a push to `main`, it waits for GitHub Pages, compares the live HTML, styling, loader and every game chunk byte-for-byte against the validated source, and commits a machine-readable deployment receipt.
+GitHub Actions validates every pull request. After a push to `main`, it waits for GitHub Pages, compares the live HTML, styling, loader and every active game chunk byte-for-byte against the validated source, verifies the remote Become service identity, and commits a machine-readable deployment receipt.
