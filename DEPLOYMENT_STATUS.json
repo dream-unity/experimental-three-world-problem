@@ -1,7 +1,7 @@
 {
   "project": "Dream Unity \u2014 Experimental Three-World Problem",
   "deployment": "verified-live",
-  "source_sha": "58255dc3c164a65c5149408c4ac7f1b94268de90",
+  "source_sha": "adf2eba857f869674da26c65056e0bee7db83368",
   "page_url": "https://dream-unity.github.io/experimental-three-world-problem/",
   "portal_replacements": [
     {
@@ -63,11 +63,11 @@
     "arcade-parts/become-lab-01.txt"
   ],
   "sha256": [
-    "2889c9fdd9279e8be7a72cbb10def337db3fc75b8b0ec576566643353054ce50  /tmp/dream-unity-live/index.html",
+    "cf1c22cc3e2c26ae8fbf67b5435292f64ca6b2df730dfa76c80e470ee6733ebb  /tmp/dream-unity-live/index.html",
     "008f907be470e8b387badb2534fa4df0c55b5bfc1c71c75d1beb9ef9ed963191  /tmp/dream-unity-live/styles.css",
     "ad8dc6788a87c34201b132b88d8e5eb3ed439a0644f54a9610d2398d1b877536  /tmp/dream-unity-live/become.css",
     "2107036b6397210444b31df52260fffb6a62d0447fefbc262beb3ee45f5b2d65  /tmp/dream-unity-live/main.js",
-    "0f5a7ac41706bd6b580219cbea49bb805d1c603c33bf61932413e2a33c19baff  /tmp/dream-unity-live/arcade.js",
+    "42c6da09590058f93a2cc0f0903d2b848443373f88d43f6a5a316bd80385f400  /tmp/dream-unity-live/arcade.js",
     "5ea7269b5c3158bbbb8fd520439c3bd3b45176537aa018beebb6a36fe68190c1  /tmp/dream-unity-live/arcade-parts/become-lab-01.txt",
     "4d7006d17cf3ae67cfd39516fe8df857bd44d82a6cb7aad4b81067484d7e2da7  /tmp/dream-unity-live/arcade-parts/part-01.txt",
     "526f14079e2ebf9560a8648a866a7bf70c8ae9f83f6bc2edcc68d861a65e04f2  /tmp/dream-unity-live/arcade-parts/part-02.txt",
@@ -84,5 +84,5 @@
     "b675b4a09a5fae66938b1b5b83889357dcc45d08641f11901f80fe46aa9f12b7  /tmp/dream-unity-live/arcade-parts/perceive-aerial-08.txt",
     "08b62c2248bed6690890881f12d4e9a157690329aaff6f3a253a3723aaa69245  /tmp/dream-unity-live/arcade-parts/perceive-role-logic.txt"
   ],
-  "verified_at": "2026-08-25T12:04:59.386367+00:00"
+  "verified_at": "2026-08-25T12:06:16.868916+00:00"
 }
