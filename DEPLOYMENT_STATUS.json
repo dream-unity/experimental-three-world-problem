@@ -1,0 +1,48 @@
+{
+  "project": "Dream Unity \u2014 Experimental Three-World Problem",
+  "deployment": "verified-live",
+  "source_sha": "b639be07a69a95987a30435b21fbc12a5c30178b",
+  "page_url": "https://dream-unity.github.io/experimental-three-world-problem/",
+  "portal_replaced": "Dream Machine / Perceive",
+  "game": "Parallax Wing",
+  "nine_game_compatibility": "validated",
+  "relation_families": [
+    "symmetry",
+    "common-fate",
+    "counterphase",
+    "anchor",
+    "bridge",
+    "rotation",
+    "convergence",
+    "mixed composition"
+  ],
+  "files_compared": [
+    "index.html",
+    "styles.css",
+    "main.js",
+    "arcade.js",
+    "arcade-parts/part-01.txt",
+    "arcade-parts/part-02.txt",
+    "arcade-parts/part-03.txt",
+    "arcade-parts/part-04.txt",
+    "arcade-parts/part-05.txt",
+    "arcade-parts/perceive-aerial-01.txt",
+    "arcade-parts/perceive-aerial-02.txt",
+    "arcade-parts/perceive-aerial-03.txt"
+  ],
+  "sha256": [
+    "c4ebb2ca3a356af43d91814b0f939a66b6434a7b2778645731c37fd3e973b52e  /tmp/dream-unity-live/index.html",
+    "008f907be470e8b387badb2534fa4df0c55b5bfc1c71c75d1beb9ef9ed963191  /tmp/dream-unity-live/styles.css",
+    "2107036b6397210444b31df52260fffb6a62d0447fefbc262beb3ee45f5b2d65  /tmp/dream-unity-live/main.js",
+    "a31119c7befe9bd6f0894bd5738b45eb3c108a9f96071772a494e33d1f1ba3d9  /tmp/dream-unity-live/arcade.js",
+    "4d7006d17cf3ae67cfd39516fe8df857bd44d82a6cb7aad4b81067484d7e2da7  /tmp/dream-unity-live/arcade-parts/part-01.txt",
+    "526f14079e2ebf9560a8648a866a7bf70c8ae9f83f6bc2edcc68d861a65e04f2  /tmp/dream-unity-live/arcade-parts/part-02.txt",
+    "183630ab3997f38ab5e2f2faf54505e9c4683c5885b3354fbb49e5508347b48c  /tmp/dream-unity-live/arcade-parts/part-03.txt",
+    "d0f4ae1a65b4edad671f9a761bd5ac1658e55e0b610a174cfaaef5a5d68c23be  /tmp/dream-unity-live/arcade-parts/part-04.txt",
+    "f4851d57f4742a3cd8df8c86b26660b1174fe6afc21119b9f2dba7877be6d04d  /tmp/dream-unity-live/arcade-parts/part-05.txt",
+    "50c7fdbca9765645654f1cd397d30aa041bf0c1cb0778b90c23709c7087bb2f8  /tmp/dream-unity-live/arcade-parts/perceive-aerial-01.txt",
+    "ad68c688acb63273d16a0004484cba301eca4e163e8ba3ccf90c167e99384646  /tmp/dream-unity-live/arcade-parts/perceive-aerial-02.txt",
+    "ee633dc36ad5a966c97a21c7f35713880ab4acad3b668c7a60a044adaf112379  /tmp/dream-unity-live/arcade-parts/perceive-aerial-03.txt"
+  ],
+  "verified_at": "2026-08-25T05:19:09.202663+00:00"
+}
