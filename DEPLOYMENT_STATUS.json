@@ -1,7 +1,7 @@
 {
   "project": "Dream Unity \u2014 Experimental Three-World Problem",
   "deployment": "verified-live",
-  "source_sha": "009715cb8fef5313707df55a55f4df415ae8048e",
+  "source_sha": "68d472f26e49fa72b0d08a8c0aa5ec235e959bb5",
   "page_url": "https://dream-unity.github.io/experimental-three-world-problem/",
   "nine_portal_compatibility": "validated",
   "perceive": {
@@ -32,13 +32,13 @@
     "personal_transfer_text_sent_to_generator": false
   },
   "sha256": [
-    "fdbf34449a1114c7e9c97787b2a777cb5f35d6e1ab917def933ca91794df1eba  /tmp/dream-unity-live/index.html",
+    "65166e7f52af137e2eb0df3199ba3e9960fe08f526c1abecddb4c912bb1e0ca8  /tmp/dream-unity-live/index.html",
     "008f907be470e8b387badb2534fa4df0c55b5bfc1c71c75d1beb9ef9ed963191  /tmp/dream-unity-live/styles.css",
     "ad8dc6788a87c34201b132b88d8e5eb3ed439a0644f54a9610d2398d1b877536  /tmp/dream-unity-live/become.css",
     "2107036b6397210444b31df52260fffb6a62d0447fefbc262beb3ee45f5b2d65  /tmp/dream-unity-live/main.js",
-    "c936d88b06960b74166d675003e57bd13adaf631e88bbe7b68cde35ee4a0f610  /tmp/dream-unity-live/arcade.js",
+    "f8e63db8a6084e5f384dfc719c33eaee856089091f8c50bd0cdb43c885b5f366  /tmp/dream-unity-live/arcade.js",
     "5ea7269b5c3158bbbb8fd520439c3bd3b45176537aa018beebb6a36fe68190c1  /tmp/dream-unity-live/arcade-parts/become-lab-01.txt",
-    "feebc486c4a86859dbb1b1e9017b04c4516ab3685f2b49d4b999084ebf79fb9b  /tmp/dream-unity-live/arcade-parts/become-live-02.txt",
+    "38dd2755b2b1e78a0683bb872b996bcd08d1a71ea3a6f52d6113094c00d4a92c  /tmp/dream-unity-live/arcade-parts/become-live-02.txt",
     "4d7006d17cf3ae67cfd39516fe8df857bd44d82a6cb7aad4b81067484d7e2da7  /tmp/dream-unity-live/arcade-parts/part-01.txt",
     "526f14079e2ebf9560a8648a866a7bf70c8ae9f83f6bc2edcc68d861a65e04f2  /tmp/dream-unity-live/arcade-parts/part-02.txt",
     "183630ab3997f38ab5e2f2faf54505e9c4683c5885b3354fbb49e5508347b48c  /tmp/dream-unity-live/arcade-parts/part-03.txt",
@@ -54,5 +54,5 @@
     "b675b4a09a5fae66938b1b5b83889357dcc45d08641f11901f80fe46aa9f12b7  /tmp/dream-unity-live/arcade-parts/perceive-aerial-08.txt",
     "08b62c2248bed6690890881f12d4e9a157690329aaff6f3a253a3723aaa69245  /tmp/dream-unity-live/arcade-parts/perceive-role-logic.txt"
   ],
-  "verified_at": "2026-08-25T16:30:38.060772+00:00"
+  "verified_at": "2026-08-25T16:37:49.366276+00:00"
 }
