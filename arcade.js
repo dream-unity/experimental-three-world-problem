@@ -1,11 +1,13 @@
 (() => {
   'use strict';
   const VERSION = '20260825-role-drift-become-1';
+  const LIVE_VERSION = '20260825-become-live-gpt-1';
   const basePaths = [1, 2, 3, 4, 5].map((n) => `./arcade-parts/part-${String(n).padStart(2, '0')}.txt?v=${VERSION}`);
   const roleLogicPath = `./arcade-parts/perceive-role-logic.txt?v=${VERSION}`;
   const perceivePaths = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => `./arcade-parts/perceive-aerial-${String(n).padStart(2, '0')}.txt?v=${VERSION}`);
   const becomePaths = [1].map((n) => `./arcade-parts/become-lab-${String(n).padStart(2, '0')}.txt?v=${VERSION}`);
-  const paths = [...basePaths, roleLogicPath, ...perceivePaths, ...becomePaths];
+  const becomeLivePath = `./arcade-parts/become-live-02.txt?v=${LIVE_VERSION}`;
+  const paths = [...basePaths, roleLogicPath, ...perceivePaths, ...becomePaths, becomeLivePath];
 
   Promise.all(paths.map((path) => fetch(path, { cache: 'force-cache' }).then((response) => {
     if (!response.ok) throw new Error(`Arcade chunk failed: ${response.status} ${path}`);
@@ -23,6 +25,8 @@
     // The original nine-game engine remains intact. The testable PERCEIVE
     // geometry, fighter replacement and BECOME laboratory are injected inside
     // its private scope, preserving one lifecycle and seven sibling portals.
+    // The second BECOME chunk overrides only scenario sourcing so each trial
+    // can be generated live while retaining the existing training lifecycle.
     const completeSource = `${baseSource.slice(0, closeIndex)}\n${roleLogicSource}\n${perceiveSource}\n${becomeSource}\n${baseSource.slice(closeIndex)}`;
     Function(completeSource)();
   }).catch((error) => {
