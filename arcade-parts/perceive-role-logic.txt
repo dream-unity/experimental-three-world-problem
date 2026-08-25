@@ -1,58 +1,159 @@
 
-  // Pure relational geometry used by Parallax Wing and its deterministic tests.
-  function roleDriftGeometry(escorts, outsideAxis, options = {}) {
-    const threshold = Number.isFinite(options.threshold) ? options.threshold : 0.018;
-    const yScale = Number.isFinite(options.yScale) ? options.yScale : 0.84;
-    const active = (escorts || []).filter((escort) => escort && escort.alive !== false);
-    const rawAxis = [Number(outsideAxis?.[0]) || 0, (Number(outsideAxis?.[1]) || 0) * yScale];
-    const axisLength = Math.max(0.000001, Math.hypot(rawAxis[0], rawAxis[1]));
-    const axis = [rawAxis[0] / axisLength, rawAxis[1] / axisLength];
-    const metrics = active.map((escort) => {
-      const relative = [Number(escort.rx) || 0, (Number(escort.ry) || 0) * yScale];
-      return {
-        id: escort.id,
-        escort,
-        projection: relative[0] * axis[0] + relative[1] * axis[1],
-        distance: Math.hypot(relative[0], relative[1]),
-      };
-    });
-    let outside = metrics.filter((metric) => metric.projection > threshold);
-    if (!outside.length && metrics.length) {
-      const maximumProjection = Math.max(...metrics.map((metric) => metric.projection));
-      outside = metrics.filter((metric) => metric.projection >= maximumProjection - 0.012);
-    }
-    outside.sort((a, b) => a.distance - b.distance || b.projection - a.projection || String(a.id).localeCompare(String(b.id)));
-    const inside = metrics
-      .filter((metric) => metric.projection <= threshold)
-      .sort((a, b) => a.distance - b.distance || a.projection - b.projection || String(a.id).localeCompare(String(b.id)));
+  // Pure causal-relational geometry for Parallax Wing. These functions are
+  // deliberately independent from rendering so the visible world and tests
+  // use the same relation definitions.
+  function causalSegmentRelation(anchorA, anchorB, relay, options = {}) {
+    const minProjection = Number.isFinite(options.minProjection) ? options.minProjection : 0.16;
+    const maxProjection = Number.isFinite(options.maxProjection) ? options.maxProjection : 0.84;
+    const maxNormalisedDistance = Number.isFinite(options.maxNormalisedDistance)
+      ? options.maxNormalisedDistance
+      : 0.075;
+    const minCrossingSpeed = Number.isFinite(options.minCrossingSpeed) ? options.minCrossingSpeed : 0.035;
+
+    const abx = (Number(anchorB?.rx) || 0) - (Number(anchorA?.rx) || 0);
+    const aby = (Number(anchorB?.ry) || 0) - (Number(anchorA?.ry) || 0);
+    const lengthSq = Math.max(1e-8, abx * abx + aby * aby);
+    const length = Math.sqrt(lengthSq);
+    const apx = (Number(relay?.rx) || 0) - (Number(anchorA?.rx) || 0);
+    const apy = (Number(relay?.ry) || 0) - (Number(anchorA?.ry) || 0);
+    const projection = (apx * abx + apy * aby) / lengthSq;
+    const closestX = (Number(anchorA?.rx) || 0) + abx * projection;
+    const closestY = (Number(anchorA?.ry) || 0) + aby * projection;
+    const dx = (Number(relay?.rx) || 0) - closestX;
+    const dy = (Number(relay?.ry) || 0) - closestY;
+    const perpendicularDistance = Math.hypot(dx, dy);
+    const normalisedDistance = perpendicularDistance / length;
+    const normal = [-aby / length, abx / length];
+    const crossingVelocity = (Number(relay?.vx) || 0) * normal[0] + (Number(relay?.vy) || 0) * normal[1];
+    const withinSegment = projection >= minProjection && projection <= maxProjection;
+    const nearLine = normalisedDistance <= maxNormalisedDistance;
+    const crossing = Math.abs(crossingVelocity) >= minCrossingSpeed;
+    const active = withinSegment && nearLine && crossing;
+    const edgeRoom = Math.min(projection - minProjection, maxProjection - projection);
+    const distanceStrength = 1 - Math.min(1, normalisedDistance / Math.max(1e-6, maxNormalisedDistance));
+    const projectionStrength = Math.max(0, Math.min(1, edgeRoom / 0.2));
+    const speedStrength = Math.max(0, Math.min(1, Math.abs(crossingVelocity) / Math.max(minCrossingSpeed * 2.6, 1e-6)));
+
+    let negativeType = null;
+    if (!withinSegment) negativeType = 'line-extension-not-between';
+    else if (!nearLine) negativeType = 'near-but-not-between';
+    else if (!crossing) negativeType = 'static-alignment-not-crossing';
+
     return {
-      axis,
-      threshold,
-      yScale,
-      metrics,
-      metricsById: new Map(metrics.map((metric) => [metric.id, metric])),
-      outside,
-      inside,
-      targetId: outside[0]?.id || null,
-      insideNearestId: inside[0]?.id || null,
-      margin: outside.length > 1 ? outside[1].distance - outside[0].distance : 1,
+      active,
+      projection,
+      perpendicularDistance,
+      normalisedDistance,
+      crossingVelocity,
+      normal,
+      lineLength: length,
+      withinSegment,
+      nearLine,
+      crossing,
+      strength: active ? distanceStrength * 0.5 + projectionStrength * 0.25 + speedStrength * 0.25 : 0,
+      negativeType,
     };
   }
 
-  function roleDriftClassifyShot({
-    shotId,
-    leaderId = 'leader',
-    currentTargetId,
-    previousTargetId,
-    secondsSinceSwitch = Number.POSITIVE_INFINITY,
-    geometry,
-  } = {}) {
+  function causalTriangleRelation(anchorA, anchorB, anchorC, relay, options = {}) {
+    const minArea = Number.isFinite(options.minArea) ? options.minArea : 0.018;
+    const edgeMarginRequired = Number.isFinite(options.edgeMarginRequired) ? options.edgeMarginRequired : 0.025;
+    const ax = Number(anchorA?.rx) || 0;
+    const ay = Number(anchorA?.ry) || 0;
+    const bx = Number(anchorB?.rx) || 0;
+    const by = Number(anchorB?.ry) || 0;
+    const cx = Number(anchorC?.rx) || 0;
+    const cy = Number(anchorC?.ry) || 0;
+    const px = Number(relay?.rx) || 0;
+    const py = Number(relay?.ry) || 0;
+    const area2 = (bx - ax) * (cy - ay) - (by - ay) * (cx - ax);
+    const area = Math.abs(area2) * 0.5;
+    if (area < minArea) {
+      return { active: false, inside: false, area, edgeMargin: -1, strength: 0, negativeType: 'open-triangle-not-enclosed' };
+    }
+    const sign = area2 >= 0 ? 1 : -1;
+    const edgeValue = (x1, y1, x2, y2) => sign * ((x2 - x1) * (py - y1) - (y2 - y1) * (px - x1));
+    const e1 = edgeValue(ax, ay, bx, by);
+    const e2 = edgeValue(bx, by, cx, cy);
+    const e3 = edgeValue(cx, cy, ax, ay);
+    const sideLengths = [Math.hypot(bx - ax, by - ay), Math.hypot(cx - bx, cy - by), Math.hypot(ax - cx, ay - cy)];
+    const normalisedEdges = [e1 / Math.max(1e-6, sideLengths[0]), e2 / Math.max(1e-6, sideLengths[1]), e3 / Math.max(1e-6, sideLengths[2])];
+    const edgeMargin = Math.min(...normalisedEdges);
+    const inside = e1 >= 0 && e2 >= 0 && e3 >= 0;
+    const active = inside && edgeMargin >= edgeMarginRequired;
+    return {
+      active,
+      inside,
+      area,
+      edgeMargin,
+      strength: active ? Math.max(0, Math.min(1, edgeMargin / (edgeMarginRequired * 3.3))) : 0,
+      negativeType: active ? null : inside ? 'boundary-touch-not-enclosed' : 'outside-triangle-not-enclosed',
+    };
+  }
+
+  function causalWeaveEvaluate(scene, options = {}) {
+    const jets = scene?.jets || [];
+    const byId = new Map(jets.filter((jet) => jet && jet.alive !== false).map((jet) => [jet.id, jet]));
+    const role = scene?.roles || {};
+    const law = scene?.law || 'between';
+    const relay = byId.get(role.relayId);
+    const anchorA = byId.get(role.anchorAId);
+    const anchorB = byId.get(role.anchorBId);
+    const anchorC = byId.get(role.anchorCId);
+    if (!relay || !anchorA || !anchorB) {
+      return { law, active: false, targetId: null, strength: 0, negativeType: 'missing-relational-object' };
+    }
+
+    const segment = causalSegmentRelation(anchorA, anchorB, relay, options.segment);
+    if (law === 'between') {
+      return {
+        law,
+        active: segment.active,
+        targetId: segment.active ? relay.id : null,
+        strength: segment.strength,
+        negativeType: segment.negativeType,
+        relation: segment,
+      };
+    }
+
+    if (law === 'flow') {
+      const flowDirection = scene.flowDirection >= 0 ? 1 : -1;
+      return {
+        law,
+        active: segment.active,
+        targetId: segment.active ? (flowDirection > 0 ? anchorB.id : anchorA.id) : null,
+        strength: segment.strength,
+        negativeType: segment.negativeType,
+        relation: segment,
+        flowDirection,
+      };
+    }
+
+    if (law === 'enclosure') {
+      if (!anchorC) return { law, active: false, targetId: null, strength: 0, negativeType: 'missing-triangle-anchor' };
+      const triangle = causalTriangleRelation(anchorA, anchorB, anchorC, relay, options.triangle);
+      return {
+        law,
+        active: triangle.active,
+        targetId: triangle.active ? relay.id : null,
+        strength: triangle.strength,
+        negativeType: triangle.negativeType,
+        relation: triangle,
+      };
+    }
+
+    return { law, active: false, targetId: null, strength: 0, negativeType: 'unknown-relational-law' };
+  }
+
+  function causalWeaveClassifyShot({ shotId, evaluation, scene, previousTargetId = null, secondsSinceTargetChange = Infinity } = {}) {
     if (!shotId) return 'empty-space-shot';
-    if (shotId === leaderId) return 'reference-object-substitution';
-    if (shotId === currentTargetId) return null;
-    if (shotId === previousTargetId && secondsSinceSwitch < 1.35) return 'stale-role-perseveration';
-    if (shotId === geometry?.insideNearestId) return 'inside-outside-reversal';
-    const metric = geometry?.metricsById?.get?.(shotId);
-    if (metric && metric.projection > (geometry?.threshold ?? 0.018)) return 'outside-distance-substitution';
-    return 'screen-position-substitution';
+    if (!evaluation?.active) return evaluation?.negativeType || 'false-positive-without-relation';
+    if (shotId === evaluation.targetId) return null;
+    if (shotId === previousTargetId && secondsSinceTargetChange < 1.15) return 'stale-causal-target';
+    const role = scene?.roles || {};
+    if (shotId === role.relayId && evaluation.law === 'flow') return 'relay-for-downstream-anchor-substitution';
+    if ((shotId === role.anchorAId || shotId === role.anchorBId) && evaluation.law === 'between') return 'anchor-for-between-object-substitution';
+    if ((shotId === role.anchorAId || shotId === role.anchorBId) && evaluation.law === 'flow') return 'wrong-flow-endpoint';
+    if (shotId === role.anchorCId && evaluation.law === 'enclosure') return 'boundary-for-enclosed-object-substitution';
+    return 'surface-proximity-substitution';
   }

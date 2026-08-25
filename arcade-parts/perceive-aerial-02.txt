@@ -1,99 +1,110 @@
-        committedTurnSign: initialTurn,
-        nextTurnAt: config.turnChanges ? rand(config.turnHoldMax, config.turnHoldMin) : Number.POSITIVE_INFINITY,
-        target: null,
-        previousTarget: null,
-        candidate: null,
-        candidateTimer: 0,
-        targetStableFor: 0,
-        roleSwitchAt: 0,
-        reacquired: false,
-        reticleHold: 0,
+    function createEpisode(E) {
+      const law = lawForLevel(level);
+      const config = levelConfig(level, law);
+      const demoKind = nextDemoKind(law);
+      const positive = episodePolarity(config, demoKind);
+      const { jets, roles } = buildRoles(law);
+      scene = {
+        law,
+        config,
+        jets,
+        roles,
+        flowDirection: choose([-1, 1]),
+        age: 0,
+        depth: 0.07,
+        orientation: rand(Math.PI, -Math.PI),
+        rotationDrift: rand(0.22, -0.22),
+        scaleBias: rand(1.08, 0.9),
+        lane: rand(0.08, -0.08),
+        positive,
+        negativeVariant: positive ? null : chooseNegativeVariant(law),
+        demoKind,
+        demoShotDone: false,
+        demoResolveAt: 0,
+        resolved: false,
+        handled: false,
+        activeEver: false,
+        activeStartedAt: null,
+        activeEndedAt: null,
+        previousTargetId: null,
+        currentTargetId: null,
+        targetChangedAt: 0,
+        evaluation: { active: false, targetId: null, strength: 0, law },
+        fireTimer: rand(config.enemyFireInterval * 1.2, config.enemyFireInterval * 0.72),
         hits: 0,
-        solved: false,
-        failed: false,
-        fireTimer: rand(config.fireInterval * 1.18, config.fireInterval * 0.72),
         startedAt: performance.now(),
-        outsideAxis: [-initialTurn, 0],
-        insideAxis: [initialTurn, 0],
-        outsideVisual: [-initialTurn, 0],
-        insideVisual: [initialTurn, 0],
-        roleMargin: 1,
-        turnTransition: false,
       };
-      resolveTimer = 0;
+      enemyShots = [];
+      tracers = [];
       wrongShotCooldown = 0;
-      updateFormation(E, 0);
-      E.toast(level <= 2 ? 'NEAREST ESCORT ON THE OUTSIDE' : 'TRACK THE MOVING ROLE', 1.08);
+      resolveTimer = 0;
+      updateSceneGeometry(E, 0.0001);
+      if (!demoKind) E.toast('WATCH THE FIELD', 0.64);
       E.setMetric('SHIELD', `${Math.ceil(player.shield)} · ×${streak}`);
     }
 
-    function updateLeaderTurn(dt) {
-      const config = encounter.config;
-      if (encounter.age >= encounter.nextTurnAt) {
-        encounter.turnTarget *= -1;
-        encounter.nextTurnAt = encounter.age + rand(config.turnHoldMax, config.turnHoldMin);
-      }
-      const blend = 1 - Math.exp(-config.turnResponse * dt);
-      encounter.turnValue = lerp(encounter.turnValue, encounter.turnTarget, blend);
-      encounter.turnTransition = Math.abs(encounter.turnValue) < 0.36;
-      if (!encounter.turnTransition) {
-        const nextCommitted = encounter.turnValue > 0 ? 1 : -1;
-        if (nextCommitted !== encounter.committedTurnSign) {
-          encounter.committedTurnSign = nextCommitted;
-          encounter.candidate = null;
-          encounter.candidateTimer = 0;
-        }
-      }
-
-      encounter.coursePhase += encounter.turnValue * config.turnRate * dt;
-      encounter.laneVelocity += encounter.turnValue * dt * 0.082;
-      encounter.laneVelocity += -encounter.lane * dt * 0.16;
-      encounter.laneVelocity *= Math.exp(-dt * 0.76);
-      encounter.lane = clamp(encounter.lane + encounter.laneVelocity * dt, -0.34, 0.34);
-
-      leader.heading = clamp(encounter.laneVelocity * 2.15 + encounter.turnValue * 0.2, -0.72, 0.72);
-      leader.bank = lerp(leader.bank, encounter.turnValue * 0.9, 1 - Math.exp(-dt * 4.8));
-      leader.pulse = 0.52 + 0.48 * Math.sin(encounter.age * 2.3) ** 2;
-
-      const rightAxis = normalize2([Math.cos(leader.heading), Math.sin(leader.heading)]);
-      encounter.insideAxis = [rightAxis[0] * encounter.committedTurnSign, rightAxis[1] * encounter.committedTurnSign];
-      encounter.outsideAxis = [-encounter.insideAxis[0], -encounter.insideAxis[1]];
-      encounter.insideVisual = normalize2([encounter.insideAxis[0], encounter.insideAxis[1] * 0.84]);
-      encounter.outsideVisual = [-encounter.insideVisual[0], -encounter.insideVisual[1]];
+    function jetById(id) {
+      return scene?.jets.find((jet) => jet.id === id) || null;
     }
 
-    function updateFormation(E, dt) {
-      if (!encounter) return;
-      encounter.age += dt;
-      if (!encounter.solved && !encounter.failed) {
-        encounter.depth = Math.min(1.08, encounter.depth + dt * encounter.config.approachSpeed);
+    function localForBetween(t) {
+      const anchorSpread = 0.255 + Math.sin(scene.age * 0.82) * 0.012;
+      const anchorA = [-anchorSpread, Math.sin(scene.age * 0.55) * 0.012];
+      const anchorB = [anchorSpread, -Math.sin(scene.age * 0.55) * 0.012];
+      const travel = lerp(-0.34, 0.34, ease(t));
+      let relayX = Math.sin(scene.age * 1.35) * 0.024;
+      let relayY = travel;
+      if (!scene.positive) {
+        if (scene.negativeVariant === 'line-extension') relayX = 0.39 + Math.sin(scene.age * 1.1) * 0.018;
+        else if (scene.negativeVariant === 'near-offset') relayY = lerp(-0.34, -0.09, ease(t)) + Math.sin(t * Math.PI) * 0.028;
+        else {
+          relayX = lerp(-0.22, 0.22, ease(t));
+          relayY = 0.052 + Math.sin(scene.age * 1.2) * 0.012;
+        }
       }
-      updateLeaderTurn(dt);
+      const decoyX = scene.positive ? -0.4 + Math.sin(scene.age * 0.9) * 0.025 : -0.31;
+      const decoyY = scene.positive ? lerp(0.25, -0.23, ease(t)) : lerp(0.28, -0.25, ease(t));
+      return {
+        [scene.roles.anchorAId]: anchorA,
+        [scene.roles.anchorBId]: anchorB,
+        [scene.roles.relayId]: [relayX, relayY],
+        [scene.roles.decoyId]: [decoyX, decoyY],
+      };
+    }
 
-      const depth = encounter.depth;
-      const scale = E.u * (0.34 + depth * 0.42);
-      const centerX = E.w * 0.5 + encounter.lane * E.u * 0.72;
-      const centerY = E.top + E.h * (0.15 + depth * 0.42) + Math.sin(encounter.coursePhase * 0.52) * E.u * 0.018;
-      leader.sx = centerX;
-      leader.sy = centerY;
-      leader.size = Math.max(13, E.u * (0.018 + depth * 0.019));
-      leader.trail.push([leader.sx, leader.sy]);
-      if (leader.trail.length > 28) leader.trail.shift();
+    function localForEnclosure(t) {
+      const breathing = 1 + Math.sin(scene.age * 0.72) * 0.035;
+      const anchorA = [-0.265 * breathing, 0.18 * breathing];
+      const anchorB = [0.265 * breathing, 0.18 * breathing];
+      let anchorC = [0, -0.245 * breathing];
+      const travel = lerp(-0.39, 0.27, ease(t));
+      let relayX = Math.sin(scene.age * 1.2) * 0.025;
+      let relayY = travel;
+      if (!scene.positive) {
+        if (scene.negativeVariant === 'outside-triangle') relayX = 0.31 + Math.sin(scene.age * 0.8) * 0.018;
+        else if (scene.negativeVariant === 'boundary-touch') relayX = 0.22;
+        else anchorC = [0, 0.15 + Math.sin(scene.age) * 0.012];
+      }
+      const decoy = [-0.35 + Math.cos(scene.age * 0.66) * 0.035, -0.04 + Math.sin(scene.age * 0.95) * 0.055];
+      return {
+        [scene.roles.anchorAId]: anchorA,
+        [scene.roles.anchorBId]: anchorB,
+        [scene.roles.anchorCId]: anchorC,
+        [scene.roles.relayId]: [relayX, relayY],
+        [scene.roles.decoyId]: decoy,
+      };
+    }
 
-      const config = encounter.config;
-      const active = activeEscorts();
-      for (const escort of active) {
-        const orbit = escort.slotAngle
-          + encounter.age * config.orbitSpeed * escort.orbitDirection
-          + Math.sin(encounter.age * config.weaveSpeed * escort.weaveRate + escort.weavePhase) * config.weaveAmplitude;
-        const radius = escort.baseRadius * (
-          1 + Math.sin(encounter.age * (config.weaveSpeed * 0.73) + escort.radialPhase) * config.radialAmplitude
-        );
-        const bodyX = Math.cos(orbit) * radius;
-        const bodyY = Math.sin(orbit) * radius * 0.66
-          + Math.sin(encounter.age * config.weaveSpeed * 0.52 + escort.weavePhase) * 0.028;
-        const world = rotate2(bodyX, bodyY, leader.heading * 0.78);
-        escort.rx = world[0];
-        escort.ry = world[1];
-        escort.sx = leader.sx + world[0] * scale;
-        escort.sy = leader.sy + world[1] * scale * 0.84;
+    function updateSceneGeometry(E, dt) {
+      if (!scene) return;
+      scene.age += dt;
+      if (!scene.resolved) scene.depth = Math.min(1.08, scene.depth + dt * scene.config.approachSpeed);
+      const t = clamp(scene.age / scene.config.duration, 0, 1);
+      const local = scene.law === 'enclosure' ? localForEnclosure(t) : localForBetween(t);
+      const angle = scene.orientation + scene.age * scene.rotationDrift;
+      const scale = scene.scaleBias * (1 + Math.sin(scene.age * 0.46) * 0.03);
+      for (const jet of scene.jets) {
+        const point = local[jet.id] || [0, 0];
+        const transformed = rotate2(point[0] * scale, point[1] * scale, angle);
+        jet.previousRx = jet.rx;
+        jet.previousRy = jet.ry;

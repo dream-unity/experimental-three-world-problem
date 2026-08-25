@@ -1,26 +1,27 @@
 
-  // Dream Machine / PERCEIVE: PARALLAX WING — RELATIONAL IDENTITY DRIFT.
-  // The target is never an unusual aircraft. It is the escort currently
-  // occupying a live relational role: nearest to the leader on the outside
-  // of the leader's turn. As the formation crosses, that role moves.
+  // Dream Machine / PERCEIVE: PARALLAX WING — CAUSAL WEAVE.
+  // No proposition is stated to the player. The world repeatedly demonstrates
+  // which relational configurations open or preserve shields, then requires
+  // the player to exploit the same causal structure under transformation.
   function createPerceptionAerialGame() {
-    const PROFILE_KEY = 'dream-unity.perceive.parallax-wing.role-drift.v2';
+    const PROFILE_KEY = 'dream-unity.perceive.parallax-wing.causal-weave.v1';
+    const LAW_ORDER = ['between', 'flow', 'enclosure'];
 
     let player;
     let reticle;
-    let leader;
-    let escorts = [];
     let enemyShots = [];
     let tracers = [];
-    let encounter = null;
+    let scene = null;
     let wave = 1;
     let level = 1;
     let streak = 0;
-    let completedFormations = 0;
+    let successes = 0;
     let resolveTimer = 0;
     let wrongShotCooldown = 0;
     let pointerGesture = null;
     let stats;
+    const demonstrations = new Map(LAW_ORDER.map((law) => [law, 0]));
+    const episodeHistory = [];
 
     const rotate2 = (x, y, angle) => {
       const c = Math.cos(angle);
@@ -28,59 +29,60 @@
       return [x * c - y * s, x * s + y * c];
     };
 
-    const length2 = (v) => Math.hypot(v[0], v[1]);
-    const normalize2 = (v) => {
-      const length = Math.max(0.000001, length2(v));
-      return [v[0] / length, v[1] / length];
+    const shuffled = (items) => {
+      const output = [...items];
+      for (let i = output.length - 1; i > 0; i--) {
+        const j = (Math.random() * (i + 1)) | 0;
+        [output[i], output[j]] = [output[j], output[i]];
+      }
+      return output;
     };
 
     function writeProfile(record) {
       try {
-        const existing = JSON.parse(localStorage.getItem(PROFILE_KEY) || '[]');
-        const rows = Array.isArray(existing) ? existing : [];
+        const prior = JSON.parse(localStorage.getItem(PROFILE_KEY) || '[]');
+        const rows = Array.isArray(prior) ? prior : [];
         rows.push(record);
         localStorage.setItem(PROFILE_KEY, JSON.stringify(rows.slice(-240)));
-      } catch { /* Local telemetry is optional. */ }
+      } catch { /* local telemetry is optional */ }
     }
 
-    function levelConfig(value) {
+    function lawForLevel(value) {
+      if (value <= 3) return 'between';
+      if (value <= 6) return 'flow';
+      if (value <= 9) return 'enclosure';
+      return choose(LAW_ORDER);
+    }
+
+    function levelConfig(value, law) {
       const l = clamp(value, 1, 10);
+      const cueStrength = clamp(0.92 - (l - 1) * 0.082, 0.16, 0.92);
       return {
-        escortCount: Math.min(7, 4 + Math.floor((l - 1) / 2)),
-        hitsRequired: Math.min(4, 2 + Math.floor((l - 1) / 4)),
-        approachSpeed: 0.034 + l * 0.0025,
-        orbitSpeed: 0.11 + l * 0.014,
-        weaveSpeed: 0.72 + l * 0.075,
-        weaveAmplitude: 0.42 + l * 0.025,
-        radialAmplitude: 0.13 + l * 0.012,
-        turnRate: 0.36 + l * 0.024,
-        turnResponse: 1.65 + l * 0.09,
-        turnHoldMin: Math.max(2.15, 4.7 - l * 0.21),
-        turnHoldMax: Math.max(3.0, 6.2 - l * 0.22),
-        turnChanges: l >= 3,
-        candidateDwell: Math.max(0.11, 0.24 - l * 0.011),
-        roleHold: Math.max(0.4, 0.82 - l * 0.035),
-        outsideThreshold: 0.018,
-        distanceAdvantage: Math.max(0.045, 0.12 - l * 0.006),
-        fireInterval: Math.max(1.35, 2.8 - l * 0.105),
-        projectileSpeed: 170 + l * 15,
-        assist: l === 1 ? 1 : l === 2 ? 0.72 : l === 3 ? 0.36 : 0,
-        incomingLimit: Math.min(10, 4 + Math.floor(l / 2)),
+        law,
+        duration: Math.max(3.25, 4.75 - l * 0.105),
+        approachSpeed: 0.027 + l * 0.00225,
+        cueStrength,
+        shotsRequired: l < 4 ? 2 : l < 8 ? 3 : 4,
+        activeTolerance: Math.max(0.048, 0.082 - l * 0.0032),
+        crossingSpeed: 0.028 + l * 0.0015,
+        enemyFireInterval: Math.max(1.35, 2.75 - l * 0.11),
+        projectileSpeed: 175 + l * 13,
+        incomingLimit: Math.min(11, 4 + Math.floor(l / 2)),
+        playerShield: 5,
+        negativeRate: clamp(0.35 + l * 0.012, 0.35, 0.48),
       };
     }
 
-    function makeEscort(index, count) {
-      const spacing = TAU / count;
+    function makeJet(id) {
       return {
-        id: `escort-${wave}-${index}-${Math.random().toString(36).slice(2, 7)}`,
-        slotAngle: index * spacing + rand(spacing * 0.16, -spacing * 0.16),
-        baseRadius: rand(0.34, 0.235),
-        weavePhase: rand(TAU, 0),
-        radialPhase: rand(TAU, 0),
-        weaveRate: rand(1.18, 0.84),
-        orbitDirection: choose([-1, 1]),
+        id,
+        role: 'unassigned',
         rx: 0,
         ry: 0,
+        vx: 0,
+        vy: 0,
+        previousRx: 0,
+        previousRy: 0,
         sx: 0,
         sy: 0,
         size: 10,
@@ -89,52 +91,48 @@
         pulse: 0,
         alive: true,
         hitFlash: 0,
-        outsideProjection: 0,
-        distanceToLeader: 1,
+        shieldFlash: 0,
         trail: [],
       };
     }
 
-    function activeEscorts() {
-      return escorts.filter((escort) => escort.alive);
-    }
-
-    function refreshRoleGeometry() {
-      encounter.geometry = roleDriftGeometry(activeEscorts(), encounter.outsideAxis, {
-        threshold: encounter.config.outsideThreshold,
-        yScale: 0.84,
-      });
-      encounter.outsideVisual = encounter.geometry.axis;
-      encounter.insideVisual = [-encounter.geometry.axis[0], -encounter.geometry.axis[1]];
-      for (const metric of encounter.geometry.metrics) {
-        metric.escort.outsideProjection = metric.projection;
-        metric.escort.distanceToLeader = metric.distance;
+    function buildRoles(law) {
+      const count = law === 'enclosure' ? 5 : 4;
+      const jets = shuffled(Array.from({ length: count }, (_, index) => makeJet(`cw-${wave}-${index}-${Math.random().toString(36).slice(2, 7)}`)));
+      const roles = {
+        anchorAId: jets[0].id,
+        anchorBId: jets[1].id,
+        relayId: jets[2].id,
+        decoyId: jets[3].id,
+        anchorCId: law === 'enclosure' ? jets[4].id : null,
+      };
+      for (const jet of jets) {
+        if (jet.id === roles.anchorAId) jet.role = 'anchor-a';
+        else if (jet.id === roles.anchorBId) jet.role = 'anchor-b';
+        else if (jet.id === roles.anchorCId) jet.role = 'anchor-c';
+        else if (jet.id === roles.relayId) jet.role = 'relay';
+        else jet.role = 'decoy';
       }
-      return encounter.geometry;
+      return { jets, roles };
     }
 
-    function createEncounter(E) {
-      const config = levelConfig(level);
-      const initialTurn = choose([-1, 1]);
-      leader = {
-        sx: E.w * 0.5,
-        sy: E.top + E.h * 0.26,
-        size: Math.max(13, E.u * 0.022),
-        heading: 0,
-        bank: initialTurn * 0.72,
-        alive: true,
-        trail: [],
-        pulse: 0.6,
-      };
-      escorts = Array.from({ length: config.escortCount }, (_, index) => makeEscort(index, config.escortCount));
-      enemyShots = [];
-      tracers = [];
-      encounter = {
-        config,
-        age: 0,
-        depth: 0.075,
-        lane: rand(0.08, -0.08),
-        laneVelocity: 0,
-        coursePhase: rand(TAU, 0),
-        turnTarget: initialTurn,
-        turnValue: initialTurn,
+    function chooseNegativeVariant(law) {
+      if (law === 'enclosure') return choose(['outside-triangle', 'boundary-touch', 'open-triangle']);
+      return choose(['line-extension', 'near-offset', 'parallel-near']);
+    }
+
+    function episodePolarity(config, demoKind) {
+      if (demoKind === 'positive') return true;
+      if (demoKind === 'negative') return false;
+      const recent = episodeHistory.slice(-3);
+      if (recent.length >= 2 && recent.at(-1) === recent.at(-2)) return !recent.at(-1);
+      return Math.random() >= config.negativeRate;
+    }
+
+    function nextDemoKind(law) {
+      const progress = demonstrations.get(law) || 0;
+      if (progress === 0) return 'positive';
+      if (progress === 1) return 'negative';
+      return null;
+    }
+

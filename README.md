@@ -12,7 +12,7 @@ The overview can be orbited by mouse or touch. Selecting a world exposes its int
 
 | Portal | Game | Primary operation |
 |---|---|---|
-| **PERCEIVE** | **Parallax Wing** | Continuously identify which fighter currently occupies a changing relational role. |
+| **PERCEIVE** | **Parallax Wing** | Discover and exploit causal relations that are simultaneously visible in a moving fighter formation. |
 | **MODEL** | **Model Forge** | Encode and reconstruct a hidden network. |
 | **PREDICT** | **Oracle Gates** | Extrapolate motion through an occluded interval. |
 | **INTEND** | **Vector Vow** | Select, charge and commit a planned trajectory. |
@@ -22,88 +22,77 @@ The overview can be orbited by mouse or touch. Selecting a world exposes its int
 | **STRUCTURE** | **Lattice Lock** | Construct coherent connectivity across a grid. |
 | **EMERGE** | **Genesis Bloom** | Produce global cascades from local interactions. |
 
-The games are intentionally non-interchangeable. Model Forge trains reconstruction, Oracle Gates trains forward extrapolation, Parallax Wing trains direct perception of a relation that exists now, and Become trains deliberate experiential simulation and transfer.
+The games are intentionally non-interchangeable. Model Forge trains reconstruction, Oracle Gates trains forward extrapolation, Parallax Wing trains direct extraction of causal structure from the present visual field, and Become trains deliberate experiential simulation and transfer.
 
-## Parallax Wing — Relational Identity Drift
+## Parallax Wing — Causal Weave prototype
 
 Parallax Wing occupies **Dream Machine → PERCEIVE**.
 
-A visibly distinct leader jet flies with visually identical escorts. The vulnerable relay is not a permanently marked aircraft. It is the escort **nearest to the leader while occupying the outside of the leader’s turn**.
+The game no longer states a relational rule and no aircraft is designated as “the answer.” Instead, the moving world repeatedly demonstrates contrasting causal events:
 
-The leader banks and leaves a curved flight trace. Escorts weave, cross and change distance, so the role moves from one aircraft to another without any aircraft changing appearance. The player must bind:
+- **when a relation exists, a shield opens and a shot penetrates;**
+- **when a superficially similar relation does not exist, the shield holds and the shot ricochets.**
 
-**leader’s turn → outside of that turn → nearest escort there → fire**
+The first positive and negative examples for each law are demonstrated entirely through aircraft movement, energy transfer and weapon consequence. The player is then placed inside transformed versions of the same causal system. The instruction card says only: **“Watch what the formation causes. Exploit the opening.”**
 
-This is not odd-one-out detection. Correctness cannot be inferred from colour, fixed identity, screen side, altitude or one-object appearance.
+### Three experiential relational laws
 
-### Combat and progression
+#### 1. Between
 
-1. Read the leader’s bank and curved trail.
-2. Determine the outside of the turn.
-3. Compare the escorts occupying that side.
-4. Acquire the nearest outside escort.
-5. Fire to sever the live relay.
-6. Reacquire when the formation crosses or the leader reverses.
-7. Sever enough relays to collapse the leader’s shield network.
+Two fighters exchange shield energy through a visible link while a third fighter crosses the formation. The crossing fighter becomes vulnerable only when it is genuinely **between** the linked pair:
 
-Early encounters use fewer escorts and stronger guidance. The guide arc and label progressively disappear while the physical bank and trail remain. Escort count, crossing rate and relational switching speed increase. Switch hysteresis prevents ambiguous frame-by-frame flicker.
+- it lies within the finite segment joining them;
+- it is sufficiently close to the joining line;
+- it is actually crossing rather than merely sitting near alignment.
 
-False shots are classified as **stale-role perseveration**, inside/outside reversal, outside-distance substitution, reference-object substitution, screen-position substitution or late relational acquisition. The game stores role switches, reacquisition latency, target stability, accuracy and error types locally. These are experimental gameplay measurements, not a validated clinical or IQ assessment.
+Crossing the line beyond an endpoint, passing close without entering the relation, or remaining statically aligned does **not** open the shield.
+
+#### 2. Flow
+
+The same between-relation is combined with directional energy flow. When the crossing occurs, the **downstream endpoint** becomes vulnerable. Reversing the current reverses which endpoint opens. The player must bind:
+
+**crossing relation + visible current direction → vulnerable endpoint**
+
+Shooting the crossing fighter, the upstream endpoint, or a nearby aircraft represents a different mistaken relation.
+
+#### 3. Enclosure
+
+Three fighters create a moving triangular shield circuit. A fourth becomes vulnerable only when it is genuinely enclosed with sufficient margin. Passing near an edge, touching the boundary, remaining outside, or entering a collapsed/open triangle does not produce the consequence.
+
+### Why this belongs to PERCEIVE
+
+Everything needed for the judgment remains visible in the present moment: aircraft positions, links, motion, flow direction, enclosure and shield consequence. The player is not reconstructing a hidden graph as in Model Forge and is not calculating an occluded future state as in Oracle Gates.
+
+The training sequence is:
+
+**experience consequence → compare positive and negative cases → extract the relation → recognize it under rotation, scale, translation and identity change → act through combat**
+
+### Difficulty and anti-shortcut design
+
+- all hostile fighters use the same underlying appearance;
+- identities and logical roles are randomized each episode;
+- orientation, scale, lane and motion vary procedurally;
+- positive and negative episodes are interleaved;
+- exact near-misses define what the relation is **not**;
+- early shield openings are legible, then causal assistance fades;
+- later levels switch among the three learned laws;
+- heat and shield penalties prevent indiscriminate firing;
+- negative episodes reward correct withholding rather than constant shooting;
+- the same rules are transformation-equivariant and do not depend on screen side or colour.
+
+False shots are classified as line-extension confusion, near-but-not-between, static-alignment substitution, relay-for-downstream-endpoint substitution, wrong flow endpoint, boundary-for-enclosed-object substitution, stale causal target, surface proximity substitution or late causal acquisition.
+
+The game stores law-specific accuracy, withholding, misses, firing accuracy, response latency, cue strength and error topology locally. These are experimental gameplay measurements, not a validated clinical or IQ assessment.
 
 ## Become Reality Lab — Controlled as-if training
 
-Become occupies **Dream Maker → BECOME**, replacing Metamorph while leaving the other eight portal positions intact.
+Become occupies **Dream Maker → BECOME**, leaving the other eight portal positions intact.
 
-The prototype treats vivid imagination as a trainable system rather than one undifferentiated ability. A player chooses **1, 3, 5, 10, or a custom number of scenarios**. Ten first-person environments are included:
+The prototype treats vivid imagination as a trainable system rather than one undifferentiated ability. The live GPT layer generates a genuinely new first-person scenario for each requested trial, while the local laboratory retains the controlled 10-second faculty sequence, measurement architecture and personal transfer process.
 
-- an ice-hockey breakaway;
-- a concert opening;
-- an alpine rescue in a whiteout;
-- an orbital repair;
-- an emergency courtroom submission;
-- a zero-visibility cave dive;
-- the final bend of a championship sprint;
-- a difficult relationship conversation;
-- wildfire command after a wind shift;
-- first contact with a non-human craft.
+Each scenario trains seventeen faculties independently: Sensory Presence, Object Tangibility, Spatial Embodiment, Atmospheric Presence, Kinaesthetic Motion, Attentional Immersion, Premise Acceptance, Experiential Conviction, Consequence Presence, Emotional Resonance, Physiological Resonance, Agency, Behavioural Authenticity, Identity Inhabitation, Premise Fidelity, Integrated Reality and Exit Control.
 
-Each world trains **seventeen 10-second faculties** independently, followed immediately by a 1–10 self-score:
-
-1. Sensory Presence
-2. Object Tangibility
-3. Spatial Embodiment
-4. Atmospheric Presence
-5. Kinaesthetic Motion
-6. Attentional Immersion
-7. Premise Acceptance
-8. Experiential Conviction
-9. Consequence Presence
-10. Emotional Resonance
-11. Physiological Resonance
-12. Agency
-13. Behavioural Authenticity
-14. Identity Inhabitation
-15. Premise Fidelity
-16. Integrated Reality
-17. Exit Control
-
-A scenario report separates strong and weak faculties instead of collapsing everything into a vague “visualisation” score.
-
-### Reality transfer
-
-After the selected fictional scenarios, the player defines:
-
-- the most important current goal, dilemma, fear, decision or opportunity;
-- an observable success point;
-- one executable next physical action.
-
-The game then runs eight additional 10-second drills: Success World, Success Embodiment, Lived Consequences, Identity Cause, Reverse Causal Bridge, Friction Inclusion, Motivational Transfer and Behavioural Transfer.
-
-The session finishes with a **30-second state-entry** test. The player taps **ENTERED** only when sensory location, bodily presence, consequence and identity are simultaneously active. Entry speed is combined with a depth score so shallow speed is not rewarded.
-
-The governing distinction is controlled as-if conviction, not literal confusion about reality. The player is repeatedly instructed to retain awareness that the simulation was chosen, include inconvenient constraints, stop if intensity becomes unhelpful, and complete a deliberate exit. It must not be used while driving or during hazardous activity.
-
-Personal descriptions remain in active page memory only. The game stores only aggregate numerical training results and a completion timestamp in local browser storage; it sends no personal scenario text to a server.
+After the fictional scenarios, the player defines a real goal or dilemma, an observable success point and one executable next action. The laboratory then runs eight transfer drills and a 30-second state-entry test. Personal transfer text remains in active page memory and is not sent to the scenario generator.
 
 ## Controls
 
@@ -119,6 +108,7 @@ Personal descriptions remain in active page memory only. The game stores only ag
 - **Mouse:** move to aim; click to fire.
 - **Touch:** drag to manoeuvre; tap to fire.
 - **Keyboard:** WASD or arrows move; Space fires.
+- Enemy projectiles can be dodged or intercepted.
 
 ### Become Reality Lab
 
@@ -129,7 +119,7 @@ Personal descriptions remain in active page memory only. The game stores only ag
 
 ## Shared architecture
 
-All nine games retain shared navigation, local best scores, responsive layouts, synthesized audio, capped rendering on lower-powered devices and suspension of the 3D overview while a game is active. No external engine, model, font, analytics service or video asset is required.
+All nine games retain shared navigation, local best scores, responsive layouts, synthesized audio, capped rendering on lower-powered devices and suspension of the 3D overview while a game is active. No external game engine, model, font, analytics service or video asset is required by the arcade runtime.
 
 Key files:
 
@@ -138,10 +128,11 @@ Key files:
 - `become.css` — responsive Become interface and training readouts.
 - `arcade.js` — versioned loader that assembles the base engine and isolated replacements.
 - `arcade-parts/part-01.txt` … `part-05.txt` — original unified nine-game runtime.
-- `arcade-parts/perceive-role-logic.txt` — testable relational-role geometry and diagnostics.
-- `arcade-parts/perceive-aerial-01.txt` … `perceive-aerial-08.txt` — Parallax Wing combat, telemetry and rendering.
-- `arcade-parts/become-lab-01.txt` — Become scenarios, timers, scoring, transfer, entry-latency measurement and rendering.
-- `tests/role-drift.test.mjs` — deterministic relational-role and transformation tests.
+- `arcade-parts/perceive-role-logic.txt` — pure causal segment, flow, enclosure and diagnostic geometry.
+- `arcade-parts/perceive-aerial-01.txt` … `perceive-aerial-08.txt` — Parallax Wing combat, demonstrations, telemetry and rendering.
+- `arcade-parts/become-lab-01.txt` — Become timers, scoring, transfer and measurement.
+- `arcade-parts/become-live-02.txt` — live GPT scenario sourcing.
+- `tests/causal-weave.test.mjs` — deterministic positive/negative, transformation and diagnostic tests.
 - `tests/validate.mjs` — nine-portal compatibility, syntax, static integration and runtime smoke validation.
 
 ## Validation and deployment
@@ -150,4 +141,4 @@ Key files:
 npm test
 ```
 
-GitHub Actions validates every pull request. After a push to `main`, it waits for GitHub Pages, compares the live HTML, styling, loader and every game chunk byte-for-byte against the validated source, and commits a machine-readable deployment receipt.
+GitHub Actions validates every pull request. After a push to `main`, it waits for GitHub Pages, compares the live HTML, styling, loader and every game chunk byte-for-byte against the validated source, verifies the Become service identity and commits a machine-readable deployment receipt.

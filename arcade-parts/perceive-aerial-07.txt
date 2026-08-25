@@ -1,58 +1,47 @@
-      encounter.fireTimer -= dt;
-      if (encounter.fireTimer <= 0 && encounter.age > 1.4 && !encounter.solved && !encounter.failed) {
-        spawnEnemyShot(E);
-        encounter.fireTimer = rand(encounter.config.fireInterval * 1.2, encounter.config.fireInterval * 0.72);
+        stats.demos++;
+        resolveTimer = 0.48;
+        wave++;
+        return;
       }
-
-      for (let i = enemyShots.length - 1; i >= 0; i--) {
-        const shot = enemyShots[i];
-        shot.x += shot.vx * dt;
-        shot.y += shot.vy * dt;
-        shot.life -= dt;
-        if (shot.life <= 0 || shot.x < -30 || shot.x > E.w + 30 || shot.y > E.bottom + 35) {
-          enemyShots.splice(i, 1);
-          continue;
-        }
-        if (player.invulnerable <= 0 && dist(shot.x, shot.y, player.x, player.y) < player.size * 0.7 + shot.r) {
-          enemyShots.splice(i, 1);
-          hurt(E, 0.55, player.x, player.y, 'EVASIVE FAILURE');
-        }
+      stats.byLaw[scene.law] ||= { correct: 0, wrong: 0, withheld: 0, missed: 0 };
+      if (scene.positive && scene.activeEver) {
+        stats.missed++;
+        stats.byLaw[scene.law].missed++;
+        stats.errors['late-causal-acquisition'] = (stats.errors['late-causal-acquisition'] || 0) + 1;
+        recordOutcome(false, 'late-causal-acquisition', null);
+        hurt(E, 0.9, scene.jets[0]?.sx ?? E.w * 0.5, scene.jets[0]?.sy ?? E.h * 0.35, 'OPENING MISSED');
+      } else {
+        stats.withheld++;
+        stats.byLaw[scene.law].withheld++;
+        const reward = 70 + level * 8;
+        E.addScore(reward, E.w * 0.5, E.top + E.h * 0.3, '+CONTROL');
       }
-
-      for (let i = tracers.length - 1; i >= 0; i--) {
-        tracers[i].life -= dt;
-        if (tracers[i].life <= 0) tracers.splice(i, 1);
-      }
+      episodeHistory.push(scene.positive);
+      if (episodeHistory.length > 8) episodeHistory.shift();
+      resolveTimer = 0.52;
+      wave++;
     }
 
-    function failEncounter(E) {
-      if (!encounter || encounter.solved || encounter.failed) return;
-      encounter.failed = true;
-      stats.errors['late-relational-acquisition'] = (stats.errors['late-relational-acquisition'] || 0) + 1;
-      hurt(E, 1.05, leader.sx, leader.sy, 'FORMATION BROKE THROUGH');
-      E.burst(leader.sx, leader.sy, [255, 82, 105], 22, 210, 3);
-      resolveTimer = 0.72;
-      wave++;
-      writeProfile({
-        at: Date.now(),
-        type: 'formation',
-        completed: false,
-        level,
-        errorType: 'late-relational-acquisition',
-        hits: encounter.hits,
-        required: encounter.config.hitsRequired,
-        roleSwitches: stats.roleSwitches,
-      });
+    function updateEpisodeLifecycle(E, dt) {
+      if (!scene) return;
+      if (!scene.resolved && scene.demoKind && scene.demoShotDone && scene.age >= scene.demoResolveAt) {
+        resolveEpisodeWithoutShot(E);
+      }
+      if (!scene.resolved && scene.age >= scene.config.duration) resolveEpisodeWithoutShot(E);
+      if (scene.resolved) {
+        resolveTimer -= dt;
+        if (resolveTimer <= 0 && player.shield > 0) createEpisode(E);
+      }
     }
 
     function resetUiDefinition() {
       const definition = GAME_BY_KEY['machine:0'];
       if (!definition) return;
       Object.assign(definition, {
-        id: 'parallax-wing-role-drift',
+        id: 'parallax-wing-causal-weave',
         name: 'PARALLAX WING',
         glyph: '✦',
-        rule: "Shoot the escort nearest the leader on the outside of its turn. The role moves when the formation crosses.",
+        rule: 'Watch what the formation causes. Exploit the opening.',
         hint: 'MOVE / AIM · TAP OR SPACE TO FIRE',
         factory: createPerceptionAerialGame,
       });
@@ -66,16 +55,23 @@
         wave = 1;
         level = 1;
         streak = 0;
-        completedFormations = 0;
+        successes = 0;
+        resolveTimer = 0;
+        wrongShotCooldown = 0;
+        demonstrations.clear();
+        for (const law of LAW_ORDER) demonstrations.set(law, 0);
+        episodeHistory.length = 0;
         stats = {
           correct: 0,
           wrong: 0,
+          missed: 0,
+          withheld: 0,
           shots: 0,
           hits: 0,
-          roleSwitches: 0,
-          reacquisitions: 0,
-          reacquisitionLatencies: [],
+          demos: 0,
+          byLaw: {},
           errors: {},
+          latencies: [],
         };
         player = {
           x: E.w * 0.5,
@@ -92,7 +88,7 @@
         reticle = { x: E.w * 0.5, y: E.top + E.h * 0.38 };
         pointerGesture = null;
         E.setMetric('SHIELD', '5 · ×0');
-        createEncounter(E);
+        createEpisode(E);
       },
 
       resize(E) {
@@ -104,24 +100,20 @@
         player.targetY = clamp(player.targetY, E.h * 0.59, E.bottom - 18);
         reticle.x = clamp(reticle.x, 18, E.w - 18);
         reticle.y = clamp(reticle.y, E.top + 18, E.bottom - 42);
-        updateFormation(E, 0);
+        updateSceneGeometry(E, 0.0001);
       },
 
       ambient(E, dt) {
-        if (!encounter) createEncounter(E);
-        updateFormation(E, dt * 0.2);
+        if (!scene) createEpisode(E);
+        updateSceneGeometry(E, dt * 0.18);
       },
 
       update(E, dt) {
-        if (!player || !encounter) return;
+        if (!player || !scene) return;
         updatePlayer(E, dt);
-        updateFormation(E, dt);
+        if (!scene.resolved) updateSceneGeometry(E, dt);
         updateCombat(E, dt);
-        if (!encounter.solved && !encounter.failed && encounter.depth >= 1.035) failEncounter(E);
-        if (encounter.solved || encounter.failed) {
-          resolveTimer -= dt;
-          if (resolveTimer <= 0 && player.shield > 0) createEncounter(E);
-        }
+        updateEpisodeLifecycle(E, dt);
       },
 
       pointerDown(E, x, y) {
@@ -139,3 +131,7 @@
         reticle.y = y;
         if (down && player) {
           player.targetX = x;
+          player.targetY = clamp(y + E.u * 0.17, E.h * 0.59, E.bottom - 20);
+        }
+        if (pointerGesture && down) {
+          if (dist(pointerGesture.x, pointerGesture.y, x, y) > 12) pointerGesture.moved = true;

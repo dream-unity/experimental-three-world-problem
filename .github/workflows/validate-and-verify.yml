@@ -22,7 +22,7 @@ jobs:
     steps:
       - name: Checkout complete repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - name: Validate nine games, Relational Identity Drift and live Become
+      - name: Validate nine games, experiential Causal Weave and live Become
         run: npm test
 
   verify-live:
@@ -88,9 +88,21 @@ jobs:
           test "$matched" = true
 
           grep -q 'PARALLAX WING' /tmp/dream-unity-live/index.html
-          grep -q 'nearest escort on the outside' /tmp/dream-unity-live/index.html
-          grep -q 'function roleDriftGeometry' /tmp/dream-unity-live/arcade-parts/perceive-role-logic.txt
-          grep -q 'stale-role-perseveration' /tmp/dream-unity-live/arcade-parts/perceive-aerial-*.txt
+          grep -q 'Watch what the formation causes' /tmp/dream-unity-live/index.html
+          grep -q 'function causalSegmentRelation' /tmp/dream-unity-live/arcade-parts/perceive-role-logic.txt
+          grep -q 'function causalTriangleRelation' /tmp/dream-unity-live/arcade-parts/perceive-role-logic.txt
+          grep -q 'function causalWeaveEvaluate' /tmp/dream-unity-live/arcade-parts/perceive-role-logic.txt
+          grep -q "'between'" /tmp/dream-unity-live/arcade-parts/perceive-aerial-*.txt
+          grep -q "'flow'" /tmp/dream-unity-live/arcade-parts/perceive-aerial-*.txt
+          grep -q "'enclosure'" /tmp/dream-unity-live/arcade-parts/perceive-aerial-*.txt
+          grep -q 'demonstrateShot' /tmp/dream-unity-live/arcade-parts/perceive-aerial-*.txt
+          grep -q 'stats.withheld' /tmp/dream-unity-live/arcade-parts/perceive-aerial-*.txt
+          grep -q 'late-causal-acquisition' /tmp/dream-unity-live/arcade-parts/perceive-aerial-*.txt
+          if grep -Eqi 'roleDriftGeometry|nearest escort on the outside|odd[- ]one[- ]out' \
+            /tmp/dream-unity-live/index.html /tmp/dream-unity-live/arcade-parts/perceive-aerial-*.txt; then
+            echo 'The live Perceive portal still contains a superseded target-selection architecture.' >&2
+            exit 1
+          fi
 
           grep -q 'function createBecomeLab' /tmp/dream-unity-live/arcade-parts/become-lab-01.txt
           grep -q "GAME_BY_KEY\['maker:2'\]" /tmp/dream-unity-live/arcade-parts/become-lab-01.txt
@@ -139,7 +151,22 @@ jobs:
               'nine_portal_compatibility': 'validated',
               'perceive': {
                   'game': 'Parallax Wing',
-                  'mechanic': 'relational_identity_drift',
+                  'mechanic': 'causal_weave',
+                  'learning_mode': 'experiential_positive_negative_contrast',
+                  'laws': ['between', 'flow', 'enclosure'],
+                  'response': 'fighter_targeting_and_fire',
+                  'instructional_premises': False,
+                  'transformation_invariance': ['rotation', 'scale', 'translation', 'identity'],
+                  'diagnostic_errors': [
+                      'line-extension-not-between',
+                      'near-but-not-between',
+                      'static-alignment-not-crossing',
+                      'relay-for-downstream-anchor-substitution',
+                      'wrong-flow-endpoint',
+                      'boundary-for-enclosed-object-substitution',
+                      'stale-causal-target',
+                      'late-causal-acquisition',
+                  ],
               },
               'become': {
                   'game': 'Become Reality Lab',
