@@ -107,18 +107,19 @@
   };
 
   bBeginSession = async function(){
-    becomeLiveSessionNonce = bLiveNewNonce();
+    const nonce = bLiveNewNonce();
+    becomeLiveSessionNonce = nonce;
     becomeLivePending.clear();
     becomeLiveLastError = '';
     becomeState.queue = Array.from({length:becomeState.count},()=>null);
     becomeState.scenarioIndex=0;becomeState.results=[];becomeState.transferScores={};
     bLiveLoading(0,'GPT is constructing the first world now. It must differ from recent worlds rather than reskinning one.');
     try{
-      const first = await bLiveGenerate(0,becomeLiveSessionNonce);
-      if(!becomeLiveSessionNonce) return;
+      const first = await bLiveGenerate(0,nonce);
+      if(nonce !== becomeLiveSessionNonce) return;
       becomeState.queue[0] = first;
       bRenderBrief();
-    }catch(error){bLiveError(error);}
+    }catch(error){if(nonce === becomeLiveSessionNonce)bLiveError(error);}
   };
 
   const bLiveOriginalRun = bRun;
