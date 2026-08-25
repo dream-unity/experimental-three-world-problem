@@ -15,11 +15,10 @@ const roleLogicPath = 'arcade-parts/perceive-role-logic.txt';
 const perceivePaths = [1,2,3,4,5,6,7,8].map(n => `arcade-parts/perceive-aerial-${String(n).padStart(2,'0')}.txt`);
 const becomeCorePath = 'arcade-parts/become-lab-01.txt';
 const becomeLivePath = 'arcade-parts/become-live-02.txt';
-const becomeCpuPath = 'arcade-parts/become-local-cpu-03.txt';
 const apiPath = 'api/become-scenario.js';
 const required = [
   'index.html','styles.css','become.css','main.js','arcade.js','README.md','package.json','.nojekyll','.env.example',
-  roleLogicPath,...basePaths,...perceivePaths,becomeCorePath,becomeLivePath,becomeCpuPath,apiPath,
+  roleLogicPath,...basePaths,...perceivePaths,becomeCorePath,becomeLivePath,apiPath,
   'tests/role-drift.test.mjs','tests/validate.mjs','.github/workflows/validate-and-verify.yml'
 ];
 for (const path of required) assert.ok(exists(path), `${path} must exist`);
@@ -29,7 +28,6 @@ const roleLogicSource = read(roleLogicPath);
 const perceiveSource = perceivePaths.map(read).join('');
 const becomeCoreSource = read(becomeCorePath);
 const becomeLiveSource = read(becomeLivePath);
-const becomeCpuSource = read(becomeCpuPath);
 const apiSource = read(apiPath);
 const loader = read('arcade.js');
 const index = read('index.html');
@@ -39,7 +37,7 @@ const packageJson = JSON.parse(read('package.json'));
 
 const closeIndex = baseSource.lastIndexOf('})();');
 assert.ok(closeIndex > 0, 'shared arcade IIFE terminator must remain available');
-const completeSource = `${baseSource.slice(0,closeIndex)}\n${roleLogicSource}\n${perceiveSource}\n${becomeCoreSource}\n${becomeLiveSource}\n${becomeCpuSource}\n${baseSource.slice(closeIndex)}`;
+const completeSource = `${baseSource.slice(0,closeIndex)}\n${roleLogicSource}\n${perceiveSource}\n${becomeCoreSource}\n${becomeLiveSource}\n${baseSource.slice(closeIndex)}`;
 const temp = mkdtempSync(join(tmpdir(),'dream-unity-validate-'));
 const completePath = join(temp,'arcade-complete.js');
 writeFileSync(completePath,completeSource);
@@ -49,17 +47,17 @@ for (const path of [completePath,fileURLToPath(new URL('arcade.js',root)),fileUR
 
 // Loader and public surface.
 assert.match(loader,/VERSION = '20260825-role-drift-become-1'/);
-assert.match(loader,/LIVE_VERSION = '20260826-become-local-ai-3'/);
+assert.match(loader,/LIVE_VERSION = '20260826-become-internet-live-4'/);
 assert.match(loader,/perceive-role-logic\.txt/);
 assert.match(loader,/become-live-02\.txt/);
-assert.match(loader,/become-local-cpu-03\.txt/);
+assert.doesNotMatch(loader,/become-local-cpu-03\.txt/);
 assert.match(loader,/sources\.slice\(perceiveEnd\)\.join\(''\)/);
 assert.match(loader,/Function\(completeSource\)\(\)/);
 assert.match(index,/PARALLAX WING/);
 assert.match(index,/nearest escort on the outside/i);
 assert.match(index,/id="becomeLab"/);
 assert.match(index,/id="becomeScreen"/);
-assert.match(index,/arcade\.js\?v=20260826-become-local-ai-3/);
+assert.match(index,/arcade\.js\?v=20260826-become-internet-live-4/);
 assert.doesNotMatch(index,/SIGNAL VEIL/);
 
 // Nine-portal compatibility remains intact.
@@ -83,40 +81,29 @@ for (const marker of [
 ]) assert.ok(becomeCoreSource.includes(marker),`missing Become core marker: ${marker}`);
 assert.doesNotMatch(becomeCoreSource,/\bfetch\s*\(|XMLHttpRequest|WebSocket|sendBeacon/);
 
-// Live Become must work with no credential via local WebGPU and retain optional Groq cloud generation.
+// Live Become is internet-only: no local model runtime, no model download, no stored live fallback.
 for (const marker of [
   'DREAM MAKER · BECOME · LIVE AI','https://dream-unity-become-live.vercel.app/api/become-scenario','https://console.groq.com/keys',
-  'BECOME_GROQ_SESSION_KEY','sessionStorage','X-Groq-Api-Key','GPT-OSS 120B','ZERO-CREDENTIAL LOCAL AI',
-  'https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm/+esm','SmolLM2-360M-Instruct-q4f32_1-MLC','navigator.gpu',
-  'async function bLocalEngine','async function bLocalGenerate','function bLocalTooSimilar','bLocalJaccard','async function bGroqGenerate',
-  'async function bLiveGenerate','function bLivePrefetch','bBeginSession=async function','bNext=async function','NO STORED WORLD',
-  'recentScenarios','currentPerformance','dimensions'
+  'BECOME_GROQ_SESSION_KEY','sessionStorage','X-Groq-Api-Key','GPT-OSS 120B','LIVE CLOUD','INTERNET GENERATED','NO MODEL DOWNLOAD',
+  'async function bCloudGenerate','async function bLiveGenerate','function bLivePrefetch','bBeginSession=async function','bNext=async function','NO STORED WORLD',
+  'recentScenarios','currentPerformance','dimensions','internet generation only'
 ]) assert.ok(becomeLiveSource.includes(marker),`missing Become live marker: ${marker}`);
-assert.match(becomeLiveSource,/import\(BECOME_LOCAL_WEBLLM_URL\)/);
-assert.match(becomeLiveSource,/engine\.chat\.completions\.create/);
+assert.match(becomeLiveSource,/fetch\(BECOME_LIVE_API/);
 assert.match(becomeLiveSource,/Array\.from\(\{length:becomeState\.count\},\(\)=>null\)/);
 assert.doesNotMatch(becomeLiveSource,/bShuffle\(BECOME_SCENARIOS\)/);
 assert.doesNotMatch(becomeLiveSource,/localStorage\.setItem\([^\n]*groq/i);
-assert.doesNotMatch(becomeLiveSource,/A free Groq API key is required/i);
+for (const forbidden of [
+  '@mlc-ai/web-llm','SmolLM2-360M-Instruct','navigator.gpu','bLocalEngine','bLocalGenerate','bLocalTooSimilar',
+  '@huggingface/transformers',"device:'wasm'",'bCpuGenerate','CPU/WASM','model weights; later runs'
+]) assert.ok(!becomeLiveSource.includes(forbidden),`internet-only Become must not include ${forbidden}`);
 
-// Zero-credential compatibility fallback: Transformers.js on CPU/WASM.
-for (const marker of [
-  '@huggingface/transformers@4.2.0','onnx-community/SmolLM2-360M-Instruct-ONNX',"device:'wasm'", "dtype:'q4'",
-  'async function bCpuPipeline','async function bCpuGenerate','function bCpuExtractText','const bLocalWebGPUGenerate = bLocalGenerate',
-  'WebGPU local AI failed. Switching to CPU/WASM'
-]) assert.ok(becomeCpuSource.includes(marker),`missing Become CPU fallback marker: ${marker}`);
-assert.match(becomeCpuSource,/import\(BECOME_CPU_TRANSFORMERS_URL\)/);
-assert.match(becomeCpuSource,/bLocalGenerate = async function/);
-assert.match(becomeCpuSource,/bLocalTooSimilar\(scenario,history\)/);
-assert.doesNotMatch(becomeCpuSource,/GROQ_API_KEY|X-Groq-Api-Key|localStorage/);
-
-// Optional free Groq backend: Responses API, strict structured output, novelty rejection and CORS.
+// Remote Groq backend: Responses API, strict structured output, novelty rejection and CORS.
 for (const marker of [
   'https://api.groq.com/openai/v1/responses','openai/gpt-oss-120b','GROQ_API_KEY','x-groq-api-key','X-Groq-Api-Key',
   "strict:true",'const MAX_ATTEMPTS = 3','function tooSimilar','jaccard','dimensionOverlap>=4','https://dream-unity.github.io',
   "provider:'groq'",'GROQ_KEY_REQUIRED','GROQ_KEY_INVALID','GROQ_RATE_LIMIT'
 ]) assert.ok(apiSource.includes(marker),`missing Groq backend marker: ${marker}`);
-assert.doesNotMatch(apiSource,/@vercel\/oidc|api\.openai\.com|AI_GATEWAY_API_KEY|getVercelOidcToken|generateObject/);
+assert.doesNotMatch(apiSource,/api\.openai\.com/);
 assert.equal(packageJson.version,'1.5.0');
 assert.equal(packageJson.dependencies,undefined);
 
@@ -137,14 +124,14 @@ const becomeGame = becomeRuntime.definition.factory();
 becomeGame.reset({setScore(){},setMetric(){}});
 assert.match(becomeScreen.innerHTML,/REALITY<br>TRAINING LAB/);
 
-// Documentation/deployment verification must know about every live generation layer.
+// Documentation/deployment verification must describe the internet-only live layer.
 assert.match(readme,/Dream Maker → BECOME/);
 assert.match(readme,/controlled as-if/i);
+assert.match(readme,/internet/i);
 assert.match(workflow,/become-live-02\.txt/);
-assert.match(workflow,/become-local-cpu-03\.txt/);
+assert.doesNotMatch(workflow,/become-local-cpu-03\.txt/);
 assert.match(workflow,/dream-unity-become-live\.vercel\.app/);
 assert.match(workflow,/openai\/gpt-oss-120b/);
-assert.match(workflow,/provider.*groq/i);
-assert.match(workflow,/SmolLM2-360M-Instruct-ONNX/);
+assert.match(workflow,/NO MODEL DOWNLOAD/);
 
-console.log('Validated: nine portals, Relational Identity Drift, Become core training, zero-credential WebGPU + CPU/WASM local AI, optional Groq GPT-OSS and no stored live fallback.');
+console.log('Validated: nine portals, Relational Identity Drift, Become core training, internet-only live GPT-OSS generation and no local model download or stored live fallback.');
