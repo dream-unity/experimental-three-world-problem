@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#02040a" />
-  <meta name="description" content="Dream Unity — nine living games inside three worlds of mind." />
+  <meta name="description" content="Dream Unity — nine living games inside three worlds of mind, including Parallax Wing relational-perception flight." />
   <title>Dream Unity</title>
   <link rel="stylesheet" href="./styles.css?v=20260824-9" />
 </head>
@@ -24,7 +24,6 @@
       <small id="detailNumber">01</small>
       <strong id="detailName">DREAM MACHINE</strong>
     </div>
-
     <button class="world-label" id="label-machine" data-world="machine" type="button">
       <span>01</span><strong>DREAM MACHINE</strong>
     </button>
@@ -52,12 +51,12 @@
         <button class="game-icon" id="gameBack" type="button" aria-label="Return to triad">←</button>
         <div class="game-heading">
           <small id="gameWorld">01 · DREAM MACHINE</small>
-          <strong id="gameName">SIGNAL VEIL</strong>
+          <strong id="gameName">PARALLAX WING</strong>
         </div>
         <div class="game-readout">
           <span><small>SCORE</small><b id="gameScore">0</b></span>
           <span><small>BEST</small><b id="gameBest">0</b></span>
-          <span class="game-metric"><small id="gameMetricLabel">LIVES</small><b id="gameMetric">3</b></span>
+          <span class="game-metric"><small id="gameMetricLabel">SHIELD</small><b id="gameMetric">4 · ×0</b></span>
         </div>
         <button class="game-icon" id="gameSound" type="button" aria-label="Toggle sound">♪</button>
         <button class="game-icon" id="gamePause" type="button" aria-label="Pause game">Ⅱ</button>
@@ -65,10 +64,10 @@
       </header>
 
       <div class="game-card" id="gameCard">
-        <div class="game-glyph" id="gameGlyph">◉</div>
+        <div class="game-glyph" id="gameGlyph">✦</div>
         <small id="gameDomain">PERCEIVE</small>
-        <h1 id="gameCardTitle">SIGNAL VEIL</h1>
-        <p id="gameRule">Find the signal after the veil.</p>
+        <h1 id="gameCardTitle">PARALLAX WING</h1>
+        <p id="gameRule">Read the moving formation. Fire at the aircraft defined by its relation.</p>
         <button id="gameStart" type="button">ENTER</button>
       </div>
 
@@ -79,7 +78,7 @@
       </div>
 
       <div class="game-toast" id="gameToast"></div>
-      <div class="game-hint" id="gameHint">TAP THE SIGNAL</div>
+      <div class="game-hint" id="gameHint">DRAG TO FLY + FIRE · SPACE TO FIRE</div>
     </section>
   </main>
 
@@ -91,6 +90,6 @@
     }, 1800);
   </script>
   <script src="./main.js?v=20260824-11"></script>
-  <script src="./arcade.js?v=20260824-9"></script>
+  <script src="./arcade.js?v=20260825-perceive-1"></script>
 </body>
 </html>
