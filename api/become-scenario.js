@@ -1,10 +1,10 @@
 import { randomUUID } from 'node:crypto';
 
 const BLOCKRUN_URL = 'https://blockrun.ai/api/v1/chat/completions';
-const MODELS = ['nvidia/gpt-oss-120b','nvidia/step-3.7-flash','nvidia/mistral-nemotron'];
-const REQUEST_TIMEOUT_MS = 40_000;
+const MODEL = 'nvidia/gpt-oss-120b';
+const REQUEST_TIMEOUT_MS = 20_000;
 const MAX_HISTORY = 8;
-const MAX_ATTEMPTS = 3;
+const MAX_ATTEMPTS = 2;
 const RATE_WINDOW_MS = 60_000;
 const RATE_LIMIT = 18;
 const rateBuckets = new Map();
@@ -19,15 +19,14 @@ function sanitizeHistory(value){
   return value.slice(-MAX_HISTORY).map(item=>({
     title:clampText(item?.title,100),
     tag:clampText(item?.tag,120),
-    premise:clampText(item?.premise,700),
-    dimensions:DIMENSION_KEYS.reduce((out,key)=>{const v=clampText(item?.dimensions?.[key],140);if(v)out[key]=v;return out;},{})
+    premise:clampText(item?.premise,500),
+    dimensions:DIMENSION_KEYS.reduce((out,key)=>{const v=clampText(item?.dimensions?.[key],120);if(v)out[key]=v;return out;},{})
   })).filter(item=>item.title||item.premise);
 }
 function sanitizePerformance(value){
   if(!Array.isArray(value)) return [];
   return value.slice(0,17).map(item=>({
     id:clampText(item?.id,50),
-    title:clampText(item?.title,90),
     score:Number.isFinite(Number(item?.score))?Math.max(1,Math.min(10,Number(item.score))):null
   })).filter(item=>item.id&&item.score!==null);
 }
@@ -53,14 +52,14 @@ function validateScenario(raw){
   if(!raw || typeof raw!=='object' || Array.isArray(raw))throw new Error('Live model returned an invalid scenario object.');
   const scenario={...raw};
   for(const key of REQUIRED){
-    scenario[key]=clampText(scenario[key],key==='premise'?900:600);
+    scenario[key]=clampText(scenario[key],key==='premise'?650:420);
     if(scenario[key].length<2)throw new Error(`Live scenario is missing ${key}.`);
   }
   scenario.visual=VISUALS.has(scenario.visual.toLowerCase())?scenario.visual.toLowerCase():'future';
   if(!scenario.dimensions||typeof scenario.dimensions!=='object'||Array.isArray(scenario.dimensions))throw new Error('Live scenario is missing relational dimensions.');
   scenario.dimensions={...scenario.dimensions};
   for(const key of DIMENSION_KEYS){
-    scenario.dimensions[key]=clampText(scenario.dimensions[key],180);
+    scenario.dimensions[key]=clampText(scenario.dimensions[key],120);
     if(scenario.dimensions[key].length<2)throw new Error(`Live scenario is missing dimension ${key}.`);
   }
   scenario.id=`live-${Date.now().toString(36)}-${randomUUID().slice(0,8)}`;
@@ -105,26 +104,27 @@ function rateLimited(req){
   recent.push(now);rateBuckets.set(key,recent);return false;
 }
 function makePrompt(payload,attempt,rejected){
-  return `You are the live scenario director for Dream Unity's BECOME training lab. Generate exactly one genuinely new first-person scenario for controlled imagination training.\n\nNOVELTY IS PRIMARY. Treat recentScenarios and rejectedForSimilarity as exclusions, not inspiration. Do not merely reskin them. Change at least six of eight dimensions relative to every recent scenario: environment, role, goal, pressure, body dynamics, decision structure, emotional tone, social structure. Do not reuse titles, signature objects, central dilemmas or characteristic phrasing. Prefer an unexpected but coherent combination that is immediately inhabitable.\n\nTRAINING QUALITY. Make the world concrete, spatially legible and phenomenologically rich. Every prose field must contribute a different operation: perception, touch, embodiment, atmosphere, movement, stakes, identity, agency or exit. Identity means an embodied competent perspective, not grandiosity or magical certainty. Choice must contain more than one plausible option. Exit must explicitly dissolve the simulation and reorient attention to present reality. Keep fields concise enough for rapid training.\n\nSAFETY AND CONTROL. This is imaginative training, not real-world operational instruction. Do not give procedural guidance for weapons, crime, self-harm, dangerous stunts, medical emergencies or other hazardous activity. Avoid sexual content, graphic violence and trauma bait. Stakes may be intense only when non-graphic, non-instructional and psychologically controllable.\n\nADAPTIVE INPUT: ${JSON.stringify({...payload,attempt,rejectedForSimilarity:rejected})}\n\nReturn ONLY one valid JSON object and no markdown with exactly these top-level fields: title, tag, visual, premise, sensory, objects, body, atmosphere, motion, stakes, identity, choice, exit, dimensions. visual must be one of hockey, stage, mountain, orbit, courtroom, ocean, sprint, conversation, wildfire, contact, future. dimensions must contain exactly environment, role, goal, pressure, body_dynamics, decision_structure, emotional_tone, social_structure.`;
+  return `Create ONE genuinely new first-person BECOME training scenario. Recent scenarios are EXCLUSIONS, not inspiration. Change at least 6/8 dimensions versus every recent scenario: environment, role, goal, pressure, body dynamics, decision structure, emotional tone, social structure. Never reuse a title, signature object, central dilemma, or characteristic wording.\n\nMake it concrete, spatially clear and easy to inhabit for repeated 10-second sensory, embodiment, consequence, identity and agency drills. Each prose field must do a different job. Identity = competent perspective, not grandiosity. Choice = at least two plausible options. Exit = explicitly dissolve the simulation and reorient to present reality. Avoid operational instructions for weapons, crime, self-harm, dangerous stunts or medical emergencies; avoid sexual content, graphic violence and trauma bait.\n\nKeep EVERY prose field concise: normally 8-24 words. Keep every dimension to 2-8 words.\n\nCONTEXT: ${JSON.stringify({...payload,attempt,rejectedForSimilarity:rejected})}\n\nReturn ONLY valid JSON, no markdown. Exact fields: title, tag, visual, premise, sensory, objects, body, atmosphere, motion, stakes, identity, choice, exit, dimensions. visual is one of hockey, stage, mountain, orbit, courtroom, ocean, sprint, conversation, wildfire, contact, future. dimensions contains exactly environment, role, goal, pressure, body_dynamics, decision_structure, emotional_tone, social_structure.`;
 }
-async function callModel(model,prompt){
+async function callModel(prompt){
   const controller=new AbortController();
   const timeout=setTimeout(()=>controller.abort(),REQUEST_TIMEOUT_MS);
+  const started=Date.now();
   try{
     const response=await fetch(BLOCKRUN_URL,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       signal:controller.signal,
       body:JSON.stringify({
-        model,
+        model:MODEL,
         messages:[
-          {role:'system',content:'Return the requested controlled-imagination scenario as valid JSON only.'},
+          {role:'system',content:'Return exactly one concise controlled-imagination scenario as valid JSON only.'},
           {role:'user',content:prompt}
         ],
         stream:false,
         temperature:0.9,
         top_p:0.95,
-        max_tokens:1000,
+        max_tokens:650,
         response_format:{type:'json_object'}
       })
     });
@@ -135,22 +135,15 @@ async function callModel(model,prompt){
     }
     const text=extractContent(data);
     if(!text)throw new Error('Remote model returned no scenario text.');
-    return validateScenario(parseJSON(text));
+    const servedModel=response.headers.get('x-fallback-model')||data?.model||MODEL;
+    return{scenario:validateScenario(parseJSON(text)),model:String(servedModel),latencyMs:Date.now()-started};
   }catch(error){
-    if(error?.name==='AbortError')throw new Error(`Remote model ${model} timed out.`);
+    if(error?.name==='AbortError'){
+      const timed=new Error('Live model did not answer within 20 seconds.');
+      timed.status=504;throw timed;
+    }
     throw error;
   }finally{clearTimeout(timeout);}
-}
-async function callWithFailover(prompt){
-  let lastError=null;
-  for(const model of MODELS){
-    try{return{scenario:await callModel(model,prompt),model};}
-    catch(error){
-      lastError=error;
-      console.warn('Become live model failed',model,error instanceof Error?error.message:String(error));
-    }
-  }
-  throw lastError||new Error('All zero-key live models are temporarily unavailable.');
 }
 async function produce(body){
   const history=sanitizeHistory(body.recentScenarios);
@@ -164,12 +157,13 @@ async function produce(body){
     generationNonce:randomUUID()
   };
   const rejected=[];
-  for(let attempt=1;attempt<=MAX_ATTEMPTS;attempt++){
-    const generated=await callWithFailover(makePrompt(payload,attempt,rejected));
-    if(!tooSimilar(generated.scenario,history))return{scenario:generated.scenario,meta:{provider:'blockrun',model:generated.model,generatedAt:new Date().toISOString(),attempt,credentialMode:'none'}};
-    rejected.push({title:clampText(generated.scenario.title,100),premise:clampText(generated.scenario.premise,300),dimensions:generated.scenario.dimensions});
+  const attempts=history.length?MAX_ATTEMPTS:1;
+  for(let attempt=1;attempt<=attempts;attempt++){
+    const generated=await callModel(makePrompt(payload,attempt,rejected));
+    if(!tooSimilar(generated.scenario,history))return{scenario:generated.scenario,meta:{provider:'blockrun',model:generated.model,generatedAt:new Date().toISOString(),attempt,latencyMs:generated.latencyMs,credentialMode:'none'}};
+    rejected.push({title:clampText(generated.scenario.title,100),premise:clampText(generated.scenario.premise,240),dimensions:generated.scenario.dimensions});
   }
-  throw new Error('Live generation produced worlds too similar to recent trials after three novelty checks.');
+  throw new Error('Live generation produced a world too similar to recent trials twice. Retry for a new world.');
 }
 
 export default async function handler(req,res){
@@ -177,7 +171,7 @@ export default async function handler(req,res){
   const cors=applyCors(req,res);
   if(req.method==='OPTIONS')return res.status(204).end();
   if(req.headers.origin&&cors===null)return res.status(403).json({error:'Origin not allowed.'});
-  if(req.method==='GET')return res.status(200).json({ok:true,service:'dream-unity-become-live',provider:'blockrun',model:MODELS[0],fallbackModels:MODELS.slice(1),credentialMode:'none',accountRequired:false,localModel:false});
+  if(req.method==='GET')return res.status(200).json({ok:true,service:'dream-unity-become-live',provider:'blockrun',model:MODEL,upstreamFailover:'blockrun-managed',requestTimeoutMs:REQUEST_TIMEOUT_MS,credentialMode:'none',accountRequired:false,localModel:false});
   if(req.method!=='POST')return res.status(405).json({error:'Use POST.'});
   if(rateLimited(req))return res.status(429).json({code:'PROXY_RATE_LIMIT',error:'Live generation rate limit reached. Try again shortly.'});
   try{
@@ -188,6 +182,7 @@ export default async function handler(req,res){
     const message=error instanceof Error?error.message:'Live internet generation failed.';
     console.error('Become live generation failed',status||502,message);
     if(status===429)return res.status(429).json({code:'UPSTREAM_RATE_LIMIT',error:'The zero-key live inference service is temporarily rate-limited. Retry shortly.'});
+    if(status===504)return res.status(504).json({code:'UPSTREAM_TIMEOUT',error:message});
     return res.status(502).json({code:'LIVE_GENERATION_FAILED',error:message});
   }
 }
