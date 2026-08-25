@@ -1,7 +1,7 @@
 (() => {
   'use strict';
   const VERSION = '20260825-role-drift-become-1';
-  const LIVE_VERSION = '20260826-become-zero-key-live-5';
+  const LIVE_VERSION = '20260826-become-zero-key-proxy-6';
   const basePaths = [1, 2, 3, 4, 5].map((n) => `./arcade-parts/part-${String(n).padStart(2, '0')}.txt?v=${VERSION}`);
   const roleLogicPath = `./arcade-parts/perceive-role-logic.txt?v=${VERSION}`;
   const perceivePaths = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => `./arcade-parts/perceive-aerial-${String(n).padStart(2, '0')}.txt?v=${VERSION}`);
@@ -24,8 +24,8 @@
 
     // The original nine-game engine remains intact. PERCEIVE and BECOME are
     // injected inside its private scope so one lifecycle is preserved.
-    // BECOME generates every world through zero-key remote inference only;
-    // no local WebGPU/WASM model, API credential or model-weight download is used.
+    // BECOME sends zero-key requests to Dream Unity's remote live proxy;
+    // no local WebGPU/WASM model, browser API credential or model download is used.
     const completeSource = `${baseSource.slice(0, closeIndex)}\n${roleLogicSource}\n${perceiveSource}\n${becomeSource}\n${baseSource.slice(closeIndex)}`;
     Function(completeSource)();
   }).catch((error) => {
