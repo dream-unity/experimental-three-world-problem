@@ -1,99 +1,160 @@
-        committedTurnSign: initialTurn,
-        nextTurnAt: config.turnChanges ? rand(config.turnHoldMax, config.turnHoldMin) : Number.POSITIVE_INFINITY,
+
+    function assignCandidateTracks() {
+      const active = shuffle(activeCandidates());
+      const insideCount = Math.min(encounter.config.insideTracks, Math.max(2, active.length - 1));
+      const inside = active.slice(0, insideCount);
+      const contrasts = active.slice(insideCount);
+      const basePhase = rand(TAU, 0);
+
+      inside.forEach((jet, index) => {
+        jet.track = 'inside';
+        jet.phaseOffset = basePhase + index / Math.max(1, inside.length) * TAU;
+        jet.phaseRate = rand(1.08, 0.92);
+        jet.radialBias = rand(1.05, 0.94);
+      });
+      contrasts.forEach((jet, index) => {
+        jet.track = index % 2 === 0 ? 'outside-segment' : 'off-axis';
+        jet.phaseOffset = basePhase + Math.PI * 0.5 + index / Math.max(1, contrasts.length) * TAU;
+        jet.phaseRate = rand(1.08, 0.92);
+        jet.radialBias = rand(1.08, 0.96);
+      });
+    }
+
+    function createEncounter(E) {
+      const config = levelConfig(level);
+      anchors = [makeJet(`anchor-${wave}-a`), makeJet(`anchor-${wave}-b`)];
+      anchors.forEach((jet) => { jet.role = 'anchor'; });
+      candidates = Array.from({ length: config.candidateCount }, (_, index) => makeJet(`candidate-${wave}-${index}-${Math.random().toString(36).slice(2, 7)}`));
+      enemyShots = [];
+      tracers = [];
+      demoTracers = [];
+      encounter = {
+        config,
+        age: 0,
+        depth: 0.075,
+        centerX: rand(0.07, -0.07),
+        centerY: rand(0.03, -0.03),
+        centerDriftPhase: rand(TAU, 0),
+        baseAngle: rand(TAU, 0),
+        angle: 0,
+        halfSpan: config.halfSpan,
+        previousHalfSpan: config.halfSpan,
+        compression: 0,
+        compressionPhase: rand(TAU, 0),
+        linkFlow: rand(1, 0),
+        relationState: null,
+        relationCandidateId: null,
+        relationCandidateTimer: 0,
         target: null,
         previousTarget: null,
-        candidate: null,
-        candidateTimer: 0,
+        vulnerability: 0,
+        relationOnsetAt: 0,
         targetStableFor: 0,
-        roleSwitchAt: 0,
-        reacquired: false,
-        reticleHold: 0,
+        roleMigrations: 0,
         hits: 0,
         solved: false,
         failed: false,
-        fireTimer: rand(config.fireInterval * 1.18, config.fireInterval * 0.72),
+        fireTimer: rand(config.fireInterval * 1.18, config.fireInterval * 0.78),
+        demoPending: config.demo,
+        demoPlayed: false,
+        demoLockout: 0,
         startedAt: performance.now(),
-        outsideAxis: [-initialTurn, 0],
-        insideAxis: [initialTurn, 0],
-        outsideVisual: [-initialTurn, 0],
-        insideVisual: [initialTurn, 0],
-        roleMargin: 1,
-        turnTransition: false,
       };
+      assignCandidateTracks();
       resolveTimer = 0;
-      wrongShotCooldown = 0;
       updateFormation(E, 0);
-      E.toast(level <= 2 ? 'NEAREST ESCORT ON THE OUTSIDE' : 'TRACK THE MOVING ROLE', 1.08);
+      E.toast(level <= 2 ? 'WATCH WHAT THE LINK DOES' : 'READ THE FORMATION', 1.0);
       E.setMetric('SHIELD', `${Math.ceil(player.shield)} · ×${streak}`);
     }
 
-    function updateLeaderTurn(dt) {
+    function formationFrame() {
       const config = encounter.config;
-      if (encounter.age >= encounter.nextTurnAt) {
-        encounter.turnTarget *= -1;
-        encounter.nextTurnAt = encounter.age + rand(config.turnHoldMax, config.turnHoldMin);
-      }
-      const blend = 1 - Math.exp(-config.turnResponse * dt);
-      encounter.turnValue = lerp(encounter.turnValue, encounter.turnTarget, blend);
-      encounter.turnTransition = Math.abs(encounter.turnValue) < 0.36;
-      if (!encounter.turnTransition) {
-        const nextCommitted = encounter.turnValue > 0 ? 1 : -1;
-        if (nextCommitted !== encounter.committedTurnSign) {
-          encounter.committedTurnSign = nextCommitted;
-          encounter.candidate = null;
-          encounter.candidateTimer = 0;
-        }
-      }
-
-      encounter.coursePhase += encounter.turnValue * config.turnRate * dt;
-      encounter.laneVelocity += encounter.turnValue * dt * 0.082;
-      encounter.laneVelocity += -encounter.lane * dt * 0.16;
-      encounter.laneVelocity *= Math.exp(-dt * 0.76);
-      encounter.lane = clamp(encounter.lane + encounter.laneVelocity * dt, -0.34, 0.34);
-
-      leader.heading = clamp(encounter.laneVelocity * 2.15 + encounter.turnValue * 0.2, -0.72, 0.72);
-      leader.bank = lerp(leader.bank, encounter.turnValue * 0.9, 1 - Math.exp(-dt * 4.8));
-      leader.pulse = 0.52 + 0.48 * Math.sin(encounter.age * 2.3) ** 2;
-
-      const rightAxis = normalize2([Math.cos(leader.heading), Math.sin(leader.heading)]);
-      encounter.insideAxis = [rightAxis[0] * encounter.committedTurnSign, rightAxis[1] * encounter.committedTurnSign];
-      encounter.outsideAxis = [-encounter.insideAxis[0], -encounter.insideAxis[1]];
-      encounter.insideVisual = normalize2([encounter.insideAxis[0], encounter.insideAxis[1] * 0.84]);
-      encounter.outsideVisual = [-encounter.insideVisual[0], -encounter.insideVisual[1]];
+      const age = encounter.age;
+      const center = [
+        encounter.centerX + Math.sin(age * 0.19 + encounter.centerDriftPhase) * 0.055,
+        encounter.centerY + Math.cos(age * 0.16 + encounter.centerDriftPhase * 0.8) * 0.032,
+      ];
+      const angle = encounter.baseAngle
+        + age * config.rotationSpeed
+        + Math.sin(age * 0.31 + encounter.centerDriftPhase) * 0.16;
+      const axis = [Math.cos(angle), Math.sin(angle)];
+      const normal = [-axis[1], axis[0]];
+      return { center, angle, axis, normal };
     }
 
-    function updateFormation(E, dt) {
-      if (!encounter) return;
-      encounter.age += dt;
-      if (!encounter.solved && !encounter.failed) {
-        encounter.depth = Math.min(1.08, encounter.depth + dt * encounter.config.approachSpeed);
-      }
-      updateLeaderTurn(dt);
-
-      const depth = encounter.depth;
-      const scale = E.u * (0.34 + depth * 0.42);
-      const centerX = E.w * 0.5 + encounter.lane * E.u * 0.72;
-      const centerY = E.top + E.h * (0.15 + depth * 0.42) + Math.sin(encounter.coursePhase * 0.52) * E.u * 0.018;
-      leader.sx = centerX;
-      leader.sy = centerY;
-      leader.size = Math.max(13, E.u * (0.018 + depth * 0.019));
-      leader.trail.push([leader.sx, leader.sy]);
-      if (leader.trail.length > 28) leader.trail.shift();
-
+    function updateAnchorGeometry(dt, frame) {
       const config = encounter.config;
-      const active = activeEscorts();
-      for (const escort of active) {
-        const orbit = escort.slotAngle
-          + encounter.age * config.orbitSpeed * escort.orbitDirection
-          + Math.sin(encounter.age * config.weaveSpeed * escort.weaveRate + escort.weavePhase) * config.weaveAmplitude;
-        const radius = escort.baseRadius * (
-          1 + Math.sin(encounter.age * (config.weaveSpeed * 0.73) + escort.radialPhase) * config.radialAmplitude
-        );
-        const bodyX = Math.cos(orbit) * radius;
-        const bodyY = Math.sin(orbit) * radius * 0.66
-          + Math.sin(encounter.age * config.weaveSpeed * 0.52 + escort.weavePhase) * 0.028;
-        const world = rotate2(bodyX, bodyY, leader.heading * 0.78);
-        escort.rx = world[0];
-        escort.ry = world[1];
-        escort.sx = leader.sx + world[0] * scale;
-        escort.sy = leader.sy + world[1] * scale * 0.84;
+      encounter.previousHalfSpan = encounter.halfSpan;
+      encounter.compressionPhase += dt * config.compressionSpeed;
+      const breathing = Math.sin(encounter.compressionPhase);
+      encounter.halfSpan = config.halfSpan * (1 + breathing * config.compressionAmplitude);
+      encounter.compression = dt > 0 ? (encounter.previousHalfSpan - encounter.halfSpan) / dt : 0;
+      encounter.angle = frame.angle;
+
+      for (let index = 0; index < 2; index += 1) {
+        const sign = index === 0 ? -1 : 1;
+        const jet = anchors[index];
+        jet.previousLocalX = jet.localX;
+        jet.previousLocalY = jet.localY;
+        jet.localX = frame.center[0] + frame.axis[0] * encounter.halfSpan * sign;
+        jet.localY = frame.center[1] + frame.axis[1] * encounter.halfSpan * sign;
+        jet.velocityX = dt > 0 ? (jet.localX - jet.previousLocalX) / dt : 0;
+        jet.velocityY = dt > 0 ? (jet.localY - jet.previousLocalY) / dt : 0;
+        jet.heading = frame.angle + (sign < 0 ? 0.08 : -0.08);
+        jet.bank = Math.sin(encounter.age * 1.2 + index * Math.PI) * 0.28;
+        jet.pulse = 0.45 + 0.55 * Math.sin(encounter.age * 2.4 + index * 0.7) ** 2;
+      }
+    }
+
+    function updateCandidateGeometry(dt, frame) {
+      const config = encounter.config;
+      const age = encounter.age;
+      for (const jet of activeCandidates()) {
+        jet.previousLocalX = jet.localX;
+        jet.previousLocalY = jet.localY;
+        const phase = age * config.weaveSpeed * jet.phaseRate + jet.phaseOffset;
+        let alongScale = 0.74 * jet.radialBias;
+        let perpendicularAmplitude = 0.21 + level * 0.003;
+        let perpendicularBias = 0;
+
+        if (jet.track === 'outside-segment') {
+          alongScale = 1.33 * jet.radialBias;
+          perpendicularAmplitude = 0.12;
+        } else if (jet.track === 'off-axis') {
+          alongScale = 0.72;
+          perpendicularAmplitude = 0.16;
+          perpendicularBias = Math.sin(jet.phaseOffset) >= 0 ? 0.105 : -0.105;
+        }
+
+        const along = Math.sin(phase) * encounter.halfSpan * alongScale;
+        const perpendicular = Math.cos(phase) * perpendicularAmplitude + perpendicularBias
+          + Math.sin(phase * 0.47 + jet.phaseOffset) * 0.012;
+        const radialRipple = 1 + Math.sin(age * 0.33 + jet.phaseOffset) * 0.045;
+        jet.localX = frame.center[0]
+          + frame.axis[0] * along * radialRipple
+          + frame.normal[0] * perpendicular;
+        jet.localY = frame.center[1]
+          + frame.axis[1] * along * radialRipple
+          + frame.normal[1] * perpendicular;
+        jet.velocityX = dt > 0 ? (jet.localX - jet.previousLocalX) / dt : 0;
+        jet.velocityY = dt > 0 ? (jet.localY - jet.previousLocalY) / dt : 0;
+        jet.heading = Math.atan2(jet.velocityY, jet.velocityX) + Math.PI * 0.5;
+        jet.bank = Math.sin(phase) * 0.58;
+        jet.pulse = 0.38 + 0.62 * Math.sin(phase * 1.22) ** 2;
+        jet.hitFlash = Math.max(0, jet.hitFlash - dt * 4.8);
+        jet.shieldFlash = Math.max(0, jet.shieldFlash - dt * 2.6);
+      }
+    }
+
+    function projectFormation(E) {
+      const scale = E.u * (0.38 + encounter.depth * 0.5);
+      const centerX = E.w * 0.5;
+      const centerY = E.top + E.h * (0.15 + encounter.depth * 0.43);
+      for (const jet of allEnemyJets()) {
+        jet.sx = centerX + jet.localX * scale;
+        jet.sy = centerY + jet.localY * scale * 0.82;
+        jet.size = Math.max(9, E.u * (0.0115 + encounter.depth * 0.015));
+        jet.trail.push([jet.sx, jet.sy]);
+        if (jet.trail.length > (jet.role === 'anchor' ? 16 : 10)) jet.trail.shift();
+      }
+    }
