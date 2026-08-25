@@ -1,20 +1,29 @@
 {
   "project": "Dream Unity \u2014 Experimental Three-World Problem",
   "deployment": "verified-live",
-  "source_sha": "b639be07a69a95987a30435b21fbc12a5c30178b",
+  "source_sha": "dc74796dd540a362239b277003fec1725bf4f2ef",
   "page_url": "https://dream-unity.github.io/experimental-three-world-problem/",
-  "portal_replaced": "Dream Machine / Perceive",
+  "portal": "Dream Machine / Perceive",
   "game": "Parallax Wing",
+  "relational_mechanic": "relational_identity_drift",
+  "rule": "nearest active escort on the outside of the leader turn",
   "nine_game_compatibility": "validated",
-  "relation_families": [
-    "symmetry",
-    "common-fate",
-    "counterphase",
-    "anchor",
-    "bridge",
-    "rotation",
-    "convergence",
-    "mixed composition"
+  "validated_properties": [
+    "target identity changes with live formation relations",
+    "leader turn establishes inside and outside reference sides",
+    "distance comparison selects a unique outside escort",
+    "turn reversal and escort crossing move the target role",
+    "switch hysteresis prevents ambiguous flicker",
+    "reacquisition latency and role-switch errors are recorded",
+    "fighter combat, shield, projectiles and touch/mouse/keyboard input remain active"
+  ],
+  "diagnostic_errors": [
+    "stale-role-perseveration",
+    "inside-outside-reversal",
+    "outside-distance-substitution",
+    "reference-object-substitution",
+    "screen-position-substitution",
+    "late-relational-acquisition"
   ],
   "files_compared": [
     "index.html",
@@ -26,23 +35,35 @@
     "arcade-parts/part-03.txt",
     "arcade-parts/part-04.txt",
     "arcade-parts/part-05.txt",
+    "arcade-parts/perceive-role-logic.txt",
     "arcade-parts/perceive-aerial-01.txt",
     "arcade-parts/perceive-aerial-02.txt",
-    "arcade-parts/perceive-aerial-03.txt"
+    "arcade-parts/perceive-aerial-03.txt",
+    "arcade-parts/perceive-aerial-04.txt",
+    "arcade-parts/perceive-aerial-05.txt",
+    "arcade-parts/perceive-aerial-06.txt",
+    "arcade-parts/perceive-aerial-07.txt",
+    "arcade-parts/perceive-aerial-08.txt"
   ],
   "sha256": [
-    "c4ebb2ca3a356af43d91814b0f939a66b6434a7b2778645731c37fd3e973b52e  /tmp/dream-unity-live/index.html",
+    "0af08977691c86b43f4be37b544a004b019d64ccfa32921db8269ac07e48d5df  /tmp/dream-unity-live/index.html",
     "008f907be470e8b387badb2534fa4df0c55b5bfc1c71c75d1beb9ef9ed963191  /tmp/dream-unity-live/styles.css",
     "2107036b6397210444b31df52260fffb6a62d0447fefbc262beb3ee45f5b2d65  /tmp/dream-unity-live/main.js",
-    "a31119c7befe9bd6f0894bd5738b45eb3c108a9f96071772a494e33d1f1ba3d9  /tmp/dream-unity-live/arcade.js",
+    "2855c0cd3ab7144a13aab2ce7f7fb76f185e0f246c963c03676e3c328ed25ddd  /tmp/dream-unity-live/arcade.js",
     "4d7006d17cf3ae67cfd39516fe8df857bd44d82a6cb7aad4b81067484d7e2da7  /tmp/dream-unity-live/arcade-parts/part-01.txt",
     "526f14079e2ebf9560a8648a866a7bf70c8ae9f83f6bc2edcc68d861a65e04f2  /tmp/dream-unity-live/arcade-parts/part-02.txt",
     "183630ab3997f38ab5e2f2faf54505e9c4683c5885b3354fbb49e5508347b48c  /tmp/dream-unity-live/arcade-parts/part-03.txt",
     "d0f4ae1a65b4edad671f9a761bd5ac1658e55e0b610a174cfaaef5a5d68c23be  /tmp/dream-unity-live/arcade-parts/part-04.txt",
     "f4851d57f4742a3cd8df8c86b26660b1174fe6afc21119b9f2dba7877be6d04d  /tmp/dream-unity-live/arcade-parts/part-05.txt",
-    "50c7fdbca9765645654f1cd397d30aa041bf0c1cb0778b90c23709c7087bb2f8  /tmp/dream-unity-live/arcade-parts/perceive-aerial-01.txt",
-    "ad68c688acb63273d16a0004484cba301eca4e163e8ba3ccf90c167e99384646  /tmp/dream-unity-live/arcade-parts/perceive-aerial-02.txt",
-    "ee633dc36ad5a966c97a21c7f35713880ab4acad3b668c7a60a044adaf112379  /tmp/dream-unity-live/arcade-parts/perceive-aerial-03.txt"
+    "6ffb93b28ba9a2694d7ed17ba9733e6bcafa8e2220df532ce4f6fe8ec38722c5  /tmp/dream-unity-live/arcade-parts/perceive-aerial-01.txt",
+    "86ff5ac1e091733c7c83fdaa3360c798bcafc286c12b184f2a0114dc06702a05  /tmp/dream-unity-live/arcade-parts/perceive-aerial-02.txt",
+    "74b2b069aa4dd2e13c687be87a22be0ea5506efe8a290502c494574b47547514  /tmp/dream-unity-live/arcade-parts/perceive-aerial-03.txt",
+    "2ce3c950506df40902b14bbd067dc7363a0270fb2cf597d48abbebd05ddb5a60  /tmp/dream-unity-live/arcade-parts/perceive-aerial-04.txt",
+    "2723771ef3bf3e4cd36149528cbb8907db696c2b270f624bb32611bcde05d1e2  /tmp/dream-unity-live/arcade-parts/perceive-aerial-05.txt",
+    "38769876ba7900356dad51f7445d495d1a47661ba0bfec4a8d3b27849dea74f6  /tmp/dream-unity-live/arcade-parts/perceive-aerial-06.txt",
+    "5842f07362f10ad7d7242053dfe2ae3ad726759b48ca16b73c263a460e0cc7a4  /tmp/dream-unity-live/arcade-parts/perceive-aerial-07.txt",
+    "b675b4a09a5fae66938b1b5b83889357dcc45d08641f11901f80fe46aa9f12b7  /tmp/dream-unity-live/arcade-parts/perceive-aerial-08.txt",
+    "08b62c2248bed6690890881f12d4e9a157690329aaff6f3a253a3723aaa69245  /tmp/dream-unity-live/arcade-parts/perceive-role-logic.txt"
   ],
-  "verified_at": "2026-08-25T05:19:09.202663+00:00"
+  "verified_at": "2026-08-25T10:38:29.606797+00:00"
 }
