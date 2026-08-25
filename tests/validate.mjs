@@ -47,7 +47,7 @@ for (const path of [completePath,fileURLToPath(new URL('arcade.js',root)),fileUR
 
 // Loader and public surface.
 assert.match(loader,/VERSION = '20260825-role-drift-become-1'/);
-assert.match(loader,/LIVE_VERSION = '20260826-become-live-groq-1'/);
+assert.match(loader,/LIVE_VERSION = '20260826-become-local-ai-2'/);
 assert.match(loader,/perceive-role-logic\.txt/);
 assert.match(loader,/become-live-02\.txt/);
 assert.match(loader,/sources\.slice\(perceiveEnd\)\.join\(''\)/);
@@ -56,7 +56,7 @@ assert.match(index,/PARALLAX WING/);
 assert.match(index,/nearest escort on the outside/i);
 assert.match(index,/id="becomeLab"/);
 assert.match(index,/id="becomeScreen"/);
-assert.match(index,/arcade\.js\?v=20260826-become-live-groq-1/);
+assert.match(index,/arcade\.js\?v=20260826-become-local-ai-2/);
 assert.doesNotMatch(index,/SIGNAL VEIL/);
 
 // Nine-portal compatibility remains intact.
@@ -80,19 +80,23 @@ for (const marker of [
 ]) assert.ok(becomeCoreSource.includes(marker),`missing Become core marker: ${marker}`);
 assert.doesNotMatch(becomeCoreSource,/\bfetch\s*\(|XMLHttpRequest|WebSocket|sendBeacon/);
 
-// The live director uses a tab-scoped Groq credential and never pretends a stored world is live.
+// Live Become must work with no credential via local WebGPU and retain optional Groq cloud generation.
 for (const marker of [
-  'DREAM MAKER · BECOME · LIVE GROQ','https://dream-unity-become-live.vercel.app/api/become-scenario','https://console.groq.com/keys',
-  'BECOME_GROQ_SESSION_KEY','sessionStorage','X-Groq-Api-Key','GPT-OSS 120B','function bLiveValidateScenario',
-  'async function bLiveGenerate','function bLivePrefetch','bBeginSession = async function','bNext = async function','NO STORED WORLD',
+  'DREAM MAKER · BECOME · LIVE AI','https://dream-unity-become-live.vercel.app/api/become-scenario','https://console.groq.com/keys',
+  'BECOME_GROQ_SESSION_KEY','sessionStorage','X-Groq-Api-Key','GPT-OSS 120B','ZERO-CREDENTIAL LOCAL AI',
+  'https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm/+esm','SmolLM2-360M-Instruct-q4f32_1-MLC','navigator.gpu',
+  'async function bLocalEngine','async function bLocalGenerate','function bLocalTooSimilar','bLocalJaccard','async function bGroqGenerate',
+  'async function bLiveGenerate','function bLivePrefetch','bBeginSession=async function','bNext=async function','NO STORED WORLD',
   'recentScenarios','currentPerformance','dimensions'
 ]) assert.ok(becomeLiveSource.includes(marker),`missing Become live marker: ${marker}`);
-assert.match(becomeLiveSource,/fetch\(BECOME_LIVE_API/);
+assert.match(becomeLiveSource,/import\(BECOME_LOCAL_WEBLLM_URL\)/);
+assert.match(becomeLiveSource,/engine\.chat\.completions\.create/);
 assert.match(becomeLiveSource,/Array\.from\(\{length:becomeState\.count\},\(\)=>null\)/);
 assert.doesNotMatch(becomeLiveSource,/bShuffle\(BECOME_SCENARIOS\)/);
 assert.doesNotMatch(becomeLiveSource,/localStorage\.setItem\([^\n]*groq/i);
+assert.doesNotMatch(becomeLiveSource,/A free Groq API key is required/i);
 
-// Free Groq backend: Responses API, strict structured output, novelty rejection and CORS.
+// Optional free Groq backend: Responses API, strict structured output, novelty rejection and CORS.
 for (const marker of [
   'https://api.groq.com/openai/v1/responses','openai/gpt-oss-120b','GROQ_API_KEY','x-groq-api-key','X-Groq-Api-Key',
   "strict:true",'const MAX_ATTEMPTS = 3','function tooSimilar','jaccard','dimensionOverlap>=4','https://dream-unity.github.io',
@@ -102,7 +106,7 @@ assert.doesNotMatch(apiSource,/@vercel\/oidc|api\.openai\.com|AI_GATEWAY_API_KEY
 assert.equal(packageJson.version,'1.5.0');
 assert.equal(packageJson.dependencies,undefined);
 
-// Core Become can still instantiate independently; live networking is deliberately layered above it.
+// Core Become can still instantiate independently; live generation remains layered above it.
 const classList = () => ({add(){},remove(){},contains(){return false;}});
 const becomeRoot = {classList:classList(),setAttribute(){},onclick:null,onsubmit:null,onchange:null,onkeydown:null};
 const becomeScreen = {innerHTML:'',scrollTop:0};
@@ -119,7 +123,7 @@ const becomeGame = becomeRuntime.definition.factory();
 becomeGame.reset({setScore(){},setMetric(){}});
 assert.match(becomeScreen.innerHTML,/REALITY<br>TRAINING LAB/);
 
-// Documentation/deployment verification must know about the live Groq layer.
+// Documentation/deployment verification must know about the live layer.
 assert.match(readme,/Dream Maker → BECOME/);
 assert.match(readme,/controlled as-if/i);
 assert.match(workflow,/become-live-02\.txt/);
@@ -127,4 +131,4 @@ assert.match(workflow,/dream-unity-become-live\.vercel\.app/);
 assert.match(workflow,/openai\/gpt-oss-120b/);
 assert.match(workflow,/provider.*groq/i);
 
-console.log('Validated: nine portals, Relational Identity Drift, Become core training, live Groq GPT-OSS scenario sourcing and no stored live fallback.');
+console.log('Validated: nine portals, Relational Identity Drift, Become core training, zero-credential local AI, optional Groq GPT-OSS and no stored live fallback.');
