@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
-const MODEL = process.env.BECOME_MODEL || 'gpt-5.6-terra';
-const OPENAI_URL = 'https://api.openai.com/v1/responses';
+const MODEL = process.env.BECOME_MODEL || 'openai/gpt-5.6-sol';
+const GATEWAY_URL = 'https://ai-gateway.vercel.sh/v1/responses';
 const REQUEST_TIMEOUT_MS = 22000;
 const MAX_HISTORY = 8;
 const MAX_ATTEMPTS = 3;
@@ -148,7 +148,7 @@ function applyCors(req,res){
   const origin=allowedOrigin(req);
   if(origin) res.setHeader('Access-Control-Allow-Origin',origin);
   res.setHeader('Vary','Origin');
-  res.setHeader('Access-Control-Allow-Methods','POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods','POST, OPTIONS, GET');
   res.setHeader('Access-Control-Allow-Headers','Content-Type');
   return origin;
 }
@@ -166,15 +166,17 @@ function rateLimited(req){
   return false;
 }
 
-async function callOpenAI(payload,attempt,rejected){
+async function callGateway(payload,attempt,rejected){
+  const token=process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_OIDC_TOKEN;
+  if(!token) throw new Error('Vercel AI Gateway authentication is unavailable.');
   const controller=new AbortController();
   const timeout=setTimeout(()=>controller.abort(),REQUEST_TIMEOUT_MS);
   try{
-    const response=await fetch(OPENAI_URL,{
+    const response=await fetch(GATEWAY_URL,{
       method:'POST',
       headers:{
         'Content-Type':'application/json',
-        'Authorization':`Bearer ${process.env.OPENAI_API_KEY}`
+        'Authorization':`Bearer ${token}`
       },
       signal:controller.signal,
       body:JSON.stringify({
@@ -195,11 +197,11 @@ async function callOpenAI(payload,attempt,rejected){
     });
     const data=await response.json().catch(()=>null);
     if(!response.ok){
-      const message=data?.error?.message || `OpenAI request failed (${response.status}).`;
+      const message=data?.error?.message || `AI Gateway request failed (${response.status}).`;
       throw new Error(message);
     }
     const text=extractOutputText(data);
-    if(!text) throw new Error('OpenAI returned no scenario text.');
+    if(!text) throw new Error('AI Gateway returned no scenario text.');
     const scenario=JSON.parse(text);
     scenario.id=`live-${Date.now().toString(36)}-${randomUUID().slice(0,8)}`;
     return scenario;
@@ -211,8 +213,13 @@ export default async function handler(req,res){
   const cors=applyCors(req,res);
   if(req.method === 'OPTIONS') return res.status(204).end();
   if(req.headers.origin && cors === null) return res.status(403).json({error:'Origin not allowed.'});
+  if(req.method === 'GET') return res.status(200).json({
+    ok:true,
+    service:'dream-unity-become-live',
+    model:MODEL,
+    gatewayAuth:Boolean(process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_OIDC_TOKEN)
+  });
   if(req.method !== 'POST') return res.status(405).json({error:'Use POST.'});
-  if(!process.env.OPENAI_API_KEY) return res.status(503).json({error:'Live GPT is not configured: OPENAI_API_KEY is missing on the server.'});
   if(rateLimited(req)) return res.status(429).json({error:'Live generation rate limit reached. Try again shortly.'});
 
   const body=req.body && typeof req.body === 'object' ? req.body : {};
@@ -231,7 +238,7 @@ export default async function handler(req,res){
   let rejected=[];
   try{
     for(let attempt=1;attempt<=MAX_ATTEMPTS;attempt++){
-      const scenario=await callOpenAI(payload,attempt,rejected);
+      const scenario=await callGateway(payload,attempt,rejected);
       if(!tooSimilar(scenario,history)){
         return res.status(200).json({scenario,meta:{model:MODEL,generatedAt:new Date().toISOString(),attempt}});
       }
