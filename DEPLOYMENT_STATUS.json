@@ -1,33 +1,49 @@
 {
   "project": "Dream Unity \u2014 Experimental Three-World Problem",
   "deployment": "verified-live",
-  "source_sha": "dc74796dd540a362239b277003fec1725bf4f2ef",
+  "source_sha": "6c54234180d272047a7b32e879b8c38b46443d81",
   "page_url": "https://dream-unity.github.io/experimental-three-world-problem/",
-  "portal": "Dream Machine / Perceive",
-  "game": "Parallax Wing",
-  "relational_mechanic": "relational_identity_drift",
-  "rule": "nearest active escort on the outside of the leader turn",
-  "nine_game_compatibility": "validated",
-  "validated_properties": [
-    "target identity changes with live formation relations",
-    "leader turn establishes inside and outside reference sides",
-    "distance comparison selects a unique outside escort",
-    "turn reversal and escort crossing move the target role",
-    "switch hysteresis prevents ambiguous flicker",
-    "reacquisition latency and role-switch errors are recorded",
-    "fighter combat, shield, projectiles and touch/mouse/keyboard input remain active"
+  "portal_replacements": [
+    {
+      "portal": "Dream Machine / Perceive",
+      "game": "Parallax Wing",
+      "mechanic": "relational_identity_drift",
+      "rule": "nearest active escort on the outside of the leader turn"
+    },
+    {
+      "portal": "Dream Maker / Become",
+      "game": "Become Reality Lab",
+      "mechanic": "controlled_as_if_simulation_and_transfer"
+    }
   ],
-  "diagnostic_errors": [
-    "stale-role-perseveration",
-    "inside-outside-reversal",
-    "outside-distance-substitution",
-    "reference-object-substitution",
-    "screen-position-substitution",
-    "late-relational-acquisition"
-  ],
+  "nine_portal_compatibility": "validated",
+  "perceive_validation": {
+    "target_identity_changes_with_relation": true,
+    "switch_hysteresis": true,
+    "reacquisition_latency_recorded": true,
+    "diagnostic_errors": [
+      "stale-role-perseveration",
+      "inside-outside-reversal",
+      "outside-distance-substitution",
+      "reference-object-substitution",
+      "screen-position-substitution",
+      "late-relational-acquisition"
+    ]
+  },
+  "become_training": {
+    "scenario_modules": 10,
+    "timed_faculties": 17,
+    "seconds_per_faculty": 10,
+    "self_score_scale": "1-10",
+    "transfer_faculties": 8,
+    "state_entry_seconds": 30,
+    "exit_control_required": true,
+    "personal_text_persisted": false
+  },
   "files_compared": [
     "index.html",
     "styles.css",
+    "become.css",
     "main.js",
     "arcade.js",
     "arcade-parts/part-01.txt",
@@ -43,13 +59,16 @@
     "arcade-parts/perceive-aerial-05.txt",
     "arcade-parts/perceive-aerial-06.txt",
     "arcade-parts/perceive-aerial-07.txt",
-    "arcade-parts/perceive-aerial-08.txt"
+    "arcade-parts/perceive-aerial-08.txt",
+    "arcade-parts/become-lab-01.txt"
   ],
   "sha256": [
-    "0af08977691c86b43f4be37b544a004b019d64ccfa32921db8269ac07e48d5df  /tmp/dream-unity-live/index.html",
+    "2889c9fdd9279e8be7a72cbb10def337db3fc75b8b0ec576566643353054ce50  /tmp/dream-unity-live/index.html",
     "008f907be470e8b387badb2534fa4df0c55b5bfc1c71c75d1beb9ef9ed963191  /tmp/dream-unity-live/styles.css",
+    "ad8dc6788a87c34201b132b88d8e5eb3ed439a0644f54a9610d2398d1b877536  /tmp/dream-unity-live/become.css",
     "2107036b6397210444b31df52260fffb6a62d0447fefbc262beb3ee45f5b2d65  /tmp/dream-unity-live/main.js",
-    "2855c0cd3ab7144a13aab2ce7f7fb76f185e0f246c963c03676e3c328ed25ddd  /tmp/dream-unity-live/arcade.js",
+    "0f5a7ac41706bd6b580219cbea49bb805d1c603c33bf61932413e2a33c19baff  /tmp/dream-unity-live/arcade.js",
+    "5ea7269b5c3158bbbb8fd520439c3bd3b45176537aa018beebb6a36fe68190c1  /tmp/dream-unity-live/arcade-parts/become-lab-01.txt",
     "4d7006d17cf3ae67cfd39516fe8df857bd44d82a6cb7aad4b81067484d7e2da7  /tmp/dream-unity-live/arcade-parts/part-01.txt",
     "526f14079e2ebf9560a8648a866a7bf70c8ae9f83f6bc2edcc68d861a65e04f2  /tmp/dream-unity-live/arcade-parts/part-02.txt",
     "183630ab3997f38ab5e2f2faf54505e9c4683c5885b3354fbb49e5508347b48c  /tmp/dream-unity-live/arcade-parts/part-03.txt",
@@ -65,5 +84,5 @@
     "b675b4a09a5fae66938b1b5b83889357dcc45d08641f11901f80fe46aa9f12b7  /tmp/dream-unity-live/arcade-parts/perceive-aerial-08.txt",
     "08b62c2248bed6690890881f12d4e9a157690329aaff6f3a253a3723aaa69245  /tmp/dream-unity-live/arcade-parts/perceive-role-logic.txt"
   ],
-  "verified_at": "2026-08-25T10:38:29.606797+00:00"
+  "verified_at": "2026-08-25T11:11:21.718857+00:00"
 }
