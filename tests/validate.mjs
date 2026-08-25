@@ -47,9 +47,8 @@ for (const path of [completePath,fileURLToPath(new URL('arcade.js',root)),fileUR
 
 // Loader and public surface.
 assert.match(loader,/VERSION = '20260825-role-drift-become-1'/);
-assert.match(loader,/LIVE_VERSION = '20260826-become-live-gpt-2'/);
+assert.match(loader,/LIVE_VERSION = '20260826-become-live-groq-1'/);
 assert.match(loader,/perceive-role-logic\.txt/);
-assert.match(loader,/become-lab-\$\{String\(n\)\.padStart\(2, '0'\)\}\.txt/);
 assert.match(loader,/become-live-02\.txt/);
 assert.match(loader,/sources\.slice\(perceiveEnd\)\.join\(''\)/);
 assert.match(loader,/Function\(completeSource\)\(\)/);
@@ -57,7 +56,7 @@ assert.match(index,/PARALLAX WING/);
 assert.match(index,/nearest escort on the outside/i);
 assert.match(index,/id="becomeLab"/);
 assert.match(index,/id="becomeScreen"/);
-assert.match(index,/arcade\.js\?v=20260826-become-live-gpt-2/);
+assert.match(index,/arcade\.js\?v=20260826-become-live-groq-1/);
 assert.doesNotMatch(index,/SIGNAL VEIL/);
 
 // Nine-portal compatibility remains intact.
@@ -81,26 +80,27 @@ for (const marker of [
 ]) assert.ok(becomeCoreSource.includes(marker),`missing Become core marker: ${marker}`);
 assert.doesNotMatch(becomeCoreSource,/\bfetch\s*\(|XMLHttpRequest|WebSocket|sendBeacon/);
 
-// The live director overrides only scenario sourcing and never pretends a stored world is live.
+// The live director uses a tab-scoped Groq credential and never pretends a stored world is live.
 for (const marker of [
-  'DREAM MAKER · BECOME · LIVE GPT','https://dream-unity-become-live.vercel.app/api/become-scenario','function bLiveValidateScenario',
-  'async function bLiveGenerate','function bLivePrefetch','bBeginSession = async function','bNext = async function','NOT A SCENARIO BANK',
-  'NO STORED WORLD','recentScenarios','currentPerformance','dimensions'
+  'DREAM MAKER · BECOME · LIVE GROQ','https://dream-unity-become-live.vercel.app/api/become-scenario','https://console.groq.com/keys',
+  'BECOME_GROQ_SESSION_KEY','sessionStorage','X-Groq-Api-Key','GPT-OSS 120B','function bLiveValidateScenario',
+  'async function bLiveGenerate','function bLivePrefetch','bBeginSession = async function','bNext = async function','NO STORED WORLD',
+  'recentScenarios','currentPerformance','dimensions'
 ]) assert.ok(becomeLiveSource.includes(marker),`missing Become live marker: ${marker}`);
 assert.match(becomeLiveSource,/fetch\(BECOME_LIVE_API/);
 assert.match(becomeLiveSource,/Array\.from\(\{length:becomeState\.count\},\(\)=>null\)/);
 assert.doesNotMatch(becomeLiveSource,/bShuffle\(BECOME_SCENARIOS\)/);
+assert.doesNotMatch(becomeLiveSource,/localStorage\.setItem\([^\n]*groq/i);
 
-// Secure Vercel backend: OIDC, structured generation, novelty rejection and CORS.
+// Free Groq backend: Responses API, strict structured output, novelty rejection and CORS.
 for (const marker of [
-  "generateObject", "@vercel/oidc", "getVercelOidcToken", "openai/gpt-5.6-sol", "const MAX_ATTEMPTS = 3",
-  'function tooSimilar','jaccard','dimensionOverlap>=4','https://dream-unity.github.io','Live GPT hosting is configured'
-]) assert.ok(apiSource.includes(marker),`missing backend marker: ${marker}`);
-assert.doesNotMatch(apiSource,/OPENAI_API_KEY/);
-assert.doesNotMatch(apiSource,/api\.openai\.com/);
-assert.equal(packageJson.dependencies?.ai,'latest');
-assert.equal(packageJson.dependencies?.zod,'latest');
-assert.equal(packageJson.dependencies?.['@vercel/oidc'],'latest');
+  'https://api.groq.com/openai/v1/responses','openai/gpt-oss-120b','GROQ_API_KEY','x-groq-api-key','X-Groq-Api-Key',
+  "strict:true",'const MAX_ATTEMPTS = 3','function tooSimilar','jaccard','dimensionOverlap>=4','https://dream-unity.github.io',
+  "provider:'groq'",'GROQ_KEY_REQUIRED','GROQ_KEY_INVALID','GROQ_RATE_LIMIT'
+]) assert.ok(apiSource.includes(marker),`missing Groq backend marker: ${marker}`);
+assert.doesNotMatch(apiSource,/@vercel\/oidc|api\.openai\.com|AI_GATEWAY_API_KEY|getVercelOidcToken|generateObject/);
+assert.equal(packageJson.version,'1.5.0');
+assert.equal(packageJson.dependencies,undefined);
 
 // Core Become can still instantiate independently; live networking is deliberately layered above it.
 const classList = () => ({add(){},remove(){},contains(){return false;}});
@@ -119,10 +119,12 @@ const becomeGame = becomeRuntime.definition.factory();
 becomeGame.reset({setScore(){},setMetric(){}});
 assert.match(becomeScreen.innerHTML,/REALITY<br>TRAINING LAB/);
 
-// Documentation/deployment verification must know about the live layer.
+// Documentation/deployment verification must know about the live Groq layer.
 assert.match(readme,/Dream Maker → BECOME/);
 assert.match(readme,/controlled as-if/i);
 assert.match(workflow,/become-live-02\.txt/);
 assert.match(workflow,/dream-unity-become-live\.vercel\.app/);
+assert.match(workflow,/openai\/gpt-oss-120b/);
+assert.match(workflow,/provider.*groq/i);
 
-console.log('Validated: nine portals, Relational Identity Drift, Become core training, live GPT scenario sourcing, OIDC backend and deployment surfaces.');
+console.log('Validated: nine portals, Relational Identity Drift, Become core training, live Groq GPT-OSS scenario sourcing and no stored live fallback.');
