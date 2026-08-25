@@ -1,14 +1,14 @@
 {
   "project": "Dream Unity \u2014 Experimental Three-World Problem",
   "deployment": "verified-live",
-  "source_sha": "01769f69be60b8cec55325a5918d8d57dee48a42",
+  "source_sha": "c94a15fcc960b3db79244c6bec9c5a059fe6f697",
   "page_url": "https://dream-unity.github.io/experimental-three-world-problem/",
   "nine_portal_compatibility": "validated",
   "become": {
     "generation": "cloud_ai_first_relational_synthesis_guaranteed",
     "cloud_provider": "blockrun",
     "cloud_model": "nvidia/gpt-oss-120b",
-    "cloud_status_http": "429",
+    "cloud_status_http": "502",
     "cloud_request_timeout_ms": 20000,
     "browser_cloud_timeout_ms": 12000,
     "cloud_cooldown_ms": 180000,
@@ -43,5 +43,5 @@
     "b675b4a09a5fae66938b1b5b83889357dcc45d08641f11901f80fe46aa9f12b7  /tmp/dream-unity-live/arcade-parts/perceive-aerial-08.txt",
     "08b62c2248bed6690890881f12d4e9a157690329aaff6f3a253a3723aaa69245  /tmp/dream-unity-live/arcade-parts/perceive-role-logic.txt"
   ],
-  "verified_at": "2026-08-25T16:51:50.832646+00:00"
+  "verified_at": "2026-08-25T23:44:21.153351+00:00"
 }
