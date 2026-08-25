@@ -68,7 +68,7 @@ jobs:
           rm -rf /tmp/dream-unity-live
           mkdir -p /tmp/dream-unity-live/arcade-parts
           matched=false
-          for attempt in $(seq 1 40); do
+          for attempt in $(seq 1 60); do
             matched=true
             for path in "${files[@]}"; do
               if ! curl --fail --location --silent --show-error --retry 3 --retry-all-errors --retry-delay 2 \
@@ -82,7 +82,7 @@ jobs:
               fi
             done
             if [ "$matched" = true ]; then break; fi
-            echo "Pages has not propagated yet (attempt $attempt/40)."
+            echo "Pages has not propagated yet (attempt $attempt/60)."
             sleep 5
           done
           test "$matched" = true
@@ -96,17 +96,15 @@ jobs:
           grep -q "GAME_BY_KEY\['maker:2'\]" /tmp/dream-unity-live/arcade-parts/become-lab-01.txt
           grep -q 'STATE-ENTRY LATENCY' /tmp/dream-unity-live/arcade-parts/become-lab-01.txt
           grep -q 'DREAM MAKER · BECOME · LIVE AI' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
-          grep -q 'https://blockrun.ai/api/v1/chat/completions' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
-          grep -q 'nvidia/gpt-oss-120b' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
+          grep -q 'https://dream-unity-become-live.vercel.app/api/become-scenario' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
           grep -q 'NO API KEY' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
           grep -q 'NO ACCOUNT' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
           grep -q 'INTERNET GENERATED' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
           grep -q 'NO MODEL DOWNLOAD' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
           grep -q 'NO STORED FALLBACK' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
-          grep -q 'bLiveTooSimilar' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
-          grep -q 'bLiveCallWithFailover' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
           ! grep -qi 'groq' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
           ! grep -q 'sessionStorage' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
+          ! grep -q 'blockrun.ai/api/v1/chat/completions' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
           ! grep -q '@mlc-ai/web-llm' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
           ! grep -q '@huggingface/transformers' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
           ! grep -q 'navigator.gpu' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
@@ -116,13 +114,27 @@ jobs:
             /tmp/dream-unity-live/become.css /tmp/dream-unity-live/main.js /tmp/dream-unity-live/arcade.js \
             /tmp/dream-unity-live/arcade-parts/*.txt > /tmp/live-checksums.txt
 
-      - name: Verify zero-key browser-accessible GPT-OSS inference
+      - name: Verify zero-key Become proxy identity and browser CORS
         shell: bash
         env:
-          LIVE_API: https://blockrun.ai/api/v1/chat/completions
+          LIVE_API: https://dream-unity-become-live.vercel.app/api/become-scenario
           PAGE_ORIGIN: https://dream-unity.github.io
         run: |
           set -euo pipefail
+          curl --fail --silent --show-error --retry 3 --retry-all-errors \
+            "$LIVE_API" > /tmp/become-service.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          data=json.loads(Path('/tmp/become-service.json').read_text(encoding='utf-8'))
+          assert data.get('ok') is True
+          assert data.get('service') == 'dream-unity-become-live'
+          assert data.get('provider') == 'blockrun'
+          assert data.get('model') == 'nvidia/gpt-oss-120b'
+          assert data.get('credentialMode') == 'none'
+          assert data.get('accountRequired') is False
+          assert data.get('localModel') is False
+          PY
 
           preflight_code=$(curl --silent --show-error --output /tmp/become-preflight-body \
             --dump-header /tmp/become-preflight-headers --write-out '%{http_code}' \
@@ -131,48 +143,72 @@ jobs:
             -H 'Access-Control-Request-Method: POST' \
             -H 'Access-Control-Request-Headers: content-type' \
             "$LIVE_API")
-
           export PREFLIGHT_CODE="$preflight_code"
           python3 - <<'PY'
           import os
           from pathlib import Path
-          code = int(os.environ['PREFLIGHT_CODE'])
-          assert 200 <= code < 300, f'CORS preflight failed with HTTP {code}'
-          headers = Path('/tmp/become-preflight-headers').read_text(encoding='utf-8', errors='ignore').lower()
-          origin = os.environ['PAGE_ORIGIN'].lower()
-          allow_origin = None
-          allow_methods = None
+          code=int(os.environ['PREFLIGHT_CODE'])
+          assert 200 <= code < 300, f'Proxy CORS preflight failed with HTTP {code}'
+          headers=Path('/tmp/become-preflight-headers').read_text(encoding='utf-8',errors='ignore').lower()
+          origin=os.environ['PAGE_ORIGIN'].lower()
+          allow_origin=allow_methods=allow_headers=None
           for line in headers.splitlines():
-              if line.startswith('access-control-allow-origin:'):
-                  allow_origin = line.split(':',1)[1].strip()
-              if line.startswith('access-control-allow-methods:'):
-                  allow_methods = line.split(':',1)[1].strip()
-          assert allow_origin in {'*', origin}, f'Browser origin not allowed: {allow_origin!r}'
-          assert allow_methods and 'post' in allow_methods, f'POST not allowed by CORS: {allow_methods!r}'
+              if line.startswith('access-control-allow-origin:'): allow_origin=line.split(':',1)[1].strip()
+              if line.startswith('access-control-allow-methods:'): allow_methods=line.split(':',1)[1].strip()
+              if line.startswith('access-control-allow-headers:'): allow_headers=line.split(':',1)[1].strip()
+          assert allow_origin in {'*',origin}, f'Browser origin not allowed: {allow_origin!r}'
+          assert allow_methods and 'post' in allow_methods, f'POST not allowed: {allow_methods!r}'
+          assert allow_headers and 'content-type' in allow_headers, f'Content-Type not allowed: {allow_headers!r}'
           PY
 
-          curl --fail --silent --show-error --retry 3 --retry-all-errors --retry-delay 2 \
-            --dump-header /tmp/become-live-headers \
+      - name: Generate a real zero-key Become world
+        shell: bash
+        env:
+          LIVE_API: https://dream-unity-become-live.vercel.app/api/become-scenario
+          PAGE_ORIGIN: https://dream-unity.github.io
+        run: |
+          set -euo pipefail
+          cat > /tmp/become-request.json <<'JSON'
+          {
+            "trialIndex": 0,
+            "trialCount": 1,
+            "sessionNonce": "github-actions-live-proof",
+            "recentScenarios": [],
+            "currentPerformance": [],
+            "previousWeakestMetric": null
+          }
+          JSON
+          curl --fail --silent --show-error --retry 2 --retry-all-errors --retry-delay 3 \
+            --max-time 100 \
+            --dump-header /tmp/become-generation-headers \
             -X POST \
             -H "Origin: $PAGE_ORIGIN" \
             -H 'Content-Type: application/json' \
-            -d '{"model":"nvidia/gpt-oss-120b","messages":[{"role":"user","content":"Reply with the single word LIVE"}],"stream":false,"max_tokens":16}' \
-            "$LIVE_API" > /tmp/become-live-response.json
+            --data-binary @/tmp/become-request.json \
+            "$LIVE_API" > /tmp/become-generation.json
 
           python3 - <<'PY'
           import json, os
           from pathlib import Path
-          data = json.loads(Path('/tmp/become-live-response.json').read_text(encoding='utf-8'))
-          content = data.get('choices',[{}])[0].get('message',{}).get('content','')
-          assert isinstance(content,str) and content.strip(), 'Zero-key GPT-OSS call returned no completion'
-          headers = Path('/tmp/become-live-headers').read_text(encoding='utf-8', errors='ignore').lower()
-          origin = os.environ['PAGE_ORIGIN'].lower()
-          allow_origin = None
+          data=json.loads(Path('/tmp/become-generation.json').read_text(encoding='utf-8'))
+          scenario=data.get('scenario') or {}
+          meta=data.get('meta') or {}
+          required=['id','title','tag','visual','premise','sensory','objects','body','atmosphere','motion','stakes','identity','choice','exit','dimensions']
+          for key in required:
+              assert key in scenario and scenario[key], f'missing generated field: {key}'
+          dims=scenario['dimensions']
+          for key in ['environment','role','goal','pressure','body_dynamics','decision_structure','emotional_tone','social_structure']:
+              assert isinstance(dims.get(key),str) and dims[key].strip(), f'missing dimension: {key}'
+          assert meta.get('provider') == 'blockrun'
+          assert meta.get('model') in {'nvidia/gpt-oss-120b','nvidia/step-3.7-flash','nvidia/mistral-nemotron'}
+          assert meta.get('credentialMode') == 'none'
+          headers=Path('/tmp/become-generation-headers').read_text(encoding='utf-8',errors='ignore').lower()
+          origin=os.environ['PAGE_ORIGIN'].lower()
+          allow_origin=None
           for line in headers.splitlines():
-              if line.startswith('access-control-allow-origin:'):
-                  allow_origin = line.split(':',1)[1].strip()
-          assert allow_origin in {'*', origin}, f'Completion response is not browser-readable: {allow_origin!r}'
-          print('Verified zero-key live GPT-OSS completion:', content[:80])
+              if line.startswith('access-control-allow-origin:'): allow_origin=line.split(':',1)[1].strip()
+          assert allow_origin in {'*',origin}, f'Generated response is not browser-readable: {allow_origin!r}'
+          print('Verified live world:', scenario['title'], 'via', meta.get('model'))
           PY
 
       - name: Commit machine-readable live deployment receipt
@@ -198,18 +234,19 @@ jobs:
               },
               'become': {
                   'game': 'Become Reality Lab',
-                  'scenario_source': 'zero_key_internet_live_cloud',
+                  'scenario_source': 'zero_key_internet_live_via_proxy',
                   'browser_model_download': False,
                   'local_generation': False,
-                  'cloud_gateway': 'blockrun',
+                  'browser_api_key_required': False,
+                  'browser_account_required': False,
+                  'proxy': 'https://dream-unity-become-live.vercel.app/api/become-scenario',
+                  'upstream_gateway': 'blockrun',
                   'primary_model': 'nvidia/gpt-oss-120b',
                   'failover_models': ['nvidia/step-3.7-flash','nvidia/mistral-nemotron'],
-                  'endpoint': 'https://blockrun.ai/api/v1/chat/completions',
                   'credential_mode': 'none',
-                  'account_required': False,
                   'browser_cors_verified': True,
                   'live_inference_verified': True,
-                  'client_novelty_rejection': True,
+                  'server_novelty_rejection': True,
                   'stored_live_fallback': False,
                   'timed_faculties': 17,
                   'state_entry_seconds': 30,
@@ -224,6 +261,6 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add DEPLOYMENT_STATUS.json
           git diff --cached --quiet && exit 0
-          git commit -m 'Record verified zero-key internet Dream Unity deployment [skip ci]'
+          git commit -m 'Record verified zero-key proxy Dream Unity deployment [skip ci]'
           git pull --rebase origin main
           git push origin HEAD:main
