@@ -1,0 +1,409 @@
+
+  // Dream Maker / Become — controlled phenomenological simulation training.
+  const BECOME_SECONDS = 10;
+  const BECOME_ENTRY_SECONDS = 30;
+  const BECOME_PRESETS = [1, 3, 5, 10];
+  const becomeRoot = document.getElementById('becomeLab');
+  const becomeScreen = document.getElementById('becomeScreen');
+
+  const BECOME_SCENARIOS = [
+    {
+      id: 'breakaway', title: 'BREAKAWAY', tag: 'HIGH-SPEED AGENCY', visual: 'hockey',
+      premise: 'Game seven is tied 2–2. Twenty-three seconds remain. You cross the blue line at full speed. The puck is fifteen metres ahead, one defender blocks the lane, and the goalkeeper is reading your hips.',
+      sensory: 'See scratched blue-white ice, the black puck, red goal frame and visor edge. Hear blades cut, boards strike and the crowd compressed through your helmet.',
+      objects: 'Feel taped stick through thick gloves, skates biting each edge, pad weight, trapped heat and cold air at your mouth.',
+      body: 'Put the viewpoint behind the visor. Your gloved hands are your hands; your centre of gravity is low; the skates are beneath you.',
+      atmosphere: 'Feel the packed arena: enormous outside the helmet, narrow and private inside it.',
+      motion: 'Feel left edge, right edge, acceleration, torso shift and blade chatter as the puck expands in view.',
+      stakes: 'This possession may decide the championship. Losing the puck removes the opportunity; scoring changes everyone on your bench.',
+      identity: 'Inhabit the player for whom skating is more automatic than running and whose body knows hundreds of versions of this play.',
+      choice: 'The defender commits left. Choose now: cut right, chip, brake, pass or improvise—and mentally execute it.',
+      exit: 'Let ice, helmet and crowd dissolve. Feel your actual feet and hands. Name three real objects around you.'
+    },
+    {
+      id: 'opening-note', title: 'THE OPENING NOTE', tag: 'PERFORMANCE PRESENCE', visual: 'stage',
+      premise: 'You stand under a white spotlight before two thousand people and a live broadcast. The conductor’s hand is raised. The first note belongs to you in twelve seconds.',
+      sensory: 'See light haze, front rows, black stage floor, instrument detail and the lifted hand. Hear audience hush, ventilation and one distant chair.',
+      objects: 'Feel the instrument’s weight and contact points, clothing at your shoulders, warm light on your face and floor through your shoes.',
+      body: 'Move the viewpoint into your eyes. Feel stance, hand position, jaw, breath and tiny balancing corrections.',
+      atmosphere: 'Feel public exposure and private silence coexisting immediately before music begins.',
+      motion: 'Experience the preparatory breath, hand rising, fingers settling and the motion that releases sound.',
+      stakes: 'The opening phrase sets your timing, the ensemble’s confidence and the audience’s first emotional frame.',
+      identity: 'Inhabit the musician whose years of practice are available without needing to narrate them.',
+      choice: 'The conductor gives the motion. Decide attack, breath, timing and weight—then hear yourself begin.',
+      exit: 'Let the stage go dark. Release the instrument, feel your actual jaw and hands, and orient to real sounds.'
+    },
+    {
+      id: 'whiteout', title: 'WHITEOUT', tag: 'RESPONSIBILITY UNDER PRESSURE', visual: 'mountain',
+      premise: 'You lead an alpine rescue. A teammate hangs eight metres below the ridge on your rope. A whiteout will erase visibility in six minutes. The anchor is holding—for now.',
+      sensory: 'See hard snow, rope over the lip, ice crystals and grey sky. Hear wind buffet fabric, metal strike and a broken radio voice.',
+      objects: 'Feel rope load through gloves and harness, crampon pressure, cold cheeks and granular snow under one knee.',
+      body: 'Locate your weight against the anchor. Your hips, hands and boots are the points keeping the system stable.',
+      atmosphere: 'Let the mountain feel vast and indifferent while your small team becomes intensely important.',
+      motion: 'Feel gusts shift balance, rope pulse under load and your body reposition one deliberate movement at a time.',
+      stakes: 'A rushed move may shock-load the anchor; delay may erase visibility; your teammate depends on your next command.',
+      identity: 'Inhabit the trained leader whose knots, load systems and calm communication are embodied.',
+      choice: 'Choose the next command: reinforce, haul, lower, reposition or communicate—and perform its first step.',
+      exit: 'Release rope and mountain. Feel the support under your actual body, warm your hands and name today’s date.'
+    },
+    {
+      id: 'orbital-repair', title: 'ORBITAL REPAIR', tag: 'SPATIAL CONVICTION', visual: 'orbit',
+      premise: 'A micrometeorite has disabled an orbital station’s cooling array. The repair panel is twelve metres along the hull. Your manoeuvring unit is offline and four minutes of oxygen remain.',
+      sensory: 'See curved Earth, black space, white panels, warning light and the repair hatch. Hear suit fans, radio hiss and your breath.',
+      objects: 'Feel suit stiffness, glove resistance, helmet pressure, tether pull and a tool against your thigh.',
+      body: 'Place the viewpoint inside the helmet. Up and down are absent; one hand anchors your floating torso to the hull.',
+      atmosphere: 'Feel the silent scale of orbit beside the intimate mechanical world inside the suit.',
+      motion: 'Experience hand-over-hand translation, body rotation, tether oscillation and delayed movement.',
+      stakes: 'Missing a grip costs oxygen and may damage the tether; failure threatens the station and everyone inside.',
+      identity: 'Inhabit the astronaut whose movement, checklists and breath control were trained for this exact class of failure.',
+      choice: 'Choose your first three grips and tool sequence, then move toward the panel without inventing a thruster.',
+      exit: 'Let Earth and hull disappear. Feel gravity, the surface holding you and the real air moving through your nose.'
+    },
+    {
+      id: 'final-submission', title: 'FINAL SUBMISSION', tag: 'MORAL AGENCY', visual: 'courtroom',
+      premise: 'You are counsel in an emergency hearing. A family will lose shelter tonight unless the judge accepts your final submission. You have ninety seconds and one disputed fact you must not overstate.',
+      sensory: 'See timber bench, files, clock, counsel table and the family behind you. Hear paper, keyboard taps and the judge’s measured breathing.',
+      objects: 'Feel lectern edge, dry paper, pen weight, shoes on carpet and formal clothing restricting your shoulders.',
+      body: 'Stand behind your own eyes. Feel breath supporting speech, feet grounded and attention moving between judge, notes and client.',
+      atmosphere: 'Feel procedural restraint containing an immediate human consequence.',
+      motion: 'Experience looking up, choosing a sentence, turning a page and using silence rather than rushing.',
+      stakes: 'Precision may preserve trust and shelter; exaggeration may destroy both. Time is genuinely running.',
+      identity: 'Inhabit the advocate whose courage is inseparable from accuracy and whose preparation is available now.',
+      choice: 'Choose your opening sentence and how you qualify the disputed fact. Speak it internally as the clock moves.',
+      exit: 'Let court and parties dissolve. Relax your actual tongue and shoulders; identify where you are and what day it is.'
+    },
+    {
+      id: 'cave-line', title: 'THE CAVE LINE', tag: 'CALM UNDER UNCERTAINTY', visual: 'ocean',
+      premise: 'You are cave diving when silt removes visibility. Your hand has lost the guide line. You have enough gas to search once before beginning the reserve protocol.',
+      sensory: 'See only torch scatter in brown-black water. Hear regulator bubbles, valve noise and water moving past the hood.',
+      objects: 'Feel mouthpiece, mask seal, cylinder weight, reel, rock texture and buoyancy against your chest.',
+      body: 'Locate your floating body from inside it: one hand protecting the mask, knees bent, fins still, breath controlled.',
+      atmosphere: 'Feel total enclosure without turning it into fantasy horror; the cave is physical, close and indifferent.',
+      motion: 'Experience slow hand sweeps, controlled rotation and buoyancy changes with each breath.',
+      stakes: 'Panic consumes gas and orientation; disciplined procedure preserves the route home.',
+      identity: 'Inhabit the diver whose emergency drills are procedural memory rather than inspirational self-talk.',
+      choice: 'Choose the search radius and hand sequence, then execute one calm cycle before reserve protocol.',
+      exit: 'Let water and equipment vanish. Open your eyes to real light, feel open air and take one ordinary unforced breath.'
+    },
+    {
+      id: 'last-bend', title: 'THE LAST BEND', tag: 'EFFORT TOLERANCE', visual: 'sprint',
+      premise: 'You enter the final bend of a championship 400-metre race. Your legs are flooding, the leader is one stride ahead and the finish is 110 metres away.',
+      sensory: 'See lane markings, shoulder ahead, stadium rim and the finish growing clearer. Hear spikes, breath and crowd as one broad roar.',
+      objects: 'Feel track return through spikes, fabric against skin, sweat, jaw tension and the heaviness in your arms.',
+      body: 'Put the camera behind your eyes. Your torso is upright, hips drive, elbows travel and the pain belongs to this body.',
+      atmosphere: 'Feel the loneliness of maximal effort inside a public race.',
+      motion: 'Experience cadence, foot strike, arm drive and the bend opening into the straight.',
+      stakes: 'Backing off brings immediate relief and ends the chance; maintaining form keeps the outcome alive.',
+      identity: 'Inhabit the athlete who has rehearsed discomfort and can distinguish pain from loss of mechanics.',
+      choice: 'Choose the cue that governs the next ten strides—hips, arms, relaxation or attack—and run them.',
+      exit: 'Let track and race disappear. Unclench your actual hands, feel your natural breathing and the floor beneath you.'
+    },
+    {
+      id: 'the-truth', title: 'THE TRUTH', tag: 'RELATIONAL COURAGE', visual: 'conversation',
+      premise: 'Someone you love asks whether you still want the life you planned together. They need a truthful answer now. You know honesty may change the relationship permanently.',
+      sensory: 'See their face, room light, table edge and the small movements around their eyes. Hear breathing, distant traffic and the silence after the question.',
+      objects: 'Feel chair support, cup temperature, clothing at your throat and your hands resting where they can be seen.',
+      body: 'Stay behind your own eyes rather than watching a dramatic scene from outside. Feel throat, chest, face and posture.',
+      atmosphere: 'Feel intimacy, history and uncertainty occupying the same quiet room.',
+      motion: 'Experience the breath before speaking, eye contact, pause and the mouth forming the first honest words.',
+      stakes: 'Evasion protects the next minute and may damage years; honesty may hurt now and restore agency to both people.',
+      identity: 'Inhabit the person who can be kind without being false and brave without becoming cruel.',
+      choice: 'Choose your first truthful sentence. Say only what you actually know; do not manufacture certainty.',
+      exit: 'Let the person and room dissolve. Feel your actual chest, look at three neutral objects and distinguish simulation from fact.'
+    },
+    {
+      id: 'wind-shift', title: 'WIND SHIFT', tag: 'SYSTEMS DECISION', visual: 'wildfire',
+      premise: 'You command a wildfire sector. Wind has shifted toward a town. Two crews can defend the evacuation road or protect the water plant, but cannot reach both before the front arrives.',
+      sensory: 'See orange smoke, map layers, engine lights and the moving fire edge. Hear radio overlap, wind and distant aircraft.',
+      objects: 'Feel radio body, map surface, grit, headset pressure and heat through protective clothing.',
+      body: 'Locate yourself at the command point: feet planted, one hand on the map, breath pacing communication.',
+      atmosphere: 'Feel multiple human systems compress into one decision under incomplete information.',
+      motion: 'Experience wind pulling smoke, markers moving on the map and your hand tracing travel times.',
+      stakes: 'Every option protects something vital and exposes something else. Delay is also a decision.',
+      identity: 'Inhabit the commander who integrates weather, logistics and lives without pretending certainty.',
+      choice: 'Allocate the crews, state the reason and issue the first radio instruction clearly.',
+      exit: 'Let fire, crews and map disappear. Feel actual room temperature, lower your shoulders and name your present location.'
+    },
+    {
+      id: 'first-contact', title: 'FIRST CONTACT', tag: 'UNKNOWN-MODEL FLEXIBILITY', visual: 'contact',
+      premise: 'A non-human craft has landed in an empty field. You are the nearest person. A door opens and a moving pattern of light responds to the rhythm of your breathing.',
+      sensory: 'See wet grass, matte craft surface, mist and light patterns. Hear wind, a low vibration and your own breath altering the response.',
+      objects: 'Feel damp ground, cold air, phone in your pocket and vibration through the soles of your shoes.',
+      body: 'Remain in your body at a real distance from the craft; notice stance, hands, breathing and readiness to retreat.',
+      atmosphere: 'Let wonder and radical uncertainty coexist without forcing the scene into threat or salvation.',
+      motion: 'Experience your breath changing the light, one cautious step and the craft answering after a delay.',
+      stakes: 'Your response may become the first signal interpreted by another intelligence; assumptions could matter more than courage.',
+      identity: 'Inhabit a careful observer who can act without pretending to understand what is not yet understood.',
+      choice: 'Choose whether to pause, mirror the rhythm, retreat or send a simple pattern—and observe the imagined response.',
+      exit: 'Let craft and field vanish. State aloud that this was constructed, feel your actual surroundings and return to ordinary scale.'
+    }
+  ];
+
+  const BECOME_DRILLS = [
+    ['sensory','SENSORY PRESENCE','Could you see and hear the scene?','sensory'],
+    ['tangibility','OBJECT TANGIBILITY','Could imagined objects acquire weight, texture and temperature?','objects'],
+    ['embodiment','SPATIAL EMBODIMENT','Were you located inside the imagined body rather than watching it?','body'],
+    ['atmosphere','ATMOSPHERIC PRESENCE','Did the world acquire a distinctive emotional texture?','atmosphere'],
+    ['motion','KINAESTHETIC MOTION','Could you feel movement, balance and resistance?','motion'],
+    ['focus','ATTENTIONAL IMMERSION','Did the scenario dominate attention for the interval?',null],
+    ['acceptance','PREMISE ACCEPTANCE','Could you stop disputing the premise while retaining deliberate control?',null],
+    ['conviction','EXPERIENTIAL CONVICTION','Did the situation acquire enough as-if credibility to matter?',null],
+    ['consequence','CONSEQUENCE PRESENCE','Did choices feel causally consequential?','stakes'],
+    ['emotion','EMOTIONAL RESONANCE','Did an authentic emotion emerge rather than a performed one?',null],
+    ['physiology','PHYSIOLOGICAL RESONANCE','Did your body respond without you forcing symptoms?',null],
+    ['agency','AGENCY','Did you genuinely choose and mentally act?','choice'],
+    ['authenticity','BEHAVIOURAL AUTHENTICITY','Was the response yours rather than idealised?',null],
+    ['identity','IDENTITY INHABITATION','Could you inhabit the relevant trained identity?','identity'],
+    ['fidelity','PREMISE FIDELITY','Did you preserve inconvenient constraints instead of editing them?',null],
+    ['integrated','INTEGRATED REALITY','Could all faculties operate together without prompts?',null],
+    ['exit','EXIT CONTROL','Could you deliberately terminate the state and reorient fully?','exit']
+  ].map(([id,title,question,field]) => ({id,title,question,field}));
+
+  const BECOME_TRANSFER_DRILLS = [
+    {id:'success-world',title:'SUCCESS WORLD',question:'Could the completed outcome become a located world?',prompt:s=>`Place yourself at the concrete point where this succeeded: ${s.transfer.success}. See where you are, what is present and what is now different.`},
+    {id:'success-body',title:'SUCCESS EMBODIMENT',question:'Could you occupy the body of the successful self?',prompt:s=>`Move behind that person’s eyes. Feel posture, breath, pace and the ordinary bodily certainty of already having reached: ${s.transfer.success}.`},
+    {id:'lived-consequences',title:'LIVED CONSEQUENCES',question:'Did success change the felt structure of life?',prompt:s=>'Notice what this outcome changes tomorrow, in relationships, options, responsibility and self-respect. Let consequences—not celebration—make it real.'},
+    {id:'identity-cause',title:'IDENTITY CAUSE',question:'Could you inhabit the identity that caused the outcome?',prompt:s=>'Become the person whose repeated decisions produced this result. Do not wear a slogan; feel how that person notices, chooses and recovers.'},
+    {id:'reverse-bridge',title:'REVERSE CAUSAL BRIDGE',question:'Could you trace success back to today?',prompt:s=>`Move backward from success through the decisive milestone until the chain reaches the present and this action: ${s.transfer.action}.`},
+    {id:'friction',title:'FRICTION INCLUSION',question:'Did the future remain convincing after difficulty was included?',prompt:s=>`Include the real obstacle inside “${s.transfer.situation}”. See the successful self meet it without deleting cost, uncertainty, boredom or setbacks.`},
+    {id:'motivation',title:'MOTIVATIONAL TRANSFER',question:'Did wanting the next action genuinely change?',prompt:s=>`Remain inside the completed reality, then look back at the necessity of: ${s.transfer.action}. Notice the actual change in willingness; do not pretend inspiration.`},
+    {id:'behaviour',title:'BEHAVIOURAL TRANSFER',question:'Did the imagined identity specify a real next behaviour?',prompt:s=>`Mentally return to the present while keeping one executable instruction only: ${s.transfer.action}. Rehearse its first physical movement.`}
+  ];
+
+  const bClamp = (v,a,b) => Math.max(a,Math.min(b,v));
+  const bMean = values => values.length ? values.reduce((a,b)=>a+b,0)/values.length : 0;
+  const bEscape = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[char]));
+  const bShuffle = values => {
+    const copy=[...values];
+    for(let i=copy.length-1;i>0;i--){const j=(Math.random()*(i+1))|0;[copy[i],copy[j]]=[copy[j],copy[i]];}
+    return copy;
+  };
+  const bRead = key => { try{return JSON.parse(localStorage.getItem(`dreamunity.become.${key}`)||'null');}catch{return null;} };
+  const bWrite = (key,value) => { try{localStorage.setItem(`dreamunity.become.${key}`,JSON.stringify(value));}catch{} };
+
+  function bInitial(){
+    return {stage:'setup',count:3,queue:[],scenarioIndex:0,drillIndex:0,track:'scenario',scores:{},results:[],transfer:{situation:'',success:'',action:''},transferScores:{},remaining:0,entryElapsed:0,entryLatency:null,entryDepth:0,entered:false,finalized:false,lastTick:11};
+  }
+  let becomeState=bInitial();
+  let becomeE=null;
+
+  function bScenario(){return becomeState.queue[becomeState.scenarioIndex]||BECOME_SCENARIOS[0];}
+  function bDrill(){return becomeState.track==='scenario'?BECOME_DRILLS[becomeState.drillIndex]:BECOME_TRANSFER_DRILLS[becomeState.drillIndex];}
+  function bAllScores(){return becomeState.results.flatMap(result=>Object.values(result.scores));}
+  function bProfile(){
+    return BECOME_DRILLS.map(metric=>{
+      const values=becomeState.results.map(result=>result.scores[metric.id]).filter(Number.isFinite);
+      return {metric,value:bMean(values)};
+    }).filter(item=>item.value>0);
+  }
+  function bPrompt(){
+    const drill=bDrill();
+    if(becomeState.track==='transfer') return drill.prompt(becomeState);
+    const scenario=bScenario();
+    if(drill.field) return scenario[drill.field];
+    const generic={
+      focus:`For ten seconds there is only this operational world: ${scenario.premise}`,
+      acceptance:'Treat the premise as operative while retaining one quiet thread that you chose the simulation. Stop debating it for ten seconds; do not confuse it with fact.',
+      conviction:`Let a plausible past and future surround the moment. ${scenario.identity}`,
+      emotion:'Allow the emotion that actually emerges—fear, excitement, care, reluctance, calm or something else. Do not manufacture the response you think should appear.',
+      physiology:'Stay inside the situation and observe breath, pulse, temperature, jaw, shoulders, hands and posture. Do not force bodily symptoms.',
+      authenticity:`Discard the heroic or socially approved answer. ${scenario.choice}`,
+      fidelity:`Do not unconsciously edit the world when it becomes uncomfortable. Preserve this constraint: ${scenario.premise}`,
+      integrated:`All scaffolding off. ${scenario.premise} Enter first person and continue the next ten seconds as the person who must act.`
+    };
+    return generic[drill.id]||scenario.premise;
+  }
+
+  function bProgress(){
+    const total=becomeState.track==='scenario'?BECOME_DRILLS.length:BECOME_TRANSFER_DRILLS.length;
+    return Math.round((becomeState.drillIndex/total)*100);
+  }
+  function bHeader(label,title,progress=bProgress()){
+    return `<div class="become-progress"><div class="become-progress-copy"><small>${bEscape(label)}</small><strong>${bEscape(title)}</strong></div><div class="become-track"><i style="--value:${progress}%"></i></div></div>`;
+  }
+  function bPanel(inner){if(becomeScreen){becomeScreen.innerHTML=`<article class="become-panel">${inner}</article>`;becomeScreen.scrollTop=0;}}
+  function bScoreButtons(action='score'){return Array.from({length:10},(_,i)=>`<button type="button" class="become-score" data-become-action="${action}" data-value="${i+1}">${i+1}</button>`).join('');}
+
+  function bRenderSetup(){
+    becomeState.stage='setup';
+    const previous=bRead('latest');
+    const choices=BECOME_PRESETS.map(value=>`<button class="become-choice ${becomeState.count===value?'active':''}" type="button" data-become-action="set-count" data-value="${value}">${value}</button>`).join('');
+    bPanel(`<p class="become-kicker">DREAM MAKER · BECOME</p><h1 class="become-title">REALITY<br>TRAINING LAB</h1><p class="become-copy">Train the machinery that turns a hypothetical into a controlled lived simulation: perception, body, consequence, identity and action. Then transfer it to one real goal and exit deliberately.</p><p class="become-rule"><b>CONTROL RULE:</b> operate as if the scenario is real while retaining awareness that you selected it. Stop if intensity becomes unhelpful. Never use this while driving or during hazardous activity.</p><div class="become-grid three"><div class="become-card"><small>SCENARIOS</small><strong>10 worlds</strong><p>First-person pressure, performance, relationship and unknown-world simulations.</p></div><div class="become-card"><small>FACULTIES</small><strong>17 × 10 sec</strong><p>Each capacity is isolated, timed and self-scored before integration.</p></div><div class="become-card"><small>TRANSFER</small><strong>8 × 10 sec + 30 sec</strong><p>Apply the machinery to your life, then measure entry latency.</p></div></div><div class="become-divider"></div><p class="become-label">NUMBER OF SCENARIOS</p><div class="become-counts">${choices}</div><label class="become-custom">CUSTOM 1–10 <input id="becomeCustomCount" type="number" min="1" max="10" value="${becomeState.count}" inputmode="numeric"></label><div class="become-actions"><button class="become-primary" type="button" data-become-action="begin-session">BUILD SESSION</button></div><p class="become-microcopy">${previous?`Previous adaptive-entry score: ${Number(previous.adaptive||0).toFixed(1)}.`:'No previous numerical session stored.'} Personal descriptions are never written to history.</p>`);
+  }
+
+  function bBeginSession(){
+    becomeState.queue=bShuffle(BECOME_SCENARIOS).slice(0,becomeState.count);
+    becomeState.scenarioIndex=0;becomeState.results=[];becomeState.transferScores={};
+    bRenderBrief();
+  }
+  function bRenderBrief(){
+    becomeState.stage='brief';
+    const s=bScenario();
+    bPanel(`${bHeader(`SCENARIO ${becomeState.scenarioIndex+1} OF ${becomeState.queue.length}`,s.title,0)}<p class="become-kicker">${bEscape(s.tag)}</p><h2 class="become-title compact">${bEscape(s.title)}</h2><div class="become-premise">${bEscape(s.premise)}</div><div class="become-facts"><span class="become-fact">FIRST PERSON</span><span class="become-fact">17 FACULTIES</span><span class="become-fact">10 SECONDS EACH</span><span class="become-fact">1–10 SELF-SCORE</span></div><p class="become-rule">Do not try to become literally mistaken about reality. The target is <b>controlled as-if conviction</b>: enough credibility to recruit real attention, emotion, physiology and choice while keeping exit control.</p><div class="become-actions"><button class="become-primary" type="button" data-become-action="begin-scenario">BEGIN FACULTIES</button></div>`);
+  }
+  function bBeginScenario(){becomeState.track='scenario';becomeState.drillIndex=0;becomeState.scores={};bRenderCue();}
+  function bRenderCue(){
+    becomeState.stage='cue';
+    const d=bDrill();
+    const label=becomeState.track==='scenario'?`SCENARIO ${becomeState.scenarioIndex+1} · FACULTY ${becomeState.drillIndex+1}/${BECOME_DRILLS.length}`:`REALITY TRANSFER · ${becomeState.drillIndex+1}/${BECOME_TRANSFER_DRILLS.length}`;
+    const title=becomeState.track==='scenario'?bScenario().title:'YOUR LIFE';
+    bPanel(`${bHeader(label,title)}<p class="become-kicker">${bEscape(d.title)}</p><h2 class="become-title compact">READY FOR<br>10 SECONDS</h2><p class="become-prompt">${bEscape(bPrompt())}</p><p class="become-instruction">Read once. Tap only when ready. During the interval, <b>perform the faculty rather than describing it.</b></p><div class="become-actions"><button class="become-primary" type="button" data-become-action="run-drill">BEGIN 10 SECONDS</button></div>`);
+  }
+  function bRun(){
+    becomeState.stage='running';becomeState.remaining=BECOME_SECONDS;becomeState.lastTick=11;
+    const d=bDrill();
+    bPanel(`<div class="become-running">${bHeader('ACTIVE FACULTY',d.title)}<div class="become-drill-layout"><div><p class="become-kicker">${bEscape(d.title)}</p><p class="become-prompt">${bEscape(bPrompt())}</p><p class="become-instruction">Stay with the operation until the ring completes.</p></div><div class="become-timer" id="becomeTimer" style="--progress:1"><div class="become-timer-inner"><div><b id="becomeTimerNumber">10.0</b><small>SECONDS</small></div></div></div></div></div>`);
+    becomeE?.sfx('launch',.82);
+  }
+  function bRenderRating(){
+    becomeState.stage='rating';
+    const d=bDrill();
+    bPanel(`${bHeader('SELF-SCORE',d.title)}<div class="become-rating"><p class="become-kicker">${bEscape(d.title)}</p><h2 class="become-title compact">HOW FULLY<br>DID IT HAPPEN?</h2><p class="become-copy">${bEscape(d.question)} Score the actual interval—not effort, intention or what you think should have happened.</p><div class="become-score-grid">${bScoreButtons()}</div><div class="become-scale"><span>1 · ABSENT</span><span>10 · FULLY PRESENT</span></div><p class="become-microcopy">Keyboard: 1–9, or 0 for 10.</p></div>`);
+  }
+  function bRefreshScore(){
+    const values=[...bAllScores(),...Object.values(becomeState.scores),...Object.values(becomeState.transferScores)].filter(Number.isFinite);
+    becomeE?.setScore(Math.round(bMean(values)*100));
+    becomeE?.setMetric('DEPTH',values.length?bMean(values).toFixed(1):'—');
+  }
+  function bScore(value){
+    value=bClamp(Math.round(value),1,10);
+    const d=bDrill();
+    if(becomeState.track==='scenario') becomeState.scores[d.id]=value; else becomeState.transferScores[d.id]=value;
+    becomeE?.sfx('good',.75+value*.03);bRefreshScore();becomeState.drillIndex++;
+    const length=becomeState.track==='scenario'?BECOME_DRILLS.length:BECOME_TRANSFER_DRILLS.length;
+    if(becomeState.drillIndex<length){bRenderCue();return;}
+    if(becomeState.track==='scenario'){
+      becomeState.results.push({id:bScenario().id,title:bScenario().title,scores:{...becomeState.scores}});
+      becomeState.scores={};bRenderScenarioSummary();
+    }else bRenderEntryPrep();
+  }
+  function bBars(profile){return profile.map(({metric,value})=>`<div class="become-bar"><div class="become-bar-label"><span>${bEscape(metric.title)}</span><i style="--bar:${value*10}%"></i></div><b>${value.toFixed(1)}</b></div>`).join('');}
+  function bRenderScenarioSummary(){
+    becomeState.stage='summary';
+    const result=becomeState.results[becomeState.results.length-1];
+    const items=BECOME_DRILLS.map(metric=>({metric,value:result.scores[metric.id]}));
+    const sorted=[...items].sort((a,b)=>a.value-b.value);const weak=sorted[0],strong=sorted[sorted.length-1],depth=bMean(items.map(x=>x.value));
+    const last=becomeState.scenarioIndex+1>=becomeState.queue.length;
+    bPanel(`${bHeader('SCENARIO COMPLETE',result.title,100)}<div class="become-summary-head"><div><p class="become-kicker">PHENOMENOLOGICAL PROFILE</p><h2 class="become-title compact">${bEscape(result.title)}</h2><p class="become-copy">Strongest: <strong>${bEscape(strong.metric.title)}</strong>. Training priority: <strong>${bEscape(weak.metric.title)}</strong>.</p></div><div class="become-depth-number"><b>${depth.toFixed(1)}</b><small>MEAN DEPTH</small></div></div><div class="become-bars">${bBars(items)}</div><div class="become-actions"><button class="become-primary" type="button" data-become-action="next-stage">${last?'TRANSFER TO MY LIFE':'NEXT SCENARIO'}</button></div>`);
+  }
+  function bNext(){if(becomeState.scenarioIndex+1<becomeState.queue.length){becomeState.scenarioIndex++;bRenderBrief();}else bRenderTransferForm();}
+
+  function bRenderTransferForm(){
+    becomeState.stage='transfer-form';
+    bPanel(`<p class="become-kicker">REALITY TRANSFER</p><h2 class="become-title compact">NOW USE THE<br>MACHINERY ON LIFE</h2><p class="become-copy">Choose the most important unresolved goal, dilemma, fear, decision or opportunity in your life right now. Define success concretely and finish with one physical next action.</p><form class="become-form" id="becomeTransferForm"><div class="become-field"><label for="becomeSituation">CURRENT SITUATION</label><textarea id="becomeSituation" maxlength="500" placeholder="What matters, and what is unresolved?">${bEscape(becomeState.transfer.situation)}</textarea></div><div class="become-field"><label for="becomeSuccess">CONCRETE SUCCESS POINT</label><textarea id="becomeSuccess" maxlength="500" placeholder="Where are you, and what has become observably true?">${bEscape(becomeState.transfer.success)}</textarea></div><div class="become-field"><label for="becomeAction">NEXT PHYSICAL ACTION</label><input id="becomeAction" maxlength="220" placeholder="A specific action you can begin" value="${bEscape(becomeState.transfer.action)}"></div><p class="become-error" id="becomeFormError">Complete all three fields with concrete details.</p><div class="become-actions"><button class="become-primary" type="submit" data-become-action="begin-transfer">BEGIN 8 TRANSFER DRILLS</button></div></form><p class="become-microcopy">These words remain in active page memory only. Numerical scores may be saved locally; your personal text is not.</p>`);
+  }
+  function bBeginTransfer(){
+    const situation=document.getElementById('becomeSituation');const success=document.getElementById('becomeSuccess');const action=document.getElementById('becomeAction');
+    const values=[situation,success,action].map(input=>input?.value.trim()||'');
+    [situation,success,action].forEach((input,index)=>input?.setAttribute('aria-invalid',values[index]?'false':'true'));
+    const error=document.getElementById('becomeFormError');
+    if(values.some(value=>value.length<4)){error?.classList.add('show');return;}
+    becomeState.transfer={situation:values[0],success:values[1],action:values[2]};becomeState.track='transfer';becomeState.drillIndex=0;becomeState.transferScores={};bRenderCue();
+  }
+  function bRenderEntryPrep(){
+    becomeState.stage='entry-prep';
+    bPanel(`<p class="become-kicker">STATE-ENTRY LATENCY</p><h2 class="become-title compact">HOW FAST CAN<br>YOU BECOME?</h2><p class="become-copy">First let the successful world disappear. Reorient fully to your actual room. Then reconstruct it from zero. Tap <strong>ENTERED</strong> only when all four are simultaneously present.</p><div class="become-entry-grid"><div class="become-checks"><div class="become-check"><i></i>Sensory location: you can see or hear where success exists.</div><div class="become-check"><i></i>Bodily presence: your viewpoint and posture belong there.</div><div class="become-check"><i></i>Consequence: the outcome matters beyond a pleasant image.</div><div class="become-check"><i></i>Identity: you are choosing from the person who caused it.</div></div><div class="become-stopwatch"><b>30.0</b><small>MAXIMUM</small><button class="become-primary" type="button" data-become-action="start-entry">START FROM ZERO</button></div></div><p class="become-rule"><b>Depth outranks speed.</b> Do not tap for a shallow picture. Entry latency counts only when the four-part threshold is met.</p>`);
+  }
+  function bStartEntry(){
+    becomeState.stage='entry-running';becomeState.entryElapsed=0;becomeState.entryLatency=null;becomeState.entered=false;
+    bPanel(`<p class="become-kicker">STATE-ENTRY LATENCY</p><h2 class="become-title compact">ENTER THE<br>SUCCESS WORLD</h2><p class="become-prompt">${bEscape(becomeState.transfer.success)}</p><div class="become-stopwatch"><b id="becomeEntryClock">0.0</b><small>SECONDS ELAPSED</small><button class="become-primary" type="button" data-become-action="entered">ENTERED</button></div><p class="become-instruction">Sensory location + bodily presence + consequence + identity. Tap only when all four are present.</p>`);
+    becomeE?.sfx('launch');
+  }
+  function bCompleteEntry(entered){
+    if(becomeState.stage!=='entry-running')return;
+    becomeState.entered=entered;becomeState.entryLatency=entered?Math.min(BECOME_ENTRY_SECONDS,becomeState.entryElapsed):BECOME_ENTRY_SECONDS;becomeState.stage='entry-rating';
+    bPanel(`<div class="become-rating"><p class="become-kicker">QUALITY CHECK</p><h2 class="become-title compact">HOW DEEP WAS<br>THE STATE?</h2><p class="become-copy">At ${becomeState.entryLatency.toFixed(1)} seconds, how fully were sensory location, bodily presence, consequence and identity active together?</p><div class="become-score-grid">${bScoreButtons('entry-score')}</div><div class="become-scale"><span>1 · SHALLOW</span><span>10 · FULLY ENTERED</span></div></div>`);
+  }
+  function bFinal(){
+    becomeState.stage='final';
+    const profile=bProfile();const scenarioDepth=bMean(bAllScores());const transferDepth=bMean(Object.values(becomeState.transferScores));
+    const latency=becomeState.entryLatency??BECOME_ENTRY_SECONDS;const adaptive=becomeState.entryDepth*Math.max(.3,1-latency/BECOME_ENTRY_SECONDS)*10;
+    const weak=[...profile].sort((a,b)=>a.value-b.value)[0];
+    if(!becomeState.finalized){
+      bWrite('latest',{scenarioDepth:+scenarioDepth.toFixed(2),transferDepth:+transferDepth.toFixed(2),entryLatency:+latency.toFixed(2),entryDepth:becomeState.entryDepth,adaptive:+adaptive.toFixed(2),weakest:weak?.metric.id||null,completedAt:new Date().toISOString()});
+      becomeState.finalized=true;becomeE?.setScore(Math.round((scenarioDepth*.45+transferDepth*.25+becomeState.entryDepth*.3)*100));becomeE?.setMetric('ENTRY',`${latency.toFixed(1)}s`);
+    }
+    bPanel(`<p class="become-kicker">SESSION COMPLETE</p><h2 class="become-title compact">EXIT THE WORLD.<br>KEEP THE ACTION.</h2><div class="become-stat-grid"><div class="become-stat"><small>SCENARIO DEPTH</small><b>${scenarioDepth.toFixed(1)}</b></div><div class="become-stat"><small>TRANSFER DEPTH</small><b>${transferDepth.toFixed(1)}</b></div><div class="become-stat"><small>ENTRY LATENCY</small><b>${latency.toFixed(1)}s</b></div><div class="become-stat"><small>ADAPTIVE ENTRY</small><b>${adaptive.toFixed(1)}</b></div></div><div class="become-action-lock"><small>NEXT PHYSICAL ACTION</small><strong>${bEscape(becomeState.transfer.action)}</strong></div><p class="become-copy">Training priority: <strong>${bEscape(weak?.metric.title||'repeat the complete cycle')}</strong>. The imagined world is temporary; only the chosen behaviour crosses back.</p><div class="become-actions"><button class="become-primary" type="button" data-become-action="exit-with-action">EXIT WITH ACTION</button><button class="become-secondary" type="button" data-become-action="copy-action">COPY ACTION</button><button class="become-quiet" type="button" data-become-action="restart-session">NEW SESSION</button></div><p class="become-microcopy" id="becomeCopyStatus">Personal text was not written to performance history.</p>`);
+  }
+
+  async function bCopy(){
+    let copied=false;const text=becomeState.transfer.action||'';
+    try{if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(text);copied=true;}}catch{}
+    if(!copied){const field=document.createElement('textarea');field.value=text;field.setAttribute('readonly','');field.style.position='fixed';field.style.opacity='0';document.body.appendChild(field);field.select();field.setSelectionRange(0,field.value.length);try{copied=document.execCommand('copy');}catch{}field.remove();}
+    const status=document.getElementById('becomeCopyStatus');if(status)status.textContent=copied?'Action copied.':'Copy was blocked. Select the action manually.';
+  }
+  function bBind(){
+    if(!becomeRoot)return;
+    becomeRoot.onclick=event=>{
+      if(shell.classList.contains('paused'))return;
+      const target=event.target instanceof Element?event.target.closest('[data-become-action]'):null;if(!target)return;
+      const action=target.dataset.becomeAction;const value=Number(target.dataset.value);event.preventDefault();
+      if(action==='set-count'){becomeState.count=bClamp(value,1,10);bRenderSetup();}
+      else if(action==='begin-session')bBeginSession();else if(action==='begin-scenario')bBeginScenario();else if(action==='run-drill')bRun();else if(action==='score')bScore(value);else if(action==='next-stage')bNext();else if(action==='begin-transfer')bBeginTransfer();else if(action==='start-entry')bStartEntry();else if(action==='entered')bCompleteEntry(true);else if(action==='entry-score'){becomeState.entryDepth=bClamp(value,1,10);bFinal();}else if(action==='restart-session'){becomeState=bInitial();bRefreshScore();bRenderSetup();}else if(action==='copy-action')bCopy();else if(action==='exit-with-action')closeGame();
+    };
+    becomeRoot.onsubmit=event=>{event.preventDefault();if(becomeState.stage==='transfer-form')bBeginTransfer();};
+    becomeRoot.onchange=event=>{const input=event.target;if(input instanceof HTMLInputElement&&input.id==='becomeCustomCount'){becomeState.count=bClamp(Math.round(Number(input.value)||1),1,10);bRenderSetup();}};
+    becomeRoot.onkeydown=event=>{if(!['rating','entry-rating'].includes(becomeState.stage)||!/^[0-9]$/.test(event.key))return;event.preventDefault();const value=event.key==='0'?10:Number(event.key);if(becomeState.stage==='rating')bScore(value);else{becomeState.entryDepth=value;bFinal();}};
+  }
+
+  function bUpdateTimer(){
+    const number=document.getElementById('becomeTimerNumber');const ring=document.getElementById('becomeTimer');
+    if(number)number.textContent=Math.max(0,becomeState.remaining).toFixed(1);if(ring)ring.style.setProperty('--progress',String(bClamp(becomeState.remaining/BECOME_SECONDS,0,1)));
+  }
+  function bUpdate(E,dt){
+    if(becomeState.stage==='running'){
+      becomeState.remaining-=dt;bUpdateTimer();const whole=Math.ceil(becomeState.remaining);if(whole<becomeState.lastTick&&whole>0){becomeState.lastTick=whole;E.sfx('tick',.8+whole*.01);}
+      if(becomeState.remaining<=0){becomeState.remaining=0;navigator.vibrate?.(24);bRenderRating();}
+    }else if(becomeState.stage==='entry-running'){
+      becomeState.entryElapsed=Math.min(BECOME_ENTRY_SECONDS,becomeState.entryElapsed+dt);const clock=document.getElementById('becomeEntryClock');if(clock)clock.textContent=becomeState.entryElapsed.toFixed(1);if(becomeState.entryElapsed>=BECOME_ENTRY_SECONDS)bCompleteEntry(false);
+    }
+  }
+
+  function bDrawScene(E,c){
+    const scenario=becomeState.track==='scenario'?bScenario():null;const visual=scenario?.visual||'future';const t=E.t;const w=E.w,h=E.h,mid=w*.5,base=h*.78;
+    c.save();c.globalCompositeOperation='lighter';c.lineWidth=2;
+    const stroke=(color,alpha=.5)=>{c.strokeStyle=rgba(color,alpha);};const fill=(color,alpha=.2)=>{c.fillStyle=rgba(color,alpha);};
+    if(visual==='hockey'){
+      fill([170,225,255],.08);c.beginPath();c.moveTo(w*.1,base);c.lineTo(w*.9,base);c.lineTo(w*.67,h*.28);c.lineTo(w*.33,h*.28);c.closePath();c.fill();stroke([180,230,255],.25);for(let i=0;i<5;i++){c.beginPath();c.moveTo(w*(.18+i*.16),base);c.lineTo(mid+(i-2)*w*.04,h*.28);c.stroke();}stroke([255,85,95],.7);c.strokeRect(mid-44,h*.34,88,42);fill([20,25,32],.9);c.beginPath();c.ellipse(mid+Math.sin(t)*18,h*.61,8,4,0,0,TAU);c.fill();
+    }else if(visual==='stage'){
+      const g=c.createRadialGradient(mid,h*.35,0,mid,h*.35,h*.5);g.addColorStop(0,'rgba(255,245,210,.22)');g.addColorStop(1,'rgba(255,245,210,0)');c.fillStyle=g;c.fillRect(0,0,w,h);for(let i=0;i<70;i++){fill([180,200,220],.08);c.beginPath();c.arc((i*83)%w,h*.62+((i*47)%120),2,0,TAU);c.fill();}stroke([98,239,165],.6);c.beginPath();c.arc(mid,base-40,34,0,TAU);c.stroke();
+    }else if(visual==='mountain'){
+      fill([175,215,235],.12);c.beginPath();c.moveTo(0,base);c.lineTo(w*.26,h*.25);c.lineTo(w*.5,base);c.lineTo(w*.71,h*.18);c.lineTo(w,base);c.closePath();c.fill();stroke([230,245,255],.35);c.beginPath();c.moveTo(mid,h*.28);c.quadraticCurveTo(mid+20,h*.48,mid-14,base);c.stroke();
+    }else if(visual==='orbit'){
+      fill([70,150,255],.16);c.beginPath();c.arc(mid,h*1.15,w*.72,Math.PI,TAU);c.fill();stroke([235,245,255],.35);c.strokeRect(w*.18,h*.25,w*.64,h*.32);for(let i=0;i<8;i++){c.beginPath();c.moveTo(w*.18+i*w*.09,h*.25);c.lineTo(w*.18+i*w*.09,h*.57);c.stroke();}
+    }else if(visual==='courtroom'){
+      fill([185,130,75],.1);c.fillRect(w*.12,h*.3,w*.76,h*.42);stroke([235,200,150],.28);c.strokeRect(w*.27,h*.31,w*.46,h*.15);c.beginPath();c.moveTo(mid,base);c.lineTo(mid,h*.46);c.stroke();
+    }else if(visual==='ocean'){
+      const g=c.createRadialGradient(mid,h*.48,0,mid,h*.48,w*.55);g.addColorStop(0,'rgba(80,210,255,.18)');g.addColorStop(1,'rgba(0,25,50,0)');c.fillStyle=g;c.fillRect(0,0,w,h);stroke([100,220,255],.22);for(let i=0;i<12;i++){c.beginPath();c.arc(mid,h*.52,40+i*28,t*.08+i,t*.08+i+2.4);c.stroke();}
+    }else if(visual==='sprint'){
+      fill([215,95,70],.12);c.beginPath();c.moveTo(0,base);c.lineTo(w,base);c.lineTo(w*.67,h*.24);c.lineTo(w*.33,h*.24);c.closePath();c.fill();stroke([255,230,210],.3);for(let i=0;i<8;i++){c.beginPath();c.moveTo(i*w/7,base);c.lineTo(mid+(i-3.5)*w*.035,h*.24);c.stroke();}
+    }else if(visual==='conversation'){
+      fill([255,210,160],.07);c.fillRect(w*.18,h*.58,w*.64,h*.12);stroke([255,225,190],.3);c.beginPath();c.arc(mid,h*.36,44,0,TAU);c.stroke();c.beginPath();c.moveTo(mid-70,base);c.lineTo(mid,h*.46);c.lineTo(mid+70,base);c.stroke();
+    }else if(visual==='wildfire'){
+      const g=c.createLinearGradient(0,h*.2,0,base);g.addColorStop(0,'rgba(255,80,30,0)');g.addColorStop(1,'rgba(255,80,30,.22)');c.fillStyle=g;c.fillRect(0,0,w,h);for(let i=0;i<18;i++){fill([255,120,35],.16);c.beginPath();c.arc((i*97+t*8)%w,base-((i*53)%180),8+(i%4)*6,0,TAU);c.fill();}
+    }else if(visual==='contact'){
+      const g=c.createRadialGradient(mid,h*.42,0,mid,h*.42,w*.32);g.addColorStop(0,'rgba(98,239,165,.24)');g.addColorStop(1,'rgba(98,239,165,0)');c.fillStyle=g;c.fillRect(0,0,w,h);stroke([150,255,205],.65);c.beginPath();c.ellipse(mid,h*.45,w*.16,h*.09,0,0,TAU);c.stroke();for(let i=0;i<5;i++){c.beginPath();c.arc(mid,h*.45,35+i*26,t*(.12+i*.02),t*(.12+i*.02)+Math.PI);c.stroke();}
+    }else{
+      for(let i=0;i<7;i++){stroke([98,239,165],.12+i*.025);c.beginPath();c.arc(mid,h*.48,45+i*35,t*.08+i,t*.08+i+4.2);c.stroke();}
+    }
+    c.restore();
+  }
+
+  function createBecomeLab(){
+    return {
+      reset(E){becomeE=E;becomeState=bInitial();shell.classList.add('become-mode');becomeRoot?.classList.add('active');becomeRoot?.setAttribute('aria-hidden','false');if(gameHint)gameHint.textContent='10 SEC FACULTIES · 1–10 SELF-SCORE · LIFE TRANSFER';bBind();bRefreshScore();bRenderSetup();},
+      resize(){},update(E,dt){bUpdate(E,dt);},draw(E,c){bDrawScene(E,c);},
+      keyDown(E,key){if(key==='enter'&&becomeState.stage==='cue')bRun();}
+    };
+  }
+
+  window.addEventListener('dreamunity:game-closed',()=>{
+    shell.classList.remove('become-mode');becomeRoot?.classList.remove('active');becomeRoot?.setAttribute('aria-hidden','true');if(becomeRoot){becomeRoot.onclick=null;becomeRoot.onsubmit=null;becomeRoot.onchange=null;becomeRoot.onkeydown=null;}if(becomeScreen)becomeScreen.textContent='';
+  });
+
+  if(GAME_BY_KEY['maker:2'])Object.assign(GAME_BY_KEY['maker:2'],{
+    id:'become-reality-lab',domain:'BECOME',name:'BECOME',glyph:'◈',
+    rule:'Train imagined realities until they can move perception, body, identity and action—then exit deliberately.',
+    hint:'17 × 10 SEC · SELF-SCORE · LIFE TRANSFER · 30 SEC ENTRY TEST',
+    color:'#62efa5',rgb:[98,239,165],secondary:[57,215,255],variant:5,factory:createBecomeLab
+  });

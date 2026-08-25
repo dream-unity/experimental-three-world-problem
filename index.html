@@ -4,9 +4,10 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#02040a" />
-  <meta name="description" content="Dream Unity — nine living games inside three worlds of mind, including Parallax Wing relational-role fighter combat." />
+  <meta name="description" content="Dream Unity — nine living games inside three worlds of mind, including Parallax Wing relational-role fighter combat and Become controlled reality-simulation training." />
   <title>Dream Unity</title>
   <link rel="stylesheet" href="./styles.css?v=20260824-9" />
+  <link rel="stylesheet" href="./become.css?v=20260825-role-drift-become-1" />
 </head>
 <body>
   <main id="app" aria-label="Dream Unity interactive simulation">
@@ -79,6 +80,12 @@
 
       <div class="game-toast" id="gameToast"></div>
       <div class="game-hint" id="gameHint">MOVE / AIM · TAP OR SPACE TO FIRE</div>
+
+      <section class="become-lab" id="becomeLab" aria-hidden="true" aria-label="Become controlled reality training lab">
+        <div class="become-viewport">
+          <div class="become-screen" id="becomeScreen" aria-live="polite"></div>
+        </div>
+      </section>
     </section>
   </main>
 
@@ -90,6 +97,6 @@
     }, 1800);
   </script>
   <script src="./main.js?v=20260824-11"></script>
-  <script src="./arcade.js?v=20260825-role-drift-2"></script>
+  <script src="./arcade.js?v=20260825-role-drift-become-1"></script>
 </body>
 </html>

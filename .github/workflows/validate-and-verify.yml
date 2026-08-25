@@ -22,7 +22,7 @@ jobs:
     steps:
       - name: Checkout complete repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - name: Validate nine games and Relational Identity Drift
+      - name: Validate nine games, Relational Identity Drift and Become
         run: npm test
 
   verify-live:
@@ -45,6 +45,7 @@ jobs:
           files=(
             index.html
             styles.css
+            become.css
             main.js
             arcade.js
             arcade-parts/part-01.txt
@@ -61,6 +62,7 @@ jobs:
             arcade-parts/perceive-aerial-06.txt
             arcade-parts/perceive-aerial-07.txt
             arcade-parts/perceive-aerial-08.txt
+            arcade-parts/become-lab-01.txt
           )
           rm -rf /tmp/dream-unity-live
           mkdir -p /tmp/dream-unity-live/arcade-parts
@@ -84,6 +86,8 @@ jobs:
             sleep 5
           done
           test "$matched" = 'true'
+
+          # Dream Machine / Perceive
           grep -q 'PARALLAX WING' /tmp/dream-unity-live/index.html
           grep -q 'nearest escort on the outside' /tmp/dream-unity-live/index.html
           grep -q 'perceive-role-logic.txt' /tmp/dream-unity-live/arcade.js
@@ -96,9 +100,21 @@ jobs:
             echo 'The live Perceive game still contains the superseded odd-target architecture.' >&2
             exit 1
           fi
+
+          # Dream Maker / Become
+          grep -q 'id="becomeLab"' /tmp/dream-unity-live/index.html
+          grep -q 'become.css' /tmp/dream-unity-live/index.html
+          grep -q 'becomePaths' /tmp/dream-unity-live/arcade.js
+          grep -q 'function createBecomeLab' /tmp/dream-unity-live/arcade-parts/become-lab-01.txt
+          grep -q "GAME_BY_KEY\['maker:2'\]" /tmp/dream-unity-live/arcade-parts/become-lab-01.txt
+          grep -q 'const BECOME_SECONDS = 10' /tmp/dream-unity-live/arcade-parts/become-lab-01.txt
+          grep -q 'const BECOME_ENTRY_SECONDS = 30' /tmp/dream-unity-live/arcade-parts/become-lab-01.txt
+          grep -q 'STATE-ENTRY LATENCY' /tmp/dream-unity-live/arcade-parts/become-lab-01.txt
+
           sha256sum \
             /tmp/dream-unity-live/index.html \
             /tmp/dream-unity-live/styles.css \
+            /tmp/dream-unity-live/become.css \
             /tmp/dream-unity-live/main.js \
             /tmp/dream-unity-live/arcade.js \
             /tmp/dream-unity-live/arcade-parts/*.txt > /tmp/live-checksums.txt
@@ -121,30 +137,45 @@ jobs:
               'deployment': 'verified-live',
               'source_sha': os.environ['SOURCE_SHA'],
               'page_url': os.environ['PAGE_URL'],
-              'portal': 'Dream Machine / Perceive',
-              'game': 'Parallax Wing',
-              'relational_mechanic': 'relational_identity_drift',
-              'rule': 'nearest active escort on the outside of the leader turn',
-              'nine_game_compatibility': 'validated',
-              'validated_properties': [
-                  'target identity changes with live formation relations',
-                  'leader turn establishes inside and outside reference sides',
-                  'distance comparison selects a unique outside escort',
-                  'turn reversal and escort crossing move the target role',
-                  'switch hysteresis prevents ambiguous flicker',
-                  'reacquisition latency and role-switch errors are recorded',
-                  'fighter combat, shield, projectiles and touch/mouse/keyboard input remain active',
+              'portal_replacements': [
+                  {
+                      'portal': 'Dream Machine / Perceive',
+                      'game': 'Parallax Wing',
+                      'mechanic': 'relational_identity_drift',
+                      'rule': 'nearest active escort on the outside of the leader turn',
+                  },
+                  {
+                      'portal': 'Dream Maker / Become',
+                      'game': 'Become Reality Lab',
+                      'mechanic': 'controlled_as_if_simulation_and_transfer',
+                  },
               ],
-              'diagnostic_errors': [
-                  'stale-role-perseveration',
-                  'inside-outside-reversal',
-                  'outside-distance-substitution',
-                  'reference-object-substitution',
-                  'screen-position-substitution',
-                  'late-relational-acquisition',
-              ],
+              'nine_portal_compatibility': 'validated',
+              'perceive_validation': {
+                  'target_identity_changes_with_relation': True,
+                  'switch_hysteresis': True,
+                  'reacquisition_latency_recorded': True,
+                  'diagnostic_errors': [
+                      'stale-role-perseveration',
+                      'inside-outside-reversal',
+                      'outside-distance-substitution',
+                      'reference-object-substitution',
+                      'screen-position-substitution',
+                      'late-relational-acquisition',
+                  ],
+              },
+              'become_training': {
+                  'scenario_modules': 10,
+                  'timed_faculties': 17,
+                  'seconds_per_faculty': 10,
+                  'self_score_scale': '1-10',
+                  'transfer_faculties': 8,
+                  'state_entry_seconds': 30,
+                  'exit_control_required': True,
+                  'personal_text_persisted': False,
+              },
               'files_compared': [
-                  'index.html', 'styles.css', 'main.js', 'arcade.js',
+                  'index.html', 'styles.css', 'become.css', 'main.js', 'arcade.js',
                   'arcade-parts/part-01.txt', 'arcade-parts/part-02.txt',
                   'arcade-parts/part-03.txt', 'arcade-parts/part-04.txt',
                   'arcade-parts/part-05.txt',
@@ -157,6 +188,7 @@ jobs:
                   'arcade-parts/perceive-aerial-06.txt',
                   'arcade-parts/perceive-aerial-07.txt',
                   'arcade-parts/perceive-aerial-08.txt',
+                  'arcade-parts/become-lab-01.txt',
               ],
               'sha256': Path('/tmp/live-checksums.txt').read_text(encoding='utf-8').splitlines(),
               'verified_at': datetime.now(timezone.utc).isoformat(),
@@ -167,6 +199,6 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add DEPLOYMENT_STATUS.json
           git diff --cached --quiet && exit 0
-          git commit -m 'Record verified live Relational Identity Drift deployment [skip ci]'
+          git commit -m 'Record verified live Perceive and Become deployment [skip ci]'
           git pull --rebase origin main
           git push origin HEAD:main

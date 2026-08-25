@@ -1,6 +1,6 @@
 # Dream Unity — Experimental Three-World Problem
 
-A visual-first 3D portal containing nine distinct arcade games across three coupled worlds:
+A visual-first, mobile-compatible 3D portal containing nine distinct arcade experiences across three coupled worlds:
 
 1. **Dream Machine** — Perceive, Model, Predict.
 2. **Dream Maker** — Intend, Act, Become.
@@ -17,107 +17,137 @@ The overview can be orbited by mouse or touch. Selecting a world exposes its int
 | **PREDICT** | **Oracle Gates** | Extrapolate motion through an occluded interval. |
 | **INTEND** | **Vector Vow** | Select, charge and commit a planned trajectory. |
 | **ACT** | **Impulse Run** | Convert perception into immediate movement under speed pressure. |
-| **BECOME** | **Metamorph** | Change operational form to meet changing demands. |
+| **BECOME** | **Become Reality Lab** | Construct, inhabit, score and deliberately exit controlled imagined realities, then transfer the trained state to real action. |
 | **MATTER** | **Gravity Foundry** | Manipulate attraction and material selection. |
 | **STRUCTURE** | **Lattice Lock** | Construct coherent connectivity across a grid. |
 | **EMERGE** | **Genesis Bloom** | Produce global cascades from local interactions. |
 
-The games are intentionally non-interchangeable. Model Forge trains reconstruction, Oracle Gates trains forward extrapolation, and Parallax Wing trains direct perception of a relation that exists **now** and changes while the player acts.
+The games are intentionally non-interchangeable. Model Forge trains reconstruction, Oracle Gates trains forward extrapolation, Parallax Wing trains direct perception of a relation that exists now, and Become trains deliberate experiential simulation and transfer.
 
 ## Parallax Wing — Relational Identity Drift
 
 Parallax Wing occupies **Dream Machine → PERCEIVE**.
 
-A visibly distinct leader jet flies with a formation of visually identical escorts. The vulnerable relay is not a permanently marked aircraft. It is a live role:
+A visibly distinct leader jet flies with visually identical escorts. The vulnerable relay is not a permanently marked aircraft. It is the escort **nearest to the leader while occupying the outside of the leader’s turn**.
 
-> **the escort currently nearest to the leader while occupying the outside of the leader’s turn**
-
-The leader banks and leaves a curved flight trace. Its escorts weave, cross and change distance. As this happens, the vulnerable role moves from one escort to another without any aircraft changing appearance.
-
-The player must therefore perceive:
+The leader banks and leaves a curved flight trace. Escorts weave, cross and change distance, so the role moves from one aircraft to another without any aircraft changing appearance. The player must bind:
 
 **leader’s turn → outside of that turn → nearest escort there → fire**
 
-This is not odd-one-out detection. No escort is visually unusual, and correctness cannot be inferred from colour, identity, fixed side, altitude or one-object appearance.
+This is not odd-one-out detection. Correctness cannot be inferred from colour, fixed identity, screen side, altitude or one-object appearance.
 
-### Why it belongs to PERCEIVE
-
-- The complete relation remains simultaneously visible.
-- The player does not reconstruct a hidden network, which remains Model Forge’s role.
-- The player does not calculate a future reappearance, which remains Oracle Gates’ role.
-- The challenge is rapid binding of leader, turn direction, side and distance into one present relational role.
-- When escorts cross or the leader reverses its bank, the role must be re-perceived immediately.
-
-### Combat loop
+### Combat and progression
 
 1. Read the leader’s bank and curved trail.
 2. Determine the outside of the turn.
-3. Compare the distances of escorts occupying that side.
+3. Compare the escorts occupying that side.
 4. Acquire the nearest outside escort.
-5. Fire to sever the relay.
-6. The formation reorganises and the role moves.
+5. Fire to sever the live relay.
+6. Reacquire when the formation crosses or the leader reverses.
 7. Sever enough relays to collapse the leader’s shield network.
 
-Correct fire removes the current relay, builds a focus streak and weakens the leader’s shield. Incorrect fire leaves the hostile relation intact and damages the player.
+Early encounters use fewer escorts and stronger guidance. The guide arc and label progressively disappear while the physical bank and trail remain. Escort count, crossing rate and relational switching speed increase. Switch hysteresis prevents ambiguous frame-by-frame flicker.
 
-### Progressive difficulty
+False shots are classified as **stale-role perseveration**, inside/outside reversal, outside-distance substitution, reference-object substitution, screen-position substitution or late relational acquisition. The game stores role switches, reacquisition latency, target stability, accuracy and error types locally. These are experimental gameplay measurements, not a validated clinical or IQ assessment.
 
-- Early encounters use four escorts, a fixed turn and a restrained outside-side arc.
-- The arc and label progressively disappear while the leader’s physical bank and trail remain.
-- Escort count, crossing rate and relational switching speed increase.
-- From Level 3, the leader reverses its turn during the encounter.
-- The system uses switch hysteresis so the role changes only after one escort is decisively closer, avoiding ambiguous frame-by-frame flicker.
-- At advanced levels, the player must repeatedly reacquire the role under faster weaving and combat pressure.
+## Become Reality Lab — Controlled as-if training
 
-### Diagnostic error topology
+Become occupies **Dream Maker → BECOME**, replacing Metamorph while leaving the other eight portal positions intact.
 
-False shots are classified according to the relation the player appears to have used:
+The prototype treats vivid imagination as a trainable system rather than one undifferentiated ability. A player chooses **1, 3, 5, 10, or a custom number of scenarios**. Ten first-person environments are included:
 
-- **stale-role perseveration** — firing at the aircraft that held the role before the latest switch;
-- **inside/outside reversal** — selecting the nearest escort on the inside of the turn;
-- **outside-distance substitution** — selecting the correct side but not the nearest escort;
-- **reference-object substitution** — firing at the leader rather than using it as the reference;
-- **screen-position substitution** — treating absolute screen side as the rule;
-- **late relational acquisition** — allowing the formation to break through before enough relays are severed.
+- an ice-hockey breakaway;
+- a concert opening;
+- an alpine rescue in a whiteout;
+- an orbital repair;
+- an emergency courtroom submission;
+- a zero-visibility cave dive;
+- the final bend of a championship sprint;
+- a difficult relationship conversation;
+- wildfire command after a wind shift;
+- first contact with a non-human craft.
 
-The game stores role switches, reacquisition latency, target stability, firing accuracy and error types locally. These measurements are experimental gameplay telemetry, not a validated clinical or IQ assessment.
+Each world trains **seventeen 10-second faculties** independently, followed immediately by a 1–10 self-score:
+
+1. Sensory Presence
+2. Object Tangibility
+3. Spatial Embodiment
+4. Atmospheric Presence
+5. Kinaesthetic Motion
+6. Attentional Immersion
+7. Premise Acceptance
+8. Experiential Conviction
+9. Consequence Presence
+10. Emotional Resonance
+11. Physiological Resonance
+12. Agency
+13. Behavioural Authenticity
+14. Identity Inhabitation
+15. Premise Fidelity
+16. Integrated Reality
+17. Exit Control
+
+A scenario report separates strong and weak faculties instead of collapsing everything into a vague “visualisation” score.
+
+### Reality transfer
+
+After the selected fictional scenarios, the player defines:
+
+- the most important current goal, dilemma, fear, decision or opportunity;
+- an observable success point;
+- one executable next physical action.
+
+The game then runs eight additional 10-second drills: Success World, Success Embodiment, Lived Consequences, Identity Cause, Reverse Causal Bridge, Friction Inclusion, Motivational Transfer and Behavioural Transfer.
+
+The session finishes with a **30-second state-entry** test. The player taps **ENTERED** only when sensory location, bodily presence, consequence and identity are simultaneously active. Entry speed is combined with a depth score so shallow speed is not rewarded.
+
+The governing distinction is controlled as-if conviction, not literal confusion about reality. The player is repeatedly instructed to retain awareness that the simulation was chosen, include inconvenient constraints, stop if intensity becomes unhelpful, and complete a deliberate exit. It must not be used while driving or during hazardous activity.
+
+Personal descriptions remain in active page memory only. The game stores only aggregate numerical training results and a completion timestamp in local browser storage; it sends no personal scenario text to a server.
 
 ## Controls
 
+### Dream Unity overview
+
+- **Mouse or touch drag:** orbit the three-world structure.
+- **Pinch or wheel:** zoom.
+- **Two-finger twist:** roll.
+- **Tap a world, then an internal title:** open its game.
+
+### Parallax Wing
+
 - **Mouse:** move to aim; click to fire.
 - **Touch:** drag to manoeuvre; tap to fire.
-- **Keyboard:** WASD or arrows move the fighter and sight; Space fires.
-- Enemy projectiles can be dodged or intercepted.
+- **Keyboard:** WASD or arrows move; Space fires.
 
-## Shared arcade architecture
+### Become Reality Lab
 
-All nine games retain:
+- Use the on-screen controls on mouse, touch or keyboard.
+- Each timer starts only after an explicit action.
+- During a rating screen, press 1–9, or 0 for 10.
+- Pause, restart, sound and return controls remain available in the shared header.
 
-- shared touch, mouse and keyboard input;
-- local best scores;
-- score, lives/resources, combinations and progressive difficulty;
-- pause, restart, sound and return-to-triad controls;
-- responsive tablet and mobile layouts;
-- shared particles, flashes, shake and synthesized audio;
-- capped rendering resolution and object counts on lower-powered devices;
-- suspension of the 3D overview while a game is active;
-- same-origin, versioned and locally cached game chunks;
-- no external engine, model, font, analytics service or video asset.
+## Shared architecture
 
-## Architecture
+All nine games retain shared navigation, local best scores, responsive layouts, synthesized audio, capped rendering on lower-powered devices and suspension of the 3D overview while a game is active. No external engine, model, font, analytics service or video asset is required.
+
+Key files:
 
 - `main.js` — three-world 3D overview and portal interaction.
-- `arcade.js` — versioned shared loader.
+- `styles.css` — common Dream Unity and arcade styling.
+- `become.css` — responsive Become interface and training readouts.
+- `arcade.js` — versioned loader that assembles the base engine and isolated replacements.
 - `arcade-parts/part-01.txt` … `part-05.txt` — original unified nine-game runtime.
-- `arcade-parts/perceive-role-logic.txt` — testable geometry and diagnostic classification for relational identity drift.
-- `arcade-parts/perceive-aerial-01.txt` … `perceive-aerial-08.txt` — Parallax Wing fighter, formation, combat, telemetry and rendering.
-- `tests/role-drift.test.mjs` — deterministic relational-role, transformation and diagnostic tests.
-- `tests/validate.mjs` — nine-game compatibility, syntax, static integration and runtime smoke validation.
+- `arcade-parts/perceive-role-logic.txt` — testable relational-role geometry and diagnostics.
+- `arcade-parts/perceive-aerial-01.txt` … `perceive-aerial-08.txt` — Parallax Wing combat, telemetry and rendering.
+- `arcade-parts/become-lab-01.txt` — Become scenarios, timers, scoring, transfer, entry-latency measurement and rendering.
+- `tests/role-drift.test.mjs` — deterministic relational-role and transformation tests.
+- `tests/validate.mjs` — nine-portal compatibility, syntax, static integration and runtime smoke validation.
 
-## Validation
+## Validation and deployment
 
 ```bash
 npm test
 ```
 
-GitHub Actions validates every pull request. After a merge to `main`, it waits for GitHub Pages, compares the live HTML, loader and every game chunk byte-for-byte against the validated source, and records a deployment receipt.
+GitHub Actions validates every pull request. After a push to `main`, it waits for GitHub Pages, compares the live HTML, styling, loader and every game chunk byte-for-byte against the validated source, and commits a machine-readable deployment receipt.
