@@ -1,16 +1,19 @@
 
-  // Dream Maker / Become — zero-key, internet-only live AI scenario director.
+  // Dream Maker / Become — cloud-first live AI with guaranteed generative synthesis backup.
   const BECOME_LIVE_API = 'https://dream-unity-become-live.vercel.app/api/become-scenario';
   const BECOME_LIVE_HISTORY_LIMIT = 8;
   const BECOME_LIVE_VISUALS = new Set(['hockey','stage','mountain','orbit','courtroom','ocean','sprint','conversation','wildfire','contact','future']);
   const BECOME_DIMENSION_KEYS = ['environment','role','goal','pressure','body_dynamics','decision_structure','emotional_tone','social_structure'];
-  const BECOME_BROWSER_TIMEOUT_MS = 45_000;
+  const BECOME_BROWSER_TIMEOUT_MS = 12_000;
+  const BECOME_CLOUD_COOLDOWN_MS = 180_000;
   const becomeLivePending = new Map();
   let becomeLiveSessionNonce = '';
   let becomeLiveLastError = '';
   let becomeLiveLastModel = 'nvidia/gpt-oss-120b';
+  let becomeLiveLastSource = 'cloud';
   let becomeLiveProgressTimer = 0;
   let becomeLiveProgressStartedAt = 0;
+  let becomeCloudCooldownUntil = 0;
 
   const bLiveRequired = ['id','title','tag','visual','premise','sensory','objects','body','atmosphere','motion','stakes','identity','choice','exit'];
   const bLiveNewNonce = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2,10)}`;
@@ -26,17 +29,17 @@
   })).filter(item => item.score !== null);
 
   function bLiveValidateScenario(raw){
-    if(!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new Error('The live service returned an invalid scenario object.');
+    if(!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new Error('The generator returned an invalid scenario object.');
     const scenario = {...raw};
     for(const key of bLiveRequired){
-      if(typeof scenario[key] !== 'string' || scenario[key].trim().length < 2) throw new Error(`Live scenario is missing ${key}.`);
+      if(typeof scenario[key] !== 'string' || scenario[key].trim().length < 2) throw new Error(`Generated scenario is missing ${key}.`);
       scenario[key] = scenario[key].trim();
     }
     scenario.visual = BECOME_LIVE_VISUALS.has(scenario.visual.toLowerCase()) ? scenario.visual.toLowerCase() : 'future';
-    if(!scenario.dimensions || typeof scenario.dimensions !== 'object' || Array.isArray(scenario.dimensions)) throw new Error('Live scenario is missing relational dimensions.');
+    if(!scenario.dimensions || typeof scenario.dimensions !== 'object' || Array.isArray(scenario.dimensions)) throw new Error('Generated scenario is missing relational dimensions.');
     scenario.dimensions = {...scenario.dimensions};
     for(const key of BECOME_DIMENSION_KEYS){
-      if(typeof scenario.dimensions[key] !== 'string' || scenario.dimensions[key].trim().length < 2) throw new Error(`Live scenario is missing dimension ${key}.`);
+      if(typeof scenario.dimensions[key] !== 'string' || scenario.dimensions[key].trim().length < 2) throw new Error(`Generated scenario is missing dimension ${key}.`);
       scenario.dimensions[key] = scenario.dimensions[key].trim();
     }
     return scenario;
@@ -49,16 +52,278 @@
       .map(bLiveScenarioSummary);
   }
 
+  // These are generative grammars, not complete stored scenarios. Each world is
+  // composed at runtime from independently sampled relational dimensions.
+  const BECOME_SYNTHESIS_KITS = [
+    {
+      key:'observatory',visual:'future',
+      titles:['THE SECOND SIGNAL','NARROW WINDOW','FALSE DAWN','THE LAST EXPOSURE'],
+      environments:['a high-desert observatory under a rotating silver dome','a mountain radio-observatory control room before sunrise'],
+      roles:['transient-event astronomer','observatory night coordinator','signal-analysis researcher'],
+      goals:['decide which anomalous signal receives the final observation window','build one defensible interpretation before the telescope window closes'],
+      disruptions:['Two instruments now disagree about the same moving point','A second signal appears exactly where the team expected empty sky'],
+      pressures:['nine minutes before the target drops below the horizon','one final observation slot before daylight'],
+      sights:['star maps, blue monitor glow, the slit of the dome and one blinking anomaly','a black sky strip, stacked spectra and a timer shrinking beside the target'],
+      sounds:['servo motors turning the dome, keyboard taps and a colleague breathing through a headset','cooling fans, clipped radio updates and the soft click of tracking relays'],
+      objects:['a cold metal console edge, a warm mug and the textured focus wheel under your fingers','a notebook spine, headset pressure and a smooth control knob beneath your thumb'],
+      bodies:['leaning toward the data wall with both feet planted and one hand steady on the console','upright in the chair, shoulders loose, eyes moving between raw signal and sky position'],
+      atmospheres:['quiet wonder compressed by analytical pressure','intense curiosity held inside disciplined uncertainty'],
+      motions:['turning from the sky feed to the spectrum, marking one comparison, then looking back','sliding one display aside, leaning closer and tracing the changing signal with your eyes'],
+      stakes:['Choosing too quickly may waste the only useful observation; waiting too long loses the window','A careless claim distorts the team’s next move; a precise uncertainty preserves the chance to learn'],
+      competencies:['separates evidence from excitement without losing curiosity','can act under uncertainty without pretending the data are cleaner than they are'],
+      choices:['prioritise the stronger anomaly, cross-check the conflicting instrument, or spend the window on a control observation','commit to one target, split the remaining time, or pause long enough to test the disagreement'],
+      bodyDims:['seated visual tracking with deliberate hand control','upright console work with rapid gaze shifts'],
+      decisions:['evidence triage under a closing observation window','allocate one scarce observation across competing signals'],
+      tones:['disciplined wonder','focused uncertainty'],socials:['small expert team sharing one decision','individual judgment inside a remote scientific team']
+    },
+    {
+      key:'restoration',visual:'future',
+      titles:['THE HIDDEN LAYER','OPENING HOUR','UNDER THE VARNISH','THE CONSERVATOR'],
+      environments:['a museum conservation studio behind the main gallery','a quiet restoration lab beside an exhibition hall preparing to open'],
+      roles:['painting conservator','objects-restoration lead','exhibition conservation coordinator'],
+      goals:['decide how much of a newly revealed layer should remain visible','prepare the piece for display without overstating what the new evidence means'],
+      disruptions:['A cleaning test reveals an unexpected inscription beneath a familiar surface','New imaging contradicts the catalogue explanation printed for the exhibition'],
+      pressures:['twenty minutes before the curatorial walkthrough','one hour before the doors open to the public'],
+      sights:['raking light, magnified pigment, cotton swabs and the dark edge of the frame','a pale work lamp, scan overlays and a hairline pattern emerging beneath the surface'],
+      sounds:['ventilation, a camera shutter and distant footsteps in the gallery','paper turning, a low extractor fan and quiet voices approaching through the door'],
+      objects:['a fine brush, nitrile gloves, cool glass and the wooden frame beneath your fingertips','a weighted magnifier, soft cloth, smooth tool handle and the rigid edge of the work table'],
+      bodies:['standing close without touching the surface, neck relaxed and hands poised above the work','seated square to the object, elbows supported and breath slow enough for precise hand movement'],
+      atmospheres:['reverence mixed with the responsibility not to invent a story','quiet concentration under public expectation'],
+      motions:['moving the magnifier across the boundary, stepping back, then returning to one detail','lifting the scan overlay, comparing two edges and marking the exact point of uncertainty'],
+      stakes:['A dramatic interpretation may attract attention but distort the object; restraint protects both evidence and trust','Too much intervention changes the piece; too little may conceal information the audience deserves to see'],
+      competencies:['treats uncertainty as part of the evidence rather than a flaw to hide','balances preservation, interpretation and public clarity without rushing the material'],
+      choices:['preserve the revealed area as-is, expose a little more, or stop and reframe the exhibition note','continue the treatment, freeze the intervention, or present the contradiction openly to the curator'],
+      bodyDims:['fine hand control at close visual range','stable seated precision with intermittent step-back viewing'],
+      decisions:['preservation versus revelation trade-off','interpretation under incomplete material evidence'],
+      tones:['careful reverence','measured discovery'],socials:['expert stewardship before public display','individual technical judgment accountable to a curatorial team']
+    },
+    {
+      key:'studio',visual:'stage',
+      titles:['THIRTY SECONDS LIVE','THE EMPTY CHAIR','CONTROL ROOM','THE NEXT SEGMENT'],
+      environments:['a live broadcast control room facing a glass-walled studio','a compact production booth above a stage seconds before going live'],
+      roles:['live-show producer','broadcast segment director','studio floor coordinator'],
+      goals:['rebuild the next segment without breaking the audience’s trust','choose a new opening that keeps the programme coherent'],
+      disruptions:['The lead guest has withdrawn after the countdown already began','A verified fact changes the meaning of the scripted introduction at the last moment'],
+      pressures:['forty-five seconds until the red light comes on','one minute before the presenter needs a clear cue'],
+      sights:['multiview screens, a red tally light, cue cards and the presenter waiting through the glass','waveforms, camera thumbnails and a countdown changing from amber to red'],
+      sounds:['director chatter, a muted theme bed and three voices asking for a decision','headset clicks, the stage manager counting down and the quiet hum of equipment racks'],
+      objects:['headset pressure, the cool talkback button and a marked rundown beneath your palm','a pen against the rundown, smooth fader caps and the edge of the console under your wrist'],
+      bodies:['leaning forward with one finger over talkback and your gaze moving across four cameras','standing half-turned between the studio glass and the running order, breath kept even'],
+      atmospheres:['public immediacy inside a small room that must stay calm','compressed urgency without permission to become sloppy'],
+      motions:['muting one channel, pointing to the replacement segment and giving the presenter a clean cue','crossing out one line, sliding the next item upward and pressing talkback once'],
+      stakes:['A rushed cover story protects the schedule but damages credibility; a clean pivot preserves trust','Dead air is survivable; misleading the audience is harder to repair'],
+      competencies:['can simplify a live problem without disguising what changed','protects accuracy while keeping many people moving in the same direction'],
+      choices:['open with the verified change, move directly to the backup story, or let the presenter explain the disruption','reorder the segment, shorten it, or replace it with a transparent unscripted transition'],
+      bodyDims:['rapid visual scanning with precise finger cues','standing coordination between screens, headset and live stage'],
+      decisions:['real-time programme restructuring','accuracy-versus-continuity trade-off under countdown'],
+      tones:['controlled urgency','public-pressure clarity'],socials:['many specialists coordinated through one producer','live audience mediated through a production team']
+    },
+    {
+      key:'concourse',visual:'future',
+      titles:['THE CONCOURSE SHIFT','GATE ZERO','THE HUMAN MAP','FIFTEEN MINUTES'],
+      environments:['a vast international rail concourse during a city festival','a bright convention arrival hall linked to three transit platforms'],
+      roles:['arrival logistics coordinator','public-wayfinding lead','event movement planner'],
+      goals:['get several arriving groups to the correct meeting points without creating confusion','replace a failed digital wayfinding plan with a clear human system'],
+      disruptions:['Every electronic sign on one side of the hall has gone blank','Two large groups arrive early while one entrance is unexpectedly closed'],
+      pressures:['fifteen minutes before the programme begins','ten minutes before the busiest arrival wave'],
+      sights:['blank overhead boards, moving crowds, coloured lanyards and three visible landmarks','glass doors, platform numbers, handheld signs and streams of people crossing at different speeds'],
+      sounds:['rolling luggage, station announcements and short radio calls from volunteers','footsteps, distant chimes and overlapping questions in several languages'],
+      objects:['a folded floor plan, radio weight, marker pen and laminated route card','a handheld sign pole, paper map, cool railing and radio clipped against your side'],
+      bodies:['walking at a deliberate pace while turning your torso to keep two landmarks in view','standing where three sightlines meet, one arm free to point and both feet grounded'],
+      atmospheres:['busy public motion that becomes manageable when viewed as flows rather than a crowd','social complexity with a strong need for simple visible structure'],
+      motions:['moving one volunteer, rotating a sign and tracing a new route with your hand','stepping into a clearer sightline, pointing one group left and sending a radio update right'],
+      stakes:['A clever but complicated plan creates more questions; a simple plan may sacrifice elegance and preserve movement','Every extra instruction competes with noise; clarity determines whether people feel lost or guided'],
+      competencies:['sees movement as a system of paths, bottlenecks and attention','reduces complexity into instructions strangers can follow immediately'],
+      choices:['centralise everyone at one landmark, split volunteers across routes, or stagger departures by group colour','use one universal meeting point, create two temporary routes, or pause arrivals briefly while signs are repositioned'],
+      bodyDims:['walking spatial coordination through moving pedestrian flow','standing panoramic attention with pointing and radio communication'],
+      decisions:['route design under information failure','simplify a multi-group movement problem under time pressure'],
+      tones:['energetic concentration','socially alert calm'],socials:['strangers coordinated through visible public cues','volunteer network guiding several independent groups']
+    },
+    {
+      key:'greenhouse',visual:'future',
+      titles:['GLASSHOUSE BALANCE','THE ORCHID ROOM','CLIMATE LINE','BEFORE THE DOORS OPEN'],
+      environments:['a rooftop botanical glasshouse overlooking the city','a public conservatory filled with rare flowering plants before opening'],
+      roles:['horticulture systems lead','conservatory collections coordinator','botanical exhibition manager'],
+      goals:['decide which climate reading to trust before visitors enter','stabilise the exhibition plan around conflicting environmental data'],
+      disruptions:['Two sensor networks disagree while the plants themselves show mixed signs','A scheduled misting cycle has changed the appearance of the most sensitive display'],
+      pressures:['thirty minutes before the first guided tour','one final inspection before the exhibition opens'],
+      sights:['condensation lines, leaf surfaces, pale sensor graphs and the city beyond the glass','orchid colour, wet stone paths, sunlight patches and two climate panels showing different values'],
+      sounds:['small fans, dripping water and muted city noise through the roof glass','vent louvers moving, water ticking into drains and a colleague calling from the next bay'],
+      objects:['cool glass, a textured tablet case, damp railing and soft leaf edges viewed without handling','a clipboard, smooth sensor housing, warm handrail and moisture in the air against your skin'],
+      bodies:['walking slowly along the beds, shoulders open and gaze alternating between plant and sensor','standing between two climate zones, one hand on the rail and breath noticing the humidity'],
+      atmospheres:['living complexity that resists being reduced to one number','quiet care under the pressure to make a visible decision'],
+      motions:['moving from instrument to plant, crouching to inspect one leaf and standing to compare the whole bay','walking the boundary between two zones, pausing, then marking the difference on the plan'],
+      stakes:['Trusting the wrong signal may distort the exhibition response; overcorrecting may be worse than waiting','The public sees the display for an hour; the collection lives with the decision much longer'],
+      competencies:['uses instruments without surrendering observation to them','can distinguish a display problem from a living-system problem'],
+      choices:['trust the plant evidence, trust the calibrated sensor, or hold conditions steady while checking a third indicator','adjust one zone, leave the system unchanged, or redesign the visitor route around the uncertain area'],
+      bodyDims:['slow walking observation with crouch-and-stand comparison','humid-environment inspection with deliberate visual scanning'],
+      decisions:['sensor evidence versus direct observation','intervention-versus-stability decision in a living system'],
+      tones:['protective curiosity','patient responsibility'],socials:['collection stewardship before a public audience','small specialist team responsible for a living display']
+    },
+    {
+      key:'mediation',visual:'conversation',
+      titles:['THE THIRD VERSION','ONE TABLE','CREDIT LINE','THE NEXT SENTENCE'],
+      environments:['a small project room after everyone else has left','a quiet meeting room with two collaborators seated across from you'],
+      roles:['project mediator','team lead facilitating a difficult conversation','collaboration coordinator'],
+      goals:['get the disagreement precise enough that both people can make a real next decision','separate the dispute about credit from the dispute about future work'],
+      disruptions:['Both people agree on the facts but tell incompatible stories about what those facts mean','A private message reveals that one person is considering leaving the project entirely'],
+      pressures:['twenty minutes before one person must leave','one final conversation before tomorrow’s public presentation'],
+      sights:['two notebooks, a half-erased whiteboard and small changes around each person’s eyes','a table edge, crossed-out agenda points and hands that become still when the difficult topic returns'],
+      sounds:['air conditioning, careful breathing and the silence after a sentence lands','chair fabric shifting, one pen tapping once and voices becoming quieter rather than louder'],
+      objects:['the cool tabletop, your pen, chair support and a glass of water near your hand','paper under your fingertips, the chair back at your shoulders and the weight of your phone left face-down'],
+      bodies:['sitting upright without leaning toward either side, hands visible and jaw relaxed','feet flat under the chair, shoulders low and gaze moving deliberately between both people'],
+      atmospheres:['relational tension made workable by precision rather than reassurance','vulnerability and professional consequence sharing the same quiet room'],
+      motions:['looking from one person to the other, writing one neutral sentence and reading it back','lifting your hand to pause an interruption, then turning one accusation into a testable question'],
+      stakes:['Forcing agreement may preserve the meeting and damage the collaboration; clarity may expose a real incompatibility','Avoiding the issue protects tonight and makes tomorrow harder; naming it accurately gives both people agency'],
+      competencies:['can hold competing perspectives without flattening their differences','turns emotionally loaded claims into distinctions people can actually respond to'],
+      choices:['summarise the shared facts first, ask each person to define the disputed contribution, or move directly to future boundaries','pause the credit question, address the possible departure, or ask both people to state what a fair next week would look like'],
+      bodyDims:['seated interpersonal attention with deliberate pauses','grounded conversation posture with controlled gaze shifts'],
+      decisions:['separate intertwined relational disputes','choose the next question under interpersonal tension'],
+      tones:['precise vulnerability','steady relational courage'],socials:['three-person mediation with symmetrical attention','leader facilitating conflict between two valued collaborators']
+    },
+    {
+      key:'prototype',visual:'future',
+      titles:['THE DEMO TURN','VERSION B','THE UNEXPECTED BEHAVIOUR','FIVE MINUTES EARLY'],
+      environments:['a product prototype lab before a public demonstration','a design studio with a test unit running on the central table'],
+      roles:['prototype design lead','interaction designer','demonstration systems coordinator'],
+      goals:['decide how to present an unexpected behaviour without pretending it is solved','preserve the value of the demonstration after the prototype changes how it responds'],
+      disruptions:['The newest build behaves differently from yesterday’s verified version','A test user discovers a useful effect that also exposes a limitation'],
+      pressures:['seven minutes before observers arrive','one rehearsal remaining before the demonstration'],
+      sights:['a translucent prototype, live telemetry and a comparison video frozen on yesterday’s behaviour','test cards, a glowing interface, two versions side by side and a countdown on the wall'],
+      sounds:['small actuator clicks, keyboard taps and the soft tone of each state change','a cooling fan, touch feedback and a colleague quietly repeating the test sequence'],
+      objects:['the prototype casing, a textured control surface, note cards and the table edge beneath your palm','a stylus, smooth test device, cable weight and paper labels under your fingertips'],
+      bodies:['standing square to the test table, hands away from the controls while you watch one full cycle','leaning slightly over the prototype, then stepping back to see how a first-time observer would encounter it'],
+      atmospheres:['creative excitement constrained by the obligation to be truthful about limits','inventive momentum interrupted by a useful problem'],
+      motions:['running one clean test, stepping aside and pointing to the exact transition that changed','switching versions, watching the response, then circling one moment on the demo card'],
+      stakes:['Hiding the limitation may make the demo smoother and the project less trustworthy; showing it may make the work more credible','A polished story can collapse under one question; an honest demonstration can survive uncertainty'],
+      competencies:['can distinguish a failed expectation from a failed design','uses surprises as information instead of threats to the narrative'],
+      choices:['demonstrate the unexpected behaviour openly, switch to the verified build, or redesign the demo around the limitation','keep the new version, revert to the stable version, or show both and explain what changed'],
+      bodyDims:['standing prototype manipulation with step-back observation','fine hand interaction followed by whole-system visual review'],
+      decisions:['transparency versus polish in a live demonstration','choose between stable and informative prototype states'],
+      tones:['inventive honesty','curious pressure'],socials:['small design team preparing for external observers','technical lead accountable to both team and audience']
+    },
+    {
+      key:'archive',visual:'future',
+      titles:['THE MISSING MAP','PROVENANCE','THE EMPTY FOLDER','BEFORE THE LECTURE'],
+      environments:['a climate-controlled archive beneath a public library','a manuscript reading room beside a lecture theatre'],
+      roles:['research archivist','special-collections curator','historical evidence coordinator'],
+      goals:['build an accurate account even though the expected document is missing','decide what can responsibly be claimed before the public talk begins'],
+      disruptions:['The catalogue points to an empty folder where the key document should be','A newly found annotation contradicts the date everyone planned to present'],
+      pressures:['twenty-five minutes before the lecture','one final research pass before the audience arrives'],
+      sights:['grey archive boxes, pencilled catalogue numbers, soft reading lamps and one empty folder','cream paper, magnified handwriting, a projected slide draft and the clock above the door'],
+      sounds:['page turns, a distant trolley wheel and the low hum of climate control','paper settling, keyboard taps and muted audience noise beginning beyond the wall'],
+      objects:['cotton paper edges, a soft pencil, cool desk surface and the weight of an archive box','a magnifier, folder board, smooth keyboard keys and the lectern notes in your hand'],
+      bodies:['seated with forearms supported, turning each page slowly and keeping your place with one finger','standing between the reading desk and slide screen, posture alternating between close inspection and presentation view'],
+      atmospheres:['historical intimacy paired with the discipline not to fill gaps with imagination','intellectual suspense under a public deadline'],
+      motions:['opening one box, comparing two catalogue entries and laying the documents side by side','moving from annotation to slide, deleting one sentence and checking the source again'],
+      stakes:['A confident invention makes the story cleaner and the evidence weaker; an honest gap may make the history more interesting','The audience can tolerate uncertainty; the archive cannot tolerate a claim the sources do not support'],
+      competencies:['knows that absence is evidence to investigate, not permission to invent','can make uncertainty legible without making the research feel empty'],
+      choices:['present the gap openly, substitute a weaker source with qualification, or change the lecture around what is actually known','remove the disputed claim, present both possible dates, or postpone that conclusion while preserving the rest of the argument'],
+      bodyDims:['seated document handling with slow visual comparison','alternating close reading and standing presentation review'],
+      decisions:['evidential gap versus narrative completeness','public claim calibration under source uncertainty'],
+      tones:['quiet intellectual tension','disciplined curiosity'],socials:['individual researcher accountable to a public audience','archive specialist supporting a wider scholarly team']
+    },
+    {
+      key:'planetarium',visual:'stage',
+      titles:['THE DARK DOME','SECOND SKY','THE UNSCRIPTED QUESTION','STAR MAP'],
+      environments:['a dark planetarium dome filled with a school audience','an immersive science theatre moments before a public programme'],
+      roles:['science presenter','planetarium programme lead','public astronomy educator'],
+      goals:['turn an unexpected audience question into a clear live demonstration','rebuild the next five minutes after the planned visual sequence stops matching the narration'],
+      disruptions:['A child asks a question that exposes a misleading shortcut in the script','The projection sequence loads the wrong sky while the audience is already looking up'],
+      pressures:['the room is waiting in silence now','less than a minute before the next scheduled section'],
+      sights:['a field of projected stars, red aisle lights and faces tilted upward','constellation lines, a dark control tablet and the pale curve of the dome'],
+      sounds:['the soft projector fan, one whispered question and the room settling again','quiet audience movement, a low system chime and your own voice returning through the room'],
+      objects:['the presenter remote, smooth rail, cue card and cool tablet under your thumb','a laser pointer resting unused, textured control pad and the edge of the console beneath your hand'],
+      bodies:['standing in the dark with feet wide enough to orient without seeing the floor clearly','half-turned toward the dome, one hand on the controls and head tilted to the same sky as the audience'],
+      atmospheres:['shared wonder made stronger by admitting what the simplified script missed','public curiosity without the need to perform certainty'],
+      motions:['lifting the remote, rotating the sky slowly and pointing the audience toward a new reference','pausing the sequence, resetting one sky view and stepping into the centre of the room'],
+      stakes:['A polished but wrong explanation teaches confidence instead of understanding; a transparent correction can deepen the experience','The audience remembers how uncertainty was handled as much as the fact itself'],
+      competencies:['can turn a surprise into a better model rather than defending the script','makes complex ideas graspable without pretending they are simpler than they are'],
+      choices:['answer directly, demonstrate the distinction visually, or ask the audience to predict what the sky should do first','pause and correct the sky, continue verbally without visuals, or turn the mismatch into an explicit comparison'],
+      bodyDims:['standing presentation with spatial orientation in low light','coordinated speaking, pointing and projection control'],
+      decisions:['live explanation strategy under public scrutiny','convert a presentation error into a learning choice'],
+      tones:['playful intellectual openness','public composure'],socials:['one presenter guiding a curious audience','educator coordinating attention across a full room']
+    },
+    {
+      key:'research-dome',visual:'future',
+      titles:['THE TRANSMISSION WINDOW','TWO DATASETS','THE QUIET HOUR','UNFINISHED RESULT'],
+      environments:['a remote polar research dome during a long blue twilight','an isolated field-station analysis room connected to a distant team'],
+      roles:['field research coordinator','data-integration scientist','remote study lead'],
+      goals:['decide what result is mature enough to transmit and what must remain unresolved','merge two conflicting datasets without erasing the disagreement between them'],
+      disruptions:['A late sensor batch reverses the trend the team discussed all week','A remote collaborator sends a correction minutes before the scheduled data handoff'],
+      pressures:['twelve minutes until the communications window','one scheduled transmission before the remote team sleeps'],
+      sights:['frosted windows, layered graphs, a satellite link indicator and handwritten field notes','blue exterior light, two contradictory plots and a small status icon counting down'],
+      sounds:['air circulation, a soft modem tone and the occasional click of thermal expansion','keyboard taps, wind muted by thick walls and a remote voice breaking through slight delay'],
+      objects:['a warm mug, laminated field sheet, trackpad and the insulated desk edge under your wrist','a pencil, cold window frame, smooth data tablet and heavy station jacket at your shoulders'],
+      bodies:['seated deep in the chair, shoulders warm inside layers and eyes alternating between raw and cleaned data','standing to compare the wall plot with the laptop, then sitting to make one precise annotation'],
+      atmospheres:['geographic isolation paired with intellectual connection to a distant team','quiet responsibility under incomplete evidence'],
+      motions:['scrolling back to the raw measurements, marking one divergence and opening the transmission draft','walking to the plot, tracing the reversal, then returning to edit the conclusion line'],
+      stakes:['Sending a neat but premature conclusion wastes everyone’s trust; sending only confusion wastes the work already done','The team needs direction, but the data do not owe anyone a clean story'],
+      competencies:['can communicate what is known, unknown and next without collapsing them together','integrates disagreement without averaging away the information it contains'],
+      choices:['transmit the provisional result with a warning, send only the raw discrepancy, or delay the conclusion while sending the validated subset','keep both datasets separate, reconcile only the overlapping interval, or flag the reversal as the main finding'],
+      bodyDims:['seated data integration with periodic standing comparison','layered-clothing workstation posture with deliberate visual switching'],
+      decisions:['communicate provisional evidence under a transmission deadline','integrate conflicting datasets without false resolution'],
+      tones:['isolated focus','measured scientific responsibility'],socials:['remote team linked through a narrow communication window','individual field lead accountable to distant collaborators']
+    }
+  ];
+
+  const bSynthPick = values => values[(Math.random()*values.length)|0];
+  function bSynthTooSimilar(candidate,history){
+    for(const prior of history){
+      if(String(candidate.title).toLowerCase()===String(prior.title||'').toLowerCase())return true;
+      let same=0;
+      for(const key of BECOME_DIMENSION_KEYS){
+        const a=String(candidate.dimensions?.[key]||'').toLowerCase();
+        const b=String(prior.dimensions?.[key]||'').toLowerCase();
+        if(a&&b&&(a===b||a.includes(b)||b.includes(a)))same++;
+      }
+      if(same>=3)return true;
+    }
+    return false;
+  }
+  function bSynthGenerate(index){
+    const history=bLiveHistory(index);
+    for(let attempt=0;attempt<40;attempt++){
+      const kit=bSynthPick(BECOME_SYNTHESIS_KITS);
+      const environment=bSynthPick(kit.environments);
+      const role=bSynthPick(kit.roles);
+      const goal=bSynthPick(kit.goals);
+      const pressure=bSynthPick(kit.pressures);
+      const bodyDim=bSynthPick(kit.bodyDims);
+      const decision=bSynthPick(kit.decisions);
+      const tone=bSynthPick(kit.tones);
+      const social=bSynthPick(kit.socials);
+      const scenario=bLiveValidateScenario({
+        id:`synth-${bLiveNewNonce()}`,
+        title:bSynthPick(kit.titles),
+        tag:`GENERATIVE ${kit.key.toUpperCase().replace(/-/g,' ')}`,
+        visual:kit.visual,
+        premise:`You are the ${role} inside ${environment}. ${bSynthPick(kit.disruptions)}. You have ${pressure} to ${goal}.`,
+        sensory:`See ${bSynthPick(kit.sights)}. Hear ${bSynthPick(kit.sounds)}.`,
+        objects:`Feel ${bSynthPick(kit.objects)}.`,
+        body:`Locate yourself ${bSynthPick(kit.bodies)}.`,
+        atmosphere:`Let the world carry ${bSynthPick(kit.atmospheres)}.`,
+        motion:`Experience yourself ${bSynthPick(kit.motions)}.`,
+        stakes:`${bSynthPick(kit.stakes)}.`,
+        identity:`Inhabit the ${role} who ${bSynthPick(kit.competencies)}.`,
+        choice:`Choose now: ${bSynthPick(kit.choices)}. Mentally commit to the first concrete step.`,
+        exit:'Let the constructed world dissolve completely. Feel your actual hands and feet, name three real objects, and state where you are now.',
+        dimensions:{environment:`${kit.key}: ${environment}`,role,goal,pressure,body_dynamics:bodyDim,decision_structure:decision,emotional_tone:tone,social_structure:social},
+        source:'generative-synthesis'
+      });
+      if(!bSynthTooSimilar(scenario,history))return scenario;
+    }
+    throw new Error('Generative synthesis could not construct a sufficiently distinct world.');
+  }
+
   function bLiveStopProgress(){
     if(becomeLiveProgressTimer){clearInterval(becomeLiveProgressTimer);becomeLiveProgressTimer=0;}
   }
   function bLiveProgressCopy(){
     const elapsed=Math.max(0,Math.floor((Date.now()-becomeLiveProgressStartedAt)/1000));
-    if(elapsed<4)return `CONTACTING LIVE MODEL · ${elapsed}s`;
-    if(elapsed<12)return `MODEL IS CONSTRUCTING THE WORLD · ${elapsed}s`;
-    if(elapsed<20)return `WRITING + STRUCTURING SCENARIO · ${elapsed}s`;
-    if(elapsed<30)return `UPSTREAM IS SLOW · STILL WAITING · ${elapsed}s`;
-    return `HARD DEADLINE APPROACHING · ${elapsed}s`;
+    if(elapsed<3)return `CONTACTING CLOUD MODEL · ${elapsed}s`;
+    if(elapsed<7)return `CLOUD MODEL IS CONSTRUCTING THE WORLD · ${elapsed}s`;
+    return `FREE CLOUD CAPACITY IS SLOW · SYNTHESIS BACKUP ARMED · ${elapsed}s`;
   }
   function bLiveStartProgress(){
     bLiveStopProgress();
@@ -69,108 +334,78 @@
 
   async function bCloudGenerate(index,sessionNonce){
     const previous=bRead('latest');
-    const payload={
-      trialIndex:index,
-      trialCount:becomeState.count,
-      sessionNonce,
-      recentScenarios:bLiveHistory(index),
-      currentPerformance:bLivePerformance(),
-      previousWeakestMetric:previous?.weakest||null
-    };
+    const payload={trialIndex:index,trialCount:becomeState.count,sessionNonce,recentScenarios:bLiveHistory(index),currentPerformance:bLivePerformance(),previousWeakestMetric:previous?.weakest||null};
     const controller=new AbortController();
     const timeout=setTimeout(()=>controller.abort(),BECOME_BROWSER_TIMEOUT_MS);
     try{
-      const response=await fetch(BECOME_LIVE_API,{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        mode:'cors',
-        cache:'no-store',
-        credentials:'omit',
-        signal:controller.signal,
-        body:JSON.stringify(payload)
-      });
+      const response=await fetch(BECOME_LIVE_API,{method:'POST',headers:{'Content-Type':'application/json'},mode:'cors',cache:'no-store',credentials:'omit',signal:controller.signal,body:JSON.stringify(payload)});
       let data=null;try{data=await response.json();}catch{}
-      if(!response.ok){
-        const error=new Error(data?.error||`Live generation request failed (${response.status}).`);
-        error.code=data?.code||'';throw error;
-      }
+      if(!response.ok){const error=new Error(data?.error||`Cloud generation request failed (${response.status}).`);error.code=data?.code||'';throw error;}
       if(data?.meta?.model)becomeLiveLastModel=String(data.meta.model);
-      return bLiveValidateScenario(data?.scenario);
+      return bLiveValidateScenario({...data?.scenario,source:'cloud-ai'});
     }catch(error){
-      if(error?.name==='AbortError')throw new Error('Live generation exceeded 45 seconds and was stopped. Retry now.');
+      if(error?.name==='AbortError'){const timed=new Error('Free cloud generation exceeded twelve seconds.');timed.code='CLOUD_TIMEOUT';throw timed;}
       throw error;
     }finally{clearTimeout(timeout);}
   }
 
   async function bLiveGenerate(index,sessionNonce){
     if(sessionNonce!==becomeLiveSessionNonce)throw new Error('This generation session is no longer active.');
-    return bCloudGenerate(index,sessionNonce);
+    if(Date.now()<becomeCloudCooldownUntil){becomeLiveLastSource='synthesis';becomeLiveLastModel='generative-synthesis';return bSynthGenerate(index);}
+    try{
+      const scenario=await bCloudGenerate(index,sessionNonce);
+      becomeLiveLastSource='cloud';return scenario;
+    }catch(error){
+      becomeLiveLastError=error instanceof Error?error.message:String(error||'Cloud generation unavailable.');
+      becomeCloudCooldownUntil=Date.now()+BECOME_CLOUD_COOLDOWN_MS;
+      becomeLiveLastSource='synthesis';becomeLiveLastModel='generative-synthesis';
+      return bSynthGenerate(index);
+    }
   }
 
   function bLiveLoading(index,copy){
     becomeState.stage='live-generating';
-    bPanel(`${bHeader(`LIVE CLOUD · SCENARIO ${index+1} OF ${becomeState.count}`,'GENERATING',0)}<p class="become-kicker">REAL-TIME INTERNET GENERATION</p><h2 class="become-title compact">BUILDING A<br>NEW SCENARIO</h2><p class="become-copy">${bEscape(copy||'A fresh world is being generated remotely now.')}</p><div class="become-facts"><span class="become-fact">NO API KEY</span><span class="become-fact">NO ACCOUNT</span><span class="become-fact">INTERNET GENERATED</span><span class="become-fact">NOVELTY CHECKED</span><span class="become-fact">NO MODEL DOWNLOAD</span><span class="become-fact">NO STORED FALLBACK</span></div><p id="becomeLiveProgress" class="become-microcopy">CONTACTING LIVE MODEL · 0s</p><p class="become-microcopy">The request has a hard deadline. This screen will either advance to a generated world or surface an explicit error; it cannot wait indefinitely.</p>`);
+    bPanel(`${bHeader(`GENERATING · SCENARIO ${index+1} OF ${becomeState.count}`,'LIVE',0)}<p class="become-kicker">NEW WORLD GENERATION</p><h2 class="become-title compact">BUILDING A<br>NEW SCENARIO</h2><p class="become-copy">${bEscape(copy||'Cloud AI is attempted first. If free capacity is unavailable, generative synthesis constructs the world immediately.')}</p><div class="become-facts"><span class="become-fact">CLOUD AI FIRST</span><span class="become-fact">SYNTHESIS BACKUP</span><span class="become-fact">NOVELTY CHECKED</span><span class="become-fact">NO API KEY</span><span class="become-fact">NO PREWRITTEN WORLD FALLBACK</span></div><p id="becomeLiveProgress" class="become-microcopy">CONTACTING CLOUD MODEL · 0s</p><p class="become-microcopy">A scenario is guaranteed by the two-layer generator. The backup composes a new world from independently sampled environment, role, goal, pressure, body, decision, emotional and social dimensions; it does not select one of the original ten scenarios.</p>`);
     bLiveStartProgress();
   }
 
   function bLiveError(error){
     bLiveStopProgress();
-    becomeLiveLastError=error instanceof Error?error.message:String(error||'Live generation failed.');
+    becomeLiveLastError=error instanceof Error?error.message:String(error||'Generation failed.');
     becomeState.stage='live-error';
-    bPanel(`${bHeader('LIVE CLOUD','GENERATION ERROR',0)}<p class="become-kicker">REMOTE GENERATION DID NOT COMPLETE</p><h2 class="become-title compact">RETRY A<br>NEW WORLD</h2><p class="become-copy">${bEscape(becomeLiveLastError)}</p><p class="become-rule">No prewritten scenario was substituted. Retry launches a completely new live request.</p><div class="become-actions"><button class="become-primary" type="button" data-become-action="begin-session">RETRY LIVE GENERATION</button></div>`);
+    bPanel(`${bHeader('BECOME','GENERATION ERROR',0)}<p class="become-kicker">BOTH GENERATION LAYERS FAILED</p><h2 class="become-title compact">RETRY A<br>NEW WORLD</h2><p class="become-copy">${bEscape(becomeLiveLastError)}</p><div class="become-actions"><button class="become-primary" type="button" data-become-action="begin-session">RETRY GENERATION</button></div>`);
   }
 
   function bLivePrefetch(index){
     if(index>=becomeState.count||becomeState.queue[index]||becomeLivePending.has(index))return becomeLivePending.get(index)||Promise.resolve(becomeState.queue[index]);
-    const nonce=becomeLiveSessionNonce;
-    let promise;
-    promise=bLiveGenerate(index,nonce).then(scenario=>{
-      if(nonce===becomeLiveSessionNonce&&becomeState.queue.length===becomeState.count)becomeState.queue[index]=scenario;
-      return scenario;
-    }).catch(error=>{becomeLiveLastError=error instanceof Error?error.message:String(error);throw error;}).finally(()=>{
-      if(becomeLivePending.get(index)===promise)becomeLivePending.delete(index);
-    });
+    const nonce=becomeLiveSessionNonce;let promise;
+    promise=bLiveGenerate(index,nonce).then(scenario=>{if(nonce===becomeLiveSessionNonce&&becomeState.queue.length===becomeState.count)becomeState.queue[index]=scenario;return scenario;}).catch(error=>{becomeLiveLastError=error instanceof Error?error.message:String(error);throw error;}).finally(()=>{if(becomeLivePending.get(index)===promise)becomeLivePending.delete(index);});
     promise.catch(()=>{});becomeLivePending.set(index,promise);return promise;
   }
 
   bRenderSetup=function(){
-    bLiveStopProgress();
-    becomeState.stage='setup';
+    bLiveStopProgress();becomeState.stage='setup';
     const previous=bRead('latest');
     const choices=BECOME_PRESETS.map(value=>`<button class="become-choice ${becomeState.count===value?'active':''}" type="button" data-become-action="set-count" data-value="${value}">${value}</button>`).join('');
-    bPanel(`<p class="become-kicker">DREAM MAKER · BECOME · LIVE AI</p><h1 class="become-title">REALITY<br>TRAINING LAB</h1><p class="become-copy">Every trial is generated live over the internet when it is needed. The server asks one free hosted model endpoint for a concise structured world and relies on the provider's own failover instead of stacking slow retries.</p><p class="become-rule"><b>CONTROL RULE:</b> operate as if the scenario is real while retaining awareness that you selected it. Stop if intensity becomes unhelpful. Never use this while driving or during hazardous activity.</p><div class="become-grid three"><div class="become-card"><small>DEFAULT</small><strong>ZERO-KEY LIVE CLOUD</strong><p>Remote generation on demand. No account, credential or browser-model download.</p></div><div class="become-card"><small>PRIMARY MODEL</small><strong>GPT-OSS 120B</strong><p>BlockRun manages upstream free-model failover. Dream Unity no longer serially retries three models.</p></div><div class="become-card"><small>LATENCY</small><strong>BOUNDED</strong><p>Generation has explicit server and browser deadlines, with visible elapsed status.</p></div></div><div class="become-facts"><span class="become-fact">NO API KEY</span><span class="become-fact">NO ACCOUNT</span><span class="become-fact">INTERNET ONLY</span><span class="become-fact">NO MODEL DOWNLOAD</span><span class="become-fact">NO STORED FALLBACK</span></div><div class="become-divider"></div><p class="become-label">NUMBER OF LIVE SCENARIOS</p><div class="become-counts">${choices}</div><label class="become-custom">CUSTOM 1–10 <input id="becomeCustomCount" type="number" min="1" max="10" value="${becomeState.count}" inputmode="numeric"></label><div class="become-actions"><button class="become-primary" type="button" data-become-action="begin-session">GENERATE LIVE SESSION</button></div><p class="become-microcopy">${previous?`Previous adaptive-entry score: ${Number(previous.adaptive||0).toFixed(1)}. Its weakest numerical faculty may shape the first trial.`:'No previous numerical session stored.'} Personal life-transfer descriptions are not sent to the live generator.</p>`);
+    bPanel(`<p class="become-kicker">DREAM MAKER · BECOME · GENERATIVE</p><h1 class="become-title">REALITY<br>TRAINING LAB</h1><p class="become-copy">Every trial is newly generated. Cloud AI is preferred when free capacity exists; if it is saturated, a local relational synthesis engine instantly composes a fresh coherent world instead of hanging or reverting to the ten original scenarios.</p><p class="become-rule"><b>CONTROL RULE:</b> operate as if the scenario is real while retaining awareness that you selected it. Stop if intensity becomes unhelpful. Never use this while driving or during hazardous activity.</p><div class="become-grid three"><div class="become-card"><small>LAYER 1</small><strong>CLOUD AI</strong><p>GPT-OSS generation is attempted first without an account or API key.</p></div><div class="become-card"><small>LAYER 2</small><strong>RELATIONAL SYNTHESIS</strong><p>When free cloud capacity is unavailable, independent dimensions are recombined into a new world locally.</p></div><div class="become-card"><small>GUARANTEE</small><strong>SESSION STARTS</strong><p>No indefinite spinner and no substitution from the original prewritten scenario bank.</p></div></div><div class="become-divider"></div><p class="become-label">NUMBER OF GENERATED SCENARIOS</p><div class="become-counts">${choices}</div><label class="become-custom">CUSTOM 1–10 <input id="becomeCustomCount" type="number" min="1" max="10" value="${becomeState.count}" inputmode="numeric"></label><div class="become-actions"><button class="become-primary" type="button" data-become-action="begin-session">GENERATE SESSION</button></div><p class="become-microcopy">${previous?`Previous adaptive-entry score: ${Number(previous.adaptive||0).toFixed(1)}. Its weakest numerical faculty may shape cloud generation when available.`:'No previous numerical session stored.'} Personal life-transfer descriptions are not sent to the cloud generator.</p>`);
   };
 
   bBeginSession=async function(){
     const nonce=bLiveNewNonce();
-    becomeLiveSessionNonce=nonce;becomeLivePending.clear();becomeLiveLastError='';becomeLiveLastModel='nvidia/gpt-oss-120b';
-    becomeState.queue=Array.from({length:becomeState.count},()=>null);
-    becomeState.scenarioIndex=0;becomeState.results=[];becomeState.transferScores={};
+    becomeLiveSessionNonce=nonce;becomeLivePending.clear();becomeLiveLastError='';becomeLiveLastModel='nvidia/gpt-oss-120b';becomeLiveLastSource='cloud';
+    becomeState.queue=Array.from({length:becomeState.count},()=>null);becomeState.scenarioIndex=0;becomeState.results=[];becomeState.transferScores={};
     bLiveLoading(0,'Generating the first genuinely new world now.');
-    try{
-      const first=await bLiveGenerate(0,nonce);
-      if(nonce!==becomeLiveSessionNonce)return;
-      bLiveStopProgress();becomeState.queue[0]=first;bRenderBrief();
-    }catch(error){if(nonce===becomeLiveSessionNonce)bLiveError(error);}
+    try{const first=await bLiveGenerate(0,nonce);if(nonce!==becomeLiveSessionNonce)return;bLiveStopProgress();becomeState.queue[0]=first;bRenderBrief();}
+    catch(error){if(nonce===becomeLiveSessionNonce)bLiveError(error);}
   };
 
   const bLiveOriginalRun=bRun;
-  bRun=function(){
-    if(becomeState.track==='scenario'&&becomeState.drillIndex===BECOME_DRILLS.length-1)bLivePrefetch(becomeState.scenarioIndex+1);
-    return bLiveOriginalRun();
-  };
+  bRun=function(){if(becomeState.track==='scenario'&&becomeState.drillIndex===BECOME_DRILLS.length-1)bLivePrefetch(becomeState.scenarioIndex+1);return bLiveOriginalRun();};
 
   bNext=async function(){
-    const next=becomeState.scenarioIndex+1;
-    if(next>=becomeState.queue.length){bRenderTransferForm();return;}
-    if(!becomeState.queue[next]){
-      bLiveLoading(next,`Generating the next novelty-checked world${becomeLiveLastModel?` through ${becomeLiveLastModel}`:''}.`);
-      try{const scenario=await bLivePrefetch(next);if(!scenario)throw new Error('The live generator returned no scenario.');bLiveStopProgress();}
-      catch(error){bLiveError(error);return;}
-    }
+    const next=becomeState.scenarioIndex+1;if(next>=becomeState.queue.length){bRenderTransferForm();return;}
+    if(!becomeState.queue[next]){bLiveLoading(next,becomeLiveLastSource==='synthesis'?'Constructing the next world through relational synthesis.':`Generating the next novelty-checked world through ${becomeLiveLastModel}.`);try{const scenario=await bLivePrefetch(next);if(!scenario)throw new Error('The generator returned no scenario.');bLiveStopProgress();}catch(error){bLiveError(error);return;}}
     becomeState.scenarioIndex=next;bRenderBrief();
   };
 
-  window.addEventListener('dreamunity:game-closed',()=>{
-    bLiveStopProgress();becomeLiveSessionNonce='';becomeLivePending.clear();
-  });
+  window.addEventListener('dreamunity:game-closed',()=>{bLiveStopProgress();becomeLiveSessionNonce='';becomeLivePending.clear();});
