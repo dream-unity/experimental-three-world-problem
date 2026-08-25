@@ -1,7 +1,7 @@
 {
   "project": "Dream Unity \u2014 Experimental Three-World Problem",
   "deployment": "verified-live",
-  "source_sha": "10d12252750e67cf4b3f702815be318240cb6f01",
+  "source_sha": "ae9a1fa1bb03743e5355e1cb00ac04cdb18835b3",
   "page_url": "https://dream-unity.github.io/experimental-three-world-problem/",
   "nine_portal_compatibility": "validated",
   "perceive": {
@@ -10,17 +10,13 @@
   },
   "become": {
     "game": "Become Reality Lab",
-    "scenario_source": "local_webgpu_then_cpu_wasm_groq_optional",
-    "zero_credential_default": true,
-    "local_webgpu_provider": "webllm_webgpu",
-    "local_webgpu_model": "SmolLM2-360M-Instruct-q4f32_1-MLC",
-    "local_cpu_provider": "transformers_js_wasm",
-    "local_cpu_model": "onnx-community/SmolLM2-360M-Instruct-ONNX",
-    "optional_cloud_provider": "groq",
-    "optional_cloud_model": "openai/gpt-oss-120b",
+    "scenario_source": "internet_live_cloud_only",
+    "browser_model_download": false,
+    "local_generation": false,
+    "cloud_provider": "groq",
+    "cloud_model": "openai/gpt-oss-120b",
     "backend": "https://dream-unity-become-live.vercel.app/api/become-scenario",
-    "credential_mode": "none_for_local_optional_browser_session_key_for_groq",
-    "local_novelty_rejection": true,
+    "credential_mode": "server_or_browser_session_key",
     "cloud_novelty_rejection": true,
     "stored_live_fallback": false,
     "timed_faculties": 17,
@@ -29,14 +25,13 @@
     "groq_key_persisted_to_performance_history": false
   },
   "sha256": [
-    "cf97e97834bf7570727e727f3ed191cdcc6bb4b5334858243e9545c68086e7ea  /tmp/dream-unity-live/index.html",
+    "0c76490c389861088defee425be7ead59b0dfa9a9429b6385f96b7918d7d46c9  /tmp/dream-unity-live/index.html",
     "008f907be470e8b387badb2534fa4df0c55b5bfc1c71c75d1beb9ef9ed963191  /tmp/dream-unity-live/styles.css",
     "ad8dc6788a87c34201b132b88d8e5eb3ed439a0644f54a9610d2398d1b877536  /tmp/dream-unity-live/become.css",
     "2107036b6397210444b31df52260fffb6a62d0447fefbc262beb3ee45f5b2d65  /tmp/dream-unity-live/main.js",
-    "cf8db4fffe1d84a92f84629489111481dbca54d1536c200fdac9b70b06709c61  /tmp/dream-unity-live/arcade.js",
+    "62bb8c1722b92961d7abd478e75911e7f36ec8636f7d062ed4ffd175a20d38be  /tmp/dream-unity-live/arcade.js",
     "5ea7269b5c3158bbbb8fd520439c3bd3b45176537aa018beebb6a36fe68190c1  /tmp/dream-unity-live/arcade-parts/become-lab-01.txt",
-    "441da90c22d1eb4b0417555f4f5e8b58ee209bdae04e1133ddae5bbda08da4f1  /tmp/dream-unity-live/arcade-parts/become-live-02.txt",
-    "3a55553d02507aee03a6a035fff4e76e3bb98fcd61d1afcbe45d5eb948fd4ce6  /tmp/dream-unity-live/arcade-parts/become-local-cpu-03.txt",
+    "5e7e6d531672ed25261567a9aaed8991a663e595814b6a2a04af32991c2eb159  /tmp/dream-unity-live/arcade-parts/become-live-02.txt",
     "4d7006d17cf3ae67cfd39516fe8df857bd44d82a6cb7aad4b81067484d7e2da7  /tmp/dream-unity-live/arcade-parts/part-01.txt",
     "526f14079e2ebf9560a8648a866a7bf70c8ae9f83f6bc2edcc68d861a65e04f2  /tmp/dream-unity-live/arcade-parts/part-02.txt",
     "183630ab3997f38ab5e2f2faf54505e9c4683c5885b3354fbb49e5508347b48c  /tmp/dream-unity-live/arcade-parts/part-03.txt",
@@ -52,5 +47,5 @@
     "b675b4a09a5fae66938b1b5b83889357dcc45d08641f11901f80fe46aa9f12b7  /tmp/dream-unity-live/arcade-parts/perceive-aerial-08.txt",
     "08b62c2248bed6690890881f12d4e9a157690329aaff6f3a253a3723aaa69245  /tmp/dream-unity-live/arcade-parts/perceive-role-logic.txt"
   ],
-  "verified_at": "2026-08-25T15:54:00.795068+00:00"
+  "verified_at": "2026-08-25T16:07:33.793722+00:00"
 }
