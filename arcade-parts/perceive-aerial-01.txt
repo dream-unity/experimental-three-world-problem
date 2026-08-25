@@ -1,0 +1,330 @@
+
+  // Dream Machine / PERCEIVE replacement: PARALLAX WING.
+  // The complete relation remains visible in the moving combat field. The
+  // player's target lock and pulse-cannon shot are the response.
+  function createPerceptionAerialGame() {
+    const PROFILE_KEY = 'dream-unity.perceive.parallax-wing.v1';
+    const FAMILY_ORDER = [
+      'symmetry',
+      'common-fate',
+      'counterphase',
+      'anchor',
+      'bridge',
+      'rotation',
+      'convergence',
+      'mixed',
+    ];
+
+    let player;
+    let reticle;
+    let enemies = [];
+    let enemyShots = [];
+    let tracers = [];
+    let encounter = null;
+    let pointerFire = false;
+    let wave = 1;
+    let level = 1;
+    let streak = 0;
+    let successes = 0;
+    let resolveTimer = 0;
+    let wrongLockCooldown = 0;
+    let spawnDelay = 0;
+    let stats;
+
+    const rotate = (x, y, angle) => {
+      const c = Math.cos(angle);
+      const s = Math.sin(angle);
+      return [x * c - y * s, x * s + y * c];
+    };
+
+    const shuffled = (items) => {
+      const output = [...items];
+      for (let i = output.length - 1; i > 0; i--) {
+        const j = (Math.random() * (i + 1)) | 0;
+        [output[i], output[j]] = [output[j], output[i]];
+      }
+      return output;
+    };
+
+    function writeProfile(record) {
+      try {
+        const prior = JSON.parse(localStorage.getItem(PROFILE_KEY) || '[]');
+        const rows = Array.isArray(prior) ? prior : [];
+        rows.push(record);
+        localStorage.setItem(PROFILE_KEY, JSON.stringify(rows.slice(-160)));
+      } catch { /* storage is optional */ }
+    }
+
+    function makeEnemy(nodeId, role = 'distractor') {
+      return {
+        nodeId,
+        role,
+        rx: 0,
+        ry: 0,
+        baseX: 0,
+        baseY: 0,
+        sx: 0,
+        sy: 0,
+        size: 10,
+        bank: 0,
+        pulse: 0,
+        alive: true,
+        hitFlash: 0,
+        fireTimer: rand(2.4, 1.1),
+        trail: [],
+      };
+    }
+
+    function remapEdges(logicalEnemies, logicalEdges, finalEnemies) {
+      const byNode = new Map(finalEnemies.map((enemy, index) => [enemy.nodeId, index]));
+      return logicalEdges.map(([a, b]) => [byNode.get(logicalEnemies[a].nodeId), byNode.get(logicalEnemies[b].nodeId)]);
+    }
+
+    function buildSymmetry() {
+      const logical = [];
+      const pairs = [];
+      const pairRows = [-0.24, 0.02, 0.27];
+      pairRows.forEach((y, pair) => {
+        const span = 0.17 + pair * 0.055;
+        const left = makeEnemy(`s-${pair}-l`, 'paired');
+        const right = makeEnemy(`s-${pair}-r`, 'paired');
+        left.baseX = -span; left.baseY = y;
+        right.baseX = span; right.baseY = y;
+        logical.push(left, right);
+        pairs.push([left.nodeId, right.nodeId]);
+      });
+      const target = makeEnemy('s-keystone', 'unpaired-symmetry-break');
+      target.baseX = choose([-1, 1]) * rand(0.31, 0.21);
+      target.baseY = rand(0.22, -0.2);
+      logical.push(target);
+      const finalEnemies = shuffled(logical);
+      return { enemies: finalEnemies, target, pairs, axisAngle: 0 };
+    }
+
+    function buildCommonFate() {
+      const logical = [];
+      const count = 7;
+      for (let i = 0; i < count; i++) {
+        const enemy = makeEnemy(`f-${i}`, 'follower');
+        const a = -Math.PI * 0.88 + i / (count - 1) * Math.PI * 1.76;
+        const radius = 0.18 + (i % 2) * 0.09;
+        enemy.baseX = Math.cos(a) * radius;
+        enemy.baseY = Math.sin(a) * radius * 0.72;
+        enemy.delay = 0.17 + i * 0.045;
+        logical.push(enemy);
+      }
+      const target = choose(logical);
+      target.role = 'causal-source';
+      target.delay = 0;
+      target.baseX = rand(0.2, -0.2);
+      target.baseY = rand(0.12, -0.18);
+      return { enemies: shuffled(logical), target, sourcePulse: Math.random() * TAU };
+    }
+
+    function buildCounterphase() {
+      const logical = [];
+      const count = 7;
+      const targetIndex = (Math.random() * count) | 0;
+      for (let i = 0; i < count; i++) {
+        const enemy = makeEnemy(`p-${i}`, i === targetIndex ? 'anti-phase' : 'in-phase');
+        const a = i / count * TAU + rand(0.18, -0.18);
+        const radius = i % 2 ? 0.29 : 0.22;
+        enemy.baseX = Math.cos(a) * radius;
+        enemy.baseY = Math.sin(a) * radius * 0.68;
+        enemy.phaseOffset = i === targetIndex ? Math.PI : 0;
+        logical.push(enemy);
+      }
+      return { enemies: shuffled(logical), target: logical[targetIndex] };
+    }
+
+    function buildAnchor() {
+      const logical = [];
+      const count = 7;
+      const targetIndex = (Math.random() * count) | 0;
+      for (let i = 0; i < count; i++) {
+        const enemy = makeEnemy(`a-${i}`, i === targetIndex ? 'beacon-relative-anchor' : 'screen-relative-drift');
+        enemy.baseX = rand(0.36, -0.36);
+        enemy.baseY = rand(0.28, -0.24);
+        enemy.motionSeed = Math.random() * TAU;
+        logical.push(enemy);
+      }
+      const target = logical[targetIndex];
+      const angle = rand(TAU, 0);
+      const radius = rand(0.25, 0.17);
+      target.anchorOffset = [Math.cos(angle) * radius, Math.sin(angle) * radius * 0.8];
+      return { enemies: shuffled(logical), target, beacon: [0, 0], anchorRadius: radius };
+    }
+
+    function buildBridge(compound = false) {
+      const logical = [];
+      const left = [];
+      const right = [];
+      for (let i = 0; i < 3; i++) {
+        const a = makeEnemy(`b-l-${i}`, 'cluster-node');
+        a.baseX = -0.28 + (i % 2) * 0.08;
+        a.baseY = -0.22 + i * 0.22;
+        left.push(a); logical.push(a);
+        const b = makeEnemy(`b-r-${i}`, 'cluster-node');
+        b.baseX = 0.28 - (i % 2) * 0.08;
+        b.baseY = -0.22 + i * 0.22;
+        right.push(b); logical.push(b);
+      }
+      const bridgeA = makeEnemy('b-x-a', compound ? 'connector-in-phase' : 'topological-bridge');
+      bridgeA.baseX = -0.025; bridgeA.baseY = -0.055;
+      logical.push(bridgeA);
+      let bridgeB = null;
+      if (compound) {
+        bridgeB = makeEnemy('b-x-b', 'connector-anti-phase');
+        bridgeB.baseX = 0.035; bridgeB.baseY = 0.13;
+        logical.push(bridgeB);
+      }
+      const edges = [
+        [0, 1], [1, 2], [3, 4], [4, 5],
+        [0, 2], [3, 5], [1, 6], [6, 4],
+      ];
+      if (compound) edges.push([2, 7], [7, 3]);
+      const target = compound ? bridgeB : bridgeA;
+      if (compound) {
+        const phaseDistractor = left[0];
+        phaseDistractor.role = 'cluster-anti-phase';
+        phaseDistractor.phaseOffset = Math.PI;
+        bridgeB.phaseOffset = Math.PI;
+        bridgeA.phaseOffset = 0;
+      }
+      const finalEnemies = shuffled(logical);
+      const remapped = remapEdges(logical, edges, finalEnemies);
+      return { enemies: finalEnemies, target, edges: remapped, compound };
+    }
+
+    function buildRotation() {
+      const logical = [];
+      const count = 8;
+      const targetIndex = (Math.random() * count) | 0;
+      const initial = rand(TAU, 0);
+      for (let i = 0; i < count; i++) {
+        const enemy = makeEnemy(`r-${i}`, i === targetIndex ? 'marker-opposite-local-frame' : 'rotating-distractor');
+        enemy.slotAngle = initial + i / count * TAU;
+        logical.push(enemy);
+      }
+      const target = logical[targetIndex];
+      const markerOffset = target.slotAngle - Math.PI;
+      return {
+        enemies: shuffled(logical),
+        target,
+        angularSpeed: choose([-1, 1]) * rand(0.76, 0.42),
+        markerOffset,
+      };
+    }
+
+    function buildConvergence() {
+      const logical = [];
+      const target = makeEnemy('c-target', 'dual-beam-intersection');
+      target.baseX = rand(0.11, -0.11);
+      target.baseY = rand(0.08, -0.12);
+      logical.push(target);
+      const angles = [rand(0.48, 0.28), rand(2.86, 2.55)];
+      const sources = [];
+      angles.forEach((a, pair) => {
+        const radiusA = rand(0.39, 0.31);
+        const radiusB = rand(0.39, 0.31);
+        const first = makeEnemy(`c-${pair}-a`, pair === 0 ? 'single-beam-a' : 'single-beam-c');
+        const second = makeEnemy(`c-${pair}-b`, pair === 0 ? 'single-beam-b' : 'single-beam-d');
+        first.baseX = target.baseX + Math.cos(a) * radiusA;
+        first.baseY = target.baseY + Math.sin(a) * radiusA * 0.72;
+        second.baseX = target.baseX - Math.cos(a) * radiusB;
+        second.baseY = target.baseY - Math.sin(a) * radiusB * 0.72;
+        logical.push(first, second);
+        sources.push([first.nodeId, second.nodeId]);
+      });
+      while (logical.length < 7) {
+        const enemy = makeEnemy(`c-d-${logical.length}`, 'surface-near-intersection');
+        enemy.baseX = rand(0.39, -0.39);
+        enemy.baseY = rand(0.28, -0.25);
+        logical.push(enemy);
+      }
+      return { enemies: shuffled(logical), target, beams: sources };
+    }
+
+    function selectFamily() {
+      if (level <= 7) return FAMILY_ORDER[level - 1];
+      if (level === 8) return choose(FAMILY_ORDER.slice(0, 7));
+      return 'mixed';
+    }
+
+    function buildEncounter(E) {
+      const family = selectFamily();
+      let built;
+      if (family === 'symmetry') built = buildSymmetry();
+      else if (family === 'common-fate') built = buildCommonFate();
+      else if (family === 'counterphase') built = buildCounterphase();
+      else if (family === 'anchor') built = buildAnchor();
+      else if (family === 'bridge') built = buildBridge(false);
+      else if (family === 'rotation') built = buildRotation();
+      else if (family === 'convergence') built = buildConvergence();
+      else built = buildBridge(true);
+
+      enemies = built.enemies;
+      encounter = {
+        ...built,
+        family,
+        age: 0,
+        depth: 0.055,
+        orientation: rand(0.58, -0.58),
+        driftSeed: Math.random() * TAU,
+        solved: false,
+        assist: clamp(1.04 - (level - 1) * 0.065, 0.39, 1),
+        startedAt: performance.now(),
+      };
+      enemyShots = [];
+      tracers = [];
+      wrongLockCooldown = 0;
+      resolveTimer = 0;
+      spawnDelay = 0;
+      E.toast(level <= 2 ? 'READ THE FORMATION' : 'ACQUIRE THE RELATION', 0.82);
+      updateRelation(E, 0);
+    }
+
+    function formationTransform(x, y) {
+      const angle = encounter.orientation + Math.sin(encounter.age * 0.23 + encounter.driftSeed) * 0.12;
+      return rotate(x, y, angle);
+    }
+
+    function updateRelation(E, dt) {
+      if (!encounter) return;
+      encounter.age += dt;
+      if (!encounter.solved) encounter.depth += dt * (0.052 + level * 0.0048);
+      const age = encounter.age;
+
+      if (encounter.family === 'symmetry') {
+        const axisShift = Math.sin(age * 0.73 + encounter.driftSeed) * 0.045;
+        for (const enemy of enemies) {
+          let x = enemy.baseX + axisShift;
+          let y = enemy.baseY + Math.sin(age * 1.05 + enemy.nodeId.length) * 0.012;
+          [x, y] = formationTransform(x, y);
+          enemy.rx = x; enemy.ry = y;
+          enemy.bank = Math.sin(age * 1.35 + enemy.baseY * 8) * 0.42;
+          enemy.pulse = 0.45 + 0.55 * Math.sin(age * 2.2 + enemy.baseY * 5) ** 2;
+        }
+      } else if (encounter.family === 'common-fate') {
+        for (const enemy of enemies) {
+          const t = age - enemy.delay;
+          const motionX = Math.sin(t * 2.15 + encounter.sourcePulse) * 0.105;
+          const motionY = Math.sin(t * 1.45 + encounter.sourcePulse * 0.7) * 0.038;
+          let x = enemy.baseX + motionX;
+          let y = enemy.baseY + motionY;
+          [x, y] = formationTransform(x, y);
+          enemy.rx = x; enemy.ry = y;
+          enemy.bank = Math.cos(t * 2.15 + encounter.sourcePulse) * 0.68;
+          enemy.pulse = 0.4 + 0.6 * Math.sin((t + 0.12) * 2.15 + encounter.sourcePulse) ** 2;
+        }
+      } else if (encounter.family === 'counterphase') {
+        for (const enemy of enemies) {
+          const phase = age * 3.05 + enemy.phaseOffset;
+          let x = enemy.baseX + Math.sin(phase) * 0.018;
+          let y = enemy.baseY + Math.cos(phase) * 0.012;
+          [x, y] = formationTransform(x, y);
+          enemy.rx = x; enemy.ry = y;
+          enemy.bank = Math.sin(phase) * 0.78;
+          enemy.pulse = 0.12 + 0.88 * (0.5 + 0.5 * Math.sin(phase));
+        }
+      } else if (encounter.family === 'anchor') {

@@ -1,55 +1,86 @@
 # Dream Unity — Experimental Three-World Problem
 
-A visual-first autonomous simulation of three mutually coupled worlds:
+A visual-first simulation containing three coupled worlds and nine distinct arcade games:
 
-1. **Dream Machine** — perception, modelling, prediction.
-2. **Dream Maker** — intention, action, becoming.
-3. **Dream World** — matter, structure, emergence.
+1. **Dream Machine** — Perceive, Model, Predict.
+2. **Dream Maker** — Intend, Act, Become.
+3. **Dream World** — Matter, Structure, Emerge.
 
-The main scene is the interface. There is no video player, timeline, dashboard, or scripted loop.
+The main scene is a mathematically projected 3D triad. Hold and drag to orbit it, pinch or wheel to zoom, twist with two fingers to roll, and select a world to enter its internal triad. Selecting an internal label opens the corresponding game.
 
-## True 3D triad interaction
+## The nine games and their cognitive roles
 
-The overview is a mathematically projected three-dimensional object, not a transformed webpage layer.
+| Portal | Game | Distinct gameplay purpose |
+|---|---|---|
+| **PERCEIVE** | **Parallax Wing** | Perceive live relations among moving fighter formations and fire at the aircraft defined by the relation. |
+| **MODEL** | **Model Forge** | Encode a hidden network and reconstruct its exact connection structure. |
+| **PREDICT** | **Oracle Gates** | Extrapolate where a moving object will reappear after occlusion. |
+| **INTEND** | **Vector Vow** | Aim, charge and commit a planned trajectory through moving geometry and ricochets. |
+| **ACT** | **Impulse Run** | Convert perception into immediate movement under escalating speed and obstacle pressure. |
+| **BECOME** | **Metamorph** | Transform between three operational forms to meet changing environmental demands. |
+| **MATTER** | **Gravity Foundry** | Manipulate attraction to absorb required matter while rejecting destabilising particles. |
+| **STRUCTURE** | **Lattice Lock** | Rotate interconnected tiles until a coherent energy pathway emerges. |
+| **EMERGE** | **Genesis Bloom** | Place limited seeds so local interactions produce large cascading ecological effects. |
 
-- Hold and drag with a mouse to orbit the complete **Dream Machine / Dream Maker / Dream World** triad around Unity.
-- Drag with one finger on a touchscreen to orbit the same 3D object.
-- Pinch with two fingers to move closer to or farther from the triad.
-- Twist two fingers to roll the 3D triad.
-- Two-finger movement adjusts its viewing angle.
-- Mouse wheel zooms the 3D camera.
-- Depth changes object scale, connection strength, label position and paint order; nearer worlds occlude farther worlds.
-- Double-tap or double-click empty space to restore the canonical orientation.
+The games are intentionally non-interchangeable. **Model Forge** trains reconstruction, **Oracle Gates** trains forward extrapolation, and **Parallax Wing** now trains immediate relational seeing in a continuously visible, moving field.
 
-No CSS or DOM transform is used for this interaction. Each world and connection is rotated in model space and projected back onto the canvas every frame.
+## Parallax Wing — the PERCEIVE fighter game
 
-## Nested worlds and games
+Parallax Wing replaces Signal Veil while retaining the same `machine:0` portal, shared lifecycle and unified arcade interface.
 
-Tap/click any world to enter its internal triad:
+The player flies a fighter, aims a pulse cannon and survives incoming fire. Enemy aircraft are visually identical; no colour or static side marks the correct target. The decisive aircraft is defined only by its relation to the rest of the moving formation.
 
-- **Dream Machine:** Perceive, Model, Predict
-- **Dream Maker:** Intend, Act, Become
-- **Dream World:** Matter, Structure, Emerge
+The game generates eight progressively combined perceptual families:
 
-Each internal label opens a distinct playable game, producing nine games in total. Internal triads retain their own drag-orbit, pinch-zoom and wheel-zoom controls.
+- a symmetry-breaking aircraft among mirrored pairs;
+- the causal source whose movement propagates through a squadron;
+- an aircraft moving in counterphase to an otherwise synchronized formation;
+- an aircraft preserving a constant relation to a moving beacon;
+- a bridge connecting two moving formation clusters;
+- an aircraft opposite a marker in a rotating local frame;
+- the aircraft at the intersection of two moving sight-lines;
+- compound topology-plus-phase relations at higher levels.
 
-## Performance
+The relation remains visible while the player acts. There are no textual premises, picture-answer panels or hidden arbitrary answer tokens. The response is the targeting and firing action itself.
 
-- Self-contained Canvas 2D projection engine
-- No external rendering library or video asset
-- Capped frame delta after stalls
-- Adaptive device-pixel ratio on sustained low frame rate
-- Reduced object counts on mobile-class hardware
-- Throttled DOM label updates
-- Main visualization pauses while a game is active
-- Same-origin, versioned engine chunks with retry and loader fail-safe
+Correct acquisition destroys the formation, builds a focus streak and increases score. A false lock damages the fighter and records the specific perceptual error represented by that distractor. Failing to acquire the relation before the formation reaches the player is separately recorded as late relational acquisition.
 
-## Stack
+### Anti-shortcut and assessment design
 
-- Canvas 2D
-- Pointer Events
-- Perspective projection and 3D rotation mathematics
-- Web Audio API for games
-- Zero build step
+- target identity, absolute side, formation rotation and screen position vary each encounter;
+- all aircraft share the same base appearance;
+- assistance gradually reduces without removing the causal evidence;
+- distractors embody specific errors rather than random alternatives;
+- relation family, latency, false-lock type, firing accuracy and run outcomes are stored locally;
+- combat pressure creates urgency, but success still depends on perceiving the relation rather than shooting everything.
 
-Serve over HTTP or host directly with GitHub Pages.
+## Shared arcade architecture
+
+All nine games retain:
+
+- touch, mouse and keyboard controls;
+- persistent local best scores;
+- scoring, lives/resources, combinations and progressive difficulty;
+- pause, restart, sound and return-to-triad controls;
+- responsive tablet and mobile layouts;
+- shared particle, flash, shake and synthesized-audio feedback;
+- capped pixel ratio and object counts on lower-powered hardware;
+- suspension of the 3D overview while a game is active;
+- same-origin, versioned and locally cached game chunks;
+- no external game engine, font, model, analytics service or video asset.
+
+## Parallax Wing controls
+
+- **Touch/mouse:** drag to fly and aim; hold to fire.
+- **Keyboard:** WASD or arrows move the fighter and sight; Space fires.
+- Enemy fire can be dodged or destroyed through the sight.
+
+## Validation
+
+```bash
+npm test
+```
+
+The repository test assembles the original five arcade chunks, injects the three Parallax Wing chunks inside the shared private runtime, syntax-checks the complete game engine and verifies nine-game compatibility, portal isolation, relation-family coverage, perceptual error topology, controls and static deployment references.
+
+Serve over HTTP or deploy directly through GitHub Pages.
