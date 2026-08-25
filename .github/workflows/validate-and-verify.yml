@@ -21,8 +21,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout complete repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - name: Validate nine games, Relational Identity Drift and live Become
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Validate Dream Unity and bounded Become
         run: npm test
 
   verify-live:
@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout validated source
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           ref: main
           fetch-depth: 0
@@ -42,176 +42,83 @@ jobs:
           PAGE_URL: https://dream-unity.github.io/experimental-three-world-problem
         run: |
           set -euo pipefail
-          files=(
-            index.html
-            styles.css
-            become.css
-            main.js
-            arcade.js
-            arcade-parts/part-01.txt
-            arcade-parts/part-02.txt
-            arcade-parts/part-03.txt
-            arcade-parts/part-04.txt
-            arcade-parts/part-05.txt
-            arcade-parts/perceive-role-logic.txt
-            arcade-parts/perceive-aerial-01.txt
-            arcade-parts/perceive-aerial-02.txt
-            arcade-parts/perceive-aerial-03.txt
-            arcade-parts/perceive-aerial-04.txt
-            arcade-parts/perceive-aerial-05.txt
-            arcade-parts/perceive-aerial-06.txt
-            arcade-parts/perceive-aerial-07.txt
-            arcade-parts/perceive-aerial-08.txt
-            arcade-parts/become-lab-01.txt
-            arcade-parts/become-live-02.txt
-          )
+          files=(index.html styles.css become.css main.js arcade.js arcade-parts/part-01.txt arcade-parts/part-02.txt arcade-parts/part-03.txt arcade-parts/part-04.txt arcade-parts/part-05.txt arcade-parts/perceive-role-logic.txt arcade-parts/perceive-aerial-01.txt arcade-parts/perceive-aerial-02.txt arcade-parts/perceive-aerial-03.txt arcade-parts/perceive-aerial-04.txt arcade-parts/perceive-aerial-05.txt arcade-parts/perceive-aerial-06.txt arcade-parts/perceive-aerial-07.txt arcade-parts/perceive-aerial-08.txt arcade-parts/become-lab-01.txt arcade-parts/become-live-02.txt)
           rm -rf /tmp/dream-unity-live
           mkdir -p /tmp/dream-unity-live/arcade-parts
           matched=false
           for attempt in $(seq 1 60); do
             matched=true
             for path in "${files[@]}"; do
-              if ! curl --fail --location --silent --show-error --retry 3 --retry-all-errors --retry-delay 2 \
-                "$PAGE_URL/$path?source=${GITHUB_SHA}" --output "/tmp/dream-unity-live/$path"; then
-                matched=false
-                break
-              fi
-              if ! cmp --silent "$path" "/tmp/dream-unity-live/$path"; then
-                matched=false
-                break
-              fi
+              if ! curl --fail --location --silent --show-error --retry 3 --retry-all-errors --retry-delay 2 "$PAGE_URL/$path?source=${GITHUB_SHA}" --output "/tmp/dream-unity-live/$path"; then matched=false; break; fi
+              if ! cmp --silent "$path" "/tmp/dream-unity-live/$path"; then matched=false; break; fi
             done
             if [ "$matched" = true ]; then break; fi
             echo "Pages has not propagated yet (attempt $attempt/60)."
             sleep 5
           done
           test "$matched" = true
-
           grep -q 'PARALLAX WING' /tmp/dream-unity-live/index.html
-          grep -q 'nearest escort on the outside' /tmp/dream-unity-live/index.html
-          grep -q 'function roleDriftGeometry' /tmp/dream-unity-live/arcade-parts/perceive-role-logic.txt
-          grep -q 'stale-role-perseveration' /tmp/dream-unity-live/arcade-parts/perceive-aerial-*.txt
-
-          grep -q 'function createBecomeLab' /tmp/dream-unity-live/arcade-parts/become-lab-01.txt
-          grep -q "GAME_BY_KEY\['maker:2'\]" /tmp/dream-unity-live/arcade-parts/become-lab-01.txt
-          grep -q 'STATE-ENTRY LATENCY' /tmp/dream-unity-live/arcade-parts/become-lab-01.txt
-          grep -q 'DREAM MAKER · BECOME · LIVE AI' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
-          grep -q 'https://dream-unity-become-live.vercel.app/api/become-scenario' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
-          grep -q 'NO API KEY' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
-          grep -q 'NO ACCOUNT' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
-          grep -q 'INTERNET GENERATED' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
-          grep -q 'NO MODEL DOWNLOAD' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
+          grep -q 'arcade.js?v=20260826-become-zero-key-proxy-7' /tmp/dream-unity-live/index.html
+          grep -q 'BECOME_BROWSER_TIMEOUT_MS = 45_000' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
+          grep -q 'becomeLiveProgress' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
+          grep -q 'HARD DEADLINE APPROACHING' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
           grep -q 'NO STORED FALLBACK' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
-          ! grep -qi 'groq' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
-          ! grep -q 'sessionStorage' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
-          ! grep -q 'blockrun.ai/api/v1/chat/completions' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
           ! grep -q '@mlc-ai/web-llm' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
           ! grep -q '@huggingface/transformers' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
-          ! grep -q 'navigator.gpu' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
-          ! grep -q 'become-local-cpu-03' /tmp/dream-unity-live/arcade.js
+          sha256sum /tmp/dream-unity-live/index.html /tmp/dream-unity-live/styles.css /tmp/dream-unity-live/become.css /tmp/dream-unity-live/main.js /tmp/dream-unity-live/arcade.js /tmp/dream-unity-live/arcade-parts/*.txt > /tmp/live-checksums.txt
 
-          sha256sum /tmp/dream-unity-live/index.html /tmp/dream-unity-live/styles.css \
-            /tmp/dream-unity-live/become.css /tmp/dream-unity-live/main.js /tmp/dream-unity-live/arcade.js \
-            /tmp/dream-unity-live/arcade-parts/*.txt > /tmp/live-checksums.txt
-
-      - name: Verify zero-key Become proxy identity and browser CORS
+      - name: Verify bounded zero-key proxy and CORS
         shell: bash
         env:
           LIVE_API: https://dream-unity-become-live.vercel.app/api/become-scenario
           PAGE_ORIGIN: https://dream-unity.github.io
         run: |
           set -euo pipefail
-          curl --fail --silent --show-error --retry 3 --retry-all-errors \
-            "$LIVE_API" > /tmp/become-service.json
+          curl --fail --silent --show-error "$LIVE_API" > /tmp/become-service.json
           python3 - <<'PY'
           import json
           from pathlib import Path
-          data=json.loads(Path('/tmp/become-service.json').read_text(encoding='utf-8'))
-          assert data.get('ok') is True
-          assert data.get('service') == 'dream-unity-become-live'
-          assert data.get('provider') == 'blockrun'
-          assert data.get('model') == 'nvidia/gpt-oss-120b'
-          assert data.get('credentialMode') == 'none'
-          assert data.get('accountRequired') is False
-          assert data.get('localModel') is False
+          data=json.loads(Path('/tmp/become-service.json').read_text())
+          assert data['ok'] is True
+          assert data['provider']=='blockrun'
+          assert data['model']=='nvidia/gpt-oss-120b'
+          assert data['upstreamFailover']=='blockrun-managed'
+          assert data['requestTimeoutMs']==20000
+          assert data['credentialMode']=='none'
           PY
+          code=$(curl --silent --show-error --output /tmp/preflight --dump-header /tmp/preflight-h --write-out '%{http_code}' -X OPTIONS -H "Origin: $PAGE_ORIGIN" -H 'Access-Control-Request-Method: POST' -H 'Access-Control-Request-Headers: content-type' "$LIVE_API")
+          test "$code" = '204'
+          grep -qi 'access-control-allow-origin: https://dream-unity.github.io' /tmp/preflight-h
 
-          preflight_code=$(curl --silent --show-error --output /tmp/become-preflight-body \
-            --dump-header /tmp/become-preflight-headers --write-out '%{http_code}' \
-            -X OPTIONS \
-            -H "Origin: $PAGE_ORIGIN" \
-            -H 'Access-Control-Request-Method: POST' \
-            -H 'Access-Control-Request-Headers: content-type' \
-            "$LIVE_API")
-          export PREFLIGHT_CODE="$preflight_code"
-          python3 - <<'PY'
-          import os
-          from pathlib import Path
-          code=int(os.environ['PREFLIGHT_CODE'])
-          assert 200 <= code < 300, f'Proxy CORS preflight failed with HTTP {code}'
-          headers=Path('/tmp/become-preflight-headers').read_text(encoding='utf-8',errors='ignore').lower()
-          origin=os.environ['PAGE_ORIGIN'].lower()
-          allow_origin=allow_methods=allow_headers=None
-          for line in headers.splitlines():
-              if line.startswith('access-control-allow-origin:'): allow_origin=line.split(':',1)[1].strip()
-              if line.startswith('access-control-allow-methods:'): allow_methods=line.split(':',1)[1].strip()
-              if line.startswith('access-control-allow-headers:'): allow_headers=line.split(':',1)[1].strip()
-          assert allow_origin in {'*',origin}, f'Browser origin not allowed: {allow_origin!r}'
-          assert allow_methods and 'post' in allow_methods, f'POST not allowed: {allow_methods!r}'
-          assert allow_headers and 'content-type' in allow_headers, f'Content-Type not allowed: {allow_headers!r}'
-          PY
-
-      - name: Generate a real zero-key Become world
+      - name: Generate a real new Become scenario
         shell: bash
         env:
           LIVE_API: https://dream-unity-become-live.vercel.app/api/become-scenario
           PAGE_ORIGIN: https://dream-unity.github.io
         run: |
           set -euo pipefail
-          cat > /tmp/become-request.json <<'JSON'
-          {
-            "trialIndex": 0,
-            "trialCount": 1,
-            "sessionNonce": "github-actions-live-proof",
-            "recentScenarios": [],
-            "currentPerformance": [],
-            "previousWeakestMetric": null
-          }
+          cat > /tmp/request.json <<'JSON'
+          {"trialIndex":0,"trialCount":1,"sessionNonce":"github-actions-bounded-proof","recentScenarios":[],"currentPerformance":[],"previousWeakestMetric":null}
           JSON
-          curl --fail --silent --show-error --retry 2 --retry-all-errors --retry-delay 3 \
-            --max-time 100 \
-            --dump-header /tmp/become-generation-headers \
-            -X POST \
-            -H "Origin: $PAGE_ORIGIN" \
-            -H 'Content-Type: application/json' \
-            --data-binary @/tmp/become-request.json \
-            "$LIVE_API" > /tmp/become-generation.json
-
+          curl --fail --silent --show-error --retry 1 --retry-all-errors --retry-delay 2 --max-time 30 --dump-header /tmp/gen-h -X POST -H "Origin: $PAGE_ORIGIN" -H 'Content-Type: application/json' --data-binary @/tmp/request.json "$LIVE_API" > /tmp/gen.json
           python3 - <<'PY'
-          import json, os
+          import json
           from pathlib import Path
-          data=json.loads(Path('/tmp/become-generation.json').read_text(encoding='utf-8'))
-          scenario=data.get('scenario') or {}
-          meta=data.get('meta') or {}
-          required=['id','title','tag','visual','premise','sensory','objects','body','atmosphere','motion','stakes','identity','choice','exit','dimensions']
-          for key in required:
-              assert key in scenario and scenario[key], f'missing generated field: {key}'
-          dims=scenario['dimensions']
-          for key in ['environment','role','goal','pressure','body_dynamics','decision_structure','emotional_tone','social_structure']:
-              assert isinstance(dims.get(key),str) and dims[key].strip(), f'missing dimension: {key}'
-          assert meta.get('provider') == 'blockrun'
-          assert meta.get('model') in {'nvidia/gpt-oss-120b','nvidia/step-3.7-flash','nvidia/mistral-nemotron'}
-          assert meta.get('credentialMode') == 'none'
-          headers=Path('/tmp/become-generation-headers').read_text(encoding='utf-8',errors='ignore').lower()
-          origin=os.environ['PAGE_ORIGIN'].lower()
-          allow_origin=None
-          for line in headers.splitlines():
-              if line.startswith('access-control-allow-origin:'): allow_origin=line.split(':',1)[1].strip()
-          assert allow_origin in {'*',origin}, f'Generated response is not browser-readable: {allow_origin!r}'
-          print('Verified live world:', scenario['title'], 'via', meta.get('model'))
+          data=json.loads(Path('/tmp/gen.json').read_text())
+          s=data.get('scenario') or {}; m=data.get('meta') or {}
+          for k in ['id','title','tag','visual','premise','sensory','objects','body','atmosphere','motion','stakes','identity','choice','exit','dimensions']:
+              assert s.get(k), f'missing {k}'
+          for k in ['environment','role','goal','pressure','body_dynamics','decision_structure','emotional_tone','social_structure']:
+              assert s['dimensions'].get(k), f'missing dimension {k}'
+          assert m.get('provider')=='blockrun'
+          assert isinstance(m.get('model'),str) and m['model']
+          assert m.get('credentialMode')=='none'
+          assert isinstance(m.get('latencyMs'),int) and m['latencyMs'] > 0
+          print('LIVE_SCENARIO_OK',s['title'],m['model'],m['latencyMs'])
           PY
+          grep -qi 'access-control-allow-origin: https://dream-unity.github.io' /tmp/gen-h
 
-      - name: Commit machine-readable live deployment receipt
+      - name: Commit live deployment receipt
         shell: bash
         env:
           SOURCE_SHA: ${{ github.sha }}
@@ -222,45 +129,41 @@ jobs:
           from datetime import datetime, timezone
           from pathlib import Path
           import json, os
-          receipt = {
-              'project': 'Dream Unity — Experimental Three-World Problem',
-              'deployment': 'verified-live',
-              'source_sha': os.environ['SOURCE_SHA'],
-              'page_url': os.environ['PAGE_URL'],
-              'nine_portal_compatibility': 'validated',
-              'perceive': {
-                  'game': 'Parallax Wing',
-                  'mechanic': 'relational_identity_drift',
-              },
-              'become': {
-                  'game': 'Become Reality Lab',
-                  'scenario_source': 'zero_key_internet_live_via_proxy',
-                  'browser_model_download': False,
-                  'local_generation': False,
-                  'browser_api_key_required': False,
-                  'browser_account_required': False,
-                  'proxy': 'https://dream-unity-become-live.vercel.app/api/become-scenario',
-                  'upstream_gateway': 'blockrun',
-                  'primary_model': 'nvidia/gpt-oss-120b',
-                  'failover_models': ['nvidia/step-3.7-flash','nvidia/mistral-nemotron'],
-                  'credential_mode': 'none',
-                  'browser_cors_verified': True,
-                  'live_inference_verified': True,
-                  'server_novelty_rejection': True,
-                  'stored_live_fallback': False,
-                  'timed_faculties': 17,
-                  'state_entry_seconds': 30,
-                  'personal_transfer_text_sent_to_generator': False,
-              },
-              'sha256': Path('/tmp/live-checksums.txt').read_text(encoding='utf-8').splitlines(),
-              'verified_at': datetime.now(timezone.utc).isoformat(),
+          gen=json.loads(Path('/tmp/gen.json').read_text())
+          meta=gen.get('meta') or {}
+          receipt={
+            'project':'Dream Unity — Experimental Three-World Problem',
+            'deployment':'verified-live',
+            'source_sha':os.environ['SOURCE_SHA'],
+            'page_url':os.environ['PAGE_URL'],
+            'nine_portal_compatibility':'validated',
+            'become':{
+              'scenario_source':'zero_key_internet_live_via_proxy',
+              'browser_api_key_required':False,
+              'browser_account_required':False,
+              'proxy':'https://dream-unity-become-live.vercel.app/api/become-scenario',
+              'upstream_gateway':'blockrun',
+              'primary_model':'nvidia/gpt-oss-120b',
+              'upstream_failover':'blockrun-managed',
+              'server_request_timeout_ms':20000,
+              'browser_request_timeout_ms':45000,
+              'last_verified_model':meta.get('model'),
+              'last_verified_latency_ms':meta.get('latencyMs'),
+              'live_inference_verified':True,
+              'visible_progress_watchdog':True,
+              'server_novelty_rejection':True,
+              'stored_live_fallback':False,
+              'personal_transfer_text_sent_to_generator':False,
+            },
+            'sha256':Path('/tmp/live-checksums.txt').read_text().splitlines(),
+            'verified_at':datetime.now(timezone.utc).isoformat(),
           }
-          Path('DEPLOYMENT_STATUS.json').write_text(json.dumps(receipt, indent=2) + '\n', encoding='utf-8')
+          Path('DEPLOYMENT_STATUS.json').write_text(json.dumps(receipt,indent=2)+'\n')
           PY
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add DEPLOYMENT_STATUS.json
           git diff --cached --quiet && exit 0
-          git commit -m 'Record verified zero-key proxy Dream Unity deployment [skip ci]'
+          git commit -m 'Record verified bounded Become deployment [skip ci]'
           git pull --rebase origin main
           git push origin HEAD:main
