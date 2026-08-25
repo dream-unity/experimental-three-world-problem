@@ -64,7 +64,6 @@ jobs:
             arcade-parts/perceive-aerial-08.txt
             arcade-parts/become-lab-01.txt
             arcade-parts/become-live-02.txt
-            arcade-parts/become-local-cpu-03.txt
           )
           rm -rf /tmp/dream-unity-live
           mkdir -p /tmp/dream-unity-live/arcade-parts
@@ -97,30 +96,26 @@ jobs:
           grep -q "GAME_BY_KEY\['maker:2'\]" /tmp/dream-unity-live/arcade-parts/become-lab-01.txt
           grep -q 'STATE-ENTRY LATENCY' /tmp/dream-unity-live/arcade-parts/become-lab-01.txt
           grep -q 'DREAM MAKER · BECOME · LIVE AI' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
-          grep -q 'ZERO-CREDENTIAL LOCAL AI' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
-          grep -q 'BECOME_LOCAL_WEBLLM_URL' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
-          grep -q 'SmolLM2-360M-Instruct-q4f32_1-MLC' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
-          grep -q 'navigator.gpu' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
-          grep -q 'bLocalTooSimilar' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
+          grep -q 'LIVE CLOUD' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
+          grep -q 'INTERNET GENERATED' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
+          grep -q 'NO MODEL DOWNLOAD' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
           grep -q 'GPT-OSS 120B' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
           grep -q 'BECOME_GROQ_SESSION_KEY' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
           grep -q 'X-Groq-Api-Key' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
           grep -q 'dream-unity-become-live.vercel.app' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
           grep -q 'NO STORED WORLD' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
+          grep -q 'bCloudGenerate' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
           grep -q 'bLivePrefetch' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
-
-          grep -q '@huggingface/transformers@4.2.0' /tmp/dream-unity-live/arcade-parts/become-local-cpu-03.txt
-          grep -q 'onnx-community/SmolLM2-360M-Instruct-ONNX' /tmp/dream-unity-live/arcade-parts/become-local-cpu-03.txt
-          grep -q "device:'wasm'" /tmp/dream-unity-live/arcade-parts/become-local-cpu-03.txt
-          grep -q "dtype:'q4'" /tmp/dream-unity-live/arcade-parts/become-local-cpu-03.txt
-          grep -q 'bCpuGenerate' /tmp/dream-unity-live/arcade-parts/become-local-cpu-03.txt
-          grep -q 'WebGPU local AI failed. Switching to CPU/WASM' /tmp/dream-unity-live/arcade-parts/become-local-cpu-03.txt
+          ! grep -q '@mlc-ai/web-llm' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
+          ! grep -q '@huggingface/transformers' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
+          ! grep -q 'navigator.gpu' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
+          ! grep -q 'become-local-cpu-03' /tmp/dream-unity-live/arcade.js
 
           sha256sum /tmp/dream-unity-live/index.html /tmp/dream-unity-live/styles.css \
             /tmp/dream-unity-live/become.css /tmp/dream-unity-live/main.js /tmp/dream-unity-live/arcade.js \
             /tmp/dream-unity-live/arcade-parts/*.txt > /tmp/live-checksums.txt
 
-      - name: Verify optional Groq Become inference service identity
+      - name: Verify remote Become inference service identity
         shell: bash
         run: |
           set -euo pipefail
@@ -135,17 +130,6 @@ jobs:
           assert data.get('provider') == 'groq'
           assert data.get('model') == 'openai/gpt-oss-120b'
           assert data.get('credentialMode') in {'session-key', 'server'}
-          PY
-
-          code=$(curl --silent --show-error --output /tmp/become-no-key.json --write-out '%{http_code}' \
-            -X POST -H 'Content-Type: application/json' -d '{}' \
-            https://dream-unity-become-live.vercel.app/api/become-scenario)
-          test "$code" = '401'
-          python3 - <<'PY'
-          import json
-          with open('/tmp/become-no-key.json', encoding='utf-8') as f:
-              data = json.load(f)
-          assert data.get('code') == 'GROQ_KEY_REQUIRED'
           PY
 
       - name: Commit machine-readable live deployment receipt
@@ -171,17 +155,13 @@ jobs:
               },
               'become': {
                   'game': 'Become Reality Lab',
-                  'scenario_source': 'local_webgpu_then_cpu_wasm_groq_optional',
-                  'zero_credential_default': True,
-                  'local_webgpu_provider': 'webllm_webgpu',
-                  'local_webgpu_model': 'SmolLM2-360M-Instruct-q4f32_1-MLC',
-                  'local_cpu_provider': 'transformers_js_wasm',
-                  'local_cpu_model': 'onnx-community/SmolLM2-360M-Instruct-ONNX',
-                  'optional_cloud_provider': 'groq',
-                  'optional_cloud_model': 'openai/gpt-oss-120b',
+                  'scenario_source': 'internet_live_cloud_only',
+                  'browser_model_download': False,
+                  'local_generation': False,
+                  'cloud_provider': 'groq',
+                  'cloud_model': 'openai/gpt-oss-120b',
                   'backend': 'https://dream-unity-become-live.vercel.app/api/become-scenario',
-                  'credential_mode': 'none_for_local_optional_browser_session_key_for_groq',
-                  'local_novelty_rejection': True,
+                  'credential_mode': 'server_or_browser_session_key',
                   'cloud_novelty_rejection': True,
                   'stored_live_fallback': False,
                   'timed_faculties': 17,
@@ -198,6 +178,6 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add DEPLOYMENT_STATUS.json
           git diff --cached --quiet && exit 0
-          git commit -m 'Record verified zero-credential Dream Unity deployment [skip ci]'
+          git commit -m 'Record verified internet-only Dream Unity deployment [skip ci]'
           git pull --rebase origin main
           git push origin HEAD:main
