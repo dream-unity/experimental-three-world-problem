@@ -1,7 +1,7 @@
 (() => {
   'use strict';
   const VERSION = '20260825-role-drift-become-1';
-  const LIVE_VERSION = '20260825-become-live-gpt-1';
+  const LIVE_VERSION = '20260826-become-live-gpt-2';
   const basePaths = [1, 2, 3, 4, 5].map((n) => `./arcade-parts/part-${String(n).padStart(2, '0')}.txt?v=${VERSION}`);
   const roleLogicPath = `./arcade-parts/perceive-role-logic.txt?v=${VERSION}`;
   const perceivePaths = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => `./arcade-parts/perceive-aerial-${String(n).padStart(2, '0')}.txt?v=${VERSION}`);
