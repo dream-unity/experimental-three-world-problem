@@ -22,7 +22,7 @@ jobs:
     steps:
       - name: Checkout complete repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-      - name: Validate Dream Unity and guaranteed Become generation
+      - name: Validate Dream Unity and quantitative Become diversity
         run: npm test
 
   verify-live:
@@ -42,7 +42,7 @@ jobs:
           PAGE_URL: https://dream-unity.github.io/experimental-three-world-problem
         run: |
           set -euo pipefail
-          files=(index.html styles.css become.css main.js arcade.js arcade-parts/part-01.txt arcade-parts/part-02.txt arcade-parts/part-03.txt arcade-parts/part-04.txt arcade-parts/part-05.txt arcade-parts/perceive-role-logic.txt arcade-parts/perceive-aerial-01.txt arcade-parts/perceive-aerial-02.txt arcade-parts/perceive-aerial-03.txt arcade-parts/perceive-aerial-04.txt arcade-parts/perceive-aerial-05.txt arcade-parts/perceive-aerial-06.txt arcade-parts/perceive-aerial-07.txt arcade-parts/perceive-aerial-08.txt arcade-parts/become-lab-01.txt arcade-parts/become-live-02.txt)
+          files=(index.html styles.css become.css main.js arcade.js arcade-parts/part-01.txt arcade-parts/part-02.txt arcade-parts/part-03.txt arcade-parts/part-04.txt arcade-parts/part-05.txt arcade-parts/perceive-role-logic.txt arcade-parts/perceive-aerial-01.txt arcade-parts/perceive-aerial-02.txt arcade-parts/perceive-aerial-03.txt arcade-parts/perceive-aerial-04.txt arcade-parts/perceive-aerial-05.txt arcade-parts/perceive-aerial-06.txt arcade-parts/perceive-aerial-07.txt arcade-parts/perceive-aerial-08.txt arcade-parts/become-lab-01.txt arcade-parts/become-live-02.txt arcade-parts/become-diversity-09.txt)
           rm -rf /tmp/dream-unity-live
           mkdir -p /tmp/dream-unity-live/arcade-parts
           matched=false
@@ -57,66 +57,19 @@ jobs:
             sleep 5
           done
           test "$matched" = true
-          grep -q 'arcade.js?v=20260826-become-guaranteed-generation-8' /tmp/dream-unity-live/index.html
-          grep -q 'BECOME_SYNTHESIS_KITS' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
-          grep -q 'function bSynthGenerate' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
-          grep -q 'SYNTHESIS BACKUP' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
-          grep -q 'NO PREWRITTEN WORLD FALLBACK' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
-          grep -q 'BECOME_BROWSER_TIMEOUT_MS = 12_000' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
-          ! grep -q 'bShuffle(BECOME_SCENARIOS)' /tmp/dream-unity-live/arcade-parts/become-live-02.txt
+          grep -q 'arcade.js?v=20260826-become-max-distance-9' /tmp/dream-unity-live/index.html
+          grep -q 'become-diversity-09.txt' /tmp/dream-unity-live/arcade.js
+          grep -q 'D9_MEMORY_KEY' /tmp/dream-unity-live/arcade-parts/become-diversity-09.txt
+          grep -q 'D9_AXES' /tmp/dream-unity-live/arcade-parts/become-diversity-09.txt
+          grep -q 'function d9CandidateScore' /tmp/dream-unity-live/arcade-parts/become-diversity-09.txt
+          grep -q 'function d9BuildDiverseQueue' /tmp/dream-unity-live/arcade-parts/become-diversity-09.txt
+          grep -q 'MAXIMIN' /tmp/dream-unity-live/arcade-parts/become-diversity-09.txt
+          grep -q 'The entire session queue is synthesized before scenario one opens' /tmp/dream-unity-live/arcade-parts/become-diversity-09.txt
+          ! grep -q 'fetch(' /tmp/dream-unity-live/arcade-parts/become-diversity-09.txt
+          ! grep -q 'bShuffle(BECOME_SCENARIOS)' /tmp/dream-unity-live/arcade-parts/become-diversity-09.txt
           sha256sum /tmp/dream-unity-live/index.html /tmp/dream-unity-live/styles.css /tmp/dream-unity-live/become.css /tmp/dream-unity-live/main.js /tmp/dream-unity-live/arcade.js /tmp/dream-unity-live/arcade-parts/*.txt > /tmp/live-checksums.txt
 
-      - name: Verify cloud proxy identity and CORS
-        shell: bash
-        env:
-          LIVE_API: https://dream-unity-become-live.vercel.app/api/become-scenario
-          PAGE_ORIGIN: https://dream-unity.github.io
-        run: |
-          set -euo pipefail
-          curl --fail --silent --show-error "$LIVE_API" > /tmp/become-service.json
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-          data=json.loads(Path('/tmp/become-service.json').read_text())
-          assert data['ok'] is True
-          assert data['provider']=='blockrun'
-          assert data['model']=='nvidia/gpt-oss-120b'
-          assert data['requestTimeoutMs']==20000
-          assert data['credentialMode']=='none'
-          PY
-          code=$(curl --silent --show-error --output /tmp/preflight --dump-header /tmp/preflight-h --write-out '%{http_code}' -X OPTIONS -H "Origin: $PAGE_ORIGIN" -H 'Access-Control-Request-Method: POST' -H 'Access-Control-Request-Headers: content-type' "$LIVE_API")
-          test "$code" = '204'
-          grep -qi 'access-control-allow-origin: https://dream-unity.github.io' /tmp/preflight-h
-
-      - name: Probe optional cloud capacity without blocking synthesis guarantee
-        shell: bash
-        env:
-          LIVE_API: https://dream-unity-become-live.vercel.app/api/become-scenario
-          PAGE_ORIGIN: https://dream-unity.github.io
-        run: |
-          set -euo pipefail
-          cat > /tmp/request.json <<'JSON'
-          {"trialIndex":0,"trialCount":1,"sessionNonce":"github-actions-cloud-capacity-probe","recentScenarios":[],"currentPerformance":[],"previousWeakestMetric":null}
-          JSON
-          code=$(curl --silent --show-error --output /tmp/cloud.json --write-out '%{http_code}' --max-time 25 -X POST -H "Origin: $PAGE_ORIGIN" -H 'Content-Type: application/json' --data-binary @/tmp/request.json "$LIVE_API" || true)
-          export CLOUD_STATUS="$code"
-          python3 - <<'PY'
-          import json, os
-          from pathlib import Path
-          code=os.environ.get('CLOUD_STATUS') or '000'
-          body={}
-          try: body=json.loads(Path('/tmp/cloud.json').read_text())
-          except Exception: pass
-          if code=='200':
-              s=body.get('scenario') or {}
-              assert s.get('title') and s.get('dimensions')
-              print('Cloud AI available:', s['title'])
-          else:
-              print('Cloud AI unavailable with HTTP',code,'— verified synthesis fallback remains authoritative')
-          Path('/tmp/cloud-status.txt').write_text(code+'\n')
-          PY
-
-      - name: Commit live deployment receipt
+      - name: Record max-distance deployment
         shell: bash
         env:
           SOURCE_SHA: ${{ github.sha }}
@@ -127,7 +80,6 @@ jobs:
           from datetime import datetime, timezone
           from pathlib import Path
           import json, os
-          cloud=Path('/tmp/cloud-status.txt').read_text().strip()
           receipt={
             'project':'Dream Unity — Experimental Three-World Problem',
             'deployment':'verified-live',
@@ -135,20 +87,20 @@ jobs:
             'page_url':os.environ['PAGE_URL'],
             'nine_portal_compatibility':'validated',
             'become':{
-              'generation':'cloud_ai_first_relational_synthesis_guaranteed',
-              'cloud_provider':'blockrun',
-              'cloud_model':'nvidia/gpt-oss-120b',
-              'cloud_status_http':cloud,
-              'cloud_request_timeout_ms':20000,
-              'browser_cloud_timeout_ms':12000,
-              'cloud_cooldown_ms':180000,
-              'generative_synthesis_fallback':True,
-              'synthesis_runtime_tested_with_network_disabled':True,
-              'synthesis_families':10,
-              'novelty_rejection':True,
+              'scenario_source':'instant_max_distance_runtime_synthesis',
+              'cloud_on_critical_path':False,
+              'queue_precomputed_before_scenario_one':True,
+              'between_scenario_network_wait':False,
+              'world_family_count':26,
+              'candidate_variants_per_family':8,
+              'structural_novelty_axes':13,
+              'selection_objective':'maximin_worst_case_distance',
+              'cross_session_signature_memory':True,
+              'same_family_allowed_within_session':False,
+              'lexical_overlap_penalized':True,
+              'recent_family_reuse_heavily_penalized':True,
               'original_scenario_bank_used_as_fallback':False,
-              'indefinite_spinner_possible':False,
-              'personal_transfer_text_sent_to_cloud':False,
+              'personal_transfer_text_stored_in_novelty_memory':False,
             },
             'sha256':Path('/tmp/live-checksums.txt').read_text().splitlines(),
             'verified_at':datetime.now(timezone.utc).isoformat(),
@@ -159,6 +111,6 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add DEPLOYMENT_STATUS.json
           git diff --cached --quiet && exit 0
-          git commit -m 'Record verified guaranteed Become generation [skip ci]'
+          git commit -m 'Record max-distance Become deployment [skip ci]'
           git pull --rebase origin main
           git push origin HEAD:main
