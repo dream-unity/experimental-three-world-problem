@@ -1,7 +1,7 @@
 (() => {
   'use strict';
   const VERSION = '20260825-role-drift-become-1';
-  const BECOME_VERSION = '20260826-become-rapid-entry-15';
+  const BECOME_VERSION = '20260826-become-objective-16';
   const basePaths = [1, 2, 3, 4, 5].map((n) => `./arcade-parts/part-${String(n).padStart(2, '0')}.txt?v=${VERSION}`);
   const roleLogicPath = `./arcade-parts/perceive-role-logic.txt?v=${VERSION}`;
   const perceivePaths = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => `./arcade-parts/perceive-aerial-${String(n).padStart(2, '0')}.txt?v=${VERSION}`);
@@ -11,7 +11,8 @@
   const becomeIntegrationPath = `./arcade-parts/become-social-integration-11.txt?v=${BECOME_VERSION}`;
   const becomeCompressionPath = `./arcade-parts/become-compressed-12.txt?v=${BECOME_VERSION}`;
   const becomeRapidPath = `./arcade-parts/become-rapid-entry-13.txt?v=${BECOME_VERSION}`;
-  const paths = [...basePaths, roleLogicPath, ...perceivePaths, becomeCorePath, becomeDiversityPath, becomeSocialPath, becomeIntegrationPath, becomeCompressionPath, becomeRapidPath];
+  const becomeObjectivePath = `./arcade-parts/become-activation-objectives-14.txt?v=${BECOME_VERSION}`;
+  const paths = [...basePaths, roleLogicPath, ...perceivePaths, becomeCorePath, becomeDiversityPath, becomeSocialPath, becomeIntegrationPath, becomeCompressionPath, becomeRapidPath, becomeObjectivePath];
 
   Promise.all(paths.map((path) => fetch(path, { cache: 'force-cache' }).then((response) => {
     if (!response.ok) throw new Error(`Arcade chunk failed: ${response.status} ${path}`);
@@ -26,8 +27,8 @@
     const closeIndex = baseSource.lastIndexOf('})();');
     if (closeIndex < 0) throw new Error('Arcade source terminator was not found.');
 
-    // BECOME: core → orthogonal worlds → social maximin → contextual integration
-    // → compact profile cues → final 34-word / 18-word rapid-entry governor.
+    // BECOME: orthogonal worlds → social maximin → compact rapid entry →
+    // indirect objectives with explicit experiential win conditions.
     const completeSource = `${baseSource.slice(0, closeIndex)}\n${roleLogicSource}\n${perceiveSource}\n${becomeSource}\n${baseSource.slice(closeIndex)}`;
     Function(completeSource)();
   }).catch((error) => {
