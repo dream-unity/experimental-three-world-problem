@@ -1,0 +1,105 @@
+
+  // Dream Maker / Become — contextual social integration and feedback calibration.
+  // This layer fuses the social architecture into the world task rather than
+  // placing an unrelated conversation beside it.
+  const S11_VERSION='20260826-social-integration-1';
+  const S11_FIT={
+    solo:new Set(['dyad','triad','small-group']),
+    dyad:new Set(['dyad','triad','small-group']),
+    group:new Set(['dyad','triad','small-group','network']),
+    audience:new Set(['dyad','small-group','audience','community']),
+    network:new Set(['dyad','small-group','community','network','audience'])
+  };
+
+  function s11WorldBand(world){
+    const value=String(world?.sig?.socialClass||'').toLowerCase();
+    if(value==='solo')return'solo';
+    if(/crowd|many-agents/.test(value))return'network';
+    if(/audience|future-audience/.test(value))return'audience';
+    if(/dyad|partner/.test(value))return'dyad';
+    if(/team|group|ensemble|swarm/.test(value))return'group';
+    return'group';
+  }
+  function s11Compatibility(world,profile){
+    const band=s11WorldBand(world);
+    return S11_FIT[band].has(profile.sig.socialScale)?1:0;
+  }
+
+  const s11BaseComboScore=s10ComboScore;
+  s10ComboScore=function(combo,selected,baseRefs,socialRefs,coverage,baseUse,profileUse){
+    const baseScore=s11BaseComboScore(combo,selected,baseRefs,socialRefs,coverage,baseUse,profileUse);
+    return baseScore+(s11Compatibility(combo.world,combo.profile)?0.055:-1.5);
+  };
+
+  function s11Human(value){return String(value||'').replace(/-/g,' ');}
+  function s11PowerFrame(profile,base){
+    const power=String(profile.sig.power||'');
+    const role=s11Human(base.__signature?.roleClass||'participant');
+    if(/you-higher|you-represent|systemic|process-holder|attention-holder|resource-holder|situational-advantage|ingroup-advantage/.test(power))return`Your ${role} position gives you more influence over the shared conditions, so restraint and invitation carry extra weight.`;
+    if(/you-lower|majority-pressure/.test(power))return`The other side has more influence over what becomes discussable, so agency requires precision rather than either disappearance or attack.`;
+    if(/mixed|ambiguous|historically-layered|context-dependent|fluid|shifting/.test(power))return`Power is mixed across status, knowledge, vulnerability and consequences; do not reduce it to one simple hierarchy.`;
+    return`Neither perspective owns the whole situation; influence will shift through timing, information and response.`;
+  }
+  function s11ContextFrame(profile,base){
+    const world=s11Human(base.__signature?.worldClass||'shared');
+    const goal=s11Human(base.__signature?.goalClass||'current');
+    const scale=profile.sig.socialScale;
+    const relation=/community|network|audience/.test(scale)
+      ?`The relevant social perspective comes from ${profile.counterpart}, represented through people directly affected by this ${world} work.`
+      :`The relevant social perspective comes from ${profile.counterpart}, directly sharing or being affected by this ${world} task.`;
+    return`${relation} Their stakes are tied to how the two sides pursue ${goal}; this is not a separate conversation pasted onto the setting.`;
+  }
+  function s11FeedbackTest(profile){
+    return`FEEDBACK TEST — imagine one response that supports your leading model and one that contradicts it. In each branch, identify what you would update, what evidence you would seek next, and which value or boundary should remain stable.`;
+  }
+
+  const s11BaseApplySocial=s10ApplySocial;
+  s10ApplySocial=function(base,profile){
+    const original={premise:base.premise,sensory:base.sensory,body:base.body,atmosphere:base.atmosphere,motion:base.motion,stakes:base.stakes,identity:base.identity,choice:base.choice};
+    const scenario=s11BaseApplySocial(base,profile);
+    const context=s11ContextFrame(profile,scenario);
+    const power=s11PowerFrame(profile,scenario);
+    const feedback=s11FeedbackTest(profile);
+    scenario.premise=`${original.premise} ${context} ${profile.encounter} ${power}`;
+    scenario.sensory=`${original.sensory} Inside that same physical task, observe without assigning motive: ${profile.cue}.`;
+    scenario.body=`${original.body} ${profile.body} Separate the bodily signal from the story your mind is building around it.`;
+    scenario.atmosphere=`${original.atmosphere} Hold the unequal but simultaneous emotional field of ${s11Human(profile.sig.emotionalField)} without forcing both people into the same feeling.`;
+    scenario.motion=`${original.motion} Let the social action occur through the same body and environment: ${profile.move}.`;
+    scenario.stakes=`${original.stakes} ${profile.impact} The world-level task and the relationship now constrain one another.`;
+    scenario.identity=`${original.identity} Inhabit the person who ${profile.identity}. Empathy is model flexibility—not agreement, mind-reading, rescuing or self-erasure.`;
+    scenario.choice=`WORLD DECISION — ${original.choice} SELF — ${profile.self} OTHER — ${profile.other} OUTSIDE — ${profile.field} POWER — ${power} ACTION — ${profile.move}. ${feedback} Then make the world decision again with the new relational information included.`;
+    scenario.__socialAgency={...scenario.__socialAgency,context,powerFrame:power,worldDecision:original.choice,feedbackTest:feedback,worldClass:scenario.__signature.worldClass,worldSocialBand:s11WorldBand({sig:scenario.__signature})};
+    scenario.__integrationVersion=S11_VERSION;
+    return scenario;
+  };
+
+  const s11PriorPrompt=bPrompt;
+  bPrompt=function(){
+    if(becomeState.track!=='scenario')return s11PriorPrompt();
+    const scenario=bScenario(),social=scenario?.__socialAgency,drill=bDrill();
+    if(!social)return s11PriorPrompt();
+    const prompts={
+      focus:`Hold five channels at once: the material task, your bodily state, your protective motive, observable cues from ${social.counterpart}, and the interaction loop. Keep data, inference and value judgment separate.`,
+      acceptance:`Permit three truths simultaneously: your perspective and boundary matter; ${social.counterpart} is an autonomous centre of experience; and neither model exhausts the shared situation.`,
+      conviction:`Construct three genuinely different models of ${social.counterpart}. For each, name one cue that would support it and one cue that would weaken it. Do not choose a winner yet.`,
+      consequence:`Trace first-order and second-order effects: what your action changes in the world task, in the other person’s available choices, in your own self-model, and in the next interaction.`,
+      emotion:`Name your own emotion, action urge and protected value. Then model two possible emotions in ${social.counterpart} while explicitly retaining uncertainty.`,
+      physiology:`${scenario.body} Test how changing breath, posture or distance changes both your interpretation and the social signal your body sends.`,
+      agency:`Choose an action that meets four tests: it expresses your real value or boundary; preserves the other person’s agency; gains useful information; and remains revisable where uncertainty is high. ${social.action}.`,
+      authenticity:`Reject the merely approved or “nice” answer. Find the response you could enact honestly without rescuing, appeasing, dominating or withdrawing from discomfort.`,
+      fidelity:`Preserve the other mind as independent: they may disagree after being fully understood, may value something you dislike, and may interpret your empathy differently from how you intended it.`,
+      integrated:`Run the complete cycle. WORLD — ${social.worldDecision} SELF — ${social.self} OTHER — ${social.other} OUTSIDE — ${social.observer} POWER — ${social.powerFrame} ACTION — ${social.action}. Now simulate confirming and disconfirming feedback, update the model, and choose the next action without defending the first interpretation.`,
+      exit:`Dissolve the imagined world. Reorient to your actual body and room. Release every inference about any real person this scenario evoked; only direct evidence from real interaction can update that real relationship.`
+    };
+    return prompts[drill.id]||s11PriorPrompt();
+  };
+
+  bRenderBrief=function(){
+    becomeState.stage='brief';
+    const s=bScenario(),social=s.__socialAgency;
+    bPanel(`${bHeader(`SCENARIO ${becomeState.scenarioIndex+1} OF ${becomeState.queue.length}`,s.title,0)}<p class="become-kicker">${bEscape(s.tag)}</p><h2 class="become-title compact">${bEscape(s.title)}</h2><div class="become-premise">${bEscape(s.premise)}</div><div class="become-grid three"><div class="become-card"><small>SELF MODEL</small><strong>BODY · MOTIVE · VALUE</strong><p>${bEscape(social.self)}</p></div><div class="become-card"><small>OTHER MODEL</small><strong>KEEP 3 HYPOTHESES</strong><p>${bEscape(social.other)}</p></div><div class="become-card"><small>SYSTEM MODEL</small><strong>LOOP · POWER · CONSTRAINT</strong><p>${bEscape(social.observer)} ${bEscape(social.powerFrame)}</p></div></div><p class="become-rule"><b>WORLD DECISION:</b> ${bEscape(social.worldDecision)}</p><p class="become-rule"><b>AGENCY MOVE:</b> ${bEscape(social.action)}. ${bEscape(social.feedbackTest)}</p><div class="become-facts"><span class="become-fact">SOCIALLY INTEGRATED WORLD</span><span class="become-fact">3 OTHER-MIND MODELS</span><span class="become-fact">POWER MAPPED</span><span class="become-fact">BOUNDARIES RETAINED</span><span class="become-fact">FEEDBACK UPDATES MODEL</span></div><div class="become-actions"><button class="become-primary" type="button" data-become-action="begin-scenario">BEGIN FACULTIES</button></div>`);
+  };
+
+  if(window.DREAM_UNITY_BECOME_SOCIAL_AGENCY){
+    Object.assign(window.DREAM_UNITY_BECOME_SOCIAL_AGENCY,{integrationVersion:S11_VERSION,compatibility:s11Compatibility,worldBand:s11WorldBand});
+  }
