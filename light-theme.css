@@ -1,0 +1,22 @@
+/* Dream Unity overview light theme. Arcade/game surfaces remain dark. */
+html,body,#app{background:#fff}
+#app>.vignette{background:radial-gradient(circle at 50% 46%,transparent 48%,rgba(15,23,42,.025) 78%,rgba(15,23,42,.08) 130%)}
+#app>.brand{color:#334155}
+#app>.live{color:#64748b}
+#app>.live i{box-shadow:0 0 10px rgba(16,185,129,.35)}
+#app>.world-label,#app>.sub-label{border-color:rgba(15,23,42,.13);background:rgba(255,255,255,.86);box-shadow:0 10px 28px rgba(15,23,42,.10);backdrop-filter:blur(10px);color:#0f172a}
+#app>.world-label span{color:#64748b}
+#app>.world-label[data-world="machine"] strong{color:#087ca4}
+#app>.world-label[data-world="maker"] strong{color:#16834e}
+#app>.world-label[data-world="reality"] strong{color:#7b3fb0}
+#app>.world-label:hover,#app>.world-label:focus-visible,#app>.sub-label:hover,#app>.sub-label:focus-visible{border-color:rgba(15,23,42,.30);background:rgba(255,255,255,.96)}
+#app>.unity-label{color:#6b5d37}
+#app>.back{border-color:rgba(15,23,42,.13);background:rgba(255,255,255,.9);color:#0f172a;box-shadow:0 8px 24px rgba(15,23,42,.08)}
+#app>.back:hover,#app>.back:focus-visible{border-color:rgba(15,23,42,.3)}
+#app>.detail-title{color:#0f172a}
+#app>.detail-title small{color:#64748b}
+#app>.sub-label strong{color:#0f172a}
+#app>.sub-label.active{border-color:rgba(15,23,42,.28);background:rgba(15,23,42,.055);box-shadow:0 0 24px rgba(15,23,42,.06)}
+#app>.hint{color:#64748b}
+#app>.loading{background:#fff}
+#app>.loading span{border-color:rgba(15,23,42,.12);border-top-color:#0ea5c6}
