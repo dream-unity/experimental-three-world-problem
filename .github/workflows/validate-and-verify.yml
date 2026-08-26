@@ -22,7 +22,7 @@ jobs:
     steps:
       - name: Checkout complete repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-      - name: Validate Dream Unity social agency and quantitative diversity
+      - name: Validate Dream Unity social agency, integration and quantitative diversity
         run: npm test
 
   verify-live:
@@ -42,7 +42,7 @@ jobs:
           PAGE_URL: https://dream-unity.github.io/experimental-three-world-problem
         run: |
           set -euo pipefail
-          files=(index.html styles.css become.css main.js arcade.js arcade-parts/part-01.txt arcade-parts/part-02.txt arcade-parts/part-03.txt arcade-parts/part-04.txt arcade-parts/part-05.txt arcade-parts/perceive-role-logic.txt arcade-parts/perceive-aerial-01.txt arcade-parts/perceive-aerial-02.txt arcade-parts/perceive-aerial-03.txt arcade-parts/perceive-aerial-04.txt arcade-parts/perceive-aerial-05.txt arcade-parts/perceive-aerial-06.txt arcade-parts/perceive-aerial-07.txt arcade-parts/perceive-aerial-08.txt arcade-parts/become-lab-01.txt arcade-parts/become-diversity-09.txt arcade-parts/become-social-agency-10.txt)
+          files=(index.html styles.css become.css main.js arcade.js arcade-parts/part-01.txt arcade-parts/part-02.txt arcade-parts/part-03.txt arcade-parts/part-04.txt arcade-parts/part-05.txt arcade-parts/perceive-role-logic.txt arcade-parts/perceive-aerial-01.txt arcade-parts/perceive-aerial-02.txt arcade-parts/perceive-aerial-03.txt arcade-parts/perceive-aerial-04.txt arcade-parts/perceive-aerial-05.txt arcade-parts/perceive-aerial-06.txt arcade-parts/perceive-aerial-07.txt arcade-parts/perceive-aerial-08.txt arcade-parts/become-lab-01.txt arcade-parts/become-diversity-09.txt arcade-parts/become-social-agency-10.txt arcade-parts/become-social-integration-11.txt)
           rm -rf /tmp/dream-unity-live
           mkdir -p /tmp/dream-unity-live/arcade-parts
           matched=false
@@ -57,9 +57,10 @@ jobs:
             sleep 5
           done
           test "$matched" = true
-          grep -q 'arcade.js?v=20260826-become-social-agency-11' /tmp/dream-unity-live/index.html
-          grep -q 'become-social-agency-10.txt' /tmp/dream-unity-live/arcade.js
+          grep -q 'arcade.js?v=20260826-become-social-agency-12' /tmp/dream-unity-live/index.html
           grep -q 'become-diversity-09.txt' /tmp/dream-unity-live/arcade.js
+          grep -q 'become-social-agency-10.txt' /tmp/dream-unity-live/arcade.js
+          grep -q 'become-social-integration-11.txt' /tmp/dream-unity-live/arcade.js
           ! grep -q 'become-live-02.txt' /tmp/dream-unity-live/arcade.js
           ! grep -Eqi 'vercel|blockrun|groq|web-llm|transformers' /tmp/dream-unity-live/arcade.js
           grep -q 'S10_PROFILES' /tmp/dream-unity-live/arcade-parts/become-social-agency-10.txt
@@ -70,13 +71,18 @@ jobs:
           grep -q 'OTHER —' /tmp/dream-unity-live/arcade-parts/become-social-agency-10.txt
           grep -q 'NON-PERFORMATIVE EMPATHY' /tmp/dream-unity-live/arcade-parts/become-social-agency-10.txt
           grep -q 'AGENTIC SELF-AWARENESS' /tmp/dream-unity-live/arcade-parts/become-social-agency-10.txt
-          grep -q 'ALL SCENARIOS SOCIAL' /tmp/dream-unity-live/arcade-parts/become-social-agency-10.txt
-          grep -q 'NO REPEATED SOCIAL PROFILE' /tmp/dream-unity-live/arcade-parts/become-social-agency-10.txt
-          grep -q 'NO NETWORK WAIT' /tmp/dream-unity-live/arcade-parts/become-social-agency-10.txt
+          grep -q 'S11_FIT' /tmp/dream-unity-live/arcade-parts/become-social-integration-11.txt
+          grep -q 'function s11Compatibility' /tmp/dream-unity-live/arcade-parts/become-social-integration-11.txt
+          grep -q 'not a separate conversation pasted onto the setting' /tmp/dream-unity-live/arcade-parts/become-social-integration-11.txt
+          grep -q 'WORLD DECISION' /tmp/dream-unity-live/arcade-parts/become-social-integration-11.txt
+          grep -q 'FEEDBACK TEST' /tmp/dream-unity-live/arcade-parts/become-social-integration-11.txt
+          grep -q '3 OTHER-MIND MODELS' /tmp/dream-unity-live/arcade-parts/become-social-integration-11.txt
+          grep -q 'SOCIALLY INTEGRATED WORLD' /tmp/dream-unity-live/arcade-parts/become-social-integration-11.txt
           ! grep -q 'bShuffle(BECOME_SCENARIOS)' /tmp/dream-unity-live/arcade-parts/become-social-agency-10.txt
+          ! grep -q 'bShuffle(BECOME_SCENARIOS)' /tmp/dream-unity-live/arcade-parts/become-social-integration-11.txt
           sha256sum /tmp/dream-unity-live/index.html /tmp/dream-unity-live/styles.css /tmp/dream-unity-live/become.css /tmp/dream-unity-live/main.js /tmp/dream-unity-live/arcade.js /tmp/dream-unity-live/arcade-parts/*.txt > /tmp/live-checksums.txt
 
-      - name: Record social-agency deployment
+      - name: Record context-integrated social-agency deployment
         shell: bash
         env:
           SOURCE_SHA: ${{ github.sha }}
@@ -94,17 +100,24 @@ jobs:
             'page_url':os.environ['PAGE_URL'],
             'nine_portal_compatibility':'validated',
             'become':{
-              'scenario_source':'instant_social_agency_maximin_synthesis',
+              'scenario_source':'instant_context_integrated_social_agency_maximin_synthesis',
+              'integration_version':'20260826-social-integration-1',
               'all_scenarios_social':True,
-              'perspective_cycle':['self','other_multiple_models','outside_interaction','action','feedback_update'],
-              'empathy_rule':'model_flexibility_without_mind_reading_agreement_or_self_erasure',
+              'social_profiles_fused_into_world_task':True,
+              'world_decision_preserved':True,
+              'world_social_scale_compatibility_constrained':True,
+              'perspective_cycle':['world','self','other_three_hypotheses','outside_interaction','power','action','confirming_feedback','disconfirming_feedback','model_update'],
+              'empathy_rule':'evidence_sensitive_model_flexibility_without_mind_reading_agreement_rescuing_or_self_erasure',
+              'other_mind_hypotheses_per_scenario':3,
+              'confirming_and_disconfirming_feedback_branches':True,
+              'power_relation_explicitly_modelled':True,
               'boundaries_preserved':True,
               'social_profile_count':40,
               'world_family_count':26,
               'social_novelty_axes':16,
               'world_novelty_axes':13,
               'combined_novelty_axes':29,
-              'selection_objective':'joint_maximin_worst_case_distance',
+              'selection_objective':'compatibility_constrained_joint_maximin_worst_case_distance',
               'same_world_family_allowed_within_session':False,
               'same_social_profile_allowed_within_session':False,
               'cross_session_world_memory':True,
@@ -131,6 +144,6 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add DEPLOYMENT_STATUS.json
           git diff --cached --quiet && exit 0
-          git commit -m 'Record lean social-agency Become deployment [skip ci]'
+          git commit -m 'Record context-integrated social-agency Become deployment [skip ci]'
           git pull --rebase origin main
           git push origin HEAD:main
