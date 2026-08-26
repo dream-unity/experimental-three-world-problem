@@ -1,27 +1,38 @@
 {
   "project": "Dream Unity \u2014 Experimental Three-World Problem",
   "deployment": "verified-live",
-  "source_sha": "6e6ddfcd01be4604b63501da078fd5e562f274c4",
+  "source_sha": "b71931e868631db5206fea2cb9c09b412a983907",
   "page_url": "https://dream-unity.github.io/experimental-three-world-problem/",
   "nine_portal_compatibility": "validated",
   "become": {
-    "scenario_source": "instant_social_agency_maximin_synthesis",
+    "scenario_source": "instant_context_integrated_social_agency_maximin_synthesis",
+    "integration_version": "20260826-social-integration-1",
     "all_scenarios_social": true,
+    "social_profiles_fused_into_world_task": true,
+    "world_decision_preserved": true,
+    "world_social_scale_compatibility_constrained": true,
     "perspective_cycle": [
+      "world",
       "self",
-      "other_multiple_models",
+      "other_three_hypotheses",
       "outside_interaction",
+      "power",
       "action",
-      "feedback_update"
+      "confirming_feedback",
+      "disconfirming_feedback",
+      "model_update"
     ],
-    "empathy_rule": "model_flexibility_without_mind_reading_agreement_or_self_erasure",
+    "empathy_rule": "evidence_sensitive_model_flexibility_without_mind_reading_agreement_rescuing_or_self_erasure",
+    "other_mind_hypotheses_per_scenario": 3,
+    "confirming_and_disconfirming_feedback_branches": true,
+    "power_relation_explicitly_modelled": true,
     "boundaries_preserved": true,
     "social_profile_count": 40,
     "world_family_count": 26,
     "social_novelty_axes": 16,
     "world_novelty_axes": 13,
     "combined_novelty_axes": 29,
-    "selection_objective": "joint_maximin_worst_case_distance",
+    "selection_objective": "compatibility_constrained_joint_maximin_worst_case_distance",
     "same_world_family_allowed_within_session": false,
     "same_social_profile_allowed_within_session": false,
     "cross_session_world_memory": true,
@@ -49,14 +60,15 @@
     ]
   },
   "sha256": [
-    "5a3a3707b59f7105a82d181cb815b48f6ca1435601cdd994b1be062184d271de  /tmp/dream-unity-live/index.html",
+    "5068f4aa9862df33531bd254ec3192438cc76bf6a5b91dd6b04f1464398add63  /tmp/dream-unity-live/index.html",
     "008f907be470e8b387badb2534fa4df0c55b5bfc1c71c75d1beb9ef9ed963191  /tmp/dream-unity-live/styles.css",
     "ad8dc6788a87c34201b132b88d8e5eb3ed439a0644f54a9610d2398d1b877536  /tmp/dream-unity-live/become.css",
     "2107036b6397210444b31df52260fffb6a62d0447fefbc262beb3ee45f5b2d65  /tmp/dream-unity-live/main.js",
-    "2342917ffe65ed3a491fb3db172d1f14383924456e2e130ead02623cbdb46fde  /tmp/dream-unity-live/arcade.js",
+    "27d6d2763ae13e66c602bfd9e335a195f1b8f7dad9aee17639ba55494c04be1a  /tmp/dream-unity-live/arcade.js",
     "ddc1eae5b9d4b4d92c6b2548be18a77a9ae944a84890c1c4bf6a9d788f054848  /tmp/dream-unity-live/arcade-parts/become-diversity-09.txt",
     "5ea7269b5c3158bbbb8fd520439c3bd3b45176537aa018beebb6a36fe68190c1  /tmp/dream-unity-live/arcade-parts/become-lab-01.txt",
     "bf3aeacaee790f7b40689d57784097e1eec28f23a8b367b975e30a5e397601b9  /tmp/dream-unity-live/arcade-parts/become-social-agency-10.txt",
+    "51a6c94fee61c36b8d2d670e3d88c65e77ea11af2af7185996e6c7a4bf90a35e  /tmp/dream-unity-live/arcade-parts/become-social-integration-11.txt",
     "4d7006d17cf3ae67cfd39516fe8df857bd44d82a6cb7aad4b81067484d7e2da7  /tmp/dream-unity-live/arcade-parts/part-01.txt",
     "526f14079e2ebf9560a8648a866a7bf70c8ae9f83f6bc2edcc68d861a65e04f2  /tmp/dream-unity-live/arcade-parts/part-02.txt",
     "183630ab3997f38ab5e2f2faf54505e9c4683c5885b3354fbb49e5508347b48c  /tmp/dream-unity-live/arcade-parts/part-03.txt",
@@ -72,5 +84,5 @@
     "b675b4a09a5fae66938b1b5b83889357dcc45d08641f11901f80fe46aa9f12b7  /tmp/dream-unity-live/arcade-parts/perceive-aerial-08.txt",
     "08b62c2248bed6690890881f12d4e9a157690329aaff6f3a253a3723aaa69245  /tmp/dream-unity-live/arcade-parts/perceive-role-logic.txt"
   ],
-  "verified_at": "2026-08-26T00:32:08.703038+00:00"
+  "verified_at": "2026-08-26T00:41:17.296730+00:00"
 }
