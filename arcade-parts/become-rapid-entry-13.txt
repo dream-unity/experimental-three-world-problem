@@ -1,6 +1,6 @@
 
   // Dream Maker / Become — final rapid-entry governor for 10-second transformation.
-  const S13_VERSION='20260826-rapid-entry-governor-1';
+  const S13_VERSION='20260826-rapid-entry-governor-2';
   const S13_SCENE_MAX=34;
   const S13_PACKET_MAX=64;
   const S13_PROMPT_MAX=18;
@@ -13,6 +13,8 @@
   }
   function s13Human(value){return String(value||'').replace(/-/g,' ');}
   function s13Outside(scenario){
+    const observer=String(scenario?.__socialAgency?.observer||'').replace(/^From outside,?\s*/i,'').trim();
+    if(observer)return s13Limit(observer,8);
     const sig=scenario?.__socialSignature||{};
     return s13Limit(`${s13Human(sig.topology)} · ${s13Human(sig.power)}`,8);
   }
@@ -31,7 +33,7 @@
     const outside=s13Outside(scenario);
     const act=s13Limit(c.move||scenario?.__socialAgency?.action||'choose, observe, update',8);
     let total=s13Count(`${scene} ${self} ${other} ${outside} ${act}`);
-    if(total>S13_PACKET_MAX){scene=s13Limit(scene,Math.max(24,S13_SCENE_MAX-(total-S13_PACKET_MAX)));total=s13Count(`${scene} ${self} ${other} ${outside} ${act}`);}
+    if(total>S13_PACKET_MAX){scene=s13Limit(scene,Math.max(22,S13_SCENE_MAX-(total-S13_PACKET_MAX)));total=s13Count(`${scene} ${self} ${other} ${outside} ${act}`);}
     return{scene,self,other,outside,act,totalWords:total};
   }
 
