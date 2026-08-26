@@ -1,0 +1,85 @@
+
+  // Dream Maker / Become — final rapid-entry governor for 10-second transformation.
+  const S13_VERSION='20260826-rapid-entry-governor-1';
+  const S13_SCENE_MAX=34;
+  const S13_PACKET_MAX=64;
+  const S13_PROMPT_MAX=18;
+
+  function s13Words(text){return String(text||'').trim().split(/\s+/).filter(Boolean);}
+  function s13Count(text){return s13Words(text).length;}
+  function s13Limit(text,max){
+    const words=s13Words(text);if(words.length<=max)return String(text||'').trim();
+    return words.slice(0,max).join(' ').replace(/[,:;.!?]+$/,'')+'…';
+  }
+  function s13Human(value){return String(value||'').replace(/-/g,' ');}
+  function s13Outside(scenario){
+    const sig=scenario?.__socialSignature||{};
+    return s13Limit(`${s13Human(sig.topology)} · ${s13Human(sig.power)}`,8);
+  }
+  function s13Scene(scenario,c){
+    const full=String(scenario?.premise||'');
+    const marker=c?.self?`Watch ${c.self}.`:'';
+    const at=marker?full.indexOf(marker):-1;
+    const scene=at>=0?full.slice(0,at).trim():full;
+    return s13Limit(scene,S13_SCENE_MAX);
+  }
+  function s13Packet(scenario){
+    const c=scenario?.__compact||{};
+    let scene=s13Scene(scenario,c);
+    const self=s13Limit(s13Human(c.self||scenario?.__socialSignature?.selfBlindspot||'notice your bias'),7);
+    const other=s13Limit(c.other||'three plausible explanations',10);
+    const outside=s13Outside(scenario);
+    const act=s13Limit(c.move||scenario?.__socialAgency?.action||'choose, observe, update',8);
+    let total=s13Count(`${scene} ${self} ${other} ${outside} ${act}`);
+    if(total>S13_PACKET_MAX){scene=s13Limit(scene,Math.max(24,S13_SCENE_MAX-(total-S13_PACKET_MAX)));total=s13Count(`${scene} ${self} ${other} ${outside} ${act}`);}
+    return{scene,self,other,outside,act,totalWords:total};
+  }
+
+  const s13PriorApply=s10ApplySocial;
+  s10ApplySocial=function(base,profile){
+    const scenario=s13PriorApply(base,profile);
+    const rapid=s13Packet(scenario);
+    scenario.premise=rapid.scene;
+    scenario.__rapid13={...rapid,version:S13_VERSION};
+    scenario.__socialAgency={...scenario.__socialAgency,rapid13:scenario.__rapid13};
+    return scenario;
+  };
+
+  function s13PromptFor(drillId,scenario){
+    const r=scenario?.__rapid13,c=scenario?.__compact||{};if(!r)return'';
+    const prompts={
+      sensory:`See + hear: ${c.worldSensory||'the shared scene'}. Notice their cues; infer nothing yet.`,
+      tangibility:'Feel one object: weight, texture, temperature. Both people occupy this same physical world.',
+      embodiment:`Body: ${c.worldBody||'feet, breath, posture'}. Name your urge before interpreting them.`,
+      atmosphere:'Feel your emotion and the shared tension separately. Do not merge your state with theirs.',
+      motion:`Move: ${c.worldMotion||'one physical action'}. Feel timing and distance alter the relationship.`,
+      focus:'Hold task + body + other cues + interaction. Evidence is not your story.',
+      acceptance:'Your view is partial. Keep your boundary; let their experience differ.',
+      conviction:`Hold 3 models: ${r.other}. No winner yet.`,
+      consequence:'Feel one act changing task, their options, you, and the next exchange.',
+      emotion:'Name your feeling + urge. Imagine two of theirs. Keep both uncertain.',
+      physiology:'Shift breath or posture. Notice interpretation change and the signal your body sends.',
+      agency:`Act: ${r.act}. Preserve self + their agency; gain information.`,
+      authenticity:'Choose truth—not niceness, rescuing, appeasing, dominating, or fleeing discomfort.',
+      identity:'Become self-aware and other-aware together. Stay centred, permeable, revisable.',
+      fidelity:'Even understood, they may disagree, refuse, value differently, or surprise you.',
+      integrated:'SELF → 3 OTHER models → LOOP → POWER → ACT → opposite feedback → UPDATE.',
+      exit:'Drop every imagined person. Feel your real body. Reset inference to zero.'
+    };
+    return s13Limit(prompts[drillId]||'Enter the scene. Notice self, other, interaction, then choose.',S13_PROMPT_MAX);
+  }
+
+  bPrompt=function(){
+    if(becomeState.track!=='scenario')return'';
+    return s13PromptFor(bDrill()?.id,bScenario());
+  };
+
+  bRenderBrief=function(){
+    becomeState.stage='brief';
+    const s=bScenario(),r=s.__rapid13;
+    bPanel(`${bHeader(`SCENARIO ${becomeState.scenarioIndex+1} OF ${becomeState.queue.length}`,s.title,0)}<p class="become-kicker">${bEscape(s.tag)}</p><h2 class="become-title compact">${bEscape(s.title)}</h2><div class="become-premise">${bEscape(r.scene)}</div><div class="become-grid three"><div class="become-card"><small>SELF</small><strong>${bEscape(r.self)}</strong></div><div class="become-card"><small>OTHER · 3 MODELS</small><strong>${bEscape(r.other)}</strong></div><div class="become-card"><small>OUTSIDE</small><strong>${bEscape(r.outside)}</strong></div></div><p class="become-rule"><b>ACT:</b> ${bEscape(r.act)} <span>·</span> <b>SURPRISE?</b> UPDATE.</p><div class="become-facts"><span class="become-fact">${r.totalWords} WORD ENTRY</span><span class="become-fact">≤ ${S13_PROMPT_MAX} WORD PROMPTS</span><span class="become-fact">10 SEC</span><span class="become-fact">NO NETWORK WAIT</span></div><div class="become-actions"><button class="become-primary" type="button" data-become-action="begin-scenario">BECOME IT</button></div>`);
+  };
+
+  if(window.DREAM_UNITY_BECOME_SOCIAL_AGENCY){
+    Object.assign(window.DREAM_UNITY_BECOME_SOCIAL_AGENCY,{rapidEntryVersion:S13_VERSION,sceneWordMax:S13_SCENE_MAX,packetWordMax:S13_PACKET_MAX,promptWordMax:S13_PROMPT_MAX,countRapidWords:s13Count,promptRapid:s13PromptFor});
+  }
