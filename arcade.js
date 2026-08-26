@@ -1,7 +1,7 @@
 (() => {
   'use strict';
   const VERSION = '20260825-role-drift-become-1';
-  const BECOME_VERSION = '20260826-become-objective-16';
+  const BECOME_VERSION = '20260826-become-imagine-opening-17';
   const basePaths = [1, 2, 3, 4, 5].map((n) => `./arcade-parts/part-${String(n).padStart(2, '0')}.txt?v=${VERSION}`);
   const roleLogicPath = `./arcade-parts/perceive-role-logic.txt?v=${VERSION}`;
   const perceivePaths = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => `./arcade-parts/perceive-aerial-${String(n).padStart(2, '0')}.txt?v=${VERSION}`);
@@ -28,7 +28,7 @@
     if (closeIndex < 0) throw new Error('Arcade source terminator was not found.');
 
     // BECOME: orthogonal worlds → social maximin → compact rapid entry →
-    // indirect objectives with explicit experiential win conditions.
+    // experiential objectives → mandatory “Imagine that you/you're” scene opening.
     const completeSource = `${baseSource.slice(0, closeIndex)}\n${roleLogicSource}\n${perceiveSource}\n${becomeSource}\n${baseSource.slice(closeIndex)}`;
     Function(completeSource)();
   }).catch((error) => {
