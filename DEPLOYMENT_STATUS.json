@@ -1,23 +1,29 @@
 {
   "project": "Dream Unity \u2014 Experimental Three-World Problem",
   "deployment": "verified-live",
-  "source_sha": "71ba73a87441bbf4f9c4311b9f320d48f823211a",
+  "source_sha": "d1db0ab2f035c72a430400c2a118f821b42e659b",
   "page_url": "https://dream-unity.github.io/experimental-three-world-problem/",
   "nine_portal_compatibility": "validated",
   "overview": {
-    "theme": "crisp_white",
+    "theme": "kinetic_white",
     "canvas_background": "#ffffff",
     "legacy_render_vignette_active": false,
     "nebula_fog_active": false,
-    "oversized_radial_glow_active": false,
     "world_palette": {
-      "machine": "#008CFF",
-      "maker": "#00C875",
-      "reality": "#7C3AED",
+      "machine": "#009DFF",
+      "maker": "#00C97A",
+      "reality": "#7A36F5",
       "unity": "#F59E0B"
     },
+    "long_bezier_ribbons": true,
+    "connection_endpoint_overshoot": true,
+    "braided_echo_arcs": true,
+    "world_orbit_ribbons": 5,
+    "world_satellites": true,
+    "unity_core_scale": "0.026 * viewport unit",
+    "unity_orbit_planes": 3,
     "renderer_override": "visual-parts/light-overview-07.txt",
-    "main_cache_version": "20260826-white-overview-3"
+    "main_cache_version": "20260826-white-overview-4"
   },
   "become": {
     "scenario_source": "instant_objective_driven_social_agency_maximin_synthesis",
@@ -37,14 +43,14 @@
     "original_scenario_bank_used_as_fallback": false
   },
   "sha256": [
-    "925147217df1a9ef42285e4a791cea54d1b16ea8d49699d3a2ffd762a9323d43  /tmp/dream-unity-live/index.html",
+    "67f542f342c63983f293f59da41e253db8f94ef2fb2df753b63cc72bb00a7b5f  /tmp/dream-unity-live/index.html",
     "008f907be470e8b387badb2534fa4df0c55b5bfc1c71c75d1beb9ef9ed963191  /tmp/dream-unity-live/styles.css",
     "ad8dc6788a87c34201b132b88d8e5eb3ed439a0644f54a9610d2398d1b877536  /tmp/dream-unity-live/become.css",
     "9a8816ba7bf5a610294d3f1183ddcded684cf2998fa6a3a3a2e610dd6c2c3498  /tmp/dream-unity-live/light-theme.css",
     "fdcb5ae4fe5bc3743073d730276c719d553b6bd3a05951cfe1a87cd74573a0ac  /tmp/dream-unity-live/light-theme.js",
-    "13e826041cfa3a1af8847ecb27f2e46098267308fbc24ac868c42e838ef91bb4  /tmp/dream-unity-live/main.js",
+    "1942c81fd2885ca52be63518fa5acd6590d1e90347744cc4b9fe81ad57f69961  /tmp/dream-unity-live/main.js",
     "a8d0c5c6c2382ad15ea4f5a11d72355ed4925aa82a86c626735e6782139b1a20  /tmp/dream-unity-live/arcade.js",
-    "de4ea40c95bacdf1c4befadf5a1f44a887f419e49d0b023631a9c5512cb9c773  /tmp/dream-unity-live/visual-parts/light-overview-07.txt",
+    "55e202ac590fb8ce9acd07c7d3836310d4cb0185ba1e55fde3c566422f438fc1  /tmp/dream-unity-live/visual-parts/light-overview-07.txt",
     "4742ad3c7d09f6e2423116a8ac08ce020ab3c149c05cb27a36bc1f2a88e1fac4  /tmp/dream-unity-live/visual-parts/part-01.txt",
     "cf1092cd154f27e634fed6eaee0a59b49a6784a6e0dcbc07e503a652be964f65  /tmp/dream-unity-live/visual-parts/part-02.txt",
     "96e934b79b31db20b58453e4246101b98246c981c86032259d390df51c9bfb50  /tmp/dream-unity-live/visual-parts/part-03.txt",
@@ -73,5 +79,5 @@
     "b675b4a09a5fae66938b1b5b83889357dcc45d08641f11901f80fe46aa9f12b7  /tmp/dream-unity-live/arcade-parts/perceive-aerial-08.txt",
     "08b62c2248bed6690890881f12d4e9a157690329aaff6f3a253a3723aaa69245  /tmp/dream-unity-live/arcade-parts/perceive-role-logic.txt"
   ],
-  "verified_at": "2026-08-26T05:24:02.298431+00:00"
+  "verified_at": "2026-08-26T05:46:16.993358+00:00"
 }
