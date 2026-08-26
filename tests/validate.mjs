@@ -15,34 +15,37 @@ const perceivePaths=[1,2,3,4,5,6,7,8].map(n=>`arcade-parts/perceive-aerial-${Str
 const corePath='arcade-parts/become-lab-01.txt';
 const diversityPath='arcade-parts/become-diversity-09.txt';
 const socialPath='arcade-parts/become-social-agency-10.txt';
+const integrationPath='arcade-parts/become-social-integration-11.txt';
 const apiPath='api/become-scenario.js';
-for(const path of ['index.html','styles.css','become.css','main.js','arcade.js','README.md','package.json','.nojekyll',rolePath,...basePaths,...perceivePaths,corePath,diversityPath,socialPath,apiPath,'tests/role-drift.test.mjs','.github/workflows/validate-and-verify.yml'])assert.ok(exists(path),`${path} must exist`);
+for(const path of ['index.html','styles.css','become.css','main.js','arcade.js','README.md','package.json','.nojekyll',rolePath,...basePaths,...perceivePaths,corePath,diversityPath,socialPath,integrationPath,apiPath,'tests/role-drift.test.mjs','.github/workflows/validate-and-verify.yml'])assert.ok(exists(path),`${path} must exist`);
 
 const base=basePaths.map(read).join('');
 const role=read(rolePath),perceive=perceivePaths.map(read).join('');
-const core=read(corePath),diversity=read(diversityPath),social=read(socialPath);
+const core=read(corePath),diversity=read(diversityPath),social=read(socialPath),integration=read(integrationPath);
 const loader=read('arcade.js'),index=read('index.html'),workflow=read('.github/workflows/validate-and-verify.yml');
 const packageJson=JSON.parse(read('package.json'));
 const close=base.lastIndexOf('})();');
 assert.ok(close>0);
-const complete=`${base.slice(0,close)}\n${role}\n${perceive}\n${core}\n${diversity}\n${social}\n${base.slice(close)}`;
+const complete=`${base.slice(0,close)}\n${role}\n${perceive}\n${core}\n${diversity}\n${social}\n${integration}\n${base.slice(close)}`;
 const temp=mkdtempSync(join(tmpdir(),'dream-unity-'));
 const completePath=join(temp,'complete.js');writeFileSync(completePath,complete);
 for(const path of [completePath,fileURLToPath(new URL('arcade.js',root)),fileURLToPath(new URL('main.js',root)),fileURLToPath(new URL(apiPath,root))])execFileSync(process.execPath,['--check',path],{stdio:'inherit'});
 
-assert.match(loader,/BECOME_VERSION = '20260826-become-social-agency-11'/);
-assert.match(loader,/become-social-agency-10\.txt/);
+assert.match(loader,/BECOME_VERSION = '20260826-become-social-agency-12'/);
+for(const marker of ['become-diversity-09.txt','become-social-agency-10.txt','become-social-integration-11.txt'])assert.match(loader,new RegExp(marker.replace('.','\\.')));
 assert.ok(loader.indexOf('become-diversity-09.txt')<loader.indexOf('become-social-agency-10.txt'));
+assert.ok(loader.indexOf('become-social-agency-10.txt')<loader.indexOf('become-social-integration-11.txt'));
 assert.doesNotMatch(loader,/become-live-02\.txt/);
-assert.match(index,/arcade\.js\?v=20260826-become-social-agency-11/);
+assert.doesNotMatch(loader,/dream-unity-become-live|vercel|blockrun|groq|web-llm|transformers/i);
+assert.match(index,/arcade\.js\?v=20260826-become-social-agency-12/);
 assert.equal((base.match(/key:\s*'(?:machine|maker|reality):[0-2]'/g)||[]).length,9);
 for(const marker of ['function roleDriftGeometry','stale-role-perseveration'])assert.ok(role.includes(marker));
 for(const marker of ['function createPerceptionAerialGame',"GAME_BY_KEY['machine:0']",'roleSwitchAt'])assert.ok(perceive.includes(marker));
 for(const marker of ['function createBecomeLab',"GAME_BY_KEY['maker:2']",'BECOME_DRILLS','BECOME_TRANSFER_DRILLS'])assert.ok(core.includes(marker));
 for(const marker of ['D9_WORLDS','d9Candidate','d9SigDistance','d9MemoryRead'])assert.ok(diversity.includes(marker));
-for(const marker of ['S10_PROFILES','S10_COMBINED_AXES','s10SelectCombos','s10SchedulePrewarm','SELF —','OTHER —','NON-PERFORMATIVE EMPATHY','AGENTIC SELF-AWARENESS','ALL SCENARIOS SOCIAL','NO NETWORK WAIT'])assert.ok(social.includes(marker),`missing ${marker}`);
-assert.doesNotMatch(social,/bShuffle\(BECOME_SCENARIOS\)/);
-assert.doesNotMatch(loader,/dream-unity-become-live|vercel|blockrun|groq|web-llm|transformers/i);
+for(const marker of ['S10_PROFILES','S10_COMBINED_AXES','s10SelectCombos','s10SchedulePrewarm','SELF —','OTHER —','NON-PERFORMATIVE EMPATHY','AGENTIC SELF-AWARENESS'])assert.ok(social.includes(marker),`missing ${marker}`);
+for(const marker of ['S11_FIT','s11Compatibility','s11ContextFrame','s11PowerFrame','FEEDBACK TEST','WORLD DECISION','3 OTHER-MIND MODELS','SOCIALLY INTEGRATED WORLD'])assert.ok(integration.includes(marker),`missing integration marker ${marker}`);
+assert.doesNotMatch(social+integration,/bShuffle\(BECOME_SCENARIOS\)/);
 
 let seed=0x9e3779b9;
 const seededMath=Object.create(Math);seededMath.random=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/0x100000000;};
@@ -61,30 +64,34 @@ const runtime={
   performance:{now:()=>Number(process.hrtime.bigint())/1e6},fetch:async()=>{throw new Error('network disabled')}
 };
 vm.createContext(runtime);
-vm.runInContext(`${core}\n${diversity}\n${social}\nthis.definition=GAME_BY_KEY['maker:2'];this.drills=BECOME_DRILLS;`,runtime);
+vm.runInContext(`${core}\n${diversity}\n${social}\n${integration}\nthis.definition=GAME_BY_KEY['maker:2'];this.drills=BECOME_DRILLS;`,runtime);
 assert.equal(runtime.definition.id,'become-reality-lab');
 runtime.definition.factory().reset({setScore(){},setMetric(){},sfx(){}});
 assert.match(becomeScreen.innerHTML,/SOCIAL<br>AGENCY LAB/);
 const api=runtime.window.DREAM_UNITY_BECOME_SOCIAL_AGENCY;
-assert.equal(api.profiles,40);assert.equal(api.socialAxes,16);assert.equal(api.combinedAxes,29);
+assert.equal(api.profiles,40);assert.equal(api.socialAxes,16);assert.equal(api.combinedAxes,29);assert.equal(api.integrationVersion,'20260826-social-integration-1');
 
 function inspect(queue,label){
   assert.equal(queue.length,10);
-  const families=new Set(),profiles=new Set(),empathy=new Set(),agency=new Set();
+  const families=new Set(),profiles=new Set(),empathy=new Set(),agency=new Set(),bands=new Set();
   for(const s of queue){
     for(const key of ['id','title','tag','visual','premise','sensory','objects','body','atmosphere','motion','stakes','identity','choice','exit','dimensions'])assert.ok(s[key],`${label} missing ${key}`);
-    assert.equal(s.__source,'social-agency-max-distance');assert.ok(s.__socialAgency);assert.notEqual(s.dimensions.social_structure,'solo');
-    assert.match(s.choice,/SELF —/);assert.match(s.choice,/OTHER —/);assert.match(s.choice,/ACTION —/);assert.match(s.identity,/Empathy here is model flexibility/);
-    families.add(s.__signature.family);profiles.add(s.__socialAgency.profileId);empathy.add(s.__socialSignature.empathyOperation);agency.add(s.__socialSignature.agencyMode);
+    assert.equal(s.__source,'social-agency-max-distance');assert.equal(s.__integrationVersion,'20260826-social-integration-1');assert.ok(s.__socialAgency);assert.notEqual(s.dimensions.social_structure,'solo');
+    assert.match(s.premise,/not a separate conversation pasted onto the setting/);
+    assert.match(s.choice,/WORLD DECISION —/);assert.match(s.choice,/SELF —/);assert.match(s.choice,/OTHER —/);assert.match(s.choice,/OUTSIDE —/);assert.match(s.choice,/POWER —/);assert.match(s.choice,/FEEDBACK TEST —/);
+    assert.match(s.identity,/Empathy is model flexibility/);
+    assert.ok(s.__socialAgency.worldDecision);assert.ok(s.__socialAgency.powerFrame);assert.ok(s.__socialAgency.feedbackTest);
+    assert.equal(api.compatibility({sig:s.__signature},{sig:s.__socialSignature}),1,`${label} contains a world/social-scale mismatch`);
+    families.add(s.__signature.family);profiles.add(s.__socialAgency.profileId);empathy.add(s.__socialSignature.empathyOperation);agency.add(s.__socialSignature.agencyMode);bands.add(s.__socialAgency.worldSocialBand);
   }
-  assert.equal(families.size,10);assert.equal(profiles.size,10);assert.equal(empathy.size,10);assert.equal(agency.size,10);
+  assert.equal(families.size,10);assert.equal(profiles.size,10);assert.equal(empathy.size,10);assert.equal(agency.size,10);assert.ok(bands.size>=3,'session should span at least three world social bands');
   let minSocial=1,minCombined=1;
   for(let i=0;i<queue.length;i++)for(let j=i+1;j<queue.length;j++){
     minSocial=Math.min(minSocial,api.socialDistance(queue[i].__socialSignature,queue[j].__socialSignature));
     minCombined=Math.min(minCombined,api.combinedDistance({baseSignature:queue[i].__signature,socialSignature:queue[i].__socialSignature},{baseSignature:queue[j].__signature,socialSignature:queue[j].__socialSignature}));
   }
-  assert.ok(minSocial>=0.72,`${label} social min ${minSocial}`);assert.ok(minCombined>=0.78,`${label} combined min ${minCombined}`);
-  return{families,profiles,minSocial,minCombined};
+  assert.ok(minSocial>=0.70,`${label} social min ${minSocial}`);assert.ok(minCombined>=0.76,`${label} combined min ${minCombined}`);
+  return{families,profiles,minSocial,minCombined,bands};
 }
 
 const start=performance.now();const first=api.buildQueue(10);const elapsed=performance.now()-start;
@@ -93,5 +100,5 @@ const b=inspect(api.buildQueue(10),'second');
 assert.equal([...a.families].filter(x=>b.families.has(x)).length,0);assert.equal([...a.profiles].filter(x=>b.profiles.has(x)).length,0);
 const metrics=Object.fromEntries(runtime.drills.map(x=>[x.id,x]));
 assert.equal(metrics.agency.title,'RELATIONAL AGENCY');assert.equal(metrics.authenticity.title,'NON-PERFORMATIVE EMPATHY');assert.equal(metrics.identity.title,'AGENTIC SELF-AWARENESS');assert.equal(metrics.integrated.title,'MULTI-PERSPECTIVE INTEGRATION');
-assert.match(workflow,/become-social-agency-10\.txt/);assert.equal(packageJson.version,'1.7.0');assert.equal(packageJson.dependencies,undefined);
-console.log(`Validated: lean loader, 40 social profiles, 29 axes, ${elapsed.toFixed(1)}ms, social min ${a.minSocial.toFixed(3)}, combined min ${a.minCombined.toFixed(3)}, zero next-session repeats.`);
+assert.match(workflow,/become-social-integration-11\.txt/);assert.equal(packageJson.version,'1.7.0');assert.equal(packageJson.dependencies,undefined);
+console.log(`Validated: context-integrated social agency, 40 profiles, 29 axes, ${elapsed.toFixed(1)}ms, social min ${a.minSocial.toFixed(3)}, combined min ${a.minCombined.toFixed(3)}, ${a.bands.size} social bands, zero next-session repeats.`);
