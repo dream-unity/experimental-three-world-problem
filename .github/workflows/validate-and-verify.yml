@@ -57,7 +57,7 @@ jobs:
             sleep 5
           done
           test "$matched" = true
-          grep -q 'arcade.js?v=20260826-become-rapid-entry-14' /tmp/dream-unity-live/index.html
+          grep -q 'arcade.js?v=20260826-become-rapid-entry-15' /tmp/dream-unity-live/index.html
           grep -q 'become-diversity-09.txt' /tmp/dream-unity-live/arcade.js
           grep -q 'become-social-agency-10.txt' /tmp/dream-unity-live/arcade.js
           grep -q 'become-social-integration-11.txt' /tmp/dream-unity-live/arcade.js
