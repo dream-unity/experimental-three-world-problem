@@ -1,0 +1,134 @@
+
+  // Dream Maker / Become — strict rapid-entry compression.
+  // Social depth remains; explanation is pushed into tiny timed operations.
+  const S12_VERSION='20260826-rapid-entry-1';
+  const S12_SCENE_WORD_LIMIT=38;
+  const S12_PACKET_WORD_LIMIT=70;
+  const S12_PROMPT_WORD_LIMIT=22;
+  const S12_CUE_LIMITS={self:8,other:12,outside:8,act:9};
+
+  function s12Words(text){return String(text||'').trim().split(/\s+/).filter(Boolean);}
+  function s12WordCount(text){return s12Words(text).length;}
+  function s12Clip(text,limit){
+    const words=s12Words(text);if(words.length<=limit)return words.join(' ');
+    return words.slice(0,limit).join(' ').replace(/[,:;\-–—]+$/,'')+'…';
+  }
+  function s12Sentences(text,maxSentences,maxWords){
+    const parts=String(text||'').trim().match(/[^.!?]+[.!?]?/g)||[];
+    const chosen=parts.slice(0,maxSentences).join(' ').trim();
+    return s12Clip(chosen,maxWords);
+  }
+  function s12Human(value){return String(value||'').replace(/-/g,' ');}
+  function s12Actor(text){
+    let value=String(text||'another person').trim();
+    value=value.replace(/\s+(?:who|whose|asking|offering|giving|communicating|affected|declining|entering|responding|being|living)\b.*$/i,'').trim();
+    return s12Clip(value,6);
+  }
+  function s12Models(text,fallback){
+    let raw=String(text||'').replace(/^(?:they|he|she)\s+(?:may|might|could)\s+/i,'');
+    let parts=raw.split(/,\s*(?:(?:they\s+)?(?:may|might|could)\s+|or\s+)|;|\.\s+/i).map(x=>x.trim()).filter(Boolean);
+    if(parts.length<3)parts=raw.split(/,|\bor\b/i).map(x=>x.trim()).filter(Boolean);
+    parts=parts.map(x=>x.replace(/^(?:they\s+)?(?:may|might|could)\s+/i,'').replace(/^(?:be|feel|want|need)\s+/i,'').trim()).filter(Boolean);
+    while(parts.length<3)parts.push(s12Human(fallback||'another explanation'));
+    return parts.slice(0,3).map(x=>s12Clip(x,3)).join(' / ');
+  }
+  function s12SelfCue(profile){
+    const blind=s12Human(profile.sig.selfBlindspot);
+    const conflict=s12Human(profile.sig.valueConflict).replace(/ versus /g,' ↔ ');
+    return s12Clip(`${blind}? ${conflict}.`,S12_CUE_LIMITS.self);
+  }
+  function s12OutsideCue(profile){
+    return s12Clip(`${s12Human(profile.sig.topology)} · ${s12Human(profile.sig.power)}.`,S12_CUE_LIMITS.outside);
+  }
+  function s12ActCue(profile){return s12Clip(profile.move,S12_CUE_LIMITS.act);}
+  function s12SocialLine(profile){
+    const actor=s12Actor(profile.counterpart);
+    const event=s12Clip(profile.encounter,11);
+    return `${actor}: ${event}`;
+  }
+  function s12RapidPacket(original,profile){
+    const world=s12Sentences(original.premise,2,24);
+    let scene=s12Clip(`${world} ${s12SocialLine(profile)}`,S12_SCENE_WORD_LIMIT);
+    const self=s12SelfCue(profile);
+    const other=s12Clip(s12Models(profile.other,profile.sig.empathyOperation),S12_CUE_LIMITS.other);
+    const outside=s12OutsideCue(profile);
+    const act=s12ActCue(profile);
+    let packet={scene,self,other,outside,act};
+    let total=s12WordCount(Object.values(packet).join(' '));
+    if(total>S12_PACKET_WORD_LIMIT){
+      scene=s12Clip(scene,Math.max(26,S12_SCENE_WORD_LIMIT-(total-S12_PACKET_WORD_LIMIT)));
+      packet={scene,self,other,outside,act};total=s12WordCount(Object.values(packet).join(' '));
+    }
+    return{...packet,totalWords:total};
+  }
+
+  const s12IntegratedApply=s10ApplySocial;
+  s10ApplySocial=function(base,profile){
+    const original={premise:base.premise,sensory:base.sensory,objects:base.objects,body:base.body,atmosphere:base.atmosphere,motion:base.motion,stakes:base.stakes,identity:base.identity,choice:base.choice};
+    const scenario=s12IntegratedApply(base,profile);
+    const rapid=s12RapidPacket(original,profile);
+    const sensory=s12Clip(`${original.sensory} ${profile.cue}`,20);
+    const objects=s12Clip(original.objects,15);
+    const body=s12Clip(`${original.body} ${profile.body}`,20);
+    const atmosphere=s12Clip(`${original.atmosphere} ${s12Human(profile.sig.emotionalField)}.`,16);
+    const motion=s12Clip(`${original.motion} ${rapid.act}`,19);
+    const stakes=s12Clip(`${original.stakes} ${profile.impact}`,20);
+    const identity=s12Clip(`${original.identity} Self-aware, empathic, bounded, revisable.`,17);
+    const choice=s12Clip(`SELF ${rapid.self} OTHER ${rapid.other} ACT ${rapid.act}`,22);
+    scenario.premise=rapid.scene;
+    scenario.sensory=sensory;
+    scenario.objects=objects;
+    scenario.body=body;
+    scenario.atmosphere=atmosphere;
+    scenario.motion=motion;
+    scenario.stakes=stakes;
+    scenario.identity=identity;
+    scenario.choice=choice;
+    scenario.__rapid={...rapid,worldDecision:s12Clip(original.choice,10),feedback:'Surprised? update the model, not your defence.',version:S12_VERSION};
+    scenario.__socialAgency={...scenario.__socialAgency,rapid:scenario.__rapid,worldDecisionShort:scenario.__rapid.worldDecision};
+    return scenario;
+  };
+
+  function s12PromptFor(drillId,scenario){
+    const r=scenario?.__rapid,social=scenario?.__socialAgency;if(!r||!social)return'';
+    const prompts={
+      sensory:`SEE + HEAR: ${scenario.sensory}`,
+      tangibility:`TOUCH: ${scenario.objects}`,
+      embodiment:`BODY: ${scenario.body}`,
+      atmosphere:`FIELD: ${scenario.atmosphere}`,
+      motion:`MOVE: ${scenario.motion}`,
+      focus:'Hold task + body + other cues + interaction. Evidence ≠ story.',
+      acceptance:'Your view is partial. Keep your boundary; let their experience differ.',
+      conviction:`Hold 3 motives: ${r.other}. No winner yet.`,
+      consequence:'Feel one act changing the task, their options, you, and the next exchange.',
+      emotion:'Name your feeling + urge. Imagine two of theirs. Keep both uncertain.',
+      physiology:'Shift breath or posture. Notice how body changes interpretation and what you signal.',
+      agency:`ACT: ${r.act}. Preserve self + their agency; gain information.`,
+      authenticity:'Choose the truthful response—not nice, rescuing, dominating, appeasing, or withdrawing.',
+      identity:'Become self-aware and other-aware simultaneously. Stay centred, permeable, revisable.',
+      fidelity:'They remain independent: even understood, they may disagree, refuse, or surprise you.',
+      integrated:'SELF → 3 OTHER models → LOOP → POWER → ACT → opposite feedback → UPDATE.',
+      exit:'Drop every imagined person. Feel your real body. Reset inference to zero.'
+    };
+    return s12Clip(prompts[drillId]||'',S12_PROMPT_WORD_LIMIT);
+  }
+
+  const s12PriorPrompt=bPrompt;
+  bPrompt=function(){
+    if(becomeState.track!=='scenario')return s12PriorPrompt();
+    const prompt=s12PromptFor(bDrill()?.id,bScenario());
+    return prompt||s12PriorPrompt();
+  };
+
+  bRenderBrief=function(){
+    becomeState.stage='brief';
+    const s=bScenario(),r=s.__rapid;
+    bPanel(`${bHeader(`SCENARIO ${becomeState.scenarioIndex+1} OF ${becomeState.queue.length}`,s.title,0)}<p class="become-kicker">${bEscape(s.tag)}</p><h2 class="become-title compact">${bEscape(s.title)}</h2><div class="become-premise">${bEscape(r.scene)}</div><div class="become-grid three"><div class="become-card"><small>SELF</small><strong>${bEscape(r.self)}</strong></div><div class="become-card"><small>OTHER · 3 MODELS</small><strong>${bEscape(r.other)}</strong></div><div class="become-card"><small>OUTSIDE</small><strong>${bEscape(r.outside)}</strong></div></div><p class="become-rule"><b>ACT:</b> ${bEscape(r.act)} <span>·</span> <b>IF SURPRISED:</b> UPDATE.</p><div class="become-facts"><span class="become-fact">${r.totalWords} WORD ENTRY</span><span class="become-fact">10 SEC FACULTIES</span><span class="become-fact">NO NETWORK WAIT</span></div><div class="become-actions"><button class="become-primary" type="button" data-become-action="begin-scenario">BECOME IT</button></div>`);
+  };
+
+  if(window.DREAM_UNITY_BECOME_SOCIAL_AGENCY){
+    Object.assign(window.DREAM_UNITY_BECOME_SOCIAL_AGENCY,{
+      rapidVersion:S12_VERSION,sceneWordLimit:S12_SCENE_WORD_LIMIT,packetWordLimit:S12_PACKET_WORD_LIMIT,promptWordLimit:S12_PROMPT_WORD_LIMIT,
+      wordCount:s12WordCount,promptFor:s12PromptFor
+    });
+  }
