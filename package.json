@@ -1,9 +1,9 @@
 {
   "name": "dream-unity-experimental-three-world-problem",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "private": true,
   "type": "module",
-  "description": "Nine compatible Dream Unity games with Parallax Wing relational identity drift and zero-key internet-generated Become training.",
+  "description": "Nine compatible Dream Unity games with Parallax Wing relational identity drift and instant max-distance social-agency Become training.",
   "scripts": {
     "test": "node tests/role-drift.test.mjs && node tests/validate.mjs"
   },
