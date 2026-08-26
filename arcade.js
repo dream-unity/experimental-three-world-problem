@@ -1,7 +1,7 @@
 (() => {
   'use strict';
   const VERSION = '20260825-role-drift-become-1';
-  const BECOME_VERSION = '20260826-become-rapid-entry-14';
+  const BECOME_VERSION = '20260826-become-rapid-entry-15';
   const basePaths = [1, 2, 3, 4, 5].map((n) => `./arcade-parts/part-${String(n).padStart(2, '0')}.txt?v=${VERSION}`);
   const roleLogicPath = `./arcade-parts/perceive-role-logic.txt?v=${VERSION}`;
   const perceivePaths = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => `./arcade-parts/perceive-aerial-${String(n).padStart(2, '0')}.txt?v=${VERSION}`);
@@ -26,8 +26,8 @@
     const closeIndex = baseSource.lastIndexOf('})();');
     if (closeIndex < 0) throw new Error('Arcade source terminator was not found.');
 
-    // BECOME: core → orthogonal worlds → social maximin → integration →
-    // compact profile cues → final strict 10-second word-budget governor.
+    // BECOME: core → orthogonal worlds → social maximin → contextual integration
+    // → compact profile cues → final 34-word / 18-word rapid-entry governor.
     const completeSource = `${baseSource.slice(0, closeIndex)}\n${roleLogicSource}\n${perceiveSource}\n${becomeSource}\n${baseSource.slice(closeIndex)}`;
     Function(completeSource)();
   }).catch((error) => {
