@@ -13,28 +13,28 @@ const basePaths=[1,2,3,4,5].map(n=>`arcade-parts/part-${String(n).padStart(2,'0'
 const rolePath='arcade-parts/perceive-role-logic.txt';
 const perceivePaths=[1,2,3,4,5,6,7,8].map(n=>`arcade-parts/perceive-aerial-${String(n).padStart(2,'0')}.txt`);
 const corePath='arcade-parts/become-lab-01.txt';
-const livePath='arcade-parts/become-live-02.txt';
 const diversityPath='arcade-parts/become-diversity-09.txt';
 const socialPath='arcade-parts/become-social-agency-10.txt';
 const apiPath='api/become-scenario.js';
-for(const path of ['index.html','styles.css','become.css','main.js','arcade.js','README.md','package.json','.nojekyll',rolePath,...basePaths,...perceivePaths,corePath,livePath,diversityPath,socialPath,apiPath,'tests/role-drift.test.mjs','.github/workflows/validate-and-verify.yml'])assert.ok(exists(path),`${path} must exist`);
+for(const path of ['index.html','styles.css','become.css','main.js','arcade.js','README.md','package.json','.nojekyll',rolePath,...basePaths,...perceivePaths,corePath,diversityPath,socialPath,apiPath,'tests/role-drift.test.mjs','.github/workflows/validate-and-verify.yml'])assert.ok(exists(path),`${path} must exist`);
 
 const base=basePaths.map(read).join('');
 const role=read(rolePath),perceive=perceivePaths.map(read).join('');
-const core=read(corePath),live=read(livePath),diversity=read(diversityPath),social=read(socialPath);
+const core=read(corePath),diversity=read(diversityPath),social=read(socialPath);
 const loader=read('arcade.js'),index=read('index.html'),workflow=read('.github/workflows/validate-and-verify.yml');
 const packageJson=JSON.parse(read('package.json'));
 const close=base.lastIndexOf('})();');
 assert.ok(close>0);
-const complete=`${base.slice(0,close)}\n${role}\n${perceive}\n${core}\n${live}\n${diversity}\n${social}\n${base.slice(close)}`;
+const complete=`${base.slice(0,close)}\n${role}\n${perceive}\n${core}\n${diversity}\n${social}\n${base.slice(close)}`;
 const temp=mkdtempSync(join(tmpdir(),'dream-unity-'));
 const completePath=join(temp,'complete.js');writeFileSync(completePath,complete);
 for(const path of [completePath,fileURLToPath(new URL('arcade.js',root)),fileURLToPath(new URL('main.js',root)),fileURLToPath(new URL(apiPath,root))])execFileSync(process.execPath,['--check',path],{stdio:'inherit'});
 
-assert.match(loader,/LIVE_VERSION = '20260826-become-social-agency-10'/);
+assert.match(loader,/BECOME_VERSION = '20260826-become-social-agency-11'/);
 assert.match(loader,/become-social-agency-10\.txt/);
 assert.ok(loader.indexOf('become-diversity-09.txt')<loader.indexOf('become-social-agency-10.txt'));
-assert.match(index,/arcade\.js\?v=20260826-become-social-agency-10/);
+assert.doesNotMatch(loader,/become-live-02\.txt/);
+assert.match(index,/arcade\.js\?v=20260826-become-social-agency-11/);
 assert.equal((base.match(/key:\s*'(?:machine|maker|reality):[0-2]'/g)||[]).length,9);
 for(const marker of ['function roleDriftGeometry','stale-role-perseveration'])assert.ok(role.includes(marker));
 for(const marker of ['function createPerceptionAerialGame',"GAME_BY_KEY['machine:0']",'roleSwitchAt'])assert.ok(perceive.includes(marker));
@@ -42,6 +42,7 @@ for(const marker of ['function createBecomeLab',"GAME_BY_KEY['maker:2']",'BECOME
 for(const marker of ['D9_WORLDS','d9Candidate','d9SigDistance','d9MemoryRead'])assert.ok(diversity.includes(marker));
 for(const marker of ['S10_PROFILES','S10_COMBINED_AXES','s10SelectCombos','s10SchedulePrewarm','SELF —','OTHER —','NON-PERFORMATIVE EMPATHY','AGENTIC SELF-AWARENESS','ALL SCENARIOS SOCIAL','NO NETWORK WAIT'])assert.ok(social.includes(marker),`missing ${marker}`);
 assert.doesNotMatch(social,/bShuffle\(BECOME_SCENARIOS\)/);
+assert.doesNotMatch(loader,/dream-unity-become-live|vercel|blockrun|groq|web-llm|transformers/i);
 
 let seed=0x9e3779b9;
 const seededMath=Object.create(Math);seededMath.random=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/0x100000000;};
@@ -60,7 +61,7 @@ const runtime={
   performance:{now:()=>Number(process.hrtime.bigint())/1e6},fetch:async()=>{throw new Error('network disabled')}
 };
 vm.createContext(runtime);
-vm.runInContext(`${core}\n${live}\n${diversity}\n${social}\nthis.definition=GAME_BY_KEY['maker:2'];this.drills=BECOME_DRILLS;`,runtime);
+vm.runInContext(`${core}\n${diversity}\n${social}\nthis.definition=GAME_BY_KEY['maker:2'];this.drills=BECOME_DRILLS;`,runtime);
 assert.equal(runtime.definition.id,'become-reality-lab');
 runtime.definition.factory().reset({setScore(){},setMetric(){},sfx(){}});
 assert.match(becomeScreen.innerHTML,/SOCIAL<br>AGENCY LAB/);
@@ -92,5 +93,5 @@ const b=inspect(api.buildQueue(10),'second');
 assert.equal([...a.families].filter(x=>b.families.has(x)).length,0);assert.equal([...a.profiles].filter(x=>b.profiles.has(x)).length,0);
 const metrics=Object.fromEntries(runtime.drills.map(x=>[x.id,x]));
 assert.equal(metrics.agency.title,'RELATIONAL AGENCY');assert.equal(metrics.authenticity.title,'NON-PERFORMATIVE EMPATHY');assert.equal(metrics.identity.title,'AGENTIC SELF-AWARENESS');assert.equal(metrics.integrated.title,'MULTI-PERSPECTIVE INTEGRATION');
-assert.match(workflow,/become-social-agency-10\.txt/);assert.equal(packageJson.version,'1.6.0');assert.equal(packageJson.dependencies,undefined);
-console.log(`Validated: 40 social profiles, 29 axes, ${elapsed.toFixed(1)}ms, social min ${a.minSocial.toFixed(3)}, combined min ${a.minCombined.toFixed(3)}, zero next-session repeats.`);
+assert.match(workflow,/become-social-agency-10\.txt/);assert.equal(packageJson.version,'1.7.0');assert.equal(packageJson.dependencies,undefined);
+console.log(`Validated: lean loader, 40 social profiles, 29 axes, ${elapsed.toFixed(1)}ms, social min ${a.minSocial.toFixed(3)}, combined min ${a.minCombined.toFixed(3)}, zero next-session repeats.`);
