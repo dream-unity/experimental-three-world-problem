@@ -1,0 +1,143 @@
+
+  // Dream Maker / Become — indirect phenomenological objective layer.
+  // Each 10-second faculty is now a micro-simulation with an experiential win
+  // condition. Understanding the instruction is not completion; something must
+  // change inside the imagined perceptual, bodily or relational world.
+  const S14_VERSION='20260826-activation-objectives-1';
+  const S14_WIN_MAX=11;
+  const S14_OBJECTIVE_MAX=14;
+  const S14_SOLVED_MAX=11;
+
+  const S14_WINS={
+    'quiet-apprentice':'They volunteer one observation you did not supply.',
+    'challenge-upward':'They name what evidence would reopen the decision.',
+    'credit-dispute':'Build one contribution account that erases neither person.',
+    'listen-not-fix':'They choose what support they want before advice appears.',
+    'compassionate-boundary':'Give a clear no that leaves one real option.',
+    'receive-feedback':'Extract one testable claim without accepting the whole judgment.',
+    'give-feedback':'They restate the impact and choose their next adjustment.',
+    'own-impact':'Name impact and repair without seeking reassurance.',
+    'receive-apology':'Name what landed and one condition for rebuilding trust.',
+    'triad-mediation':'Each identifies one shared fact and one disputed interpretation.',
+    'consensus-dissent':'Surface one real dissent before the group commits.',
+    'cross-cultural-signal':'Discover one shared meaning without assigning motive.',
+    'nonverbal-coordination':'Complete three turns with leadership changing twice.',
+    'public-misread':'Correct one phrase while preserving intent and impact.',
+    'child-curiosity':'They predict first, then revise after the demonstration.',
+    'elder-autonomy':'Offer two genuine options and accept their choice.',
+    'accessibility-hidden':'Change one process step without requiring personal disclosure.',
+    'scarce-resource':'State one fair criterion that survives a role reversal.',
+    'risk-tolerance':'Separate shared risk from individually owned risk.',
+    'ambiguous-message':'Reach clarification without retaliating against an imagined tone.',
+    'distributed-burden':'Move one recurring inconvenience away from the same people.',
+    'excluded-contributor':'Correct the story while letting them choose visibility.',
+    'too-quick-yes':'Make refusal safe, then wait for their second answer.',
+    'shared-grief':'Stay connected through silence without forcing relief.',
+    'rival-vulnerability':'Acknowledge vulnerability while keeping competition fair.',
+    'stranger-help':'Offer help once; let refusal end your intervention.',
+    'art-interpretation':'Learn what caused their response before explaining intent.',
+    'outsider-ritual':'Make observation a valid form of belonging.',
+    'mutual-deference':'State one preference and get one contrasting preference.',
+    'rumor-uncertainty':'Separate one fact, one inference, and one fear.',
+    'family-memory':'Hold two meanings while finding one verifiable fact.',
+    'language-repair':'They restate the plan in their own words.',
+    'tokenized-representative':'Ask the person, not the category.',
+    'overfunction-loop':'Hand over one real decision without reclaiming the method.',
+    'help-refused':'Respect no and leave the door open once.',
+    'success-envy':'Celebrate them, then choose one self-directed next move.',
+    'receive-praise':'Receive praise without deflecting or creating immediate debt.',
+    'playful-co-creation':'Create a third idea carrying both signatures.',
+    'coalition-loyalty':'Challenge your group without buying belonging through silence.',
+    'community-trust':'Make one verifiable commitment and share one decision.'
+  };
+
+  const S14_OBJECTIVES={
+    sensory:{mode:'social-perception',objective:'Make gaze, voice, and distance vivid enough to support different meanings.',solved:'Two interpretations stay alive without choosing one.'},
+    tangibility:{mode:'shared-world',objective:'Place one shared object between you; make both bodies orient to it.',solved:'Its position changes how the interaction feels.'},
+    embodiment:{mode:'self-interoception',objective:'Shift posture until your urge toward them changes.',solved:'The new urge is felt before explanation.'},
+    atmosphere:{mode:'affective-differentiation',objective:'Separate your emotion from the shared social tension.',solved:'Both feel present without becoming the same state.'},
+    motion:{mode:'proxemic-causality',objective:'Change distance or timing once; let the relationship change before words.',solved:'Proximity or timing now carries social meaning.'},
+    focus:{mode:'multi-channel-attention',objective:'Hold task, self, other, and interaction loop simultaneously.',solved:'Dropping any one weakens the whole scene.'},
+    acceptance:{mode:'perspective-coexistence',objective:'Make their incompatible goal feel coherent while yours remains intact.',solved:'Both motives feel real without agreement.'},
+    conviction:{mode:'hypothesis-generation',objective:'Make three motives predict three different next cues.',solved:'Each future feels plausible before evidence arrives.'},
+    consequence:{mode:'second-order-consequence',objective:'Run one choice forward until both people gain or lose options.',solved:'You feel second-order consequences, not just outcome.'},
+    emotion:{mode:'emotional-perspective-shift',objective:'Let your real emotion arise; inhabit two possible emotions of theirs.',solved:'Each version changes the meaning of their cues.'},
+    physiology:{mode:'embodied-signalling',objective:'Shift breath or posture until their imagined response changes.',solved:'Your body now changes the social field.'},
+    agency:{mode:'relational-choice',objective:'Find a move toward the social win that preserves both choices.',solved:'It gains information without erasing either person.'},
+    authenticity:{mode:'self-honest-action',objective:'Reject the nicest answer; choose what you would actually enact.',solved:'A real cost, reluctance, or relief appears.'},
+    identity:{mode:'stable-flexible-self',objective:'Stay centred while their response changes unexpectedly.',solved:'You adapt without appeasing, attacking, or freezing.'},
+    fidelity:{mode:'other-autonomy',objective:'Make them understand you fully and still disagree.',solved:'Their separate agency remains emotionally real.'},
+    integrated:{mode:'feedback-updating',objective:'Pursue the win; receive opposite feedback; update; act again.',solved:'Your second action changes because your model changed.'},
+    exit:{mode:'epistemic-reset',objective:'Erase person, mission, and inferred motives completely.',solved:'Only your actual room and real evidence remain.'}
+  };
+
+  const s14PriorApply=s10ApplySocial;
+  s10ApplySocial=function(base,profile){
+    const scenario=s14PriorApply(base,profile);
+    const win=s13Limit(S14_WINS[profile.id]||'Preserve both perspectives while reaching one shared next step.',S14_WIN_MAX);
+    scenario.__activation14={version:S14_VERSION,profileId:profile.id,win};
+    scenario.__socialAgency={...scenario.__socialAgency,socialWin:win};
+    return scenario;
+  };
+
+  function s14ObjectiveFor(drillId,scenario){
+    const raw=S14_OBJECTIVES[drillId]||{mode:'phenomenological-change',objective:'Change something inside the lived simulation, not just your description.',solved:'The imagined state becomes detectably different.'};
+    return{
+      mode:raw.mode,
+      objective:s13Limit(raw.objective,S14_OBJECTIVE_MAX),
+      solved:s13Limit(raw.solved,S14_SOLVED_MAX),
+      win:s13Limit(scenario?.__activation14?.win||'Reach one social outcome without erasing either perspective.',S14_WIN_MAX)
+    };
+  }
+
+  const s14PriorPrompt=bPrompt;
+  bPrompt=function(){
+    if(becomeState.track!=='scenario'){
+      const drill=bDrill();
+      return typeof drill?.prompt==='function'?drill.prompt(becomeState):s14PriorPrompt();
+    }
+    return s14ObjectiveFor(bDrill()?.id,bScenario()).objective;
+  };
+
+  bRenderBrief=function(){
+    becomeState.stage='brief';
+    const s=bScenario(),r=s.__rapid13,a=s.__activation14;
+    bPanel(`${bHeader(`SCENARIO ${becomeState.scenarioIndex+1} OF ${becomeState.queue.length}`,s.title,0)}<p class="become-kicker">${bEscape(s.tag)}</p><h2 class="become-title compact">${bEscape(s.title)}</h2><div class="become-premise">${bEscape(r.scene)}</div><div class="become-grid three"><div class="become-card"><small>SELF</small><strong>${bEscape(r.self)}</strong></div><div class="become-card"><small>OTHER · 3 MODELS</small><strong>${bEscape(r.other)}</strong></div><div class="become-card"><small>SOCIAL WIN</small><strong>${bEscape(a.win)}</strong></div></div><p class="become-rule"><b>OUTSIDE:</b> ${bEscape(r.outside)}. The 17 faculties are objective tests: each is solved only when something changes inside the simulation.</p><div class="become-facts"><span class="become-fact">17 MICRO-OBJECTIVES</span><span class="become-fact">EXPERIENTIAL WIN CONDITIONS</span><span class="become-fact">SELF + OTHER + LOOP</span><span class="become-fact">10 SEC EACH</span></div><div class="become-actions"><button class="become-primary" type="button" data-become-action="begin-scenario">BEGIN OBJECTIVES</button></div>`);
+  };
+
+  const s14PriorCue=bRenderCue;
+  bRenderCue=function(){
+    if(becomeState.track!=='scenario')return s14PriorCue();
+    becomeState.stage='cue';
+    const d=bDrill(),o=s14ObjectiveFor(d.id,bScenario());
+    const label=`SCENARIO ${becomeState.scenarioIndex+1} · OBJECTIVE ${becomeState.drillIndex+1}/${BECOME_DRILLS.length}`;
+    bPanel(`${bHeader(label,bScenario().title)}<p class="become-kicker">${bEscape(d.title)}</p><h2 class="become-title compact">SOLVE IN<br>10 SECONDS</h2><div class="become-action-lock"><small>SOCIAL WIN</small><strong>${bEscape(o.win)}</strong></div><p class="become-label">OBJECTIVE</p><p class="become-prompt">${bEscape(o.objective)}</p><p class="become-label">SOLVED WHEN</p><p class="become-rule">${bEscape(o.solved)}</p><p class="become-microcopy">Count only what becomes perceptually, bodily or relationally present—not what you can explain.</p><div class="become-actions"><button class="become-primary" type="button" data-become-action="run-drill">BEGIN 10 SECONDS</button></div>`);
+  };
+
+  const s14PriorRun=bRun;
+  bRun=function(){
+    if(becomeState.track!=='scenario')return s14PriorRun();
+    becomeState.stage='running';becomeState.remaining=BECOME_SECONDS;becomeState.lastTick=11;
+    const d=bDrill(),o=s14ObjectiveFor(d.id,bScenario());
+    bPanel(`<div class="become-running">${bHeader('ACTIVE OBJECTIVE',d.title)}<div class="become-drill-layout"><div><p class="become-kicker">${bEscape(o.win)}</p><p class="become-prompt">${bEscape(o.objective)}</p><p class="become-instruction"><b>SOLVED WHEN:</b> ${bEscape(o.solved)}</p></div><div class="become-timer" id="becomeTimer" style="--progress:1"><div class="become-timer-inner"><div><b id="becomeTimerNumber">10.0</b><small>SECONDS</small></div></div></div></div></div>`);
+    becomeE?.sfx('launch',.82);
+  };
+
+  const s14PriorRating=bRenderRating;
+  bRenderRating=function(){
+    if(becomeState.track!=='scenario')return s14PriorRating();
+    becomeState.stage='rating';
+    const d=bDrill(),o=s14ObjectiveFor(d.id,bScenario());
+    bPanel(`${bHeader('OBJECTIVE RESULT',d.title)}<div class="become-rating"><p class="become-kicker">${bEscape(d.title)}</p><h2 class="become-title compact">DID THE STATE<br>ACTUALLY CHANGE?</h2><p class="become-copy"><strong>Solved when:</strong> ${bEscape(o.solved)} Score phenomenological completion—not understanding, effort or verbal description.</p><div class="become-score-grid">${bScoreButtons()}</div><div class="become-scale"><span>1 · NO CHANGE</span><span>10 · FULLY INSTANTIATED</span></div><p class="become-microcopy">Keyboard: 1–9, or 0 for 10.</p></div>`);
+  };
+
+  if(window.DREAM_UNITY_BECOME_SOCIAL_AGENCY){
+    Object.assign(window.DREAM_UNITY_BECOME_SOCIAL_AGENCY,{
+      activationObjectiveVersion:S14_VERSION,
+      socialWinCount:Object.keys(S14_WINS).length,
+      socialWinWordMax:S14_WIN_MAX,
+      objectiveWordMax:S14_OBJECTIVE_MAX,
+      solvedWordMax:S14_SOLVED_MAX,
+      objectiveFor:s14ObjectiveFor
+    });
+  }
