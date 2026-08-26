@@ -24,20 +24,23 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - name: Validate Imagine-that openings, social objectives and diversity
         run: npm test
-      - name: Validate crisp white visual override source
+      - name: Validate kinetic white visual override source
         shell: bash
         run: |
           set -euo pipefail
-          grep -q "VERSION = '20260826-white-overview-3'" main.js
+          grep -q "VERSION = '20260826-white-overview-4'" main.js
           grep -q 'light-overview-07.txt' main.js
           grep -q "ctx.fillStyle = '#ffffff'" visual-parts/light-overview-07.txt
-          grep -q 'render = function crispWhiteRender' visual-parts/light-overview-07.txt
-          grep -q 'drawBackground = function crispWhiteBackground' visual-parts/light-overview-07.txt
-          grep -q "WORLD.machine.css = '#008CFF'" visual-parts/light-overview-07.txt
-          grep -q "WORLD.maker.css = '#00C875'" visual-parts/light-overview-07.txt
-          grep -q "WORLD.reality.css = '#7C3AED'" visual-parts/light-overview-07.txt
+          grep -q 'render = function kineticWhiteRender' visual-parts/light-overview-07.txt
+          grep -q 'drawBackground = function whiteKineticBackground' visual-parts/light-overview-07.txt
+          grep -q 'drawCurve = function fluidLongCurve' visual-parts/light-overview-07.txt
+          grep -q 'function wDrawUnity' visual-parts/light-overview-07.txt
+          grep -q 'coreR=unit\*0.026' visual-parts/light-overview-07.txt
+          grep -q 'reach=Math.min' visual-parts/light-overview-07.txt
+          grep -q "WORLD.machine.css = '#009DFF'" visual-parts/light-overview-07.txt
+          grep -q "WORLD.maker.css = '#00C97A'" visual-parts/light-overview-07.txt
+          grep -q "WORLD.reality.css = '#7A36F5'" visual-parts/light-overview-07.txt
           grep -q 'display:none!important' light-theme.css
-          ! grep -q 'createRadialGradient' visual-parts/light-overview-07.txt
 
   verify-live:
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
@@ -50,7 +53,7 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - name: Wait for GitHub Pages to match crisp white overview and Become source
+      - name: Wait for GitHub Pages to match kinetic white overview and Become source
         shell: bash
         env:
           PAGE_URL: https://dream-unity.github.io/experimental-three-world-problem
@@ -72,14 +75,18 @@ jobs:
           done
           test "$matched" = true
 
-          grep -q 'main.js?v=20260826-white-overview-3' /tmp/dream-unity-live/index.html
-          grep -q 'light-theme.css?v=20260826-white-overview-3' /tmp/dream-unity-live/index.html
+          grep -q 'main.js?v=20260826-white-overview-4' /tmp/dream-unity-live/index.html
+          grep -q 'light-theme.css?v=20260826-white-overview-4' /tmp/dream-unity-live/index.html
           grep -q 'light-overview-07.txt' /tmp/dream-unity-live/main.js
           grep -q "ctx.fillStyle = '#ffffff'" /tmp/dream-unity-live/visual-parts/light-overview-07.txt
-          grep -q 'render = function crispWhiteRender' /tmp/dream-unity-live/visual-parts/light-overview-07.txt
-          grep -q "WORLD.machine.css = '#008CFF'" /tmp/dream-unity-live/visual-parts/light-overview-07.txt
-          grep -q "WORLD.maker.css = '#00C875'" /tmp/dream-unity-live/visual-parts/light-overview-07.txt
-          grep -q "WORLD.reality.css = '#7C3AED'" /tmp/dream-unity-live/visual-parts/light-overview-07.txt
+          grep -q 'render = function kineticWhiteRender' /tmp/dream-unity-live/visual-parts/light-overview-07.txt
+          grep -q 'drawCurve = function fluidLongCurve' /tmp/dream-unity-live/visual-parts/light-overview-07.txt
+          grep -q 'function wDrawUnity' /tmp/dream-unity-live/visual-parts/light-overview-07.txt
+          grep -q 'coreR=unit\*0.026' /tmp/dream-unity-live/visual-parts/light-overview-07.txt
+          grep -q 'reach=Math.min' /tmp/dream-unity-live/visual-parts/light-overview-07.txt
+          grep -q "WORLD.machine.css = '#009DFF'" /tmp/dream-unity-live/visual-parts/light-overview-07.txt
+          grep -q "WORLD.maker.css = '#00C97A'" /tmp/dream-unity-live/visual-parts/light-overview-07.txt
+          grep -q "WORLD.reality.css = '#7A36F5'" /tmp/dream-unity-live/visual-parts/light-overview-07.txt
           grep -q 'display:none!important' /tmp/dream-unity-live/light-theme.css
 
           grep -q 'arcade.js?v=20260826-become-imagine-opening-17' /tmp/dream-unity-live/index.html
@@ -90,7 +97,7 @@ jobs:
           ! grep -q 'bShuffle(BECOME_SCENARIOS)' /tmp/dream-unity-live/arcade-parts/become-activation-objectives-14.txt
           sha256sum /tmp/dream-unity-live/index.html /tmp/dream-unity-live/styles.css /tmp/dream-unity-live/become.css /tmp/dream-unity-live/light-theme.css /tmp/dream-unity-live/light-theme.js /tmp/dream-unity-live/main.js /tmp/dream-unity-live/arcade.js /tmp/dream-unity-live/visual-parts/*.txt /tmp/dream-unity-live/arcade-parts/*.txt > /tmp/live-checksums.txt
 
-      - name: Record crisp white overview and Become deployment
+      - name: Record kinetic white overview and Become deployment
         shell: bash
         env:
           SOURCE_SHA: ${{ github.sha }}
@@ -108,14 +115,20 @@ jobs:
             'page_url':os.environ['PAGE_URL'],
             'nine_portal_compatibility':'validated',
             'overview':{
-              'theme':'crisp_white',
+              'theme':'kinetic_white',
               'canvas_background':'#ffffff',
               'legacy_render_vignette_active':False,
               'nebula_fog_active':False,
-              'oversized_radial_glow_active':False,
-              'world_palette':{'machine':'#008CFF','maker':'#00C875','reality':'#7C3AED','unity':'#F59E0B'},
+              'world_palette':{'machine':'#009DFF','maker':'#00C97A','reality':'#7A36F5','unity':'#F59E0B'},
+              'long_bezier_ribbons':True,
+              'connection_endpoint_overshoot':True,
+              'braided_echo_arcs':True,
+              'world_orbit_ribbons':5,
+              'world_satellites':True,
+              'unity_core_scale':'0.026 * viewport unit',
+              'unity_orbit_planes':3,
               'renderer_override':'visual-parts/light-overview-07.txt',
-              'main_cache_version':'20260826-white-overview-3'
+              'main_cache_version':'20260826-white-overview-4'
             },
             'become':{
               'scenario_source':'instant_objective_driven_social_agency_maximin_synthesis',
@@ -140,6 +153,6 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add DEPLOYMENT_STATUS.json
           git diff --cached --quiet && exit 0
-          git commit -m 'Record crisp white overview deployment [skip ci]'
+          git commit -m 'Record kinetic white overview deployment [skip ci]'
           git pull --rebase origin main
           git push origin HEAD:main
