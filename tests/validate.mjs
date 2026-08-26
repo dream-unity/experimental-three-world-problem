@@ -33,12 +33,12 @@ const temp=mkdtempSync(join(tmpdir(),'dream-unity-'));
 const completePath=join(temp,'complete.js');writeFileSync(completePath,complete);
 for(const path of [completePath,fileURLToPath(new URL('arcade.js',root)),fileURLToPath(new URL('main.js',root)),fileURLToPath(new URL(apiPath,root))])execFileSync(process.execPath,['--check',path],{stdio:'inherit'});
 
-assert.match(loader,/BECOME_VERSION = '20260826-become-rapid-entry-14'/);
+assert.match(loader,/BECOME_VERSION = '20260826-become-rapid-entry-15'/);
 for(const marker of ['become-diversity-09.txt','become-social-agency-10.txt','become-social-integration-11.txt','become-compressed-12.txt','become-rapid-entry-13.txt'])assert.match(loader,new RegExp(marker.replace('.','\\.')));
 assert.ok(loader.indexOf('become-compressed-12.txt')<loader.indexOf('become-rapid-entry-13.txt'));
 assert.doesNotMatch(loader,/become-live-02\.txt/);
 assert.doesNotMatch(loader,/dream-unity-become-live|vercel|blockrun|groq|web-llm|transformers/i);
-assert.match(index,/arcade\.js\?v=20260826-become-rapid-entry-14/);
+assert.match(index,/arcade\.js\?v=20260826-become-rapid-entry-15/);
 assert.equal((base.match(/key:\s*'(?:machine|maker|reality):[0-2]'/g)||[]).length,9);
 for(const marker of ['function roleDriftGeometry','stale-role-perseveration'])assert.ok(role.includes(marker));
 for(const marker of ['function createPerceptionAerialGame',"GAME_BY_KEY['machine:0']",'roleSwitchAt'])assert.ok(perceive.includes(marker));
