@@ -1,0 +1,126 @@
+
+  // Dream Maker / Become — ten-second compression layer.
+  // Hard limits prevent explanatory prose from replacing phenomenological training.
+  const S12_VERSION='20260826-compressed-social-agency-1';
+  const S12_BRIEF_WORD_MAX=48;
+  const S12_PROMPT_WORD_MAX=20;
+
+  const S12_PROFILE_COMPACT={
+    'quiet-apprentice':{tension:'Your apprentice has stopped offering observations.',self:'speed-as-competence',other:'confused · cautious · disagreeing',move:'Slow down; invite their view.'},
+    'challenge-upward':{tension:'A respected senior dismisses your concern.',self:'deference-or-reactance',other:'confident · rushed · avoiding uncertainty',move:'State evidence; ask what would change their mind.'},
+    'credit-dispute':{tension:'A peer claims the shared insight as theirs.',self:'status-threat',other:'different memory · invisibility · overclaim',move:'Compare specifics; protect fair credit.'},
+    'listen-not-fix':{tension:'Someone close wants understanding, not another solution.',self:'rescue-impulse',other:'hurt · overwhelmed · needing presence',move:'Reflect first; ask what response they want.'},
+    'compassionate-boundary':{tension:'Someone vulnerable asks more than you can sustain.',self:'guilt-overresponsibility',other:'afraid · disappointed · urgently focused',move:'Name the limit; offer only sustainable help.'},
+    'receive-feedback':{tension:'Sharp feedback contains a possibly accurate criticism.',self:'defensive-identity-fusion',other:'clumsy · frustrated · partly mistaken',move:'Ask for one example; test the content.'},
+    'give-feedback':{tension:'A talented person is affecting others negatively.',self:'approval-seeking-avoidance',other:'unaware · defensive · ready to learn',move:'Name behaviour, impact and requested change.'},
+    'own-impact':{tension:'Someone describes harm you did not intend.',self:'shame-and-explanation',other:'hurt · cautious · needing repair',move:'Acknowledge impact; ask what repair means.'},
+    'receive-apology':{tension:'A sincere apology arrives before trust has returned.',self:'vindication-or-premature-peace',other:'remorseful · fearful · partly self-protective',move:'Name what landed and what still needs evidence.'},
+    'triad-mediation':{tension:'Two trusted people each make the other seem unreasonable.',self:'coalition-pull',other:'hurt · protective · selectively remembering',move:'Map both views; separate facts from interpretations.'},
+    'consensus-dissent':{tension:'A group is agreeing while one person quietly hesitates.',self:'consensus-comfort',other:'uncertain · socially cautious · dissenting',move:'Lower the cost of disagreement before deciding.'},
+    'cross-cultural-signal':{tension:'A social signal means something different than you assumed.',self:'familiar-norm-as-universal',other:'respectful · uncomfortable · culturally different',move:'Describe the cue; ask how it lands.'},
+    'nonverbal-coordination':{tension:'You and a partner keep leading and yielding at once.',self:'control-through-leading',other:'inviting · testing rhythm · protecting space',move:'Offer one move; leave room for transformation.'},
+    'public-misread':{tension:'An audience reacts to meaning you did not intend.',self:'reputation-defence',other:'hurt · context-sensitive · possibly mistaken',move:'Acknowledge impact, clarify briefly, then correct.'},
+    'child-curiosity':{tension:'A child repeats a question through a new example.',self:'expert-impatience',other:'testing · missing a concept · connecting',move:'Ask their model; let them predict first.'},
+    'elder-autonomy':{tension:'An older person rejects a change you consider helpful.',self:'paternalism',other:'protecting autonomy · continuity · lived knowledge',move:'Ask what is threatened; offer genuine options.'},
+    'accessibility-hidden':{tension:'Someone quietly asks for another way to participate.',self:'default-person-assumption',other:'managing load · privacy · hidden constraints',move:'Offer multiple routes without demanding disclosure.'},
+    'scarce-resource':{tension:'Equal treatment would create unequal harm.',self:'simple-equality-bias',other:'need-based · rule-based · consequence-focused',move:'State criteria; compare impact, not just shares.'},
+    'risk-tolerance':{tension:'Someone you trust accepts risks you resist.',self:'protection-as-control',other:'autonomy-valuing · optimistic · differently exposed',move:'Map who owns each downside; set shared thresholds.'},
+    'ambiguous-message':{tension:'A short message feels cold but gives little evidence.',self:'negative-tone-projection',other:'rushed · upset · neutral',move:'Generate three readings; clarify before reacting.'},
+    'distributed-burden':{tension:'A team routine repeatedly burdens the same people.',self:'local-convenience-bias',other:'coping · constrained · reluctant to complain',move:'Make the burden visible; rotate the cost.'},
+    'excluded-contributor':{tension:'A celebration is erasing an important contributor.',self:'salience-and-status-bias',other:'proud · overlooked · publicity-averse',move:'Name the contribution; invite, never force, visibility.'},
+    'too-quick-yes':{tension:'Someone agrees faster than their body seems to.',self:'agreement-seeking',other:'willing · conflict-avoidant · pressured',move:'Make no safe; delay commitment if needed.'},
+    'shared-grief':{tension:'A grieving person falls silent beside you.',self:'need-to-fix-pain',other:'needing presence · space · practical help',move:'Acknowledge; ask company or space; follow.'},
+    'rival-vulnerability':{tension:'A serious rival reveals a private vulnerability.',self:'dehumanise-or-rescue',other:'seeking privacy · fairness · simple recognition',move:'Acknowledge humanity; keep fair boundaries intact.'},
+    'stranger-help':{tension:'A stranger looks lost but has not asked for help.',self:'saviour-assumption',other:'wanting help · privacy · time',move:'Offer once; let no end the intervention.'},
+    'art-interpretation':{tension:'Someone experiences your work opposite to your intention.',self:'identity-attached-to-intent',other:'personally moved · projecting · noticing something real',move:'Ask what produced it; add intent, not verdict.'},
+    'outsider-ritual':{tension:'A newcomer is welcomed into a ritual they may not want.',self:'assimilation-as-inclusion',other:'curious · uncertain · boundary-protecting',move:'Explain options; make observation legitimate.'},
+    'mutual-deference':{tension:'Both of you keep yielding until nobody chooses.',self:'conflict-avoidance',other:'flexible · anxious · waiting for preference',move:'State one revisable preference; invite contrast.'},
+    'rumor-uncertainty':{tension:'An alarming rumor grows more certain as it spreads.',self:'certainty-contagion',other:'frightened · warning sincerely · status-seeking',move:'Separate fact from fear; stop unsupported detail.'},
+    'family-memory':{tension:'A family member remembers a defining event differently.',self:'memory-as-objective-record',other:'different vantage · self-protection · missing context',move:'Separate facts from lived meaning; hold both.'},
+    'language-repair':{tension:'Agreement may hide incomplete shared meaning.',self:'fluency-status-bias',other:'translating · face-saving · missing one term',move:'Simplify the message; ask them to restate it.'},
+    'tokenized-representative':{tension:'A group expects one person to represent a category.',self:'category-reduction',other:'willing · burdened · refusing representation',move:'Ask the individual; remove representative duty.'},
+    'overfunction-loop':{tension:'Your competence is making the team increasingly passive.',self:'control-through-helpfulness',other:'disengaged · overwritten · adapting rationally',move:'Return real ownership; tolerate a recoverable mistake.'},
+    'help-refused':{tension:'Someone refuses help you believe would benefit them.',self:'need-to-be-useful',other:'protecting autonomy · timing · dignity',move:'Respect no; ask once what support is welcome.'},
+    'success-envy':{tension:'A close peer gets the success you wanted.',self:'comparison-shame',other:'celebrating · cautious around you · carrying hidden costs',move:'Celebrate specifically; process envy elsewhere; act for yourself.'},
+    'receive-praise':{tension:'Sincere praise feels accurate enough to expose you.',self:'self-effacing-deflection',other:'grateful · connecting · simply recognising',move:'Let it land; receive without inflation or debt.'},
+    'playful-co-creation':{tension:'A collaborator transforms your favourite idea into something stranger.',self:'ownership-of-coherence',other:'respectfully transforming · exploring · misreading',move:'Preserve one value; accept one transformation.'},
+    'coalition-loyalty':{tension:'Your own group is treating an outsider unfairly.',self:'ingroup-moral-exemption',other:'protective · threatened · normalising harm',move:'Challenge the behaviour from inside the relationship.'},
+    'community-trust':{tension:'A reasonable proposal meets distrust built by history.',self:'present-intent-erases-history',other:'skeptical · testing power · protecting against repetition',move:'Acknowledge history; share real power; make one verifiable commitment.'}
+  };
+
+  function s12Words(text){return String(text||'').trim().split(/\s+/).filter(Boolean);}
+  function s12Count(text){return s12Words(text).length;}
+  function s12Limit(text,max){
+    const words=s12Words(text);
+    if(words.length<=max)return String(text||'').trim();
+    return words.slice(0,max).join(' ').replace(/[,:;.!?]+$/,'')+'…';
+  }
+  function s12Before(text,marker){const i=String(text||'').indexOf(marker);return(i>=0?String(text).slice(0,i):String(text||'')).trim();}
+  function s12Sentences(text,maxSentences=2){
+    const parts=String(text||'').trim().match(/[^.!?]+[.!?]+|[^.!?]+$/g)||[];
+    return parts.slice(0,maxSentences).join(' ').trim();
+  }
+  function s12CompactFor(profile){
+    return S12_PROFILE_COMPACT[profile.id]||{
+      tension:s12Limit(profile.encounter,9),
+      self:s12Limit(String(profile.sig.selfBlindspot||'self-bias').replace(/-/g,' '),5),
+      other:'uncertain · protecting something · differently informed',
+      move:s12Limit(profile.move,9)
+    };
+  }
+  function s12BuildBrief(scenario,profile,compact){
+    const originalWorld=s12Sentences(s12Before(scenario.premise,'The relevant social perspective'),2);
+    const socialTail=`${compact.tension} Watch ${compact.self}. They may be ${compact.other}. ${compact.move}`;
+    const socialWords=s12Count(socialTail);
+    const worldBudget=Math.max(14,S12_BRIEF_WORD_MAX-socialWords);
+    return s12Limit(`${s12Limit(originalWorld,worldBudget)} ${socialTail}`,S12_BRIEF_WORD_MAX);
+  }
+
+  const s12PriorApplySocial=s10ApplySocial;
+  s10ApplySocial=function(base,profile){
+    const scenario=s12PriorApplySocial(base,profile);
+    const compact=s12CompactFor(profile);
+    const worldSensory=s12Limit(s12Before(scenario.sensory,'Inside that same physical task'),12);
+    const worldBody=s12Limit(s12Before(scenario.body,'Separate the bodily signal'),10);
+    const worldMotion=s12Limit(s12Before(scenario.motion,'Let the social action occur'),10);
+    scenario.premise=s12BuildBrief(scenario,profile,compact);
+    scenario.__compact={...compact,worldSensory,worldBody,worldMotion,briefWords:s12Count(scenario.premise)};
+    scenario.__compressionVersion=S12_VERSION;
+    return scenario;
+  };
+
+  function s12Prompt(text){return s12Limit(text,S12_PROMPT_WORD_MAX);}
+  bPrompt=function(){
+    if(becomeState.track!=='scenario')return'';
+    const s=bScenario(),c=s?.__compact||{},social=s?.__socialAgency||{},drill=bDrill();
+    const prompts={
+      sensory:`${c.worldSensory||'See the scene and hear the room.'} Notice their face, hands and distance; infer nothing yet.`,
+      tangibility:'Feel one object’s weight, texture and temperature. Make both people occupy the same physical world.',
+      embodiment:`${c.worldBody||'Feel your feet, breath and posture.'} Name your action urge before interpreting them.`,
+      atmosphere:'Feel your emotion and the shared tension separately. Do not merge your state with theirs.',
+      motion:`${c.worldMotion||'Move once inside the scene.'} Feel how timing and distance alter the relationship.`,
+      focus:'Hold task, self, other and interaction loop together. Separate observable fact from the story you add.',
+      acceptance:'Your view is partial. Keep your boundary while letting the other mind remain independent and possibly disagree.',
+      conviction:'Hold three explanations for them. For each, imagine one cue that supports it and one that weakens it.',
+      consequence:'Trace your action through the task, their available choices, your self-model and the next interaction.',
+      emotion:'Name your emotion and urge. Imagine two possible emotions in them; know that neither is yet fact.',
+      physiology:'Change breath or posture. Notice how it shifts your interpretation and the social signal your body sends.',
+      agency:`Protect your value and their agency. ${c.move||social.action||'Choose one revisable action and watch the response.'}`,
+      authenticity:'Drop the socially approved answer. Choose what you can enact without rescuing, appeasing, dominating or fleeing discomfort.',
+      identity:'Become centred and permeable: know your motive, keep your boundary, and let evidence change your model.',
+      fidelity:'Let them disagree after being understood. Preserve their values, choices and separateness from your preferred outcome.',
+      integrated:'SELF → three OTHER models → LOOP → POWER → ACTION → FEEDBACK. Update the model; do not defend it.',
+      exit:'Drop the simulation. Feel hands and feet. Release every inference about real people; only real evidence updates them.'
+    };
+    return s12Prompt(prompts[drill.id]||'Enter the scene. Notice yourself, the other perspective, and your next chosen action.');
+  };
+
+  bRenderBrief=function(){
+    becomeState.stage='brief';
+    const s=bScenario(),c=s.__compact||{};
+    bPanel(`${bHeader(`SCENARIO ${becomeState.scenarioIndex+1} OF ${becomeState.queue.length}`,s.title,0)}<p class="become-kicker">${bEscape(s.tag)}</p><h2 class="become-title compact">${bEscape(s.title)}</h2><div class="become-premise">${bEscape(s.premise)}</div><div class="become-grid three"><div class="become-card"><small>SELF</small><strong>${bEscape(String(c.self||'notice your bias').replace(/-/g,' '))}</strong></div><div class="become-card"><small>OTHER</small><strong>${bEscape(c.other||'hold three plausible models')}</strong></div><div class="become-card"><small>ACT</small><strong>${bEscape(c.move||'choose, observe, update')}</strong></div></div><div class="become-facts"><span class="become-fact">≤ ${S12_BRIEF_WORD_MAX} WORD SCENE</span><span class="become-fact">3 OTHER-MIND MODELS</span><span class="become-fact">BOUNDARY + EMPATHY</span><span class="become-fact">10 SEC FACULTIES</span></div><div class="become-actions"><button class="become-primary" type="button" data-become-action="begin-scenario">ENTER SCENARIO</button></div>`);
+  };
+
+  if(window.DREAM_UNITY_BECOME_SOCIAL_AGENCY){
+    Object.assign(window.DREAM_UNITY_BECOME_SOCIAL_AGENCY,{compressionVersion:S12_VERSION,briefWordMax:S12_BRIEF_WORD_MAX,promptWordMax:S12_PROMPT_WORD_MAX,countWords:s12Count});
+  }
