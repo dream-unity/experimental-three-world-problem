@@ -1,7 +1,7 @@
 (() => {
   'use strict';
   const VERSION = '20260825-role-drift-become-1';
-  const BECOME_VERSION = '20260826-become-compressed-13';
+  const BECOME_VERSION = '20260826-become-rapid-entry-14';
   const basePaths = [1, 2, 3, 4, 5].map((n) => `./arcade-parts/part-${String(n).padStart(2, '0')}.txt?v=${VERSION}`);
   const roleLogicPath = `./arcade-parts/perceive-role-logic.txt?v=${VERSION}`;
   const perceivePaths = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => `./arcade-parts/perceive-aerial-${String(n).padStart(2, '0')}.txt?v=${VERSION}`);
@@ -10,7 +10,8 @@
   const becomeSocialPath = `./arcade-parts/become-social-agency-10.txt?v=${BECOME_VERSION}`;
   const becomeIntegrationPath = `./arcade-parts/become-social-integration-11.txt?v=${BECOME_VERSION}`;
   const becomeCompressionPath = `./arcade-parts/become-compressed-12.txt?v=${BECOME_VERSION}`;
-  const paths = [...basePaths, roleLogicPath, ...perceivePaths, becomeCorePath, becomeDiversityPath, becomeSocialPath, becomeIntegrationPath, becomeCompressionPath];
+  const becomeRapidPath = `./arcade-parts/become-rapid-entry-13.txt?v=${BECOME_VERSION}`;
+  const paths = [...basePaths, roleLogicPath, ...perceivePaths, becomeCorePath, becomeDiversityPath, becomeSocialPath, becomeIntegrationPath, becomeCompressionPath, becomeRapidPath];
 
   Promise.all(paths.map((path) => fetch(path, { cache: 'force-cache' }).then((response) => {
     if (!response.ok) throw new Error(`Arcade chunk failed: ${response.status} ${path}`);
@@ -25,8 +26,8 @@
     const closeIndex = baseSource.lastIndexOf('})();');
     if (closeIndex < 0) throw new Error('Arcade source terminator was not found.');
 
-    // BECOME: core lifecycle → orthogonal worlds → social maximin planner →
-    // contextual integration → hard ten-second compression. No cloud path.
+    // BECOME: core → orthogonal worlds → social maximin → integration →
+    // compact profile cues → final strict 10-second word-budget governor.
     const completeSource = `${baseSource.slice(0, closeIndex)}\n${roleLogicSource}\n${perceiveSource}\n${becomeSource}\n${baseSource.slice(closeIndex)}`;
     Function(completeSource)();
   }).catch((error) => {
