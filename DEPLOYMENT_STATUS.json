@@ -1,35 +1,39 @@
 {
   "project": "Dream Unity \u2014 Experimental Three-World Problem",
   "deployment": "verified-live",
-  "source_sha": "71c5fa1d33af56bf4d2864e9a9477b242265c311",
+  "source_sha": "9c9960e57b67576a569bb36af6c75a1fea03a54e",
   "page_url": "https://dream-unity.github.io/experimental-three-world-problem/",
   "nine_portal_compatibility": "validated",
   "become": {
-    "scenario_source": "instant_rapid_contextual_social_agency_maximin_synthesis",
-    "rapid_entry_version": "20260826-rapid-entry-governor-2",
+    "scenario_source": "instant_objective_driven_social_agency_maximin_synthesis",
+    "activation_objective_version": "20260826-activation-objectives-1",
+    "social_win_count": 40,
+    "social_win_word_max": 11,
+    "faculty_objective_count": 17,
+    "faculty_objective_word_max": 14,
+    "faculty_solved_when_word_max": 11,
+    "faculty_completion_rule": "score_experiential_state_change_not_verbal_understanding",
+    "activation_loop": [
+      "social_win",
+      "objective",
+      "experiential_proof",
+      "feedback",
+      "self_score"
+    ],
+    "empathy_operations": [
+      "multiple_other_models",
+      "self_bias_detection",
+      "interaction_loop",
+      "other_autonomy",
+      "feedback_updating"
+    ],
     "scene_word_max": 34,
-    "entry_packet_word_max": 64,
-    "timed_prompt_word_max": 18,
-    "entry_packet": [
-      "scene",
-      "self_bias",
-      "three_other_models",
-      "outside_interaction",
-      "agency_move"
-    ],
-    "perspective_cycle": [
-      "self",
-      "other_multiple_models",
-      "outside_interaction",
-      "action",
-      "surprise_update"
-    ],
-    "empathy_rule": "model_flexibility_without_mind_reading_agreement_rescuing_or_self_erasure",
-    "social_profile_count": 40,
     "world_family_count": 26,
+    "social_profile_count": 40,
     "combined_novelty_axes": 29,
     "same_world_family_allowed_within_session": false,
     "same_social_profile_allowed_within_session": false,
+    "same_social_win_allowed_within_session": false,
     "cross_session_world_memory": true,
     "cross_session_social_memory": true,
     "queue_prewarmed_before_start": true,
@@ -39,11 +43,12 @@
     "personal_transfer_text_stored_in_novelty_memory": false
   },
   "sha256": [
-    "63ac4af053a29b1aa39f2ff413270ddb53cea86abc620d794fba30d1f214c4eb  /tmp/dream-unity-live/index.html",
+    "a56d90e33e8cab000fe1f9928d2bc5aab5141f8bdb050d61dccc3e3604ecacc5  /tmp/dream-unity-live/index.html",
     "008f907be470e8b387badb2534fa4df0c55b5bfc1c71c75d1beb9ef9ed963191  /tmp/dream-unity-live/styles.css",
     "ad8dc6788a87c34201b132b88d8e5eb3ed439a0644f54a9610d2398d1b877536  /tmp/dream-unity-live/become.css",
     "2107036b6397210444b31df52260fffb6a62d0447fefbc262beb3ee45f5b2d65  /tmp/dream-unity-live/main.js",
-    "03e644d834f8274f822b4297a4ebb10822fcef77c285eb03f798a3bf17b7daf1  /tmp/dream-unity-live/arcade.js",
+    "79b9108ab6c7c1f16c2f07995e5cf10ece4c1f0ea0ce6c2a8589a96e419ea87e  /tmp/dream-unity-live/arcade.js",
+    "f22521b196bb38eee9a4058f0ec5bda3f67a140ac11fae06d728dca8b2346b89  /tmp/dream-unity-live/arcade-parts/become-activation-objectives-14.txt",
     "53b6481086fa2be2aba90a9570c78162e8e3b0bfa856632d3cbfb62b9f317c7a  /tmp/dream-unity-live/arcade-parts/become-compressed-12.txt",
     "ddc1eae5b9d4b4d92c6b2548be18a77a9ae944a84890c1c4bf6a9d788f054848  /tmp/dream-unity-live/arcade-parts/become-diversity-09.txt",
     "5ea7269b5c3158bbbb8fd520439c3bd3b45176537aa018beebb6a36fe68190c1  /tmp/dream-unity-live/arcade-parts/become-lab-01.txt",
@@ -65,5 +70,5 @@
     "b675b4a09a5fae66938b1b5b83889357dcc45d08641f11901f80fe46aa9f12b7  /tmp/dream-unity-live/arcade-parts/perceive-aerial-08.txt",
     "08b62c2248bed6690890881f12d4e9a157690329aaff6f3a253a3723aaa69245  /tmp/dream-unity-live/arcade-parts/perceive-role-logic.txt"
   ],
-  "verified_at": "2026-08-26T00:59:31.922570+00:00"
+  "verified_at": "2026-08-26T01:37:00.074339+00:00"
 }
