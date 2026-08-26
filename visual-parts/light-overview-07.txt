@@ -1,202 +1,255 @@
 
-  // Dream Unity crisp white renderer override.
-  // Runs inside the visual engine IIFE immediately before its closing token.
-  // The original renderer was designed for black and painted a dark radial
-  // vignette every frame. This override removes all atmospheric darkness and
-  // replaces additive/pastel primitives with saturated, high-contrast geometry.
+  // Dream Unity white kinetic renderer override.
+  // Keeps the field genuinely white while restoring depth, motion and visual
+  // richness through object-local ribbons, satellites and layered orbit geometry.
 
-  WORLD.machine.css = '#008CFF';
-  WORLD.machine.rgb = [0, 140, 255];
-  WORLD.maker.css = '#00C875';
-  WORLD.maker.rgb = [0, 200, 117];
-  WORLD.reality.css = '#7C3AED';
-  WORLD.reality.rgb = [124, 58, 237];
+  WORLD.machine.css = '#009DFF';
+  WORLD.machine.rgb = [0, 157, 255];
+  WORLD.maker.css = '#00C97A';
+  WORLD.maker.rgb = [0, 201, 122];
+  WORLD.reality.css = '#7A36F5';
+  WORLD.reality.rgb = [122, 54, 245];
 
-  drawBackground = function crispWhiteBackground(t) {
+  const WHITE_ALT = {
+    machine:[0,92,235],
+    maker:[0,146,112],
+    reality:[210,35,255],
+    unity:[255,151,0]
+  };
+
+  function wLerpColor(a,b,t){return [
+    Math.round(a[0]+(b[0]-a[0])*t),
+    Math.round(a[1]+(b[1]-a[1])*t),
+    Math.round(a[2]+(b[2]-a[2])*t)
+  ];}
+
+  drawBackground = function whiteKineticBackground(t) {
     ctx.globalCompositeOperation = 'source-over';
     ctx.globalAlpha = 1;
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, width, height);
 
-    // Sparse colored micro-particles provide depth without haze or gray fog.
-    const parallaxYaw = activeWorld ? detailYaw * 0.03 : overviewYaw * 0.045;
-    const parallaxPitch = activeWorld ? detailPitch * 0.022 : overviewPitch * 0.035;
-    const idle = t * 0.0018;
-    for (let i = 0; i < stars.length; i += 2) {
+    // Sparse cool micro-particles: enough to suggest depth, never enough to haze.
+    const parallaxYaw = activeWorld ? detailYaw * 0.026 : overviewYaw * 0.04;
+    const parallaxPitch = activeWorld ? detailPitch * 0.02 : overviewPitch * 0.03;
+    const idle = t * 0.0016;
+    for (let i = 0; i < stars.length; i += 3) {
       const star = stars[i];
       const rotated = rotate3(star, parallaxYaw + idle, parallaxPitch, 0);
       const projected = project(rotated, 0.74, 15);
       if (projected.x < 0 || projected.x > width || projected.y < 0 || projected.y > height) continue;
-      const twinkle = 0.35 + 0.65 * Math.sin(t * (0.45 + (i % 5) * 0.05) + i * 0.73) ** 2;
-      const tint = star.tint === 0 ? WORLD.machine.rgb : star.tint === 1 ? WORLD.reality.rgb : star.tint === 2 ? WORLD.maker.rgb : [71,85,105];
-      const alpha = (star.tint < 3 ? 0.14 : 0.055) * twinkle;
-      ctx.fillStyle = rgba(tint, alpha);
-      const radius = Math.min(1.15, Math.max(0.45, star.size * 0.55 * clamp(projected.f, 0.5, 1.3)));
-      ctx.fillRect(projected.x, projected.y, radius, radius);
-    }
-  };
-
-  drawCurve = function crispCurve(a, b, rgb, alpha, seed, t, packets = true) {
-    const depthBias = clamp(0.72 + ((a.z || 0) + (b.z || 0)) * 0.035, 0.5, 1.08);
-    const mx = (a.x + b.x) * 0.5 + Math.sin(t * 0.43 + seed) * unit * 0.021;
-    const my = (a.y + b.y) * 0.5 - unit * 0.038 + Math.cos(t * 0.37 + seed) * unit * 0.016;
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.lineWidth = 1.15;
-    ctx.strokeStyle = rgba(rgb, alpha * 0.48 * depthBias);
-    ctx.beginPath();
-    ctx.moveTo(a.x, a.y);
-    ctx.quadraticCurveTo(mx, my, b.x, b.y);
-    ctx.stroke();
-    if (!packets) return;
-
-    for (let j = 0; j < 3; j++) {
-      const u = (t * 0.055 + seed * 0.07 + j / 3) % 1;
-      const one = 1 - u;
-      const x = one * one * a.x + 2 * one * u * mx + u * u * b.x;
-      const y = one * one * a.y + 2 * one * u * my + u * u * b.y;
-      const radius = 1.8 + 1.2 * Math.sin(u * Math.PI);
-      ctx.fillStyle = rgba(rgb, 0.72 * alpha * depthBias);
+      const pulse = 0.45 + 0.55 * Math.sin(t * 0.48 + i * 0.77) ** 2;
+      const tint = star.tint === 0 ? WORLD.machine.rgb : star.tint === 1 ? WORLD.reality.rgb : star.tint === 2 ? WORLD.maker.rgb : [95,110,130];
+      ctx.fillStyle = rgba(tint, (star.tint < 3 ? 0.13 : 0.038) * pulse);
+      const radius = Math.min(1.15, Math.max(0.45, star.size * 0.46 * clamp(projected.f, 0.5, 1.25)));
       ctx.beginPath();
-      ctx.arc(x, y, radius, 0, TAU);
+      ctx.arc(projected.x, projected.y, radius, 0, TAU);
       ctx.fill();
-      ctx.strokeStyle = 'rgba(255,255,255,.92)';
-      ctx.lineWidth = 0.75;
-      ctx.stroke();
     }
   };
 
-  drawOrb = function crispOrb(x, y, radius, config, kind, t, alpha = 1, focus = 0, depth = 0) {
-    if (alpha <= 0.002 || radius <= 1) return;
-    ctx.save();
-    const depthAlpha = clamp(0.76 + depth * 0.045, 0.58, 1.08);
-    ctx.globalAlpha = alpha * depthAlpha;
-    ctx.globalCompositeOperation = 'source-over';
+  function wCurvePoint(p0,p1,p2,p3,u){
+    const o=1-u;
+    return {
+      x:o*o*o*p0.x+3*o*o*u*p1.x+3*o*u*u*p2.x+u*u*u*p3.x,
+      y:o*o*o*p0.y+3*o*o*u*p1.y+3*o*u*u*p2.y+u*u*u*p3.y
+    };
+  }
 
-    // Tight shell: no giant glow field.
-    ctx.fillStyle = rgba(config.rgb, 0.075 + focus * 0.025);
-    ctx.strokeStyle = rgba(config.rgb, 0.56 + focus * 0.12);
-    ctx.lineWidth = Math.max(1.05, radius * 0.012);
+  drawCurve = function fluidLongCurve(a, b, rgb, alpha, seed, t, packets = true) {
+    const dx=b.x-a.x,dy=b.y-a.y;
+    const len=Math.max(1,Math.hypot(dx,dy));
+    const tx=dx/len,ty=dy/len;
+    const nx=-ty,ny=tx;
+    const depthBias=clamp(0.72+((a.z||0)+(b.z||0))*0.035,0.5,1.08);
+    const bow=(0.095+0.025*Math.sin(t*0.32+seed))*unit;
+    const reach=Math.min(unit*0.075,len*0.13);
+
+    // Extend slightly beyond both anchors so each relation reads as a long field
+    // line rather than a short wire between two dots.
+    const p0={x:a.x-tx*reach,y:a.y-ty*reach};
+    const p3={x:b.x+tx*reach,y:b.y+ty*reach};
+    const p1={x:a.x+dx*0.28+nx*bow,y:a.y+dy*0.28+ny*bow};
+    const p2={x:a.x+dx*0.72-nx*bow*0.72,y:a.y+dy*0.72-ny*bow*0.72};
+
+    ctx.globalCompositeOperation='source-over';
+    ctx.lineCap='round';
+
+    // Soft local under-stroke for visual richness, not atmospheric fog.
+    ctx.strokeStyle=rgba(rgb,alpha*0.09*depthBias);
+    ctx.lineWidth=5.4;
+    ctx.beginPath();ctx.moveTo(p0.x,p0.y);ctx.bezierCurveTo(p1.x,p1.y,p2.x,p2.y,p3.x,p3.y);ctx.stroke();
+
+    ctx.strokeStyle=rgba(rgb,alpha*0.42*depthBias);
+    ctx.lineWidth=1.45;
+    ctx.beginPath();ctx.moveTo(p0.x,p0.y);ctx.bezierCurveTo(p1.x,p1.y,p2.x,p2.y,p3.x,p3.y);ctx.stroke();
+
+    // Offset echo arc makes each connection feel braided and less rigid.
+    const echo=unit*0.018*(seed%2?1:-1);
+    ctx.strokeStyle=rgba(rgb,alpha*0.12*depthBias);
+    ctx.lineWidth=0.85;
     ctx.beginPath();
-    ctx.arc(x, y, radius, 0, TAU);
-    ctx.fill();
+    ctx.moveTo(p0.x+nx*echo,p0.y+ny*echo);
+    ctx.bezierCurveTo(p1.x+nx*echo,p1.y+ny*echo,p2.x+nx*echo,p2.y+ny*echo,p3.x+nx*echo,p3.y+ny*echo);
     ctx.stroke();
 
-    // Saturated core with a very small white specular point.
-    ctx.fillStyle = rgba(config.rgb, 0.82);
-    ctx.beginPath();
-    ctx.arc(x, y, radius * 0.24, 0, TAU);
-    ctx.fill();
-    ctx.fillStyle = 'rgba(255,255,255,.96)';
-    ctx.beginPath();
-    ctx.arc(x - radius * 0.06, y - radius * 0.07, Math.max(1.5, radius * 0.055), 0, TAU);
-    ctx.fill();
+    if (!packets) return;
+    for(let j=0;j<4;j++){
+      const u=(t*0.045+seed*0.073+j/4)%1;
+      const p=wCurvePoint(p0,p1,p2,p3,u);
+      const rr=2.0+1.6*Math.sin(u*Math.PI);
+      ctx.fillStyle=rgba(rgb,0.82*alpha*depthBias);
+      ctx.beginPath();ctx.arc(p.x,p.y,rr,0,TAU);ctx.fill();
+      ctx.fillStyle='rgba(255,255,255,.9)';
+      ctx.beginPath();ctx.arc(p.x-rr*.22,p.y-rr*.22,Math.max(.65,rr*.22),0,TAU);ctx.fill();
+    }
+  };
 
-    // Crisp orbit geometry.
-    ctx.strokeStyle = rgba(config.rgb, 0.48 + focus * 0.1);
-    ctx.lineWidth = Math.max(0.9, radius * 0.009);
-    for (let i = 0; i < 3; i++) {
-      const ringRadius = radius * (1.12 + i * 0.22);
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.rotate(t * (0.08 + i * 0.025) + (kind === 'maker' ? i * 0.65 : i * 0.4));
-      ctx.scale(1, 0.34 + i * 0.12);
-      ctx.beginPath();
-      ctx.arc(0, 0, ringRadius, 0, TAU);
-      ctx.stroke();
+  drawOrb = function sculpturalOrb(x, y, radius, config, kind, t, alpha = 1, focus = 0, depth = 0) {
+    if(alpha<=0.002||radius<=1)return;
+    ctx.save();
+    const depthAlpha=clamp(0.76+depth*0.045,0.58,1.08);
+    ctx.globalAlpha=alpha*depthAlpha;
+    ctx.globalCompositeOperation='source-over';
+    const alt=WHITE_ALT[kind]||config.rgb;
+
+    // Compact local aura only.
+    const aura=radius*1.18;
+    let g=ctx.createRadialGradient(x,y,0,x,y,aura);
+    g.addColorStop(0,rgba(config.rgb,0.16+focus*0.035));
+    g.addColorStop(0.5,rgba(config.rgb,0.055));
+    g.addColorStop(1,rgba(config.rgb,0));
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,aura,0,TAU);ctx.fill();
+
+    // Main translucent shell.
+    g=ctx.createRadialGradient(x-radius*.22,y-radius*.24,radius*.03,x,y,radius);
+    g.addColorStop(0,'rgba(255,255,255,.96)');
+    g.addColorStop(.14,rgba(config.rgb,.78));
+    g.addColorStop(.58,rgba(config.rgb,.20));
+    g.addColorStop(1,rgba(alt,.055));
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,radius,0,TAU);ctx.fill();
+    ctx.strokeStyle=rgba(alt,.72+focus*.1);ctx.lineWidth=Math.max(1.1,radius*.011);ctx.stroke();
+
+    // Offset inner nucleus gives more sculptural depth.
+    ctx.fillStyle=rgba(alt,.92);
+    ctx.beginPath();ctx.arc(x-radius*.05,y+radius*.035,radius*.22,0,TAU);ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,.94)';
+    ctx.beginPath();ctx.arc(x-radius*.115,y-radius*.07,Math.max(1.4,radius*.052),0,TAU);ctx.fill();
+
+    // Five distinct orbital ribbons instead of three repeated ellipses.
+    for(let i=0;i<5;i++){
+      const mix=i/4;
+      const ringColor=wLerpColor(config.rgb,alt,mix*.78);
+      const ringRadius=radius*(1.18+i*.18);
+      ctx.save();ctx.translate(x,y);
+      ctx.rotate(t*(0.055+i*.017)+(kind==='maker'?i*.71:kind==='reality'?i*.48:i*.37));
+      ctx.scale(1,0.28+i*.095);
+      ctx.strokeStyle=rgba(ringColor,.28+i*.065+focus*.025);
+      ctx.lineWidth=i===0?1.45:0.9;
+      ctx.beginPath();ctx.arc(0,0,ringRadius,0,TAU);ctx.stroke();
+      // Tiny satellite riding each ribbon.
+      const ang=t*(0.48+i*.09)+i*1.37;
+      const sx=Math.cos(ang)*ringRadius,sy=Math.sin(ang)*ringRadius;
+      ctx.fillStyle=rgba(ringColor,.78);ctx.beginPath();ctx.arc(sx,sy,Math.max(1.2,radius*.018),0,TAU);ctx.fill();
       ctx.restore();
     }
 
-    if (kind === 'machine') {
-      ctx.strokeStyle = rgba(config.rgb, 0.7);
-      ctx.lineWidth = 1;
-      for (let i = 0; i < 8; i++) {
-        const angle = t * 0.1 + i * TAU / 8;
-        ctx.beginPath();
-        ctx.moveTo(x + Math.cos(angle) * radius * 0.24, y + Math.sin(angle) * radius * 0.24);
-        ctx.lineTo(x + Math.cos(angle + 0.55) * radius * 0.66, y + Math.sin(angle + 0.55) * radius * 0.66);
-        ctx.stroke();
+    // Distinct world-specific interior languages.
+    if(kind==='machine'){
+      ctx.strokeStyle=rgba(alt,.72);ctx.lineWidth=1.1;
+      for(let i=0;i<10;i++){
+        const a=t*.11+i*TAU/10;
+        const r1=radius*(.24+(i%3)*.055),r2=radius*(.62+(i%2)*.07);
+        ctx.beginPath();ctx.moveTo(x+Math.cos(a)*r1,y+Math.sin(a)*r1);ctx.lineTo(x+Math.cos(a+.28)*r2,y+Math.sin(a+.28)*r2);ctx.stroke();
       }
-    } else if (kind === 'maker') {
-      ctx.strokeStyle = rgba(config.rgb, 0.72);
-      ctx.lineWidth = 1.15;
-      ctx.beginPath();
-      for (let i = 0; i <= 42; i++) {
-        const angle = i / 42 * TAU * 2 + t * 0.2;
-        const rr = radius * (0.12 + 0.011 * i);
-        const px = x + Math.cos(angle) * rr;
-        const py = y + Math.sin(angle) * rr * 0.52;
-        i ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
+    }else if(kind==='maker'){
+      ctx.strokeStyle=rgba(alt,.76);ctx.lineWidth=1.2;ctx.beginPath();
+      for(let i=0;i<=58;i++){
+        const a=i/58*TAU*2.5+t*.19;
+        const rr=radius*(.10+.0085*i);
+        const px=x+Math.cos(a)*rr,py=y+Math.sin(a)*rr*.51;
+        i?ctx.lineTo(px,py):ctx.moveTo(px,py);
+      }ctx.stroke();
+    }else{
+      ctx.strokeStyle=rgba(alt,.60);ctx.lineWidth=.95;
+      for(let i=-3;i<=3;i++){
+        ctx.beginPath();ctx.moveTo(x-radius*.58,y+i*radius*.14);ctx.lineTo(x+radius*.58,y+i*radius*.14);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(x+i*radius*.14,y-radius*.58);ctx.lineTo(x+i*radius*.14,y+radius*.58);ctx.stroke();
       }
-      ctx.stroke();
-    } else {
-      ctx.strokeStyle = rgba(config.rgb, 0.62);
-      ctx.lineWidth = 0.95;
-      for (let i = -2; i <= 2; i++) {
-        ctx.beginPath();
-        ctx.moveTo(x - radius * 0.52, y + i * radius * 0.17);
-        ctx.lineTo(x + radius * 0.52, y + i * radius * 0.17);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(x + i * radius * 0.17, y - radius * 0.52);
-        ctx.lineTo(x + i * radius * 0.17, y + radius * 0.52);
-        ctx.stroke();
-      }
+      ctx.save();ctx.translate(x,y);ctx.rotate(t*.08);ctx.strokeStyle=rgba(config.rgb,.35);ctx.strokeRect(-radius*.34,-radius*.34,radius*.68,radius*.68);ctx.restore();
     }
     ctx.restore();
   };
 
-  drawOverview = function crispOverview(t, alpha) {
-    const positions = overviewPositions(t);
-    worldKeys.forEach((key) => Object.assign(worldScreen[key], positions[key]));
-    const unity = { x: width * 0.5, y: height * 0.5, r: unit * 0.022, z: 0 };
+  function wDrawUnity(unity,t,alpha){
+    const amber=[245,158,11],orange=[255,105,0];
+    const coreR=unit*0.026*overviewZoom;
 
-    // Structural triangle: linework only, never a translucent plane.
-    const orderedTriangle = worldKeys.map((key) => positions[key]);
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.globalAlpha = alpha;
-    ctx.strokeStyle = `rgba(15,23,42,${0.075 * alpha})`;
-    ctx.lineWidth = 0.85;
-    ctx.beginPath();
-    ctx.moveTo(orderedTriangle[0].x, orderedTriangle[0].y);
-    ctx.lineTo(orderedTriangle[1].x, orderedTriangle[1].y);
-    ctx.lineTo(orderedTriangle[2].x, orderedTriangle[2].y);
-    ctx.closePath();
-    ctx.stroke();
+    // Larger central body with local halo and multiple orbit planes.
+    const aura=coreR*2.25;
+    const g=ctx.createRadialGradient(unity.x,unity.y,0,unity.x,unity.y,aura);
+    g.addColorStop(0,rgba(amber,.20*alpha));g.addColorStop(.45,rgba(amber,.065*alpha));g.addColorStop(1,rgba(amber,0));
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(unity.x,unity.y,aura,0,TAU);ctx.fill();
 
-    const pairs = [['machine', 'maker'], ['maker', 'reality'], ['reality', 'machine']];
-    pairs.forEach((pair, index) => drawCurve(positions[pair[0]], positions[pair[1]], WORLD[pair[0]].rgb, alpha * 0.9, index + 1, t));
-    worldKeys.forEach((key, index) => drawCurve(unity, positions[key], WORLD[key].rgb, alpha, 5 + index, t));
+    ctx.fillStyle=rgba(amber,.96*alpha);ctx.beginPath();ctx.arc(unity.x,unity.y,coreR,0,TAU);ctx.fill();
+    ctx.fillStyle=rgba(orange,.82*alpha);ctx.beginPath();ctx.arc(unity.x+coreR*.18,unity.y-coreR*.12,coreR*.42,0,TAU);ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,.94)';ctx.beginPath();ctx.arc(unity.x-coreR*.22,unity.y-coreR*.26,Math.max(1.6,coreR*.12),0,TAU);ctx.fill();
 
-    // Unity becomes a compact amber technical node, not a bloom.
-    const unityRgb = [245, 158, 11];
-    ctx.fillStyle = rgba(unityRgb, 0.9 * alpha);
-    ctx.beginPath();
-    ctx.arc(unity.x, unity.y, Math.max(3.2, unit * 0.008), 0, TAU);
-    ctx.fill();
-    ctx.strokeStyle = rgba(unityRgb, 0.62 * alpha);
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.ellipse(unity.x, unity.y, unit * 0.042 * overviewZoom, unit * 0.014 * overviewZoom, t * 0.08 + overviewRoll, 0, TAU);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.ellipse(unity.x, unity.y, unit * 0.058 * overviewZoom, unit * 0.02 * overviewZoom, -t * 0.06 - overviewRoll, 0, TAU);
-    ctx.stroke();
-
-    const depthOrder = [...worldKeys].sort((a, b) => positions[a].z - positions[b].z);
-    depthOrder.forEach((key) => {
-      const position = positions[key];
-      drawOrb(position.x, position.y, position.r, WORLD[key], key, t, alpha, hoverWorld === key ? 1 : 0, position.z);
+    const rings=[
+      [unit*.075,unit*.025,t*.11+overviewRoll],
+      [unit*.105,unit*.034,-t*.075-overviewRoll*.7],
+      [unit*.135,unit*.043,t*.048+1.05]
+    ];
+    rings.forEach((r,i)=>{
+      ctx.save();ctx.translate(unity.x,unity.y);ctx.rotate(r[2]);
+      ctx.strokeStyle=rgba(i===2?orange:amber,(.52-i*.09)*alpha);ctx.lineWidth=i===0?1.7:1.05;
+      ctx.beginPath();ctx.ellipse(0,0,r[0]*overviewZoom,r[1]*overviewZoom,0,0,TAU);ctx.stroke();
+      const a=t*(.55+i*.13)+i*2.1;
+      const sx=Math.cos(a)*r[0]*overviewZoom,sy=Math.sin(a)*r[1]*overviewZoom;
+      ctx.fillStyle=rgba(i===2?orange:amber,.9*alpha);ctx.beginPath();ctx.arc(sx,sy,2.1+i*.25,0,TAU);ctx.fill();
+      ctx.restore();
     });
-    ctx.globalAlpha = 1;
+  }
+
+  drawOverview = function kineticWhiteOverview(t, alpha) {
+    const positions=overviewPositions(t);
+    worldKeys.forEach(key=>Object.assign(worldScreen[key],positions[key]));
+    const unity={x:width*.5,y:height*.5,r:unit*.05,z:0};
+
+    ctx.globalCompositeOperation='source-over';ctx.globalAlpha=alpha;
+
+    // One broad, barely visible structural spline behind the active connections.
+    const ordered=worldKeys.map(key=>positions[key]);
+    ctx.strokeStyle=`rgba(65,80,105,${.055*alpha})`;ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(ordered[0].x,ordered[0].y);
+    ctx.bezierCurveTo(width*.48,height*.16,width*.77,height*.20,ordered[1].x,ordered[1].y);
+    ctx.bezierCurveTo(width*.73,height*.55,width*.58,height*.74,ordered[2].x,ordered[2].y);
+    ctx.bezierCurveTo(width*.32,height*.67,width*.27,height*.38,ordered[0].x,ordered[0].y);ctx.stroke();
+
+    // Long world-to-world ribbons.
+    const pairs=[['machine','maker'],['maker','reality'],['reality','machine']];
+    pairs.forEach((pair,index)=>drawCurve(positions[pair[0]],positions[pair[1]],WORLD[pair[0]].rgb,alpha*.88,index+1,t));
+
+    // Stronger, longer radial relations into the larger Unity core.
+    worldKeys.forEach((key,index)=>drawCurve(unity,positions[key],WORLD[key].rgb,alpha*.95,8+index,t));
+
+    wDrawUnity(unity,t,alpha);
+
+    const depthOrder=[...worldKeys].sort((a,b)=>positions[a].z-positions[b].z);
+    depthOrder.forEach(key=>{
+      const p=positions[key];
+      drawOrb(p.x,p.y,p.r*1.06,WORLD[key],key,t,alpha,hoverWorld===key?1:0,p.z);
+    });
+    ctx.globalAlpha=1;
   };
 
-  // Absolute removal of the legacy black radial vignette in part-06.
-  render = function crispWhiteRender(t) {
+  // Pure white frame. The legacy full-screen black vignette never runs.
+  render = function kineticWhiteRender(t) {
     drawBackground(t);
-    const mix = ease(viewMix);
-    drawOverview(t, 1 - mix);
-    drawDetail(t, mix);
+    const mix=ease(viewMix);
+    drawOverview(t,1-mix);
+    drawDetail(t,mix);
     updateLabels();
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation='source-over';
+    ctx.globalAlpha=1;
   };
