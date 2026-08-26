@@ -22,7 +22,7 @@ jobs:
     steps:
       - name: Checkout complete repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-      - name: Validate compressed social agency and diversity
+      - name: Validate rapid social agency, word budgets and diversity
         run: npm test
 
   verify-live:
@@ -36,13 +36,13 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - name: Wait for GitHub Pages to match compressed Become source
+      - name: Wait for GitHub Pages to match rapid-entry Become source
         shell: bash
         env:
           PAGE_URL: https://dream-unity.github.io/experimental-three-world-problem
         run: |
           set -euo pipefail
-          files=(index.html styles.css become.css main.js arcade.js arcade-parts/part-01.txt arcade-parts/part-02.txt arcade-parts/part-03.txt arcade-parts/part-04.txt arcade-parts/part-05.txt arcade-parts/perceive-role-logic.txt arcade-parts/perceive-aerial-01.txt arcade-parts/perceive-aerial-02.txt arcade-parts/perceive-aerial-03.txt arcade-parts/perceive-aerial-04.txt arcade-parts/perceive-aerial-05.txt arcade-parts/perceive-aerial-06.txt arcade-parts/perceive-aerial-07.txt arcade-parts/perceive-aerial-08.txt arcade-parts/become-lab-01.txt arcade-parts/become-diversity-09.txt arcade-parts/become-social-agency-10.txt arcade-parts/become-social-integration-11.txt arcade-parts/become-compressed-12.txt)
+          files=(index.html styles.css become.css main.js arcade.js arcade-parts/part-01.txt arcade-parts/part-02.txt arcade-parts/part-03.txt arcade-parts/part-04.txt arcade-parts/part-05.txt arcade-parts/perceive-role-logic.txt arcade-parts/perceive-aerial-01.txt arcade-parts/perceive-aerial-02.txt arcade-parts/perceive-aerial-03.txt arcade-parts/perceive-aerial-04.txt arcade-parts/perceive-aerial-05.txt arcade-parts/perceive-aerial-06.txt arcade-parts/perceive-aerial-07.txt arcade-parts/perceive-aerial-08.txt arcade-parts/become-lab-01.txt arcade-parts/become-diversity-09.txt arcade-parts/become-social-agency-10.txt arcade-parts/become-social-integration-11.txt arcade-parts/become-compressed-12.txt arcade-parts/become-rapid-entry-13.txt)
           rm -rf /tmp/dream-unity-live
           mkdir -p /tmp/dream-unity-live/arcade-parts
           matched=false
@@ -57,26 +57,26 @@ jobs:
             sleep 5
           done
           test "$matched" = true
-          grep -q 'arcade.js?v=20260826-become-compressed-13' /tmp/dream-unity-live/index.html
+          grep -q 'arcade.js?v=20260826-become-rapid-entry-14' /tmp/dream-unity-live/index.html
           grep -q 'become-diversity-09.txt' /tmp/dream-unity-live/arcade.js
           grep -q 'become-social-agency-10.txt' /tmp/dream-unity-live/arcade.js
           grep -q 'become-social-integration-11.txt' /tmp/dream-unity-live/arcade.js
           grep -q 'become-compressed-12.txt' /tmp/dream-unity-live/arcade.js
+          grep -q 'become-rapid-entry-13.txt' /tmp/dream-unity-live/arcade.js
           ! grep -q 'become-live-02.txt' /tmp/dream-unity-live/arcade.js
           ! grep -Eqi 'vercel|blockrun|groq|web-llm|transformers' /tmp/dream-unity-live/arcade.js
-          grep -q 'S12_BRIEF_WORD_MAX=48' /tmp/dream-unity-live/arcade-parts/become-compressed-12.txt
-          grep -q 'S12_PROMPT_WORD_MAX=20' /tmp/dream-unity-live/arcade-parts/become-compressed-12.txt
+          grep -q 'S13_SCENE_MAX=34' /tmp/dream-unity-live/arcade-parts/become-rapid-entry-13.txt
+          grep -q 'S13_PACKET_MAX=64' /tmp/dream-unity-live/arcade-parts/become-rapid-entry-13.txt
+          grep -q 'S13_PROMPT_MAX=18' /tmp/dream-unity-live/arcade-parts/become-rapid-entry-13.txt
+          grep -q 'OTHER · 3 MODELS' /tmp/dream-unity-live/arcade-parts/become-rapid-entry-13.txt
+          grep -q 'OUTSIDE' /tmp/dream-unity-live/arcade-parts/become-rapid-entry-13.txt
+          grep -q 'SURPRISE?</b> UPDATE' /tmp/dream-unity-live/arcade-parts/become-rapid-entry-13.txt
           grep -q 'S12_PROFILE_COMPACT' /tmp/dream-unity-live/arcade-parts/become-compressed-12.txt
-          grep -q 'function s12BuildBrief' /tmp/dream-unity-live/arcade-parts/become-compressed-12.txt
-          grep -q 'SELF</small>' /tmp/dream-unity-live/arcade-parts/become-compressed-12.txt
-          grep -q 'OTHER</small>' /tmp/dream-unity-live/arcade-parts/become-compressed-12.txt
-          grep -q 'ACT</small>' /tmp/dream-unity-live/arcade-parts/become-compressed-12.txt
           grep -q 'NON-PERFORMATIVE EMPATHY' /tmp/dream-unity-live/arcade-parts/become-social-agency-10.txt
-          grep -q 'S11_FIT' /tmp/dream-unity-live/arcade-parts/become-social-integration-11.txt
-          ! grep -q 'bShuffle(BECOME_SCENARIOS)' /tmp/dream-unity-live/arcade-parts/become-compressed-12.txt
+          ! grep -q 'bShuffle(BECOME_SCENARIOS)' /tmp/dream-unity-live/arcade-parts/become-rapid-entry-13.txt
           sha256sum /tmp/dream-unity-live/index.html /tmp/dream-unity-live/styles.css /tmp/dream-unity-live/become.css /tmp/dream-unity-live/main.js /tmp/dream-unity-live/arcade.js /tmp/dream-unity-live/arcade-parts/*.txt > /tmp/live-checksums.txt
 
-      - name: Record compressed social-agency deployment
+      - name: Record rapid-entry social-agency deployment
         shell: bash
         env:
           SOURCE_SHA: ${{ github.sha }}
@@ -94,12 +94,13 @@ jobs:
             'page_url':os.environ['PAGE_URL'],
             'nine_portal_compatibility':'validated',
             'become':{
-              'scenario_source':'instant_compressed_contextual_social_agency_maximin_synthesis',
-              'compression_version':'20260826-compressed-social-agency-1',
-              'scenario_brief_word_max':48,
-              'timed_prompt_word_max':20,
-              'brief_structure':['scene','self_bias','three_other_models','agency_move'],
-              'perspective_cycle':['self','other_multiple_models','interaction','power','action','feedback_update'],
+              'scenario_source':'instant_rapid_contextual_social_agency_maximin_synthesis',
+              'rapid_entry_version':'20260826-rapid-entry-governor-1',
+              'scene_word_max':34,
+              'entry_packet_word_max':64,
+              'timed_prompt_word_max':18,
+              'entry_packet':['scene','self_bias','three_other_models','outside_power_loop','agency_move'],
+              'perspective_cycle':['self','other_multiple_models','outside_interaction','action','surprise_update'],
               'empathy_rule':'model_flexibility_without_mind_reading_agreement_rescuing_or_self_erasure',
               'social_profile_count':40,
               'world_family_count':26,
@@ -123,6 +124,6 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add DEPLOYMENT_STATUS.json
           git diff --cached --quiet && exit 0
-          git commit -m 'Record compressed social-agency Become deployment [skip ci]'
+          git commit -m 'Record rapid-entry social-agency Become deployment [skip ci]'
           git pull --rebase origin main
           git push origin HEAD:main
