@@ -1,7 +1,7 @@
 {
   "project": "Dream Unity \u2014 Experimental Three-World Problem",
   "deployment": "verified-live",
-  "source_sha": "f00e42009797c0e7f32b6de763f0f9ab5e8bb0ad",
+  "source_sha": "edbfa03c96e432e5c7f9214b2bea9ecdb56ab886",
   "page_url": "https://dream-unity.github.io/experimental-three-world-problem/",
   "nine_portal_compatibility": "validated",
   "become": {
@@ -27,6 +27,7 @@
     "cross_session_world_memory": true,
     "cross_session_social_memory": true,
     "queue_prewarmed_before_start": true,
+    "cloud_dispatcher_loaded": false,
     "cloud_on_scenario_critical_path": false,
     "between_scenario_network_wait": false,
     "original_scenario_bank_used_as_fallback": false,
@@ -48,14 +49,13 @@
     ]
   },
   "sha256": [
-    "dce9090e978a7e08d050f413e5d11a832f85ba83145dd9e7297067270de3396a  /tmp/dream-unity-live/index.html",
+    "5a3a3707b59f7105a82d181cb815b48f6ca1435601cdd994b1be062184d271de  /tmp/dream-unity-live/index.html",
     "008f907be470e8b387badb2534fa4df0c55b5bfc1c71c75d1beb9ef9ed963191  /tmp/dream-unity-live/styles.css",
     "ad8dc6788a87c34201b132b88d8e5eb3ed439a0644f54a9610d2398d1b877536  /tmp/dream-unity-live/become.css",
     "2107036b6397210444b31df52260fffb6a62d0447fefbc262beb3ee45f5b2d65  /tmp/dream-unity-live/main.js",
-    "97c85c85325ff637186988ed0eab1fca7733c821fa7a8aacc1e3334d747e1763  /tmp/dream-unity-live/arcade.js",
+    "2342917ffe65ed3a491fb3db172d1f14383924456e2e130ead02623cbdb46fde  /tmp/dream-unity-live/arcade.js",
     "ddc1eae5b9d4b4d92c6b2548be18a77a9ae944a84890c1c4bf6a9d788f054848  /tmp/dream-unity-live/arcade-parts/become-diversity-09.txt",
     "5ea7269b5c3158bbbb8fd520439c3bd3b45176537aa018beebb6a36fe68190c1  /tmp/dream-unity-live/arcade-parts/become-lab-01.txt",
-    "f18d92847141b4e1d58120d702d07e886f8a360045f3a1820b7ed859bf089bcb  /tmp/dream-unity-live/arcade-parts/become-live-02.txt",
     "bf3aeacaee790f7b40689d57784097e1eec28f23a8b367b975e30a5e397601b9  /tmp/dream-unity-live/arcade-parts/become-social-agency-10.txt",
     "4d7006d17cf3ae67cfd39516fe8df857bd44d82a6cb7aad4b81067484d7e2da7  /tmp/dream-unity-live/arcade-parts/part-01.txt",
     "526f14079e2ebf9560a8648a866a7bf70c8ae9f83f6bc2edcc68d861a65e04f2  /tmp/dream-unity-live/arcade-parts/part-02.txt",
@@ -72,5 +72,5 @@
     "b675b4a09a5fae66938b1b5b83889357dcc45d08641f11901f80fe46aa9f12b7  /tmp/dream-unity-live/arcade-parts/perceive-aerial-08.txt",
     "08b62c2248bed6690890881f12d4e9a157690329aaff6f3a253a3723aaa69245  /tmp/dream-unity-live/arcade-parts/perceive-role-logic.txt"
   ],
-  "verified_at": "2026-08-26T00:27:36.369911+00:00"
+  "verified_at": "2026-08-26T00:31:08.158605+00:00"
 }
