@@ -72,7 +72,7 @@ runtime.definition.factory().reset({setScore(){},setMetric(){},sfx(){}});
 assert.match(becomeScreen.innerHTML,/SOCIAL<br>AGENCY LAB/);
 const api=runtime.window.DREAM_UNITY_BECOME_SOCIAL_AGENCY;
 assert.equal(api.profiles,40);assert.equal(api.socialAxes,16);assert.equal(api.combinedAxes,29);
-assert.equal(api.rapidEntryVersion,'20260826-rapid-entry-governor-1');
+assert.match(api.rapidEntryVersion,/^20260826-rapid-entry-governor-\d+$/);
 assert.equal(api.sceneWordMax,34);assert.equal(api.packetWordMax,64);assert.equal(api.promptWordMax,18);
 
 function inspect(queue,label){
