@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const VERSION = '20260826-white-overview-3';
+  const VERSION = '20260826-white-overview-4';
   const baseParts = Array.from({ length: 6 }, (_, index) =>
     `./visual-parts/part-${String(index + 1).padStart(2, '0')}.txt?v=${VERSION}`
   );
@@ -25,8 +25,6 @@
       const overrideSource = source[baseParts.length];
       const closeIndex = baseSource.lastIndexOf('})();');
       if (closeIndex < 0) throw new Error('Visual engine terminator was not found.');
-      // Execute the light renderer inside the visual engine's private scope so
-      // it can replace background/orb/curve/render functions directly.
       Function(`${baseSource.slice(0, closeIndex)}\n${overrideSource}\n${baseSource.slice(closeIndex)}`)();
     })
     .catch((error) => {
