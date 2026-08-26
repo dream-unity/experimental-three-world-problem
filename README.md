@@ -12,17 +12,15 @@ The overview can be orbited by mouse or touch. Selecting a world exposes its int
 
 | Portal | Game | Primary operation |
 |---|---|---|
-| **PERCEIVE** | **Parallax Wing** | Continuously identify which fighter currently occupies a changing relational role. |
+| **PERCEIVE** | **Parallax Wing** | Identify which fighter currently occupies a continuously changing relational role. |
 | **MODEL** | **Model Forge** | Encode and reconstruct a hidden network. |
 | **PREDICT** | **Oracle Gates** | Extrapolate motion through an occluded interval. |
 | **INTEND** | **Vector Vow** | Select, charge and commit a planned trajectory. |
 | **ACT** | **Impulse Run** | Convert perception into immediate movement under speed pressure. |
-| **BECOME** | **Become Reality Lab** | Construct, inhabit, score and deliberately exit controlled imagined realities, then transfer the trained state to real action. |
+| **BECOME** | **Social Agency Lab** | Inhabit highly distinct social worlds while differentiating self, other, interaction pattern, action and feedback. |
 | **MATTER** | **Gravity Foundry** | Manipulate attraction and material selection. |
 | **STRUCTURE** | **Lattice Lock** | Construct coherent connectivity across a grid. |
 | **EMERGE** | **Genesis Bloom** | Produce global cascades from local interactions. |
-
-The games are intentionally non-interchangeable. Model Forge trains reconstruction, Oracle Gates trains forward extrapolation, Parallax Wing trains direct perception of a relation that exists now, and Become trains deliberate experiential simulation and transfer.
 
 ## Parallax Wing — Relational Identity Drift
 
@@ -34,57 +32,121 @@ The leader banks and leaves a curved flight trace. Escorts weave, cross and chan
 
 **leader’s turn → outside of that turn → nearest escort there → fire**
 
-This is not odd-one-out detection. Correctness cannot be inferred from colour, fixed identity, screen side, altitude or one-object appearance.
+Correctness cannot be inferred from colour, fixed identity, screen side, altitude or odd-one-out appearance. False shots are classified as stale-role perseveration, inside/outside reversal, outside-distance substitution, reference-object substitution, screen-position substitution or late relational acquisition. These are experimental gameplay measurements, not a validated clinical or IQ assessment.
 
-### Combat and progression
-
-1. Read the leader’s bank and curved trail.
-2. Determine the outside of the turn.
-3. Compare the escorts occupying that side.
-4. Acquire the nearest outside escort.
-5. Fire to sever the live relay.
-6. Reacquire when the formation crosses or the leader reverses.
-7. Sever enough relays to collapse the leader’s shield network.
-
-Early encounters use fewer escorts and stronger guidance. The guide arc and label progressively disappear while the physical bank and trail remain. Escort count, crossing rate and relational switching speed increase. Switch hysteresis prevents ambiguous frame-by-frame flicker.
-
-False shots are classified as **stale-role perseveration**, inside/outside reversal, outside-distance substitution, reference-object substitution, screen-position substitution or late relational acquisition. The game stores role switches, reacquisition latency, target stability, accuracy and error types locally. These are experimental gameplay measurements, not a validated clinical or IQ assessment.
-
-## Become Reality Lab — Controlled as-if training
+## Become — Social Agency Lab
 
 Become occupies **Dream Maker → BECOME**, replacing Metamorph while leaving the other eight portal positions intact.
 
-Become is deliberately **zero-key and internet-only for scenario generation**. A player chooses **1, 3, 5, 10, or a custom number of scenarios**. Each scenario is generated remotely at the moment it is needed. The live path does not select a prewritten world and does not download a language model, model weights, WebGPU runtime or CPU/WASM inference stack into the browser.
+The current design treats agency in social situations as a perspective-integration problem rather than a simple confidence or compliance problem. Every generated world contains another autonomous perspective and repeatedly trains the following loop:
 
-The browser calls Dream Unity's CORS-enabled live proxy at `dream-unity-become-live.vercel.app`. The proxy then calls BlockRun's remote inference service server-to-server, avoiding BlockRun's lack of browser CORS without introducing a browser credential. The primary generator is **`nvidia/gpt-oss-120b`**; **`nvidia/step-3.7-flash`** and **`nvidia/mistral-nemotron`** are remote failover models. The browser requires **no API key, no account and no local model installation**.
+**SELF → OTHER → OUTSIDE → ACTION → FEEDBACK**
 
-The browser sends only compact live-generation context: summaries of recent generated worlds, numerical training performance and a session nonce. Personal life-transfer descriptions are not sent. The proxy constructs the prompt, validates the returned JSON, compares it against recent worlds using lexical similarity plus eight relational dimensions, and rejects/regenerates it when it is too similar. There is **no stored live fallback**: Become advances only after a genuinely live internet-generated scenario has been received and novelty-checked.
+- **Self:** notice bodily state, motive, need, value, boundary and self-protective bias.
+- **Other:** hold at least two plausible models of the other person rather than converting an inference into fact.
+- **Outside:** model the interaction pattern that both people are jointly producing.
+- **Action:** choose a behaviour that integrates self-awareness and empathy without self-erasure.
+- **Feedback:** imagine how the action may land, then remain willing to update the model from the actual response.
 
-This proxy exists specifically because direct browser requests to the upstream model service are not CORS-readable. The architecture is therefore:
+Empathy is implemented as **evidence-sensitive model flexibility**. It does not mean mind-reading, automatic agreement, rescuing, forced forgiveness, surrendering standards, or losing one’s own centre. Many scenarios specifically train compassionate boundaries, respectful dissent, receiving criticism without collapse, giving feedback without humiliation, accountability without self-destruction, and care without takeover.
 
-**GitHub Pages browser → Dream Unity zero-key proxy → live remote model → proxy validation/novelty rejection → generated world returned to browser.**
+### Forty social architectures
 
-Each generated world trains **seventeen 10-second faculties** independently, followed immediately by a 1–10 self-score:
+The social layer contains forty deliberately different relational architectures, including:
 
-1. Sensory Presence
-2. Object Tangibility
-3. Spatial Embodiment
-4. Atmospheric Presence
-5. Kinaesthetic Motion
-6. Attentional Immersion
-7. Premise Acceptance
-8. Experiential Conviction
-9. Consequence Presence
-10. Emotional Resonance
-11. Physiological Resonance
-12. Agency
-13. Behavioural Authenticity
-14. Identity Inhabitation
-15. Premise Fidelity
-16. Integrated Reality
-17. Exit Control
+- mentoring someone who has stopped speaking;
+- challenging a respected authority;
+- negotiating shared credit;
+- listening without prematurely solving;
+- setting a compassionate boundary;
+- receiving and giving difficult feedback;
+- owning unintended impact;
+- receiving an apology at one’s own pace;
+- mediating two conflicting perspectives;
+- protecting dissent inside group consensus;
+- cross-cultural and cross-language interpretation;
+- nonverbal co-creation;
+- correcting a public misinterpretation;
+- entering a child’s learning model;
+- protecting an older person’s autonomy;
+- recognising hidden access constraints;
+- allocating scarce resources fairly;
+- negotiating different risk tolerances;
+- resisting projection into ambiguous text;
+- redistributing invisible burdens across a remote team;
+- recognising excluded contribution;
+- detecting pressured consent;
+- staying present with grief;
+- retaining humanity inside competition;
+- helping a stranger without taking over;
+- accepting that art can land differently from its intention;
+- inviting a newcomer without demanding assimilation;
+- breaking a mutual-deference loop;
+- slowing rumour contagion;
+- holding multiple family memories;
+- de-tokenising a person treated as a group representative;
+- interrupting overfunctioning/underfunctioning loops;
+- respecting refused help;
+- differentiating care from envy;
+- receiving sincere praise;
+- playful co-creation without domination;
+- challenging unfairness inside one’s own coalition;
+- rebuilding community trust through process.
 
-A scenario report separates strong and weak faculties instead of collapsing everything into a vague “visualisation” score.
+### Joint max-distance generation
+
+Scenario novelty is selected jointly across two independent spaces:
+
+1. **Twenty-six world families**, such as orchestra conducting, miniature clockwork navigation, night-market hosting, forest acoustics, colour-language first contact, planetarium teaching, kinetic sculpture, radio drama, ceramics, low-gravity botany, historical reconstruction and other phenomenologically distinct environments.
+2. **Forty social architectures**, each with a distinct relational topology, power structure, empathy operation, self-blindspot, agency mode, value conflict, communication channel, emotional field and boundary problem.
+
+The generator measures candidates across **twenty-nine structural novelty axes**:
+
+- 13 world axes: family, world class, scale, setting, role, goal, pressure, body dynamics, decision structure, social structure, tone, sensory channel and time pattern;
+- 16 social axes: profile, topology, power, relationship, empathy operation, self-blindspot, agency mode, value conflict, communication mode, emotional field, reciprocity, perspective depth, time horizon, social scale, repair mode and boundary mode.
+
+Selection uses a **joint maximin objective**. It does not choose the candidate with the best average novelty. It chooses the candidate whose *closest* resemblance to anything already selected or recently encountered is still as distant as possible.
+
+Within one session:
+
+- a world family cannot repeat;
+- a social profile cannot repeat;
+- empathy operations and agency modes are strongly diversified;
+- the complete session is planned before scenario one begins.
+
+Abstract world and social signatures are remembered locally across sessions, so immediately restarting the lab does not simply recycle the same families. Personal Life Transfer text is never placed in this novelty memory.
+
+### Loading architecture
+
+BECOME’s active runtime is entirely local and synchronous:
+
+**core training lifecycle → world diversity space → social-agency maximin planner → prewarmed session queue**
+
+No cloud dispatcher, remote model request, API credential, browser model download, WebGPU model or CPU/WASM inference engine is loaded on the active path. The setup screen schedules a background prewarm, and pressing **Enter Social Agency Session** consumes that prepared queue when available. All scenarios are therefore ready before scenario one opens, and moving between scenarios requires no network generation wait.
+
+The repository retains older experimental cloud files for historical development reference, but `arcade.js` does not fetch or execute them.
+
+### Seventeen social faculties
+
+Each scenario runs seventeen ten-second faculties, followed by an immediate 1–10 self-score:
+
+1. **Social Evidence** — perceive social cues without treating motive as known.
+2. **Shared-World Tangibility** — make the common environment materially constraining for both people.
+3. **Self-Location** — remain embodied in one’s own perspective while modelling another.
+4. **Relational Atmosphere** — hold two emotional worlds and the field between them.
+5. **Embodied Interaction** — feel how posture, timing, distance and action alter relation.
+6. **Relational Attention** — hold self, other and interaction pattern simultaneously.
+7. **Perspective Plurality** — accept that one’s own view is partial while retaining boundaries.
+8. **Other-Mind Modelling** — make multiple hypotheses credible without mind-reading.
+9. **Reciprocal Consequence** — feel effects on self, other and future interaction.
+10. **Emotional Differentiation** — distinguish one’s emotion from inferred emotion.
+11. **Self-Signal Awareness** — detect how physiology biases interpretation and action.
+12. **Relational Agency** — choose from integrated perspectives rather than merely react.
+13. **Non-Performative Empathy** — avoid socially idealised, rescuing or self-erasing empathy.
+14. **Agentic Self-Awareness** — remain open to another mind without losing one’s own centre.
+15. **Independent-Mind Fidelity** — preserve the other person as an autonomous centre of experience.
+16. **Multi-Perspective Integration** — combine self, other, system, boundary and action.
+17. **Exit + Epistemic Reset** — terminate the simulation and release imagined certainty about real people.
 
 ### Reality transfer
 
@@ -94,11 +156,9 @@ After the selected generated scenarios, the player defines:
 - an observable success point;
 - one executable next physical action.
 
-The game then runs eight additional 10-second drills: Success World, Success Embodiment, Lived Consequences, Identity Cause, Reverse Causal Bridge, Friction Inclusion, Motivational Transfer and Behavioural Transfer.
+The game then runs eight additional ten-second transfer drills and a thirty-second state-entry test. Personal transfer wording remains in active page memory only; numerical performance may be stored locally.
 
-The session finishes with a **30-second state-entry** test. The player taps **ENTERED** only when sensory location, bodily presence, consequence and identity are simultaneously active. Entry speed is combined with a depth score so shallow speed is not rewarded.
-
-The governing distinction is controlled as-if conviction, not literal confusion about reality. The player is repeatedly instructed to retain awareness that the simulation was chosen, include inconvenient constraints, stop if intensity becomes unhelpful, and complete a deliberate exit. It must not be used while driving or during hazardous activity.
+The governing distinction remains controlled as-if conviction, not literal confusion about reality. The player retains awareness that the simulation was chosen, preserves inconvenient constraints, stops if intensity becomes unhelpful and completes a deliberate exit. The lab must not be used while driving or during hazardous activity.
 
 ## Controls
 
@@ -115,31 +175,27 @@ The governing distinction is controlled as-if conviction, not literal confusion 
 - **Touch:** drag to manoeuvre; tap to fire.
 - **Keyboard:** WASD or arrows move; Space fires.
 
-### Become Reality Lab
+### Become Social Agency Lab
 
 - Use the on-screen controls on mouse, touch or keyboard.
 - Each timer starts only after an explicit action.
 - During a rating screen, press 1–9, or 0 for 10.
 - Pause, restart, sound and return controls remain available in the shared header.
 
-## Shared architecture
-
-The nine games retain shared navigation, local best scores, responsive layouts, synthesized audio, capped rendering on lower-powered devices and suspension of the 3D overview while a game is active. The 3D/game layer requires no external game engine. **Become is the deliberate exception for inference:** its scenarios are generated by remote internet models through the Dream Unity proxy rather than by a downloadable browser model.
-
-Key files:
+## Key files
 
 - `main.js` — three-world 3D overview and portal interaction.
 - `styles.css` — common Dream Unity and arcade styling.
 - `become.css` — responsive Become interface and training readouts.
-- `arcade.js` — versioned loader that assembles the base engine and isolated replacements.
-- `arcade-parts/part-01.txt` … `part-05.txt` — original unified nine-game runtime.
-- `arcade-parts/perceive-role-logic.txt` — testable relational-role geometry and diagnostics.
+- `arcade.js` — lean versioned loader for the active game layers.
+- `arcade-parts/part-01.txt` … `part-05.txt` — shared nine-game runtime.
+- `arcade-parts/perceive-role-logic.txt` — relational-role geometry and diagnostics.
 - `arcade-parts/perceive-aerial-01.txt` … `perceive-aerial-08.txt` — Parallax Wing combat, telemetry and rendering.
-- `arcade-parts/become-lab-01.txt` — Become timers, scoring, transfer, entry-latency measurement and core rendering.
-- `arcade-parts/become-live-02.txt` — zero-key browser dispatcher, live prefetch and error handling.
-- `api/become-scenario.js` — CORS-enabled zero-key BlockRun proxy, remote model failover, validation and novelty rejection.
-- `tests/role-drift.test.mjs` — deterministic relational-role and transformation tests.
-- `tests/validate.mjs` — nine-portal compatibility, syntax, zero-key Become integration and runtime smoke validation.
+- `arcade-parts/become-lab-01.txt` — Become timers, scoring, transfer, entry-latency measurement and rendering.
+- `arcade-parts/become-diversity-09.txt` — twenty-six orthogonal world families and world-distance primitives.
+- `arcade-parts/become-social-agency-10.txt` — forty social architectures, joint maximin selection, social prompts and prewarming.
+- `tests/role-drift.test.mjs` — deterministic relational-role tests.
+- `tests/validate.mjs` — syntax, nine-portal compatibility, speed, diversity, empathy and cross-session anti-repetition tests.
 
 ## Validation and deployment
 
@@ -147,4 +203,6 @@ Key files:
 npm test
 ```
 
-GitHub Actions validates every pull request. After a push to `main`, it waits for GitHub Pages, compares the live HTML, styling, loader and every active game chunk byte-for-byte against the validated source, checks the proxy's zero-credential identity, performs a browser-style CORS preflight, requests a real generated scenario with no key, validates every required scenario field and relational dimension, and only then records the deployment as verified-live.
+GitHub Actions validates every push, waits for GitHub Pages to match the tested source byte-for-byte, verifies that the lean loader excludes the obsolete cloud path, checks the active social-agency markers and writes a machine-readable deployment receipt.
+
+This is experimental cognitive-training gameplay, not a validated clinical, neurological or psychometric intervention.
