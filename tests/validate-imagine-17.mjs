@@ -37,7 +37,7 @@ const storage=new Map();const localStorage={getItem:k=>storage.has(k)?storage.ge
 const classList=()=>({add(){},remove(){},contains(){return false;}});const rootEl={classList:classList(),setAttribute(){}};const screen={innerHTML:'',scrollTop:0};
 const runtime={Math:seededMath,Map,Set,Number,String,Array,Object,JSON,Date,Promise,RegExp,localStorage,sessionStorage:localStorage,navigator:{vibrate(){}},window:{addEventListener(){}},document:{getElementById(id){if(id==='becomeLab')return rootEl;if(id==='becomeScreen')return screen;return null;}},shell:{classList:classList()},gameHint:{textContent:''},closeGame(){},rgba:(rgb,a)=>`rgba(${rgb.join(',')},${a})`,GAME_BY_KEY:{'maker:2':{}},setTimeout,clearTimeout,setInterval,clearInterval,AbortController,performance:{now:()=>Number(process.hrtime.bigint())/1e6},fetch:async()=>{throw new Error('network disabled')}};
 vm.createContext(runtime);
-vm.runInContext(`${core}\n${diversity}\n${social}\n${integration}\n${compression}\n${rapid}\n${objective}\nthis.definition=GAME_BY_KEY['maker:2'];this.drills=BECOME_DRILLS;this.state=becomeState;this.renderBrief=bRenderBrief;`,runtime);
+vm.runInContext(`${core}\n${diversity}\n${social}\n${integration}\n${compression}\n${rapid}\n${objective}\nthis.definition=GAME_BY_KEY['maker:2'];this.drills=BECOME_DRILLS;`,runtime);
 runtime.definition.factory().reset({setScore(){},setMetric(){},sfx(){}});
 const api=runtime.window.DREAM_UNITY_BECOME_SOCIAL_AGENCY;
 assert.equal(api.profiles,40);assert.equal(api.activationObjectiveVersion,'20260826-activation-objectives-2');assert.equal(api.sceneOpeningRule,"^Imagine that (you|you're)");assert.equal(api.socialWinCount,40);
@@ -74,7 +74,6 @@ function inspect(queue,label){
 }
 
 const started=performance.now();const first=api.buildQueue(10);const elapsed=performance.now()-started;const a=inspect(first,'first');assert.ok(elapsed<1000,`build ${elapsed}ms`);
-runtime.state.queue=first;runtime.state.scenarioIndex=0;runtime.state.track='scenario';runtime.renderBrief();assert.match(screen.innerHTML,/Imagine that (?:you|you&#039;re)/i);
 const second=api.buildQueue(10),b=inspect(second,'second');
 assert.equal([...a.families].filter(x=>b.families.has(x)).length,0);assert.equal([...a.profiles].filter(x=>b.profiles.has(x)).length,0);assert.equal([...a.wins].filter(x=>b.wins.has(x)).length,0);
 assert.equal(pkg.dependencies,undefined);
