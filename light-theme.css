@@ -1,22 +1,27 @@
-/* Dream Unity overview light theme. Arcade/game surfaces remain dark. */
+/* Dream Unity clean white overview theme. Arcade/game surfaces remain dark. */
 html,body,#app{background:#fff}
-#app>.vignette{background:radial-gradient(circle at 50% 46%,transparent 48%,rgba(15,23,42,.025) 78%,rgba(15,23,42,.08) 130%)}
-#app>.brand{color:#334155}
-#app>.live{color:#64748b}
-#app>.live i{box-shadow:0 0 10px rgba(16,185,129,.35)}
-#app>.world-label,#app>.sub-label{border-color:rgba(15,23,42,.13);background:rgba(255,255,255,.86);box-shadow:0 10px 28px rgba(15,23,42,.10);backdrop-filter:blur(10px);color:#0f172a}
+#world{background:#fff}
+#app>.vignette{display:none!important;background:none!important}
+#app>.brand{color:#1e293b}
+#app>.live{color:#475569}
+#app>.live i{background:#00c878;box-shadow:0 0 0 1px rgba(0,140,85,.12),0 0 7px rgba(0,200,120,.24)}
+#app>.world-label,#app>.sub-label{border-color:#dbe3ec;background:#fff;box-shadow:0 5px 16px rgba(15,23,42,.065);backdrop-filter:none;color:#0f172a}
 #app>.world-label span{color:#64748b}
-#app>.world-label[data-world="machine"] strong{color:#087ca4}
-#app>.world-label[data-world="maker"] strong{color:#16834e}
-#app>.world-label[data-world="reality"] strong{color:#7b3fb0}
-#app>.world-label:hover,#app>.world-label:focus-visible,#app>.sub-label:hover,#app>.sub-label:focus-visible{border-color:rgba(15,23,42,.30);background:rgba(255,255,255,.96)}
-#app>.unity-label{color:#6b5d37}
-#app>.back{border-color:rgba(15,23,42,.13);background:rgba(255,255,255,.9);color:#0f172a;box-shadow:0 8px 24px rgba(15,23,42,.08)}
-#app>.back:hover,#app>.back:focus-visible{border-color:rgba(15,23,42,.3)}
+#app>.world-label[data-world="machine"] strong{color:#006fbd}
+#app>.world-label[data-world="maker"] strong{color:#008a52}
+#app>.world-label[data-world="reality"] strong{color:#6d28d9}
+#app>.world-label[data-world="machine"]{border-color:rgba(0,149,255,.24)}
+#app>.world-label[data-world="maker"]{border-color:rgba(0,200,120,.24)}
+#app>.world-label[data-world="reality"]{border-color:rgba(124,58,237,.24)}
+#app>.world-label:hover,#app>.world-label:focus-visible,#app>.sub-label:hover,#app>.sub-label:focus-visible{border-color:#94a3b8;background:#fff;box-shadow:0 7px 20px rgba(15,23,42,.09)}
+#app>.unity-label{color:#8a5700}
+#app>.unity-label span{background:#f59e0b;box-shadow:0 0 0 1px rgba(180,100,0,.18),0 0 8px rgba(245,158,11,.28)}
+#app>.back{border-color:#dbe3ec;background:#fff;color:#0f172a;box-shadow:0 5px 16px rgba(15,23,42,.06)}
+#app>.back:hover,#app>.back:focus-visible{border-color:#94a3b8}
 #app>.detail-title{color:#0f172a}
 #app>.detail-title small{color:#64748b}
 #app>.sub-label strong{color:#0f172a}
-#app>.sub-label.active{border-color:rgba(15,23,42,.28);background:rgba(15,23,42,.055);box-shadow:0 0 24px rgba(15,23,42,.06)}
-#app>.hint{color:#64748b}
+#app>.sub-label.active{border-color:#94a3b8;background:#f8fafc;box-shadow:0 4px 14px rgba(15,23,42,.05)}
+#app>.hint{color:#52637a}
 #app>.loading{background:#fff}
-#app>.loading span{border-color:rgba(15,23,42,.12);border-top-color:#0ea5c6}
+#app>.loading span{border-color:#dbe3ec;border-top-color:#0095ff}
