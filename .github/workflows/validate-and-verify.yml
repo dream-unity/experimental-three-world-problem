@@ -65,6 +65,7 @@ jobs:
           grep -q 'become-rapid-entry-13.txt' /tmp/dream-unity-live/arcade.js
           ! grep -q 'become-live-02.txt' /tmp/dream-unity-live/arcade.js
           ! grep -Eqi 'vercel|blockrun|groq|web-llm|transformers' /tmp/dream-unity-live/arcade.js
+          grep -q "S13_VERSION='20260826-rapid-entry-governor-2'" /tmp/dream-unity-live/arcade-parts/become-rapid-entry-13.txt
           grep -q 'S13_SCENE_MAX=34' /tmp/dream-unity-live/arcade-parts/become-rapid-entry-13.txt
           grep -q 'S13_PACKET_MAX=64' /tmp/dream-unity-live/arcade-parts/become-rapid-entry-13.txt
           grep -q 'S13_PROMPT_MAX=18' /tmp/dream-unity-live/arcade-parts/become-rapid-entry-13.txt
@@ -95,11 +96,11 @@ jobs:
             'nine_portal_compatibility':'validated',
             'become':{
               'scenario_source':'instant_rapid_contextual_social_agency_maximin_synthesis',
-              'rapid_entry_version':'20260826-rapid-entry-governor-1',
+              'rapid_entry_version':'20260826-rapid-entry-governor-2',
               'scene_word_max':34,
               'entry_packet_word_max':64,
               'timed_prompt_word_max':18,
-              'entry_packet':['scene','self_bias','three_other_models','outside_power_loop','agency_move'],
+              'entry_packet':['scene','self_bias','three_other_models','outside_interaction','agency_move'],
               'perspective_cycle':['self','other_multiple_models','outside_interaction','action','surprise_update'],
               'empathy_rule':'model_flexibility_without_mind_reading_agreement_rescuing_or_self_erasure',
               'social_profile_count':40,
@@ -124,6 +125,6 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add DEPLOYMENT_STATUS.json
           git diff --cached --quiet && exit 0
-          git commit -m 'Record rapid-entry social-agency Become deployment [skip ci]'
+          git commit -m 'Record refined rapid-entry Become deployment [skip ci]'
           git pull --rebase origin main
           git push origin HEAD:main
