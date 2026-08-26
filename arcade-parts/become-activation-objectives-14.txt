@@ -1,12 +1,13 @@
 
   // Dream Maker / Become — indirect phenomenological objective layer.
-  // Each 10-second faculty is now a micro-simulation with an experiential win
+  // Each 10-second faculty is a micro-simulation with an experiential win
   // condition. Understanding the instruction is not completion; something must
   // change inside the imagined perceptual, bodily or relational world.
-  const S14_VERSION='20260826-activation-objectives-1';
+  const S14_VERSION='20260826-activation-objectives-2';
   const S14_WIN_MAX=11;
   const S14_OBJECTIVE_MAX=14;
   const S14_SOLVED_MAX=11;
+  const S14_SCENE_OPENING=/^Imagine that (?:you\b|you're\b)/;
 
   const S14_WINS={
     'quiet-apprentice':'They volunteer one observation you did not supply.',
@@ -71,9 +72,31 @@
     exit:{mode:'epistemic-reset',objective:'Erase person, mission, and inferred motives completely.',solved:'Only your actual room and real evidence remain.'}
   };
 
+  function s14ImagineScene(scene){
+    let text=String(scene||'').trim();
+    if(S14_SCENE_OPENING.test(text)) return s13Limit(text,S13_SCENE_MAX);
+    if(/^You are\b/.test(text)) text=`Imagine that you're${text.slice(7)}`;
+    else if(/^You're\b/.test(text)) text=`Imagine that you're${text.slice(6)}`;
+    else if(/^You\b/.test(text)) text=`Imagine that you${text.slice(3)}`;
+    else text=`Imagine that you're experiencing this: ${text}`;
+    return s13Limit(text,S13_SCENE_MAX);
+  }
+
+  function s14ApplySceneOpening(scenario){
+    const rapid=scenario?.__rapid13||{};
+    const fixedWords=s13Count(`${rapid.self||''} ${rapid.other||''} ${rapid.outside||''} ${rapid.act||''}`);
+    const sceneBudget=Math.max(14,Math.min(S13_SCENE_MAX,S13_PACKET_MAX-fixedWords));
+    const scene=s13Limit(s14ImagineScene(rapid.scene||scenario?.premise||''),sceneBudget);
+    const totalWords=s13Count(`${scene} ${rapid.self||''} ${rapid.other||''} ${rapid.outside||''} ${rapid.act||''}`);
+    scenario.premise=scene;
+    scenario.__rapid13={...rapid,scene,totalWords};
+    scenario.__sceneOpening14='imagine-that-you';
+    return scenario;
+  }
+
   const s14PriorApply=s10ApplySocial;
   s10ApplySocial=function(base,profile){
-    const scenario=s14PriorApply(base,profile);
+    const scenario=s14ApplySceneOpening(s14PriorApply(base,profile));
     const win=s13Limit(S14_WINS[profile.id]||'Preserve both perspectives while reaching one shared next step.',S14_WIN_MAX);
     scenario.__activation14={version:S14_VERSION,profileId:profile.id,win};
     scenario.__socialAgency={...scenario.__socialAgency,socialWin:win};
@@ -134,6 +157,7 @@
   if(window.DREAM_UNITY_BECOME_SOCIAL_AGENCY){
     Object.assign(window.DREAM_UNITY_BECOME_SOCIAL_AGENCY,{
       activationObjectiveVersion:S14_VERSION,
+      sceneOpeningRule:'^Imagine that (you|you\'re)',
       socialWinCount:Object.keys(S14_WINS).length,
       socialWinWordMax:S14_WIN_MAX,
       objectiveWordMax:S14_OBJECTIVE_MAX,
