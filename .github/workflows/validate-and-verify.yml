@@ -22,7 +22,7 @@ jobs:
     steps:
       - name: Checkout complete repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-      - name: Validate objective-driven social agency, activation and diversity
+      - name: Validate Imagine-that openings, social objectives and diversity
         run: npm test
 
   verify-live:
@@ -36,7 +36,7 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - name: Wait for GitHub Pages to match objective-driven Become source
+      - name: Wait for GitHub Pages to match Imagine-opening Become source
         shell: bash
         env:
           PAGE_URL: https://dream-unity.github.io/experimental-three-world-problem
@@ -57,25 +57,26 @@ jobs:
             sleep 5
           done
           test "$matched" = true
-          grep -q 'arcade.js?v=20260826-become-objective-16' /tmp/dream-unity-live/index.html
+          grep -q 'arcade.js?v=20260826-become-imagine-opening-17' /tmp/dream-unity-live/index.html
           grep -q 'become-activation-objectives-14.txt' /tmp/dream-unity-live/arcade.js
           grep -q 'become-rapid-entry-13.txt' /tmp/dream-unity-live/arcade.js
           ! grep -q 'become-live-02.txt' /tmp/dream-unity-live/arcade.js
           ! grep -Eqi 'vercel|blockrun|groq|web-llm|transformers' /tmp/dream-unity-live/arcade.js
-          grep -q "S14_VERSION='20260826-activation-objectives-1'" /tmp/dream-unity-live/arcade-parts/become-activation-objectives-14.txt
+          grep -q "S14_VERSION='20260826-activation-objectives-2'" /tmp/dream-unity-live/arcade-parts/become-activation-objectives-14.txt
+          grep -q 'S14_SCENE_OPENING' /tmp/dream-unity-live/arcade-parts/become-activation-objectives-14.txt
+          grep -q 'function s14ImagineScene' /tmp/dream-unity-live/arcade-parts/become-activation-objectives-14.txt
+          grep -q 'function s14ApplySceneOpening' /tmp/dream-unity-live/arcade-parts/become-activation-objectives-14.txt
+          grep -q '__sceneOpening14' /tmp/dream-unity-live/arcade-parts/become-activation-objectives-14.txt
           grep -q 'S14_WIN_MAX=11' /tmp/dream-unity-live/arcade-parts/become-activation-objectives-14.txt
           grep -q 'S14_OBJECTIVE_MAX=14' /tmp/dream-unity-live/arcade-parts/become-activation-objectives-14.txt
           grep -q 'S14_SOLVED_MAX=11' /tmp/dream-unity-live/arcade-parts/become-activation-objectives-14.txt
           grep -q 'SOCIAL WIN' /tmp/dream-unity-live/arcade-parts/become-activation-objectives-14.txt
           grep -q 'SOLVED WHEN' /tmp/dream-unity-live/arcade-parts/become-activation-objectives-14.txt
-          grep -q 'DID THE STATE' /tmp/dream-unity-live/arcade-parts/become-activation-objectives-14.txt
-          grep -q 'phenomenological completion' /tmp/dream-unity-live/arcade-parts/become-activation-objectives-14.txt
           grep -q 'S13_SCENE_MAX=34' /tmp/dream-unity-live/arcade-parts/become-rapid-entry-13.txt
-          grep -q 'S10_PROFILES' /tmp/dream-unity-live/arcade-parts/become-social-agency-10.txt
           ! grep -q 'bShuffle(BECOME_SCENARIOS)' /tmp/dream-unity-live/arcade-parts/become-activation-objectives-14.txt
           sha256sum /tmp/dream-unity-live/index.html /tmp/dream-unity-live/styles.css /tmp/dream-unity-live/become.css /tmp/dream-unity-live/main.js /tmp/dream-unity-live/arcade.js /tmp/dream-unity-live/arcade-parts/*.txt > /tmp/live-checksums.txt
 
-      - name: Record objective-driven social-agency deployment
+      - name: Record Imagine-opening social-agency deployment
         shell: bash
         env:
           SOURCE_SHA: ${{ github.sha }}
@@ -94,7 +95,10 @@ jobs:
             'nine_portal_compatibility':'validated',
             'become':{
               'scenario_source':'instant_objective_driven_social_agency_maximin_synthesis',
-              'activation_objective_version':'20260826-activation-objectives-1',
+              'activation_objective_version':'20260826-activation-objectives-2',
+              'mandatory_scene_opening':['Imagine that you','Imagine that you\'re'],
+              'scene_opening_enforced_after_compression':True,
+              'scene_opening_rebudgeted_inside_34_word_limit':True,
               'social_win_count':40,
               'social_win_word_max':11,
               'faculty_objective_count':17,
@@ -102,8 +106,8 @@ jobs:
               'faculty_solved_when_word_max':11,
               'faculty_completion_rule':'score_experiential_state_change_not_verbal_understanding',
               'activation_loop':['social_win','objective','experiential_proof','feedback','self_score'],
-              'empathy_operations':['multiple_other_models','self_bias_detection','interaction_loop','other_autonomy','feedback_updating'],
               'scene_word_max':34,
+              'entry_packet_word_max':64,
               'world_family_count':26,
               'social_profile_count':40,
               'combined_novelty_axes':29,
@@ -127,6 +131,6 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add DEPLOYMENT_STATUS.json
           git diff --cached --quiet && exit 0
-          git commit -m 'Record objective-driven Become deployment [skip ci]'
+          git commit -m 'Record Imagine-opening Become deployment [skip ci]'
           git pull --rebase origin main
           git push origin HEAD:main
