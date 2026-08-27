@@ -3,9 +3,10 @@
 
   const VOICE_ENDPOINT = 'https://dream-unity-voice-live.vercel.app/api/realtime-session';
   const MAX_SESSION_MS = 8 * 60 * 1000;
+  const TURN_TIMEOUT_MS = 30_000;
   const MAX_HISTORY = 10;
   const ARRIVAL_GREETING = 'Hello, my name is Unity. What dream would you like to unify?';
-  const DEFAULT_COPY = 'Speak naturally. Ask what to train, how the worlds differ, or anything you want Dream Unity to reason through with you.';
+  const DEFAULT_COPY = 'Ask Unity anything. Speak naturally, and Unity will answer you aloud.';
   const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
   const app = document.getElementById('app');
@@ -26,6 +27,19 @@
   let sessionTimer = 0;
   let restartTimer = 0;
   let history = [];
+  let endpointWarmup = null;
+
+  function prewarmVoiceEndpoint() {
+    if (!endpointWarmup) {
+      endpointWarmup = fetch(VOICE_ENDPOINT, {
+        method: 'GET',
+        mode: 'cors',
+        cache: 'no-store',
+        credentials: 'omit'
+      }).catch(() => null);
+    }
+    return endpointWarmup;
+  }
 
   function setOpen(open) {
     panel.classList.toggle('open', open);
@@ -220,11 +234,15 @@
   async function handleUtterance(message) {
     setPanelState('connected', 'THINKING');
     copy.textContent = 'Dream Unity is thinking…';
+    const controller = new AbortController();
+    const turnTimeout = window.setTimeout(() => controller.abort(), TURN_TIMEOUT_MS);
 
     try {
       const response = await fetch(VOICE_ENDPOINT, {
         method: 'POST',
         cache: 'no-store',
+        credentials: 'omit',
+        signal: controller.signal,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message,
@@ -247,6 +265,8 @@
     } catch (error) {
       busy = false;
       fail(error instanceof Error ? error.message : String(error));
+    } finally {
+      window.clearTimeout(turnTimeout);
     }
   }
 
@@ -333,6 +353,8 @@
   observer.observe(app, { attributes: true, attributeFilter: ['class'] });
 
   const queueArrivalGreeting = () => window.setTimeout(greetOnArrival, 120);
+  prewarmVoiceEndpoint();
+  try { window.speechSynthesis?.getVoices?.(); } catch (_) {}
   if (document.visibilityState === 'hidden') {
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') queueArrivalGreeting();

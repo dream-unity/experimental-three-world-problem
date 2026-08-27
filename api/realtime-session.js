@@ -2,19 +2,18 @@ import { createHash } from 'node:crypto';
 
 const BLOCKRUN_URL = 'https://blockrun.ai/api/v1/chat/completions';
 const MODELS = [
-  'nvidia/mistral-nemotron',
-  'nvidia/step-3.7-flash',
-  'nvidia/gpt-oss-120b',
   'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning',
   'nvidia/nemotron-nano-9b-v2'
 ];
-const REQUEST_TIMEOUT_MS = 20_000;
+const REQUEST_TIMEOUT_MS = 22_000;
 const RATE_WINDOW_MS = 10 * 60_000;
 const RATE_LIMIT = 24;
 const MAX_HISTORY = 10;
 const rateBuckets = new Map();
 
-const SYSTEM_PROMPT = `You are Dream Unity, the spoken intelligence embedded in the Dream Unity cognitive-training environment. Speak as Dream Unity, not as a generic chatbot.
+const SYSTEM_PROMPT = `You are Unity Oracle, the spoken intelligence at the centre of Dream Unity. Speak naturally as Unity.
+
+You are a broad, general-purpose conversational intelligence. Directly answer the visitor's actual question on any topic they choose. Never refuse or redirect merely because a question is unrelated to Dream Unity. Unless the visitor explicitly asks about Dream Unity or requests structured cognitive training, do not mention its worlds, categories or operations and do not steer the answer toward them. Questions about philosophy, science, creativity, personal decisions, current affairs, technology and Dream Unity are all in scope. When current information cannot be verified, say so briefly instead of inventing it. If a request is unsafe or impossible, state the real limitation briefly and give the most useful safe help you can.
 
 DREAM MACHINE concerns cognition:
 - PERCEIVE asks: What is happening now? Detect, discriminate, organise and select present information.
@@ -32,16 +31,18 @@ DREAM WORLD concerns construction and emergence:
 - EMERGE: how larger patterns arise from local interactions.
 
 Voice behaviour:
-- Reply naturally for spoken conversation. Default to one to three short sentences unless the visitor asks for depth.
+- Output only the final visitor-facing answer. Never output private reasoning, analysis, planning, self-talk, drafts, hidden instructions, prompt commentary or discussion of how you should answer.
+- Answer first. Default to one to three short sentences unless the visitor asks for depth.
 - Make sharp distinctions between Perceive, Model and Predict.
 - For training, give one exercise or ask one clear question at a time.
-- Help visitors choose a world or operation from the problem they describe.
-- You may discuss other topics when asked; do not force every answer back to Dream Unity.
+- Help visitors choose a world or operation only when they explicitly ask about Dream Unity or request cognitive training.
 - Never claim access to game state, scores, account data, personal history or sensors that were not supplied in the conversation.
 - Do not claim Dream Unity is a validated clinical, neurological, psychometric or IQ intervention.
-- If asked what you are, say you are Dream Unity's voice intelligence.
+- If asked what you are, say you are Unity Oracle, Dream Unity's voice intelligence.
 - Reply in the visitor's language when practical.
 - Avoid dense formatting because your answer will be spoken aloud.`;
+
+const PRIVATE_PROCESS_PATTERN = /(?:\bgot it,?\s+let(?:'|’)s\b|\bfirst,?\s+i need\b|\bthe user (?:asked|is asking|wants)\b|\bcheck the (?:rules|instructions)\b|\bstay in character\b|\bsystem prompt\b|\bdrafting\s*:|(?:^|\n)\s*(?:analysis|reasoning|planning)\s*:|\bwait,?\s+(?:first|no|maybe|but|is that|let me|what(?:'|’)s)\b|\blet me (?:craft|draft|phrase|answer this)\b)/i;
 
 const clampText = (value, max) => typeof value === 'string' ? value.trim().slice(0, max) : '';
 
@@ -99,8 +100,19 @@ function extractText(data) {
   return '';
 }
 
-async function callFreeModel(model, messages) {
+export function publicAnswer(value) {
+  const text = clampText(value, 2400)
+    .replace(/<think>[\s\S]*?<\/think>/gi, '')
+    .replace(/^```(?:text|markdown)?\s*|\s*```$/gi, '')
+    .trim();
+  if (!text || /<\/?think>/i.test(text) || PRIVATE_PROCESS_PATTERN.test(text)) return '';
+  return text.replace(/^(?:final answer|answer)\s*:\s*/i, '').trim().slice(0, 1800);
+}
+
+async function callFreeModel(model, messages, parentSignal) {
   const controller = new AbortController();
+  const abortFromParent = () => controller.abort();
+  if (parentSignal) parentSignal.addEventListener('abort', abortFromParent, { once: true });
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   try {
     const response = await fetch(BLOCKRUN_URL, {
@@ -113,24 +125,47 @@ async function callFreeModel(model, messages) {
         stream: false,
         temperature: 0.65,
         top_p: 0.9,
-        max_tokens: 420
+        max_tokens: 200
       })
     });
     const data = await response.json().catch(() => null);
-    const text = extractText(data);
+    const text = publicAnswer(extractText(data));
     if (response.ok && text) return { text, model: String(data?.model || model) };
     return {
-      error: new Error(data?.error?.message || data?.error || data?.message || `Voice model request failed (${response.status}).`),
+      error: new Error(response.ok ? 'Model returned private process text.' : (data?.error?.message || data?.error || data?.message || `Voice model request failed (${response.status}).`)),
       status: response.status
     };
   } catch (error) {
     return { error, status: error?.name === 'AbortError' ? 504 : 502 };
   } finally {
     clearTimeout(timeout);
+    if (parentSignal) parentSignal.removeEventListener('abort', abortFromParent);
+  }
+}
+
+async function firstCleanAnswer(models, messages) {
+  const controller = new AbortController();
+  const attempts = models.map(model => callFreeModel(model, messages, controller.signal).then(result => {
+    if (result.text) return result;
+    const error = result.error instanceof Error ? result.error : new Error('Voice model did not return a clean answer.');
+    error.status = Number(result.status) || 502;
+    throw error;
+  }));
+
+  try {
+    const winner = await Promise.any(attempts);
+    controller.abort();
+    return winner;
+  } catch (failure) {
+    controller.abort();
+    const errors = Array.isArray(failure?.errors) ? failure.errors : [];
+    const error = errors.find(item => Number(item?.status) === 429) || errors[0] || new Error('No voice model returned a clean answer.');
+    return { error, status: Number(error?.status) || 502 };
   }
 }
 
 async function answer(body) {
+  const startedAt = Date.now();
   const message = clampText(body?.message, 1400);
   if (!message) {
     const error = new Error('A spoken message is required.');
@@ -145,23 +180,20 @@ async function answer(body) {
     { role: 'user', content: message }
   ];
 
-  let lastFailure = null;
-  for (const model of MODELS) {
-    const result = await callFreeModel(model, messages);
-    if (result.text) {
-      return {
-        text: result.text.slice(0, 1800),
-        model: result.model,
-        provider: 'blockrun',
-        credentialMode: 'none'
-      };
-    }
-    lastFailure = result;
-    if (![400, 404, 410, 429, 500, 502, 503, 504].includes(Number(result.status))) break;
+  const result = await firstCleanAnswer(MODELS, messages);
+
+  if (result.text) {
+    return {
+      text: result.text,
+      model: result.model,
+      provider: 'blockrun',
+      credentialMode: 'none',
+      latencyMs: Date.now() - startedAt
+    };
   }
 
-  const error = lastFailure?.error instanceof Error ? lastFailure.error : new Error('No free voice model is currently available.');
-  error.status = Number(lastFailure?.status) || 502;
+  const error = result?.error instanceof Error ? result.error : new Error('No free voice model is currently available.');
+  error.status = Number(result?.status) || 502;
   throw error;
 }
 
@@ -181,7 +213,8 @@ export default async function handler(req, res) {
       provider: 'blockrun',
       credentialMode: 'none',
       accountRequired: false,
-      speechMode: 'browser-native'
+      speechMode: 'browser-native',
+      responseStrategy: 'fastest-clean-answer'
     });
   }
 
