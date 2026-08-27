@@ -20,10 +20,11 @@
         roleMargin: 1,
         turnTransition: false,
       };
+      buildRelationalNetwork(rule);
       resolveTimer = 0;
       wrongShotCooldown = 0;
       updateFormation(E, 0);
-      E.toast(level <= 2 ? 'NEAREST ESCORT ON THE OUTSIDE' : 'TRACK THE MOVING ROLE', 1.08);
+      E.toast(`INFER THE HIDDEN RELATION · WATCH ${config.exampleCount} EXAMPLES`, 1.35);
       E.setMetric('SHIELD', `${Math.ceil(player.shield)} · ×${streak}`);
     }
 

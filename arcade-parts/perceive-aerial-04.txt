@@ -64,6 +64,7 @@
 
     function drawOutsideRelation(E, c) {
       if (!encounter || !leader) return;
+      if (encounter.phase !== 'examples') return;
       const assist = encounter.config.assist;
       const outside = encounter.outsideVisual;
       const inside = encounter.insideVisual;
@@ -95,10 +96,39 @@
       if (!encounter || !leader) return;
       c.save();
       c.globalCompositeOperation = 'lighter';
-      for (const escort of activeEscorts()) {
-        E.line(c, leader.sx, leader.sy, escort.sx, escort.sy, E.rgb, 0.07, 0.72);
+      const network = activeEscorts();
+      const networkById = new Map(network.map(escort => [escort.id, escort]));
+      const facts = [];
+      for (const escort of network) for (const id of escort.links || []) {
+        const peer = networkById.get(id);
+        if (peer && String(escort.id) < String(peer.id)) facts.push(`${escort.code} EXCHANGES WITH ${peer.code}`);
       }
-      drawOutsideRelation(E, c);
+      const ledgerWidth = Math.min(E.w - 24, 900);
+      const columns = Math.min(3, Math.max(1, Math.floor(ledgerWidth / 250)));
+      const columnWidth = (ledgerWidth - 24) / columns;
+      const ledgerHeight = 25 + Math.ceil(facts.length / columns) * 18;
+      c.fillStyle = 'rgba(6,18,38,.9)';
+      c.fillRect(12, E.top + 8, ledgerWidth, ledgerHeight);
+      c.strokeStyle = 'rgba(80,190,255,.28)';
+      c.strokeRect(12.5, E.top + 8.5, ledgerWidth - 1, ledgerHeight - 1);
+      c.fillStyle = 'rgba(225,245,255,.96)';
+      c.font = '800 11px Inter,system-ui,sans-serif';
+      c.textAlign = 'left';
+      c.fillText('RELATION LEDGER · POSITION AND MOTION ARE IRRELEVANT', 22, E.top + 24);
+      c.font = '700 10px Inter,system-ui,sans-serif';
+      facts.forEach((fact, index) => c.fillText(fact, 22 + (index % columns) * columnWidth, E.top + 43 + Math.floor(index / columns) * 18));
+      if (encounter.phase === 'examples' && encounter.target?.alive) {
+        const target = encounter.target;
+        c.strokeStyle = 'rgba(255,224,125,.96)';
+        c.lineWidth = 2.4;
+        c.beginPath();
+        c.arc(target.sx, target.sy, target.size * 1.85, 0, TAU);
+        c.stroke();
+        c.fillStyle = 'rgba(255,224,125,.92)';
+        c.font = '800 9px Inter,system-ui,sans-serif';
+        c.textAlign = 'center';
+        c.fillText(`ANSWER ${target.code} · EXAMPLE ${encounter.exampleIndex + 1}/${encounter.config.exampleCount}`, target.sx, target.sy - target.size * 2.25);
+      }
 
       const segments = encounter.config.hitsRequired;
       const shieldRadius = leader.size * 1.86;

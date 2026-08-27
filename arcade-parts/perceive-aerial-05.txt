@@ -17,14 +17,9 @@
     }
 
     function classifyError(object) {
-      return roleDriftClassifyShot({
-        shotId: object === leader ? 'leader' : object?.id,
-        leaderId: 'leader',
-        currentTargetId: encounter.target?.id,
-        previousTargetId: encounter.previousTarget?.id,
-        secondsSinceSwitch: encounter.age - encounter.roleSwitchAt,
-        geometry: encounter.geometry,
-      });
+      if (!object) return 'empty-space-shot';
+      if (object === leader) return 'reference-object-substitution';
+      return 'relation-transfer-error';
     }
 
     function recordRoleOutcome(correct, errorType = null) {
@@ -84,7 +79,7 @@
       streak++;
       stats.correct++;
       stats.hits++;
-      const reward = 300 + level * 42 + streak * 66 + Math.floor(encounter.targetStableFor * 18);
+      const reward = 300 + level * 42 + streak * 66;
       E.addScore(reward, escort.sx, escort.sy, streak > 2 ? `FOCUS ×${streak}` : `RELAY +${reward}`);
       E.burst(escort.sx, escort.sy, E.secondary, 22, 225, 3);
       E.flash(E.rgb, 0.16);
@@ -103,19 +98,15 @@
 
       if (encounter.hits >= encounter.config.hitsRequired || activeEscorts().length < 3) completeFormation(E);
       else {
-        for (const remaining of activeEscorts()) {
-          remaining.slotAngle += rand(0.24, -0.24);
-          remaining.radialPhase += rand(0.45, -0.45);
-        }
-        refreshRoleGeometry();
+        newRelationalFormation();
         updateRelationalRole(0, true);
-        E.toast('ROLE SHIFTS', 0.65);
+        E.toast('NEW FORMATION · SAME HIDDEN RELATION', 0.75);
       }
     }
 
     function resolveWrong(E, object) {
-      if (wrongShotCooldown > 0 || encounter.solved || encounter.failed) return;
-      wrongShotCooldown = 0.42;
+      if (encounter.solved || encounter.failed) return;
+      wrongShotCooldown = 0.62;
       stats.wrong++;
       const errorType = classifyError(object);
       stats.errors[errorType] = (stats.errors[errorType] || 0) + 1;

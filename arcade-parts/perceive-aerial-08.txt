@@ -38,6 +38,13 @@
           }
           const color = escort.hitFlash > 0 ? [255, 78, 120] : E.rgb;
           drawFighter(c, escort.sx, escort.sy, escort.size, escort.heading, escort.bank, color, 'escort', 0.95, escort.pulse);
+          c.save();
+          c.fillStyle = 'rgba(235,248,255,.96)';
+          c.font = `900 ${Math.max(11, escort.size * 0.8)}px Inter,system-ui,sans-serif`;
+          c.textAlign = 'center';
+          c.textBaseline = 'middle';
+          c.fillText(escort.code, escort.sx, escort.sy);
+          c.restore();
         }
 
         if (leader?.alive) drawFighter(c, leader.sx, leader.sy, leader.size, leader.heading, leader.bank, [255, 220, 145], 'leader', 1, leader.pulse);
@@ -98,8 +105,8 @@
       id: 'parallax-wing-role-drift',
       name: 'PARALLAX WING',
       glyph: '✦',
-      rule: "Shoot the escort nearest the leader on the outside of its turn. The role moves when the formation crosses.",
-      hint: 'MOVE / AIM · TAP OR SPACE TO FIRE',
+      rule: 'Infer the hidden rule from symbolic relationship ledgers, then identify the matching call sign in new systems. Position and motion are irrelevant.',
+      hint: 'READ RELATIONS · INFER RULE · TARGET CALL SIGN',
       factory: createPerceptionAerialGame,
     });
   }

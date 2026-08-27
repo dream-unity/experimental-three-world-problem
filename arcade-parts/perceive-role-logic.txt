@@ -56,3 +56,69 @@
     if (metric && metric.projection > (geometry?.threshold ?? 0.018)) return 'outside-distance-substitution';
     return 'screen-position-substitution';
   }
+
+  const ROLE_DRIFT_RULES = [
+    { id: 'network-hub', complexity: 1 },
+    { id: 'triangle-anchor', complexity: 1 },
+    { id: 'widest-reach', complexity: 1 },
+    { id: 'strongest-neighbourhood', complexity: 1 },
+    { id: 'hub-neighbour-lowest-degree', complexity: 2 },
+    { id: 'two-steps-from-hub-most-connected', complexity: 2 },
+    { id: 'outside-hub-neighbourhood-most-triangles', complexity: 2 },
+    { id: 'critical-bridge', complexity: 2 },
+    { id: 'two-step-neighbourhood-chain', complexity: 3 },
+    { id: 'hub-opposite-triangle-chain', complexity: 3 },
+    { id: 'bridge-neighbour-lowest-degree', complexity: 3 },
+    { id: 'analogue-of-hub-neighbourhood', complexity: 3 },
+  ];
+
+  function roleGraphFeatures(escorts) {
+    const active = (escorts || []).filter(node => node?.alive !== false);
+    const byId = new Map(active.map(node => [node.id, node]));
+    const links = node => (node.links || []).map(id => byId.get(id)).filter(Boolean);
+    const degree = node => links(node).length;
+    const triangles = node => {
+      const neighbours = links(node); let count = 0;
+      for (let i = 0; i < neighbours.length; i++) for (let j = i + 1; j < neighbours.length; j++)
+        if ((neighbours[i].links || []).includes(neighbours[j].id)) count++;
+      return count;
+    };
+    const distances = start => {
+      const result = new Map([[start.id, 0]]), queue = [start];
+      while (queue.length) { const node = queue.shift(), d = result.get(node.id); for (const next of links(node)) if (!result.has(next.id)) { result.set(next.id, d + 1); queue.push(next); } }
+      return result;
+    };
+    const rows = active.map(node => ({ node, degree: degree(node), triangles: triangles(node), distances: distances(node) }));
+    for (const row of rows) {
+      const neighbours = links(row.node);
+      row.neighbourDegree = neighbours.reduce((sum, node) => sum + degree(node), 0);
+      row.twoStep = [...row.distances.values()].filter(value => value === 2).length;
+      row.reach = Math.max(...row.distances.values(), 0);
+    }
+    return { rows, byId, links, degree };
+  }
+
+  function roleGraphRank(escorts, rule) {
+    const graph = roleGraphFeatures(escorts), rows = graph.rows;
+    if (!rows.length || !rule) return [];
+    const sorted = (items, score, descending = true) => items.map(row => ({ row, score: score(row) }))
+      .sort((a, b) => (descending ? b.score - a.score : a.score - b.score) || String(a.row.node.id).localeCompare(String(b.row.node.id)));
+    const hub = sorted(rows, row => row.degree)[0]?.row;
+    const bridge = sorted(rows, row => row.twoStep * 10 + row.reach * 3 - row.triangles)[0]?.row;
+    let candidates = rows, score = row => 0, descending = true;
+    if (rule.id === 'network-hub') score = row => row.degree;
+    else if (rule.id === 'triangle-anchor') score = row => row.triangles * 10 + row.degree;
+    else if (rule.id === 'widest-reach') score = row => row.twoStep * 10 + row.reach;
+    else if (rule.id === 'strongest-neighbourhood') score = row => row.neighbourDegree;
+    else if (rule.id === 'hub-neighbour-lowest-degree') { candidates = rows.filter(row => hub?.node.links.includes(row.node.id)); score = row => row.degree; descending = false; }
+    else if (rule.id === 'two-steps-from-hub-most-connected') { candidates = rows.filter(row => hub?.distances.get(row.node.id) === 2); score = row => row.degree * 10 + row.triangles; }
+    else if (rule.id === 'outside-hub-neighbourhood-most-triangles') { candidates = rows.filter(row => !hub?.node.links.includes(row.node.id) && row !== hub); score = row => row.triangles * 10 + row.neighbourDegree; }
+    else if (rule.id === 'critical-bridge') score = row => row.twoStep * 10 + row.reach * 3 - row.triangles;
+    else if (rule.id === 'two-step-neighbourhood-chain') { candidates = rows.filter(row => hub?.distances.get(row.node.id) === 2); score = row => row.neighbourDegree * 10 + row.triangles; }
+    else if (rule.id === 'hub-opposite-triangle-chain') { candidates = rows.filter(row => !hub?.node.links.includes(row.node.id) && row !== hub); score = row => row.triangles * 100 + row.degree * 10 + row.neighbourDegree; }
+    else if (rule.id === 'bridge-neighbour-lowest-degree') { candidates = rows.filter(row => bridge?.node.links.includes(row.node.id)); score = row => row.degree * 10 + row.triangles; descending = false; }
+    else if (rule.id === 'analogue-of-hub-neighbourhood') { const target = hub?.neighbourDegree || 0; candidates = rows.filter(row => row !== hub); score = row => -Math.abs(row.neighbourDegree - target) * 100 + row.twoStep * 10 + row.triangles; }
+    return sorted(candidates.length ? candidates : rows, score, descending);
+  }
+
+  function roleGraphSelect(escorts, rule) { return roleGraphRank(escorts, rule)[0]?.row.node || null; }

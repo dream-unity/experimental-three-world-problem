@@ -26,13 +26,13 @@ The overview can be orbited by mouse or touch. Selecting a world exposes its int
 
 Parallax Wing occupies **Dream Machine → PERCEIVE**.
 
-A visibly distinct leader jet flies with visually identical escorts. The vulnerable relay is not a permanently marked aircraft. It is the escort **nearest to the leader while occupying the outside of the leader’s turn**.
+A visibly distinct leader jet flies with visually identical escorts joined by a changing network. Each encounter samples a hidden position-invariant graph rule. The player watches marked worked examples, infers which topological role is being selected, then transfers that rule to unmarked networks with new aircraft identities, connections and layouts.
 
-The leader banks and leaves a curved flight trace. Escorts weave, cross and change distance, so the role moves from one aircraft to another without any aircraft changing appearance. The player must bind:
+No rule text or outside-side cue is shown during transfer. A correct answer replaces the complete formation while preserving the hidden relation, so success requires applying an abstract relation across changed instances rather than tracking a rewarded aircraft. Target selection follows current geometry without persistence hysteresis, and a wrong answer locks firing before another relational commitment can be made.
 
-**leader’s turn → outside of that turn → nearest escort there → fire**
+Difficulty changes relational load rather than removing the reasoning requirement. Levels 1–2 infer first-order network roles such as hub, triangle anchor, widest two-step reach or strongest neighbourhood from four examples. Levels 3–6 infer composed roles such as the least-connected neighbour of the hub, the most-connected node two steps from it, or a critical bridge. Levels 7–10 follow longer chains through hubs, bridges, two-step neighbourhoods and structural analogues. Higher levels also increase transfer count, distractors and presentation speed; no active rule uses screen position, turn side, geometric distance or axis alignment.
 
-Correctness cannot be inferred from colour, fixed identity, screen side, altitude or odd-one-out appearance. False shots are classified as stale-role perseveration, inside/outside reversal, outside-distance substitution, reference-object substitution, screen-position substitution or late relational acquisition. These are experimental gameplay measurements, not a validated clinical or IQ assessment.
+Correctness cannot be inferred reliably from colour, fixed identity, screen position, proximity, altitude, odd-one-out appearance or rapid sweep firing. The task combines graph-role induction, multi-hop composition and analogical transfer. These are experimental gameplay measurements, not a validated clinical or IQ assessment.
 
 ## Become — Social Agency Lab
 

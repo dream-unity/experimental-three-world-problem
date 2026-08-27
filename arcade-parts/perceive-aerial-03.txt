@@ -7,9 +7,25 @@
         if (escort.trail.length > 10) escort.trail.shift();
       }
 
-      refreshRoleGeometry();
       updateRelationalRole(dt, false);
       updateAcquisition(dt);
+      if (encounter.phase === 'examples' && encounter.age >= encounter.nextExampleAt) {
+        encounter.exampleIndex++;
+        if (encounter.exampleIndex >= encounter.config.exampleCount) {
+          encounter.phase = 'transfer';
+          newRelationalFormation();
+          E.toast('TRANSFER · APPLY THE SAME RELATION', 1.1);
+        } else {
+          encounter.turnTarget *= -1;
+          encounter.turnValue = encounter.turnTarget;
+          encounter.committedTurnSign = encounter.turnTarget;
+          encounter.nextTurnAt = encounter.age + encounter.config.turnHoldMax;
+          newRelationalFormation();
+          encounter.nextExampleAt = encounter.age + encounter.config.exampleDuration;
+          E.toast(`EXAMPLE ${encounter.exampleIndex + 1} OF ${encounter.config.exampleCount}`, 0.75);
+        }
+        updateRelationalRole(0, true);
+      }
     }
 
     function rankedOutsideEscorts() {
@@ -38,9 +54,7 @@
     }
 
     function updateRelationalRole(dt, force = false) {
-      const ranked = rankedOutsideEscorts();
-      const next = ranked[0] || null;
-      encounter.roleMargin = encounter.geometry?.margin ?? (ranked.length > 1 ? ranked[1].distanceToLeader - ranked[0].distanceToLeader : 1);
+      const next = roleGraphSelect(activeEscorts(), encounter.rule);
       if (!next) {
         encounter.target = null;
         return;
@@ -49,30 +63,7 @@
         switchRole(next, true);
         return;
       }
-      if (next === encounter.target) {
-        encounter.candidate = null;
-        encounter.candidateTimer = 0;
-        encounter.targetStableFor += dt;
-        return;
-      }
-
-      const targetStillOutside = encounter.target.outsideProjection > encounter.config.outsideThreshold * 0.45;
-      const materiallyCloser = next.distanceToLeader
-        < encounter.target.distanceToLeader * (1 - encounter.config.distanceAdvantage);
-      const roleChanged = !targetStillOutside || materiallyCloser;
-      if (!roleChanged || encounter.targetStableFor < encounter.config.roleHold) {
-        encounter.candidate = null;
-        encounter.candidateTimer = 0;
-        encounter.targetStableFor += dt;
-        return;
-      }
-
-      if (encounter.candidate === next) encounter.candidateTimer += dt;
-      else {
-        encounter.candidate = next;
-        encounter.candidateTimer = 0;
-      }
-      if (encounter.candidateTimer >= encounter.config.candidateDwell) switchRole(next);
+      if (next !== encounter.target) switchRole(next);
       else encounter.targetStableFor += dt;
     }
 

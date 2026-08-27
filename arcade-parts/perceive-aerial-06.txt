@@ -31,7 +31,7 @@
     }
 
     function fire(E) {
-      if (!player || player.fireCooldown > 0 || player.heat >= 0.985 || !encounter || encounter.solved || encounter.failed) return;
+      if (!player || player.fireCooldown > 0 || wrongShotCooldown > 0 || player.heat >= 0.985 || !encounter || encounter.solved || encounter.failed || encounter.phase !== 'transfer') return;
       player.fireCooldown = 0.115;
       player.heat = Math.min(1, player.heat + 0.13);
       stats.shots++;
@@ -41,7 +41,7 @@
       tracers.push({ x1: player.x - 5, y1: player.y - player.size * 0.8, x2: targetX, y2: targetY, life: 0.12, max: 0.12 });
       tracers.push({ x1: player.x + 5, y1: player.y - player.size * 0.8, x2: targetX + 2, y2: targetY, life: 0.1, max: 0.1 });
       E.sfx('tap', 1.6);
-      if (!lock) return;
+      if (!lock) { resolveWrong(E, null); return; }
       if (lock.type === 'projectile') {
         const index = enemyShots.indexOf(lock.value);
         if (index >= 0) enemyShots.splice(index, 1);

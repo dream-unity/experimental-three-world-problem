@@ -32,7 +32,7 @@ assert.match(api, /https:\/\/dream-unity\.github\.io/, 'backend must allow the G
 assert.doesNotMatch(api, /process\.env\.|OPENAI_API_KEY|AI_GATEWAY_API_KEY/, 'voice backend must not require environment secrets');
 
 assert.equal(pkg.dependencies, undefined, 'static Dream Unity package must remain production-dependency free');
-assert.equal(pkg.devDependencies, undefined, 'zero-key voice must not require build dependencies');
+assert.deepEqual(Object.keys(pkg.devDependencies || {}), ['playwright'], 'zero-key voice must add no runtime or voice build dependencies');
 assert.match(css, /#app\.detail>.*du-voice-launcher/, 'voice must be limited to the overview');
 assert.match(css, /#app\.game-open>.*du-voice-launcher/, 'voice must hide inside games');
 

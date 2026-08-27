@@ -5,8 +5,8 @@ import vm from 'node:vm';
 const logic = readFileSync(new URL('../arcade-parts/perceive-role-logic.txt', import.meta.url), 'utf8');
 const context = { Math, Map, Number, String };
 vm.createContext(context);
-vm.runInContext(`${logic}\nthis.roleDriftGeometry = roleDriftGeometry; this.roleDriftClassifyShot = roleDriftClassifyShot;`, context);
-const { roleDriftGeometry, roleDriftClassifyShot } = context;
+vm.runInContext(`${logic}\nthis.roleDriftGeometry = roleDriftGeometry; this.roleDriftClassifyShot = roleDriftClassifyShot; this.roleGraphSelect = roleGraphSelect; this.roleGraphRank = roleGraphRank; this.rules = ROLE_DRIFT_RULES;`, context);
+const { roleDriftGeometry, roleDriftClassifyShot, roleGraphSelect, roleGraphRank, rules } = context;
 
 const formation = [
   { id: 'left-near', rx: -0.18, ry: 0.02, alive: true },
@@ -95,4 +95,22 @@ const fallback = roleDriftGeometry(nearAxis, [1, 0], { threshold: 0.02 });
 assert.ok(fallback.targetId);
 assert.equal(new Set(fallback.outside.map((metric) => metric.id)).size, fallback.outside.length);
 
-console.log('Role Drift: outside/inside geometry, identity migration, transformation invariance and diagnostic errors validated.');
+// Active rules depend only on graph topology. Screen coordinates can be
+// changed arbitrarily without changing the selected relational role.
+assert.equal(rules.length, 12);
+const byId = Object.fromEntries(rules.map(rule => [rule.id, rule]));
+const graph = [
+  {id:'a',links:['b','c','d','e'],alive:true,rx:-.4,ry:.2},
+  {id:'b',links:['a','c'],alive:true,rx:.3,ry:-.1},
+  {id:'c',links:['a','b'],alive:true,rx:-.2,ry:-.3},
+  {id:'d',links:['a','e','f'],alive:true,rx:.1,ry:.4},
+  {id:'e',links:['a','d'],alive:true,rx:.4,ry:.1},
+  {id:'f',links:['d'],alive:true,rx:-.1,ry:.1},
+];
+assert.equal(roleGraphSelect(graph,byId['network-hub']).id,'a');
+const relocated=graph.map((node,index)=>({...node,rx:Math.sin(index*2.1),ry:Math.cos(index*1.7)}));
+for(const rule of rules)assert.equal(roleGraphSelect(relocated,rule)?.id,roleGraphSelect(graph,rule)?.id,`${rule.id} must ignore spatial layout`);
+for(const rule of rules)assert.ok(roleGraphRank(graph,rule).length,`${rule.id} must rank a graph role`);
+assert.deepEqual([...new Set(rules.map(rule => rule.complexity))], [1, 2, 3]);
+
+console.log('Parallax relations: legacy geometry diagnostics plus position-invariant graph roles and three complexity tiers validated.');

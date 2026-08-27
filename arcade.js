@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const VERSION = '20260825-role-drift-become-1';
+  const VERSION = '20260827-parallax-relational-induction-18';
   const BECOME_VERSION = '20260826-become-imagine-opening-17';
   const basePaths = [1, 2, 3, 4, 5].map((n) => `./arcade-parts/part-${String(n).padStart(2, '0')}.txt?v=${VERSION}`);
   const roleLogicPath = `./arcade-parts/perceive-role-logic.txt?v=${VERSION}`;

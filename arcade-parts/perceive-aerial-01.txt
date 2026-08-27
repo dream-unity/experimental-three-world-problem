@@ -45,9 +45,13 @@
 
     function levelConfig(value) {
       const l = clamp(value, 1, 10);
+      const relationalTier = l <= 2 ? 1 : l <= 6 ? 2 : 3;
       return {
-        escortCount: Math.min(7, 4 + Math.floor((l - 1) / 2)),
-        hitsRequired: Math.min(4, 2 + Math.floor((l - 1) / 4)),
+        escortCount: Math.min(8, 6 + Math.floor((l - 1) / 4)),
+        hitsRequired: l <= 2 ? 2 : l <= 6 ? 3 : 4,
+        relationalTier,
+        exampleCount: l <= 2 ? 4 : 3,
+        exampleDuration: l <= 2 ? 2.7 : l <= 6 ? 2.15 : 1.7,
         approachSpeed: 0.034 + l * 0.0025,
         orbitSpeed: 0.11 + l * 0.014,
         weaveSpeed: 0.72 + l * 0.075,
@@ -64,7 +68,7 @@
         distanceAdvantage: Math.max(0.045, 0.12 - l * 0.006),
         fireInterval: Math.max(1.35, 2.8 - l * 0.105),
         projectileSpeed: 170 + l * 15,
-        assist: l === 1 ? 1 : l === 2 ? 0.72 : l === 3 ? 0.36 : 0,
+        assist: 0,
         incomingLimit: Math.min(10, 4 + Math.floor(l / 2)),
       };
     }
@@ -73,6 +77,7 @@
       const spacing = TAU / count;
       return {
         id: `escort-${wave}-${index}-${Math.random().toString(36).slice(2, 7)}`,
+        code: String.fromCharCode(65 + index),
         slotAngle: index * spacing + rand(spacing * 0.16, -spacing * 0.16),
         baseRadius: rand(0.34, 0.235),
         weavePhase: rand(TAU, 0),
@@ -91,12 +96,42 @@
         hitFlash: 0,
         outsideProjection: 0,
         distanceToLeader: 1,
+        links: [],
         trail: [],
       };
     }
 
     function activeEscorts() {
       return escorts.filter((escort) => escort.alive);
+    }
+
+    function buildRelationalNetwork(rule) {
+      const connect = (a, b) => {
+        if (a === b || a.links.includes(b.id)) return;
+        a.links.push(b.id); b.links.push(a.id);
+      };
+      for (let attempt = 0; attempt < 120; attempt++) {
+        for (const escort of escorts) escort.links = [];
+        const order = [...escorts].sort(() => Math.random() - 0.5);
+        for (let i = 1; i < order.length; i++) connect(order[i], order[(Math.random() * i) | 0]);
+        for (let i = 0; i < order.length; i++) for (let j = i + 1; j < order.length; j++) if (Math.random() < 0.27) connect(order[i], order[j]);
+        const ranked = roleGraphRank(escorts, rule);
+        if (ranked[0] && (!ranked[1] || ranked[0].score !== ranked[1].score)) return;
+      }
+      throw new Error(`Could not generate an identifiable network for ${rule.id}.`);
+    }
+
+    function newRelationalFormation() {
+      escorts = Array.from({ length: encounter.config.escortCount }, (_, index) => makeEscort(index, encounter.config.escortCount));
+      buildRelationalNetwork(encounter.rule);
+      encounter.target = null;
+      encounter.previousTarget = null;
+      encounter.candidate = null;
+      encounter.candidateTimer = 0;
+      encounter.targetStableFor = 0;
+      encounter.roleSwitchAt = encounter.age;
+      encounter.reticleHold = 0;
+      encounter.reacquired = false;
     }
 
     function refreshRoleGeometry() {
@@ -116,6 +151,7 @@
     function createEncounter(E) {
       const config = levelConfig(level);
       const initialTurn = choose([-1, 1]);
+      const rule = choose(ROLE_DRIFT_RULES.filter(candidate => candidate.complexity === config.relationalTier));
       leader = {
         sx: E.w * 0.5,
         sy: E.top + E.h * 0.26,
@@ -131,6 +167,10 @@
       tracers = [];
       encounter = {
         config,
+        rule,
+        phase: 'examples',
+        exampleIndex: 0,
+        nextExampleAt: config.exampleDuration,
         age: 0,
         depth: 0.075,
         lane: rand(0.08, -0.08),
