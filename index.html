@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="./styles.css?v=20260824-9" />
   <link rel="stylesheet" href="./become.css?v=20260825-role-drift-become-1" />
   <link rel="stylesheet" href="./light-theme.css?v=20260826-white-overview-4" />
+  <link rel="stylesheet" href="./voice.css?v=20260827-realtime-voice-1" />
 </head>
 <body>
   <main id="app" aria-label="Dream Unity interactive simulation">
@@ -16,6 +17,22 @@
     <div class="vignette" aria-hidden="true"></div>
     <div class="brand"><i></i><span>DREAM UNITY</span></div>
     <div class="live"><i></i><span>LIVE</span></div>
+    <button class="du-voice-launcher" id="duVoiceLauncher" type="button" aria-label="Talk to Dream Unity" aria-controls="duVoicePanel" aria-expanded="false">
+      <span class="du-voice-pulse" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span class="du-voice-launcher-copy"><small>REALTIME</small><strong>TALK</strong></span>
+    </button>
+    <section class="du-voice-panel" id="duVoicePanel" aria-label="Dream Unity realtime voice" aria-hidden="true">
+      <header class="du-voice-head">
+        <div><small>DREAM UNITY</small><strong>VOICE</strong></div>
+        <button class="du-voice-close" id="duVoiceClose" type="button" aria-label="Close Dream Unity voice">×</button>
+      </header>
+      <div class="du-voice-orb" id="duVoiceOrb" aria-hidden="true"><i></i><i></i><i></i><span></span></div>
+      <p class="du-voice-status" id="duVoiceStatus" aria-live="polite">READY TO CONNECT</p>
+      <p class="du-voice-copy" id="duVoiceCopy">Speak naturally. Ask what to train, how the worlds differ, or anything you want Dream Unity to reason through with you.</p>
+      <button class="du-voice-action" id="duVoiceAction" type="button">START VOICE</button>
+      <small class="du-voice-privacy">MICROPHONE AUDIO IS SENT TO OPENAI ONLY WHILE CONNECTED</small>
+      <audio id="duVoiceAudio" autoplay playsinline></audio>
+    </section>
     <button class="back" id="back" type="button" aria-label="Return to Dream Unity overview"><span>←</span><b>UNITY</b></button>
     <div class="detail-title" id="detailTitle" aria-live="polite"><small id="detailNumber">01</small><strong id="detailName">DREAM MACHINE</strong></div>
     <button class="world-label" id="label-machine" data-world="machine" type="button"><span>01</span><strong>DREAM MACHINE</strong></button>
@@ -50,5 +67,6 @@
   <script src="./light-theme.js?v=20260826-white-overview-4"></script>
   <script src="./main.js?v=20260826-white-overview-4"></script>
   <script src="./arcade.js?v=20260826-become-imagine-opening-17"></script>
+  <script src="./voice.js?v=20260827-realtime-voice-1"></script>
 </body>
 </html>
