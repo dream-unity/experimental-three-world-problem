@@ -22,7 +22,9 @@ assert.match(voice, /history: history\.slice/, 'voice must preserve bounded conv
 assert.doesNotMatch(voice, /OPENAI_API_KEY|AI_GATEWAY_API_KEY|sk-[A-Za-z0-9]|experimental_useRealtime|api\.openai\.com/, 'browser voice must not depend on static provider secrets or blocked realtime transports');
 
 assert.match(api, /https:\/\/blockrun\.ai\/api\/v1\/chat\/completions/, 'backend must use the zero-key live inference route');
-assert.match(api, /nvidia\/gpt-oss-120b/, 'backend must use the GPT-OSS 120B model');
+assert.match(api, /nvidia\/mistral-nemotron/, 'backend must prefer the currently live free Mistral Nemotron route');
+assert.match(api, /nvidia\/gpt-oss-120b/, 'backend must retain GPT-OSS as a free fallback when capacity returns');
+assert.match(api, /for \(const model of MODELS\)/, 'backend must fail over across free models');
 assert.match(api, /credentialMode: 'none'/, 'backend must require no provider credential');
 assert.match(api, /speechMode: 'browser-native'/, 'backend health must describe browser-native speech mode');
 assert.match(api, /RATE_LIMIT = 24/, 'backend must rate-limit public voice turns');

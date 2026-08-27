@@ -1,7 +1,13 @@
 import { createHash } from 'node:crypto';
 
 const BLOCKRUN_URL = 'https://blockrun.ai/api/v1/chat/completions';
-const MODEL = 'nvidia/gpt-oss-120b';
+const MODELS = [
+  'nvidia/mistral-nemotron',
+  'nvidia/step-3.7-flash',
+  'nvidia/gpt-oss-120b',
+  'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning',
+  'nvidia/nemotron-nano-9b-v2'
+];
 const REQUEST_TIMEOUT_MS = 20_000;
 const RATE_WINDOW_MS = 10 * 60_000;
 const RATE_LIMIT = 24;
@@ -41,11 +47,10 @@ const clampText = (value, max) => typeof value === 'string' ? value.trim().slice
 
 function sanitizeHistory(value) {
   if (!Array.isArray(value)) return [];
-  return value.slice(-MAX_HISTORY).map(item => {
-    const role = item?.role === 'assistant' ? 'assistant' : 'user';
-    const content = clampText(item?.content, 1200);
-    return { role, content };
-  }).filter(item => item.content);
+  return value.slice(-MAX_HISTORY).map(item => ({
+    role: item?.role === 'assistant' ? 'assistant' : 'user',
+    content: clampText(item?.content, 1200)
+  })).filter(item => item.content);
 }
 
 function allowedOrigin(req) {
@@ -90,10 +95,39 @@ function rateLimited(req) {
 function extractText(data) {
   const content = data?.choices?.[0]?.message?.content;
   if (typeof content === 'string') return content.trim();
-  if (Array.isArray(content)) {
-    return content.map(part => typeof part === 'string' ? part : String(part?.text || '')).join('').trim();
-  }
+  if (Array.isArray(content)) return content.map(part => typeof part === 'string' ? part : String(part?.text || '')).join('').trim();
   return '';
+}
+
+async function callFreeModel(model, messages) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    const response = await fetch(BLOCKRUN_URL, {
+      method: 'POST',
+      signal: controller.signal,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model,
+        messages,
+        stream: false,
+        temperature: 0.65,
+        top_p: 0.9,
+        max_tokens: 420
+      })
+    });
+    const data = await response.json().catch(() => null);
+    const text = extractText(data);
+    if (response.ok && text) return { text, model: String(data?.model || model) };
+    return {
+      error: new Error(data?.error?.message || data?.error || data?.message || `Voice model request failed (${response.status}).`),
+      status: response.status
+    };
+  } catch (error) {
+    return { error, status: error?.name === 'AbortError' ? 504 : 502 };
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 async function answer(body) {
@@ -104,55 +138,31 @@ async function answer(body) {
     throw error;
   }
 
-  const history = sanitizeHistory(body?.history);
   const locale = clampText(body?.locale, 40);
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const messages = [
+    { role: 'system', content: `${SYSTEM_PROMPT}\nVisitor locale: ${locale || 'unknown'}.` },
+    ...sanitizeHistory(body?.history),
+    { role: 'user', content: message }
+  ];
 
-  try {
-    const response = await fetch(BLOCKRUN_URL, {
-      method: 'POST',
-      signal: controller.signal,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: MODEL,
-        messages: [
-          { role: 'system', content: `${SYSTEM_PROMPT}\nVisitor locale: ${locale || 'unknown'}.` },
-          ...history,
-          { role: 'user', content: message }
-        ],
-        stream: false,
-        temperature: 0.65,
-        top_p: 0.9,
-        max_tokens: 420
-      })
-    });
-
-    const data = await response.json().catch(() => null);
-    if (!response.ok) {
-      const error = new Error(data?.error?.message || data?.message || `Voice model request failed (${response.status}).`);
-      error.status = response.status;
-      throw error;
+  let lastFailure = null;
+  for (const model of MODELS) {
+    const result = await callFreeModel(model, messages);
+    if (result.text) {
+      return {
+        text: result.text.slice(0, 1800),
+        model: result.model,
+        provider: 'blockrun',
+        credentialMode: 'none'
+      };
     }
-
-    const text = extractText(data);
-    if (!text) throw new Error('Voice model returned no response.');
-    return {
-      text: text.slice(0, 1800),
-      model: String(response.headers.get('x-fallback-model') || data?.model || MODEL),
-      provider: 'blockrun',
-      credentialMode: 'none'
-    };
-  } catch (error) {
-    if (error?.name === 'AbortError') {
-      const timed = new Error('Dream Unity voice model timed out.');
-      timed.status = 504;
-      throw timed;
-    }
-    throw error;
-  } finally {
-    clearTimeout(timeout);
+    lastFailure = result;
+    if (![400, 404, 410, 429, 500, 502, 503, 504].includes(Number(result.status))) break;
   }
+
+  const error = lastFailure?.error instanceof Error ? lastFailure.error : new Error('No free voice model is currently available.');
+  error.status = Number(lastFailure?.status) || 502;
+  throw error;
 }
 
 export default async function handler(req, res) {
@@ -167,7 +177,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       ok: true,
       service: 'dream-unity-voice-chat',
-      model: MODEL,
+      models: MODELS,
       provider: 'blockrun',
       credentialMode: 'none',
       accountRequired: false,
@@ -184,7 +194,7 @@ export default async function handler(req, res) {
     const status = Number(error?.status) || 502;
     if (status === 400) return res.status(400).json({ code: 'BAD_INPUT', error: error.message });
     if (status === 429) return res.status(429).json({ code: 'UPSTREAM_RATE_LIMIT', error: 'Dream Unity voice is briefly rate-limited. Try again.' });
-    if (status === 504) return res.status(504).json({ code: 'VOICE_TIMEOUT', error: error.message });
+    if (status === 504) return res.status(504).json({ code: 'VOICE_TIMEOUT', error: 'Dream Unity voice model timed out.' });
     console.error('Dream Unity voice chat failure', status, error?.message || 'unknown');
     return res.status(502).json({ code: 'VOICE_CHAT_FAILED', error: 'Dream Unity could not answer that turn.' });
   }
