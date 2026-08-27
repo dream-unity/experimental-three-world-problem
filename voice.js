@@ -4,7 +4,7 @@
   const VOICE_ENDPOINT = 'https://dream-unity-voice-live.vercel.app/api/realtime-session';
   const MAX_SESSION_MS = 8 * 60 * 1000;
   const MAX_HISTORY = 10;
-  const ARRIVAL_GREETING = 'Hello, welcome to Dream Unity. What would you like to know?';
+  const ARRIVAL_GREETING = 'Hello, my name is Unity. What dream would you like to unify?';
   const DEFAULT_COPY = 'Speak naturally. Ask what to train, how the worlds differ, or anything you want Dream Unity to reason through with you.';
   const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
@@ -15,6 +15,7 @@
   const actionButton = document.getElementById('duVoiceAction');
   const status = document.getElementById('duVoiceStatus');
   const copy = document.getElementById('duVoiceCopy');
+  const invite = document.getElementById('duOracleInvite');
 
   if (!app || !launcher || !panel || !closeButton || !actionButton || !status || !copy) return;
 
@@ -37,6 +38,15 @@
     if (name) panel.classList.add(name);
     if (message) status.textContent = message;
     app.dataset.voiceState = name || 'idle';
+    if (invite) {
+      invite.textContent = name === 'speaking' ? 'UNITY IS SPEAKING'
+        : name === 'listening' ? 'UNITY IS LISTENING'
+          : name === 'connecting' ? 'OPENING VOICE'
+            : name === 'error' ? 'TAP TO RETRY'
+              : message === 'THINKING' ? 'UNITY IS THINKING'
+                : message === 'TAP UNITY TO ANSWER' ? 'TAP TO ANSWER'
+                  : 'TAP TO SPEAK';
+    }
   }
 
   function clearTimers() {
@@ -290,6 +300,18 @@
   launcher.addEventListener('click', () => {
     setOpen(true);
     if (!active) begin();
+  });
+
+  const setOracleHover = value => {
+    app.dataset.voiceHover = value ? 'true' : 'false';
+  };
+  launcher.addEventListener('pointerenter', () => setOracleHover(true));
+  launcher.addEventListener('pointerleave', () => setOracleHover(false));
+  launcher.addEventListener('focus', () => setOracleHover(true));
+  launcher.addEventListener('blur', () => setOracleHover(false));
+  launcher.addEventListener('pointerdown', () => {
+    app.dataset.voicePress = 'true';
+    window.setTimeout(() => { app.dataset.voicePress = 'false'; }, 260);
   });
 
   closeButton.addEventListener('click', () => cleanup({ keepPanel: false }));

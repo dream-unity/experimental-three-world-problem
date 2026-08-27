@@ -28,7 +28,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          grep -q "VERSION = '20260827-unity-oracle-performance-5'" main.js
+          grep -q "VERSION = '20260827-unity-oracle-performance-6'" main.js
           grep -q 'light-overview-07.txt' main.js
           grep -q "ctx.fillStyle = '#ffffff'" visual-parts/light-overview-07.txt
           grep -q 'render = function kineticWhiteRender' visual-parts/light-overview-07.txt
@@ -36,10 +36,13 @@ jobs:
           grep -q 'drawCurve = function fluidLongCurve' visual-parts/light-overview-07.txt
           grep -q 'function wDrawUnity' visual-parts/light-overview-07.txt
           grep -q 'oracleState=app&&app.dataset' visual-parts/light-overview-07.txt
+          grep -q 'Projected sound shells' visual-parts/light-overview-07.txt
+          grep -q 'TAP TO SPEAK' index.html
+          grep -q 'Hello, my name is Unity. What dream would you like to unify?' voice.js
           grep -q 'ARRIVAL_GREETING' voice.js
           grep -q 'data-voice-launcher' index.html
           ! grep -q 'du-voice-launcher-copy' index.html
-          grep -q 'coreR=unit\*0.026' visual-parts/light-overview-07.txt
+          grep -q 'coreR=unit\*0.032' visual-parts/light-overview-07.txt
           grep -q 'reach=Math.min' visual-parts/light-overview-07.txt
           grep -q "WORLD.machine.css = '#009DFF'" visual-parts/light-overview-07.txt
           grep -q "WORLD.maker.css = '#00C97A'" visual-parts/light-overview-07.txt
@@ -79,7 +82,7 @@ jobs:
           done
           test "$matched" = true
 
-          grep -q 'main.js?v=20260827-unity-oracle-performance-5' /tmp/dream-unity-live/index.html
+          grep -q 'main.js?v=20260827-unity-oracle-performance-6' /tmp/dream-unity-live/index.html
           grep -q 'light-theme.css?v=20260826-white-overview-4' /tmp/dream-unity-live/index.html
           grep -q 'light-overview-07.txt' /tmp/dream-unity-live/main.js
           grep -q "ctx.fillStyle = '#ffffff'" /tmp/dream-unity-live/visual-parts/light-overview-07.txt
@@ -87,11 +90,14 @@ jobs:
           grep -q 'drawCurve = function fluidLongCurve' /tmp/dream-unity-live/visual-parts/light-overview-07.txt
           grep -q 'function wDrawUnity' /tmp/dream-unity-live/visual-parts/light-overview-07.txt
           grep -q 'oracleState=app&&app.dataset' /tmp/dream-unity-live/visual-parts/light-overview-07.txt
-          grep -q 'voice.js?v=20260827-unity-oracle-4' /tmp/dream-unity-live/index.html
+          grep -q 'Projected sound shells' /tmp/dream-unity-live/visual-parts/light-overview-07.txt
+          grep -q 'voice.js?v=20260827-unity-oracle-5' /tmp/dream-unity-live/index.html
           grep -q 'data-voice-launcher' /tmp/dream-unity-live/index.html
+          grep -q 'TAP TO SPEAK' /tmp/dream-unity-live/index.html
           grep -q 'ARRIVAL_GREETING' /tmp/dream-unity-live/voice.js
+          grep -q 'Hello, my name is Unity. What dream would you like to unify?' /tmp/dream-unity-live/voice.js
           ! grep -q 'du-voice-launcher-copy' /tmp/dream-unity-live/index.html
-          grep -q 'coreR=unit\*0.026' /tmp/dream-unity-live/visual-parts/light-overview-07.txt
+          grep -q 'coreR=unit\*0.032' /tmp/dream-unity-live/visual-parts/light-overview-07.txt
           grep -q 'reach=Math.min' /tmp/dream-unity-live/visual-parts/light-overview-07.txt
           grep -q "WORLD.machine.css = '#009DFF'" /tmp/dream-unity-live/visual-parts/light-overview-07.txt
           grep -q "WORLD.maker.css = '#00C97A'" /tmp/dream-unity-live/visual-parts/light-overview-07.txt
@@ -134,15 +140,17 @@ jobs:
               'braided_echo_arcs':True,
               'world_orbit_ribbons':5,
               'world_satellites':True,
-              'unity_core_scale':'0.026 * viewport unit',
+              'unity_core_scale':'0.032 * viewport unit',
               'unity_orbit_planes':3,
+              'unity_orbit_depth_occlusion':True,
               'renderer_override':'visual-parts/light-overview-07.txt',
-              'main_cache_version':'20260827-unity-oracle-performance-5'
+              'main_cache_version':'20260827-unity-oracle-performance-6'
             },
             'voice':{
               'launcher':'central_unity_oracle',
               'detached_talk_pill':False,
-              'arrival_greeting':'Hello, welcome to Dream Unity. What would you like to know?',
+              'arrival_greeting':'Hello, my name is Unity. What dream would you like to unify?',
+              'visual_affordance':'3d_oracle_iris_sound_shells_and_inline_tap_invite',
               'speech_mode':'browser_native',
               'backend':'dream-unity-voice-live.vercel.app'
             },

@@ -11,11 +11,13 @@ const pkg = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.ur
 assert.match(index, /class="unity-label du-unity-oracle"[^>]*data-voice-launcher/, 'the central Unity symbol must be the voice launcher');
 assert.match(index, /id="duVoicePanel"/, 'front page must include voice panel');
 assert.doesNotMatch(index, /du-voice-launcher-copy|<strong>TALK<\/strong>/, 'the detached TALK pill must not return');
-assert.match(index, /voice\.css\?v=20260827-unity-oracle-4/, 'front page must load Unity Oracle CSS');
-assert.match(index, /voice\.js\?v=20260827-unity-oracle-4/, 'front page must load Unity Oracle runtime');
+assert.match(index, /voice\.css\?v=20260827-unity-oracle-5/, 'front page must load Unity Oracle CSS');
+assert.match(index, /voice\.js\?v=20260827-unity-oracle-5/, 'front page must load Unity Oracle runtime');
+assert.match(index, /id="duOracleInvite"[^>]*>TAP TO SPEAK</, 'Unity must visibly invite a first-time visitor to speak');
+assert.match(index, /UNITY · LIVE VOICE/, 'the arrival bubble must identify itself as live voice');
 assert.doesNotMatch(index, /type="module" src="\.\/voice\.js/, 'voice must not depend on external module imports');
 
-assert.match(voice, /ARRIVAL_GREETING = 'Hello, welcome to Dream Unity\. What would you like to know\?'/, 'Unity must greet every arrival with the approved wording');
+assert.match(voice, /ARRIVAL_GREETING = 'Hello, my name is Unity\. What dream would you like to unify\?'/, 'Unity must greet every arrival with the approved wording');
 assert.match(voice, /greetOnArrival/, 'Unity must initiate the arrival greeting automatically');
 assert.match(voice, /querySelector\('\[data-voice-launcher\]'\)/, 'voice must bind to the central Unity control');
 assert.match(voice, /SpeechRecognition \|\| window\.webkitSpeechRecognition/, 'voice must support browser speech recognition');
@@ -39,9 +41,13 @@ assert.doesNotMatch(api, /process\.env\.|OPENAI_API_KEY|AI_GATEWAY_API_KEY/, 'vo
 assert.equal(pkg.dependencies, undefined, 'static Dream Unity package must remain production-dependency free');
 assert.deepEqual(Object.keys(pkg.devDependencies || {}), ['playwright'], 'zero-key voice must add no runtime or voice build dependencies');
 assert.match(css, /\.du-unity-oracle/, 'Unity Oracle must expose a central accessible hit target');
+assert.match(css, /width:clamp\(122px,16vmin,156px\)/, 'Unity must expose a real, generously sized hit target');
+assert.match(css, /\.du-oracle-invite/, 'Unity must carry its talk affordance inside the centrepiece');
 assert.match(css, /\.du-voice-panel\.arrival/, 'arrival greeting must be visually anchored to Unity');
 assert.match(css, /#app\.detail>\.du-voice-panel/, 'voice transcript must hide away from the overview');
 assert.match(visual, /oracleState=app&&app\.dataset/, 'Unity core must receive live voice state');
-assert.match(visual, /voice aperture/, 'Unity core must visibly articulate without being replaced');
+assert.match(visual, /Projected sound shells/, 'Unity core must visibly broadcast voice');
+assert.match(visual, /glassy oracle iris/, 'Unity core must visibly articulate without losing its identity');
+assert.match(visual, /drawOrbitStage\(false\)[\s\S]*drawOrbitStage\(true\)/, 'Unity orbits must occlude around the core for real depth');
 
 console.log('Dream Unity central Unity Oracle voice checks passed.');
