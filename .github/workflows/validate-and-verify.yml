@@ -40,8 +40,6 @@ jobs:
           grep -q 'TAP TO SPEAK' index.html
           grep -q 'Hello, my name is Unity. What dream would you like to unify?' voice.js
           grep -q 'ARRIVAL_GREETING' voice.js
-          grep -q 'ai-gateway-realtime.v1' voice.js
-          grep -q 'openai/gpt-realtime-2.1' api/realtime-session.js
           grep -q 'data-voice-launcher' index.html
           ! grep -q 'du-voice-launcher-copy' index.html
           grep -q 'coreR=unit\*0.032' visual-parts/light-overview-07.txt
@@ -93,12 +91,11 @@ jobs:
           grep -q 'function wDrawUnity' /tmp/dream-unity-live/visual-parts/light-overview-07.txt
           grep -q 'oracleState=app&&app.dataset' /tmp/dream-unity-live/visual-parts/light-overview-07.txt
           grep -q 'Projected sound shells' /tmp/dream-unity-live/visual-parts/light-overview-07.txt
-          grep -q 'voice.js?v=20260827-unity-oracle-realtime-6' /tmp/dream-unity-live/index.html
+          grep -q 'voice.js?v=20260827-unity-oracle-5' /tmp/dream-unity-live/index.html
           grep -q 'data-voice-launcher' /tmp/dream-unity-live/index.html
           grep -q 'TAP TO SPEAK' /tmp/dream-unity-live/index.html
           grep -q 'ARRIVAL_GREETING' /tmp/dream-unity-live/voice.js
           grep -q 'Hello, my name is Unity. What dream would you like to unify?' /tmp/dream-unity-live/voice.js
-          grep -q 'ai-gateway-realtime.v1' /tmp/dream-unity-live/voice.js
           ! grep -q 'du-voice-launcher-copy' /tmp/dream-unity-live/index.html
           grep -q 'coreR=unit\*0.032' /tmp/dream-unity-live/visual-parts/light-overview-07.txt
           grep -q 'reach=Math.min' /tmp/dream-unity-live/visual-parts/light-overview-07.txt
@@ -154,11 +151,7 @@ jobs:
               'detached_talk_pill':False,
               'arrival_greeting':'Hello, my name is Unity. What dream would you like to unify?',
               'visual_affordance':'3d_oracle_iris_sound_shells_and_inline_tap_invite',
-              'speech_mode':'realtime_websocket',
-              'model':'openai/gpt-realtime-2.1',
-              'provider':'vercel_ai_gateway',
-              'credential_mode':'vercel_oidc',
-              'permanent_provider_key_required':False,
+              'speech_mode':'browser_native',
               'backend':'dream-unity-voice-live.vercel.app'
             },
             'become':{
