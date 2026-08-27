@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="./styles.css?v=20260824-9" />
   <link rel="stylesheet" href="./become.css?v=20260825-role-drift-become-1" />
   <link rel="stylesheet" href="./light-theme.css?v=20260826-white-overview-4" />
-  <link rel="stylesheet" href="./voice.css?v=20260827-realtime-voice-1" />
+  <link rel="stylesheet" href="./voice.css?v=20260827-unity-oracle-4" />
 </head>
 <body>
   <main id="app" aria-label="Dream Unity interactive simulation">
@@ -17,19 +17,14 @@
     <div class="vignette" aria-hidden="true"></div>
     <div class="brand"><i></i><span>DREAM UNITY</span></div>
     <div class="live"><i></i><span>LIVE</span></div>
-    <button class="du-voice-launcher" id="duVoiceLauncher" type="button" aria-label="Talk to Dream Unity" aria-controls="duVoicePanel" aria-expanded="false">
-      <span class="du-voice-pulse" aria-hidden="true"><i></i><i></i><i></i></span>
-      <span class="du-voice-launcher-copy"><small>VOICE</small><strong>TALK</strong></span>
-    </button>
     <section class="du-voice-panel" id="duVoicePanel" aria-label="Dream Unity voice" aria-hidden="true">
       <header class="du-voice-head">
-        <div><small>DREAM UNITY</small><strong>VOICE</strong></div>
+        <div><small>DREAM UNITY</small><strong>UNITY ORACLE</strong></div>
         <button class="du-voice-close" id="duVoiceClose" type="button" aria-label="Close Dream Unity voice">×</button>
       </header>
-      <div class="du-voice-orb" id="duVoiceOrb" aria-hidden="true"><i></i><i></i><i></i><span></span></div>
       <p class="du-voice-status" id="duVoiceStatus" aria-live="polite">READY TO CONNECT</p>
       <p class="du-voice-copy" id="duVoiceCopy">Speak naturally. Ask what to train, how the worlds differ, or anything you want Dream Unity to reason through with you.</p>
-      <button class="du-voice-action" id="duVoiceAction" type="button">START VOICE</button>
+      <button class="du-voice-action" id="duVoiceAction" type="button">START CONVERSATION</button>
       <small class="du-voice-privacy">SPEECH RECOGNITION IS HANDLED BY YOUR BROWSER · ONLY THE TRANSCRIPT IS SENT TO DREAM UNITY</small>
       <audio id="duVoiceAudio" autoplay playsinline></audio>
     </section>
@@ -38,7 +33,7 @@
     <button class="world-label" id="label-machine" data-world="machine" type="button"><span>01</span><strong>DREAM MACHINE</strong></button>
     <button class="world-label" id="label-maker" data-world="maker" type="button"><span>02</span><strong>DREAM MAKER</strong></button>
     <button class="world-label" id="label-reality" data-world="reality" type="button"><span>03</span><strong>DREAM WORLD</strong></button>
-    <div class="unity-label" id="unityLabel"><span></span><b>UNITY</b></div>
+    <button class="unity-label du-unity-oracle" id="unityLabel" data-voice-launcher type="button" aria-label="Speak with the Unity oracle" aria-controls="duVoicePanel" aria-expanded="false"><span aria-hidden="true"></span><b>UNITY</b></button>
     <button class="sub-label" id="sub-0" type="button"><strong>PERCEIVE</strong></button>
     <button class="sub-label" id="sub-1" type="button"><strong>MODEL</strong></button>
     <button class="sub-label" id="sub-2" type="button"><strong>PREDICT</strong></button>
@@ -65,8 +60,8 @@
   <noscript>This experience requires JavaScript.</noscript>
   <script>window.setTimeout(function(){var el=document.getElementById('loading');if(el)el.classList.add('hide');},1800);</script>
   <script src="./light-theme.js?v=20260826-white-overview-4"></script>
-  <script src="./main.js?v=20260826-white-overview-4"></script>
+  <script src="./main.js?v=20260827-unity-oracle-4"></script>
   <script src="./arcade.js?v=20260827-fighter-jet-19"></script>
-  <script src="./voice.js?v=20260827-zero-key-voice-3"></script>
+  <script src="./voice.js?v=20260827-unity-oracle-4"></script>
 </body>
 </html>

@@ -184,16 +184,26 @@
   function wDrawUnity(unity,t,alpha){
     const amber=[245,158,11],orange=[255,105,0];
     const coreR=unit*0.026*overviewZoom;
+    const oracleState=app&&app.dataset?app.dataset.voiceState||'idle':'idle';
+    const oracleSpeaking=oracleState==='speaking';
+    const oracleListening=oracleState==='listening'||oracleState==='connected';
+    const oraclePulse=oracleSpeaking ? .5+.5*Math.sin(t*8.4) : oracleListening ? .5+.5*Math.sin(t*2.6) : 0;
+    const bodyR=coreR*(1+(oracleSpeaking ? .026*oraclePulse : oracleListening ? .009*oraclePulse : 0));
 
     // Larger central body with local halo and multiple orbit planes.
-    const aura=coreR*2.25;
+    const aura=coreR*(2.25+(oracleSpeaking ? .34*oraclePulse : oracleListening ? .14*oraclePulse : 0));
     const g=ctx.createRadialGradient(unity.x,unity.y,0,unity.x,unity.y,aura);
     g.addColorStop(0,rgba(amber,.20*alpha));g.addColorStop(.45,rgba(amber,.065*alpha));g.addColorStop(1,rgba(amber,0));
     ctx.fillStyle=g;ctx.beginPath();ctx.arc(unity.x,unity.y,aura,0,TAU);ctx.fill();
 
-    ctx.fillStyle=rgba(amber,.96*alpha);ctx.beginPath();ctx.arc(unity.x,unity.y,coreR,0,TAU);ctx.fill();
-    ctx.fillStyle=rgba(orange,.82*alpha);ctx.beginPath();ctx.arc(unity.x+coreR*.18,unity.y-coreR*.12,coreR*.42,0,TAU);ctx.fill();
+    ctx.fillStyle=rgba(amber,.96*alpha);ctx.beginPath();ctx.arc(unity.x,unity.y,bodyR,0,TAU);ctx.fill();
+    ctx.fillStyle=rgba(orange,.82*alpha);ctx.beginPath();ctx.arc(unity.x+bodyR*.18,unity.y-bodyR*.12,bodyR*.42,0,TAU);ctx.fill();
     ctx.fillStyle='rgba(255,255,255,.94)';ctx.beginPath();ctx.arc(unity.x-coreR*.22,unity.y-coreR*.26,Math.max(1.6,coreR*.12),0,TAU);ctx.fill();
+
+    // A restrained voice aperture lets the existing Unity core speak without replacing its identity.
+    const apertureOpen=coreR*(.025+(oracleSpeaking ? .085*oraclePulse : oracleListening ? .028 : 0));
+    ctx.fillStyle=rgba([116,65,0],(oracleSpeaking ? .58 : oracleListening ? .34 : .18)*alpha);
+    ctx.beginPath();ctx.ellipse(unity.x,unity.y+coreR*.28,coreR*.19,Math.max(.8,apertureOpen),0,0,TAU);ctx.fill();
 
     const rings=[
       [unit*.075,unit*.025,t*.11+overviewRoll],
@@ -202,7 +212,8 @@
     ];
     rings.forEach((r,i)=>{
       ctx.save();ctx.translate(unity.x,unity.y);ctx.rotate(r[2]);
-      ctx.strokeStyle=rgba(i===2?orange:amber,(.52-i*.09)*alpha);ctx.lineWidth=i===0?1.7:1.05;
+      const oracleLift=oracleSpeaking ? .16*oraclePulse : oracleListening ? .07*oraclePulse : 0;
+      ctx.strokeStyle=rgba(i===2?orange:amber,(.52-i*.09+oracleLift)*alpha);ctx.lineWidth=(i===0?1.7:1.05)+(oracleSpeaking ? .22*oraclePulse : 0);
       ctx.beginPath();ctx.ellipse(0,0,r[0]*overviewZoom,r[1]*overviewZoom,0,0,TAU);ctx.stroke();
       const a=t*(.55+i*.13)+i*2.1;
       const sx=Math.cos(a)*r[0]*overviewZoom,sy=Math.sin(a)*r[1]*overviewZoom;

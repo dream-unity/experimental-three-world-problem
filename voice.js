@@ -4,11 +4,12 @@
   const VOICE_ENDPOINT = 'https://dream-unity-voice-live.vercel.app/api/realtime-session';
   const MAX_SESSION_MS = 8 * 60 * 1000;
   const MAX_HISTORY = 10;
+  const ARRIVAL_GREETING = 'Hello, welcome to Dream Unity. What would you like to know?';
   const DEFAULT_COPY = 'Speak naturally. Ask what to train, how the worlds differ, or anything you want Dream Unity to reason through with you.';
   const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
   const app = document.getElementById('app');
-  const launcher = document.getElementById('duVoiceLauncher');
+  const launcher = document.querySelector('[data-voice-launcher]');
   const panel = document.getElementById('duVoicePanel');
   const closeButton = document.getElementById('duVoiceClose');
   const actionButton = document.getElementById('duVoiceAction');
@@ -35,6 +36,7 @@
     panel.classList.remove('connecting', 'connected', 'listening', 'speaking', 'error');
     if (name) panel.classList.add(name);
     if (message) status.textContent = message;
+    app.dataset.voiceState = name || 'idle';
   }
 
   function clearTimers() {
@@ -62,9 +64,10 @@
     clearTimers();
     stopRecognition();
     cancelSpeech();
+    panel.classList.remove('arrival');
     setPanelState('', message);
     actionButton.disabled = false;
-    actionButton.textContent = message === 'SESSION COMPLETE' ? 'RECONNECT' : 'START VOICE';
+    actionButton.textContent = message === 'SESSION COMPLETE' ? 'RECONNECT' : 'START CONVERSATION';
     if (message === 'READY TO CONNECT') copy.textContent = DEFAULT_COPY;
     if (!keepPanel) setOpen(false);
   }
@@ -75,6 +78,7 @@
     clearTimers();
     stopRecognition();
     cancelSpeech();
+    panel.classList.remove('arrival');
     setOpen(true);
     setPanelState('error', 'VOICE LINK FAILED');
     actionButton.disabled = false;
@@ -236,8 +240,9 @@
     }
   }
 
-  async function begin() {
+  function begin() {
     if (active) return;
+    panel.classList.remove('arrival');
     if (!Recognition) {
       fail('SpeechRecognition unsupported');
       return;
@@ -247,6 +252,7 @@
       return;
     }
 
+    cancelSpeech();
     active = true;
     busy = true;
     history = [];
@@ -254,22 +260,30 @@
     setPanelState('connecting', 'CONNECTING');
     actionButton.disabled = true;
     actionButton.textContent = 'CONNECTING';
-    copy.textContent = 'Starting Dream Unity voice…';
+    copy.textContent = 'Unity is opening the listening channel…';
 
     sessionTimer = window.setTimeout(() => {
       cleanup({ keepPanel: true, message: 'SESSION COMPLETE' });
       copy.textContent = 'Eight-minute public voice session complete. Tap below to reconnect.';
     }, MAX_SESSION_MS);
 
-    try {
-      await speak('Dream Unity is ready. What would you like to explore?');
-      if (!active) return;
-      busy = false;
-      actionButton.disabled = false;
-      actionButton.textContent = 'END VOICE';
-      startListening();
-    } catch (error) {
-      fail(error instanceof Error ? error.message : String(error));
+    busy = false;
+    actionButton.disabled = false;
+    actionButton.textContent = 'END CONVERSATION';
+    startListening();
+  }
+
+  async function greetOnArrival() {
+    if (app.classList.contains('detail') || app.classList.contains('game-open')) return;
+    panel.classList.add('arrival');
+    setOpen(true);
+    copy.textContent = ARRIVAL_GREETING;
+    actionButton.textContent = 'START CONVERSATION';
+    setPanelState('speaking', 'UNITY IS SPEAKING');
+    await speak(ARRIVAL_GREETING);
+    if (!active && panel.classList.contains('arrival')) {
+      setPanelState('connected', 'TAP UNITY TO ANSWER');
+      copy.textContent = ARRIVAL_GREETING;
     }
   }
 
@@ -295,6 +309,15 @@
     }
   });
   observer.observe(app, { attributes: true, attributeFilter: ['class'] });
+
+  const queueArrivalGreeting = () => window.setTimeout(greetOnArrival, 120);
+  if (document.visibilityState === 'hidden') {
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') queueArrivalGreeting();
+    }, { once: true });
+  } else {
+    queueArrivalGreeting();
+  }
 
   window.addEventListener('pagehide', () => cleanup({ keepPanel: false }));
 })();

@@ -5,14 +5,19 @@ const index = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8')
 const voice = fs.readFileSync(new URL('../voice.js', import.meta.url), 'utf8');
 const css = fs.readFileSync(new URL('../voice.css', import.meta.url), 'utf8');
 const api = fs.readFileSync(new URL('../api/realtime-session.js', import.meta.url), 'utf8');
+const visual = fs.readFileSync(new URL('../visual-parts/light-overview-07.txt', import.meta.url), 'utf8');
 const pkg = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 
-assert.match(index, /id="duVoiceLauncher"/, 'front page must expose voice launcher');
+assert.match(index, /class="unity-label du-unity-oracle"[^>]*data-voice-launcher/, 'the central Unity symbol must be the voice launcher');
 assert.match(index, /id="duVoicePanel"/, 'front page must include voice panel');
-assert.match(index, /voice\.css\?v=20260827-realtime-voice-1/, 'front page must load voice CSS');
-assert.match(index, /voice\.js\?v=20260827-zero-key-voice-3/, 'front page must load zero-key voice runtime');
+assert.doesNotMatch(index, /du-voice-launcher-copy|<strong>TALK<\/strong>/, 'the detached TALK pill must not return');
+assert.match(index, /voice\.css\?v=20260827-unity-oracle-4/, 'front page must load Unity Oracle CSS');
+assert.match(index, /voice\.js\?v=20260827-unity-oracle-4/, 'front page must load Unity Oracle runtime');
 assert.doesNotMatch(index, /type="module" src="\.\/voice\.js/, 'voice must not depend on external module imports');
 
+assert.match(voice, /ARRIVAL_GREETING = 'Hello, welcome to Dream Unity\. What would you like to know\?'/, 'Unity must greet every arrival with the approved wording');
+assert.match(voice, /greetOnArrival/, 'Unity must initiate the arrival greeting automatically');
+assert.match(voice, /querySelector\('\[data-voice-launcher\]'\)/, 'voice must bind to the central Unity control');
 assert.match(voice, /SpeechRecognition \|\| window\.webkitSpeechRecognition/, 'voice must support browser speech recognition');
 assert.match(voice, /speechSynthesis/, 'voice must provide spoken assistant output');
 assert.match(voice, /SpeechSynthesisUtterance/, 'voice must synthesize model responses');
@@ -33,7 +38,10 @@ assert.doesNotMatch(api, /process\.env\.|OPENAI_API_KEY|AI_GATEWAY_API_KEY/, 'vo
 
 assert.equal(pkg.dependencies, undefined, 'static Dream Unity package must remain production-dependency free');
 assert.deepEqual(Object.keys(pkg.devDependencies || {}), ['playwright'], 'zero-key voice must add no runtime or voice build dependencies');
-assert.match(css, /#app\.detail>.*du-voice-launcher/, 'voice must be limited to the overview');
-assert.match(css, /#app\.game-open>.*du-voice-launcher/, 'voice must hide inside games');
+assert.match(css, /\.du-unity-oracle/, 'Unity Oracle must expose a central accessible hit target');
+assert.match(css, /\.du-voice-panel\.arrival/, 'arrival greeting must be visually anchored to Unity');
+assert.match(css, /#app\.detail>\.du-voice-panel/, 'voice transcript must hide away from the overview');
+assert.match(visual, /oracleState=app&&app\.dataset/, 'Unity core must receive live voice state');
+assert.match(visual, /voice aperture/, 'Unity core must visibly articulate without being replaced');
 
-console.log('Dream Unity zero-key browser-native voice integration checks passed.');
+console.log('Dream Unity central Unity Oracle voice checks passed.');
