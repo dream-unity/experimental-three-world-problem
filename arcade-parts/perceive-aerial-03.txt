@@ -1,112 +1,120 @@
-        escort.size = Math.max(9, E.u * (0.012 + depth * 0.014));
-        escort.heading = leader.heading + Math.sin(encounter.age * 0.68 + escort.weavePhase) * 0.15;
-        escort.bank = encounter.turnValue * 0.38 + Math.cos(orbit) * 0.32;
-        escort.pulse = 0.42 + 0.58 * Math.sin(encounter.age * 2.1 + escort.weavePhase) ** 2;
-        escort.hitFlash = Math.max(0, escort.hitFlash - dt * 4.4);
-        escort.trail.push([escort.sx, escort.sy]);
-        if (escort.trail.length > 10) escort.trail.shift();
-      }
 
-      refreshRoleGeometry();
-      updateRelationalRole(dt, false);
-      updateAcquisition(dt);
+    function candidateById(id) {
+      return candidates.find((jet) => jet.id === id && jet.alive) || null;
     }
 
-    function rankedOutsideEscorts() {
-      if (!encounter.geometry) {
-        encounter.geometry = roleDriftGeometry(activeEscorts(), encounter.outsideAxis, {
-          threshold: encounter.config.outsideThreshold,
-          yScale: 0.84,
-        });
-      }
-      return encounter.geometry.outside.map((metric) => metric.escort);
-    }
-
-    function switchRole(next, forced = false) {
-      if (!next || !next.alive) return;
-      if (encounter.target === next) return;
-      const oldTarget = encounter.target;
-      encounter.previousTarget = oldTarget && oldTarget.alive ? oldTarget : encounter.previousTarget;
-      encounter.target = next;
-      encounter.candidate = null;
-      encounter.candidateTimer = 0;
+    function migrateTarget(nextTarget) {
+      if (encounter.target === nextTarget) return;
+      if (encounter.target?.alive) encounter.previousTarget = encounter.target;
+      const hadTarget = Boolean(encounter.target);
+      encounter.target = nextTarget;
       encounter.targetStableFor = 0;
-      encounter.roleSwitchAt = encounter.age;
-      encounter.reticleHold = 0;
-      encounter.reacquired = false;
-      if (oldTarget && oldTarget !== next) stats.roleSwitches++;
+      encounter.relationOnsetAt = encounter.age;
+      encounter.vulnerability = 0;
+      encounter.demoLockout = Math.max(encounter.demoLockout, 0.06);
+      if (hadTarget && nextTarget) {
+        encounter.roleMigrations += 1;
+        stats.roleMigrations += 1;
+      }
     }
 
-    function updateRelationalRole(dt, force = false) {
-      const ranked = rankedOutsideEscorts();
-      const next = ranked[0] || null;
-      encounter.roleMargin = encounter.geometry?.margin ?? (ranked.length > 1 ? ranked[1].distanceToLeader - ranked[0].distanceToLeader : 1);
-      if (!next) {
-        encounter.target = null;
-        return;
+    function updateRelationState(E, dt) {
+      const config = encounter.config;
+      const state = causalInterpositionState(
+        { id: anchors[0].id, x: anchors[0].localX, y: anchors[0].localY },
+        { id: anchors[1].id, x: anchors[1].localX, y: anchors[1].localY },
+        activeCandidates().map((jet) => ({ id: jet.id, x: jet.localX, y: jet.localY, alive: jet.alive })),
+        {
+          lineThreshold: config.lineThreshold,
+          edgeMargin: 0.14,
+          compression: encounter.compression,
+          requireCompression: config.requireCompression,
+          compressionThreshold: config.compressionThreshold,
+        },
+      );
+      encounter.relationState = state;
+      const rawCandidateId = state.activeTargetId;
+
+      if (!rawCandidateId) {
+        encounter.relationCandidateId = null;
+        encounter.relationCandidateTimer = 0;
+        migrateTarget(null);
+      } else if (encounter.relationCandidateId === rawCandidateId) {
+        encounter.relationCandidateTimer += dt;
+      } else {
+        encounter.relationCandidateId = rawCandidateId;
+        encounter.relationCandidateTimer = 0;
       }
-      if (!encounter.target || !encounter.target.alive || force) {
-        switchRole(next, true);
-        return;
+
+      if (rawCandidateId && encounter.relationCandidateTimer >= config.relationDwell) {
+        migrateTarget(candidateById(rawCandidateId));
       }
-      if (next === encounter.target) {
-        encounter.candidate = null;
-        encounter.candidateTimer = 0;
+
+      if (encounter.target?.alive && encounter.target.id === rawCandidateId) {
         encounter.targetStableFor += dt;
-        return;
+        encounter.vulnerability = lerp(encounter.vulnerability, 1, 1 - Math.exp(-dt * 12));
+      } else {
+        encounter.vulnerability = lerp(encounter.vulnerability, 0, 1 - Math.exp(-dt * 15));
       }
 
-      const targetStillOutside = encounter.target.outsideProjection > encounter.config.outsideThreshold * 0.45;
-      const materiallyCloser = next.distanceToLeader
-        < encounter.target.distanceToLeader * (1 - encounter.config.distanceAdvantage);
-      const roleChanged = !targetStillOutside || materiallyCloser;
-      if (!roleChanged || encounter.targetStableFor < encounter.config.roleHold) {
-        encounter.candidate = null;
-        encounter.candidateTimer = 0;
-        encounter.targetStableFor += dt;
-        return;
-      }
-
-      if (encounter.candidate === next) encounter.candidateTimer += dt;
-      else {
-        encounter.candidate = next;
-        encounter.candidateTimer = 0;
-      }
-      if (encounter.candidateTimer >= encounter.config.candidateDwell) switchRole(next);
-      else encounter.targetStableFor += dt;
-    }
-
-    function updateAcquisition(dt) {
-      const target = encounter.target;
-      if (!target || !target.alive || encounter.reacquired) return;
-      const radius = Math.max(18, target.size * 1.55);
-      if (dist(reticle.x, reticle.y, target.sx, target.sy) <= radius) encounter.reticleHold += dt;
-      else encounter.reticleHold = Math.max(0, encounter.reticleHold - dt * 1.8);
-      if (encounter.reticleHold >= 0.17) {
-        encounter.reacquired = true;
-        const latency = Math.max(0, encounter.age - encounter.roleSwitchAt);
-        stats.reacquisitionLatencies.push(latency);
-        stats.reacquisitions++;
+      encounter.demoLockout = Math.max(0, encounter.demoLockout - dt);
+      if (encounter.demoPending && !encounter.demoPlayed && encounter.target && encounter.vulnerability > 0.82) {
+        encounter.demoPlayed = true;
+        encounter.demoPending = false;
+        encounter.demoLockout = 0.55;
+        encounter.target.shieldFlash = 1;
+        demoTracers.push({
+          x1: E.w * 0.16,
+          y1: E.bottom - E.u * 0.08,
+          target: encounter.target,
+          life: 0.7,
+          max: 0.7,
+          struck: false,
+        });
+        E.sfx('good', 0.82);
       }
     }
 
-    function drawFighter(c, x, y, size, heading, bank, rgb, kind = 'escort', alpha = 1, pulse = 0.5) {
-      const enemy = kind !== 'player';
-      c.save();
-      c.translate(x, y);
-      c.rotate((enemy ? Math.PI : 0) + heading + bank * 0.16);
-      c.globalCompositeOperation = 'lighter';
-      c.globalAlpha = alpha;
+    function updateDemo(E, dt) {
+      for (let index = demoTracers.length - 1; index >= 0; index -= 1) {
+        const tracer = demoTracers[index];
+        tracer.life -= dt;
+        const progress = 1 - clamp(tracer.life / tracer.max, 0, 1);
+        if (!tracer.struck && progress > 0.72 && tracer.target?.alive) {
+          tracer.struck = true;
+          tracer.target.shieldFlash = 1;
+          E.burst(tracer.target.sx, tracer.target.sy, E.secondary, 8, 90, 1.8);
+          E.shake(3);
+        }
+        if (tracer.life <= 0) demoTracers.splice(index, 1);
+      }
+    }
 
-      const glow = c.createRadialGradient(0, 0, 0, 0, 0, size * 2.45);
-      glow.addColorStop(0, rgba(rgb, kind === 'leader' ? 0.2 : 0.12 + pulse * 0.055));
-      glow.addColorStop(1, 'rgba(0,0,0,0)');
-      c.fillStyle = glow;
-      c.fillRect(-size * 2.5, -size * 2.5, size * 5, size * 5);
+    function updateFormation(E, dt) {
+      if (!encounter) return;
+      encounter.age += dt;
+      if (!encounter.solved && !encounter.failed) {
+        encounter.depth = Math.min(1.08, encounter.depth + dt * encounter.config.approachSpeed);
+      }
+      encounter.linkFlow = (encounter.linkFlow + dt * (0.42 + level * 0.028)) % 1;
+      const frame = formationFrame();
+      updateAnchorGeometry(dt, frame);
+      updateCandidateGeometry(dt, frame);
+      projectFormation(E);
+      updateRelationState(E, dt);
+      updateDemo(E, dt);
+    }
 
-      c.fillStyle = rgba(rgb, kind === 'leader' ? 0.24 : 0.14 + pulse * 0.055);
-      c.strokeStyle = rgba(rgb, kind === 'leader' ? 0.96 : 0.76);
-      c.lineWidth = Math.max(1, size * 0.07);
-      c.beginPath();
-      c.moveTo(0, -size * 1.42);
-      c.lineTo(size * 0.22, -size * 0.5);
+    function relationCueStrength() {
+      const base = encounter?.config?.cueAlpha || 0;
+      const learnedFade = encounter?.hits ? Math.max(0.35, 1 - encounter.hits * 0.2) : 1;
+      return base * learnedFade;
+    }
+
+    function currentRelationPhase() {
+      if (!encounter?.relationState) return 'none';
+      if (encounter.target && encounter.vulnerability > 0.62) return 'open';
+      if (encounter.relationState.geometricTargetId && !encounter.relationState.compressionGate) return 'geometry-without-compression';
+      if (encounter.relationState.geometricTargetId) return 'forming';
+      return 'closed';
+    }

@@ -1,64 +1,70 @@
-      player.invulnerable = 0.68;
-      streak = 0;
-      E.setMetric('SHIELD', `${Math.ceil(player.shield)} · ×${streak}`);
-      E.shake(9);
-      E.flash([255, 72, 110], 0.22);
-      E.burst(x, y, [255, 72, 110], 16, 175, 2.5);
-      E.toast(copy || 'FORMATION HIT', 0.72);
-      E.sfx('bad');
-      if (player.shield <= 0) {
-        writeProfile({ at: Date.now(), type: 'run', wave, level, ...stats });
-        E.end('PERCEPTION LOST');
-      }
-    }
 
-    function nearestInsideEscort() {
-      return encounter.geometry?.inside?.[0]?.escort || null;
-    }
-
-    function classifyError(object) {
-      return roleDriftClassifyShot({
-        shotId: object === leader ? 'leader' : object?.id,
-        leaderId: 'leader',
-        currentTargetId: encounter.target?.id,
-        previousTargetId: encounter.previousTarget?.id,
-        secondsSinceSwitch: encounter.age - encounter.roleSwitchAt,
-        geometry: encounter.geometry,
+    function classifyShotObject(object) {
+      return causalShotClassification({
+        shotId: object?.id,
+        state: encounter.relationState,
+        previousTargetId: encounter.previousTarget?.id || null,
+        secondsSinceMigration: encounter.age - encounter.relationOnsetAt,
       });
     }
 
-    function recordRoleOutcome(correct, errorType = null) {
+    function nearestAimObject() {
+      let best = null;
+      let bestDistance = Number.POSITIVE_INFINITY;
+      for (const jet of allEnemyJets()) {
+        const distance = dist(reticle.x, reticle.y, jet.sx, jet.sy);
+        const radius = Math.max(18, jet.size * 1.48);
+        if (distance <= radius && distance < bestDistance) {
+          bestDistance = distance;
+          best = { type: jet.role, value: jet };
+        }
+      }
+      if (!best) {
+        for (const projectile of enemyShots) {
+          const distance = dist(reticle.x, reticle.y, projectile.x, projectile.y);
+          if (distance < 18 && distance < bestDistance) {
+            bestDistance = distance;
+            best = { type: 'projectile', value: projectile };
+          }
+        }
+      }
+      return best;
+    }
+
+    function recordShotOutcome(correct, errorType = null) {
       writeProfile({
         at: Date.now(),
-        type: 'role-shot',
+        type: 'causal-shot',
         wave,
         level,
         correct,
         errorType,
-        roleSwitches: stats.roleSwitches,
-        reacquisitionLatency: encounter.reacquired
-          ? stats.reacquisitionLatencies.at(-1) ?? null
-          : null,
+        relationPhase: currentRelationPhase(),
+        requireCompression: encounter.config.requireCompression,
+        compression: Number(encounter.compression.toFixed(5)),
         targetStableFor: Number(encounter.targetStableFor.toFixed(3)),
-        turnSign: encounter.committedTurnSign,
+        roleMigrations: encounter.roleMigrations,
         shots: stats.shots,
         firingAccuracy: stats.shots ? stats.hits / stats.shots : 0,
       });
     }
 
-    function completeFormation(E) {
+    function collapseFormation(E) {
+      if (encounter.solved || encounter.failed) return;
       encounter.solved = true;
-      leader.alive = false;
-      completedFormations++;
-      const bonus = 620 + level * 90 + streak * 80;
-      E.addScore(bonus, leader.sx, leader.sy, `FORMATION +${bonus}`);
-      E.burst(leader.sx, leader.sy, [255, 215, 126], 30, 250, 3.6);
+      completedFormations += 1;
+      const bonus = 740 + level * 90 + streak * 70;
+      E.addScore(bonus, (anchors[0].sx + anchors[1].sx) * 0.5, (anchors[0].sy + anchors[1].sy) * 0.5, `CASCADE +${bonus}`);
+      for (const jet of allEnemyJets()) {
+        jet.alive = false;
+        E.burst(jet.sx, jet.sy, jet.role === 'anchor' ? E.secondary : E.rgb, jet.role === 'anchor' ? 22 : 9, 220, 3);
+      }
       E.flash(E.rgb, 0.22);
       E.shake(11);
       E.sfx('good', 1.13);
-      E.toast('SHIELD NETWORK COLLAPSED', 1.0);
-      resolveTimer = 0.9;
-      wave++;
+      E.toast('FIELD COLLAPSED', 0.9);
+      resolveTimer = 0.86;
+      wave += 1;
       const nextLevel = Math.min(10, 1 + Math.floor(completedFormations / 2));
       if (nextLevel > level) {
         level = nextLevel;
@@ -69,60 +75,110 @@
         type: 'formation',
         completed: true,
         level,
-        roleSwitches: stats.roleSwitches,
-        medianReacquisition: stats.reacquisitionLatencies.length
-          ? [...stats.reacquisitionLatencies].sort((a, b) => a - b)[Math.floor(stats.reacquisitionLatencies.length / 2)]
-          : null,
+        roleMigrations: encounter.roleMigrations,
+        successfulOpenings: encounter.hits,
+        requiredOpenings: encounter.config.hitsRequired,
         errors: stats.errors,
+        medianAcquisition: stats.acquisitionLatencies.length
+          ? [...stats.acquisitionLatencies].sort((a, b) => a - b)[Math.floor(stats.acquisitionLatencies.length / 2)]
+          : null,
       });
     }
 
-    function resolveCorrect(E, escort) {
-      if (!escort?.alive || encounter.solved || encounter.failed) return;
-      escort.alive = false;
-      encounter.hits++;
-      streak++;
-      stats.correct++;
-      stats.hits++;
-      const reward = 300 + level * 42 + streak * 66 + Math.floor(encounter.targetStableFor * 18);
-      E.addScore(reward, escort.sx, escort.sy, streak > 2 ? `FOCUS ×${streak}` : `RELAY +${reward}`);
-      E.burst(escort.sx, escort.sy, E.secondary, 22, 225, 3);
+    function destroyVulnerableJet(E, jet) {
+      if (!jet?.alive || encounter.solved || encounter.failed) return;
+      jet.alive = false;
+      encounter.hits += 1;
+      streak += 1;
+      stats.correct += 1;
+      stats.hits += 1;
+      const acquisition = Math.max(0, encounter.age - encounter.relationOnsetAt);
+      stats.acquisitionLatencies.push(acquisition);
+      const reward = 330 + level * 48 + streak * 68 + Math.floor(encounter.targetStableFor * 20);
+      E.addScore(reward, jet.sx, jet.sy, streak > 2 ? `FOCUS ×${streak}` : `OPEN +${reward}`);
+      E.burst(jet.sx, jet.sy, E.secondary, 24, 230, 3.1);
       E.flash(E.rgb, 0.16);
       E.shake(7);
       E.sfx('good', 1 + Math.min(streak, 8) * 0.032);
-      recordRoleOutcome(true);
-      encounter.previousTarget = escort;
-      encounter.target = null;
-      encounter.candidate = null;
-      encounter.candidateTimer = 0;
-      encounter.targetStableFor = 0;
-      encounter.roleSwitchAt = encounter.age;
-      encounter.reticleHold = 0;
-      encounter.reacquired = false;
-      E.setMetric('SHIELD', `${Math.ceil(player.shield)} · ×${streak}`);
+      recordShotOutcome(true);
 
-      if (encounter.hits >= encounter.config.hitsRequired || activeEscorts().length < 3) completeFormation(E);
-      else {
-        for (const remaining of activeEscorts()) {
-          remaining.slotAngle += rand(0.24, -0.24);
-          remaining.radialPhase += rand(0.45, -0.45);
-        }
-        refreshRoleGeometry();
-        updateRelationalRole(0, true);
-        E.toast('ROLE SHIFTS', 0.65);
-      }
+      encounter.previousTarget = jet;
+      encounter.target = null;
+      encounter.relationCandidateId = null;
+      encounter.relationCandidateTimer = 0;
+      encounter.targetStableFor = 0;
+      encounter.vulnerability = 0;
+      encounter.relationOnsetAt = encounter.age;
+      encounter.demoLockout = 0.14;
+      for (const remaining of activeCandidates()) remaining.phaseOffset += rand(0.12, -0.12);
+
+      if (encounter.hits >= encounter.config.hitsRequired || activeCandidates().length < 3) collapseFormation(E);
+      else E.toast('THE FIELD REFORMS', 0.62);
+      E.setMetric('SHIELD', `${Math.ceil(player.shield)} · ×${streak}`);
     }
 
-    function resolveWrong(E, object) {
-      if (wrongShotCooldown > 0 || encounter.solved || encounter.failed) return;
-      wrongShotCooldown = 0.42;
-      stats.wrong++;
-      const errorType = classifyError(object);
+    function closedShieldShot(E, object) {
+      const errorType = classifyShotObject(object);
+      stats.wrong += 1;
       stats.errors[errorType] = (stats.errors[errorType] || 0) + 1;
-      if (object && object !== leader) object.hitFlash = 1;
-      recordRoleOutcome(false, errorType);
-      const labels = {
-        'stale-role-perseveration': 'STALE ROLE',
-        'inside-outside-reversal': 'INSIDE / OUTSIDE',
-        'outside-distance-substitution': 'WRONG DISTANCE',
-        'reference-object-substitution': 'LEADER IS THE REFERENCE',
+      streak = 0;
+      if (object) {
+        object.hitFlash = 1;
+        object.shieldFlash = 1;
+        E.burst(object.sx, object.sy, [255, 190, 118], 8, 105, 1.9);
+      }
+      player.heat = Math.min(1, player.heat + 0.055);
+      E.sfx('bad', 0.82);
+      E.shake(3);
+      E.toast('SHIELD HELD', 0.56);
+      recordShotOutcome(false, errorType);
+      if (level >= 3) hurt(E, 0.24, object?.sx ?? reticle.x, object?.sy ?? reticle.y, 'ENERGY RETURN');
+      else E.setMetric('SHIELD', `${Math.ceil(player.shield)} · ×${streak}`);
+    }
+
+    function fire(E) {
+      if (!player || player.fireCooldown > 0 || player.heat >= 0.985 || !encounter || encounter.solved || encounter.failed) return;
+      player.fireCooldown = 0.11;
+      player.heat = Math.min(1, player.heat + 0.12);
+      stats.shots += 1;
+      const lock = nearestAimObject();
+      const endX = lock ? lock.value.x ?? lock.value.sx : reticle.x;
+      const endY = lock ? lock.value.y ?? lock.value.sy : reticle.y;
+      tracers.push({ x1: player.x - 5, y1: player.y - player.size * 0.82, x2: endX, y2: endY, life: 0.12, max: 0.12 });
+      tracers.push({ x1: player.x + 5, y1: player.y - player.size * 0.82, x2: endX + 2, y2: endY, life: 0.1, max: 0.1 });
+      E.sfx('tap', 1.62);
+      if (!lock) return;
+
+      stats.hits += 1;
+      if (lock.type === 'projectile') {
+        const index = enemyShots.indexOf(lock.value);
+        if (index >= 0) enemyShots.splice(index, 1);
+        E.addScore(18, endX, endY, '+18');
+        E.burst(endX, endY, E.secondary, 8, 120, 1.8);
+        return;
+      }
+
+      const object = lock.value;
+      const open = object === encounter.target
+        && encounter.vulnerability >= 0.62
+        && encounter.demoLockout <= 0;
+      if (open && object.role === 'candidate') destroyVulnerableJet(E, object);
+      else closedShieldShot(E, object);
+    }
+
+    function hurt(E, amount, x, y, copy = 'FORMATION HIT') {
+      if (!player || player.invulnerable > 0) return;
+      player.shield = Math.max(0, player.shield - amount);
+      player.invulnerable = 0.68;
+      streak = 0;
+      E.setMetric('SHIELD', `${Math.ceil(player.shield)} · ×${streak}`);
+      E.shake(9);
+      E.flash([255, 72, 110], 0.22);
+      E.burst(x, y, [255, 72, 110], 16, 175, 2.5);
+      E.toast(copy, 0.72);
+      E.sfx('bad');
+      if (player.shield <= 0) {
+        writeProfile({ at: Date.now(), type: 'run', wave, level, ...stats });
+        E.end('PERCEPTION LOST');
+      }
+    }

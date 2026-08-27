@@ -1,64 +1,8 @@
-        'screen-position-substitution': 'SCREEN SIDE IS NOT THE RULE',
-      };
-      const x = object?.sx ?? reticle.x;
-      const y = object?.sy ?? reticle.y;
-      E.burst(x, y, [255, 78, 120], 10, 135, 2.1);
-      hurt(E, 0.72, x, y, labels[errorType] || 'FALSE ROLE LOCK');
-    }
-
-    function nearestAimObject() {
-      let best = null;
-      let bestDistance = Infinity;
-      const objects = leader?.alive ? [leader, ...activeEscorts()] : activeEscorts();
-      for (const object of objects) {
-        const distance = dist(reticle.x, reticle.y, object.sx, object.sy);
-        const radius = Math.max(18, object.size * 1.45);
-        if (distance <= radius && distance < bestDistance) {
-          bestDistance = distance;
-          best = { type: object === leader ? 'leader' : 'escort', value: object };
-        }
-      }
-      if (!best) {
-        for (const shot of enemyShots) {
-          const distance = dist(reticle.x, reticle.y, shot.x, shot.y);
-          if (distance < 18 && distance < bestDistance) {
-            bestDistance = distance;
-            best = { type: 'projectile', value: shot };
-          }
-        }
-      }
-      return best;
-    }
-
-    function fire(E) {
-      if (!player || player.fireCooldown > 0 || player.heat >= 0.985 || !encounter || encounter.solved || encounter.failed) return;
-      player.fireCooldown = 0.115;
-      player.heat = Math.min(1, player.heat + 0.13);
-      stats.shots++;
-      const lock = nearestAimObject();
-      const targetX = lock ? lock.value.x ?? lock.value.sx : reticle.x;
-      const targetY = lock ? lock.value.y ?? lock.value.sy : reticle.y;
-      tracers.push({ x1: player.x - 5, y1: player.y - player.size * 0.8, x2: targetX, y2: targetY, life: 0.12, max: 0.12 });
-      tracers.push({ x1: player.x + 5, y1: player.y - player.size * 0.8, x2: targetX + 2, y2: targetY, life: 0.1, max: 0.1 });
-      E.sfx('tap', 1.6);
-      if (!lock) return;
-      if (lock.type === 'projectile') {
-        const index = enemyShots.indexOf(lock.value);
-        if (index >= 0) enemyShots.splice(index, 1);
-        stats.hits++;
-        E.addScore(20, targetX, targetY, '+20');
-        E.burst(targetX, targetY, E.secondary, 8, 120, 1.8);
-        return;
-      }
-      const object = lock.value;
-      if (lock.type === 'escort' && object === encounter.target) resolveCorrect(E, object);
-      else resolveWrong(E, object);
-    }
 
     function spawnEnemyShot(E) {
-      const active = activeEscorts();
-      if (!active.length || enemyShots.length >= encounter.config.incomingLimit) return;
-      const shooter = choose(active);
+      const shooters = allEnemyJets();
+      if (!shooters.length || enemyShots.length >= encounter.config.incomingLimit) return;
+      const shooter = choose(shooters);
       const dx = player.x - shooter.sx;
       const dy = player.y - shooter.sy;
       const length = Math.max(1, Math.hypot(dx, dy));
@@ -66,12 +10,42 @@
       enemyShots.push({
         x: shooter.sx,
         y: shooter.sy,
-        vx: dx / length * speed + rand(14, -14),
+        vx: dx / length * speed + rand(12, -12),
         vy: dy / length * speed + rand(10, -10),
-        r: 3.2 + encounter.depth * 1.7,
+        r: 3.1 + encounter.depth * 1.6,
         life: 4.8,
       });
-      E.sfx('tick', 0.66 + encounter.depth * 0.28);
+      E.sfx('tick', 0.64 + encounter.depth * 0.25);
+    }
+
+    function updateCombat(E, dt) {
+      if (encounter.config.enemyFire && !encounter.solved && !encounter.failed) {
+        encounter.fireTimer -= dt;
+        if (encounter.fireTimer <= 0 && encounter.age > 1.45) {
+          spawnEnemyShot(E);
+          encounter.fireTimer = rand(encounter.config.fireInterval * 1.2, encounter.config.fireInterval * 0.72);
+        }
+      }
+
+      for (let index = enemyShots.length - 1; index >= 0; index -= 1) {
+        const shot = enemyShots[index];
+        shot.x += shot.vx * dt;
+        shot.y += shot.vy * dt;
+        shot.life -= dt;
+        if (shot.life <= 0 || shot.x < -30 || shot.x > E.w + 30 || shot.y > E.bottom + 35) {
+          enemyShots.splice(index, 1);
+          continue;
+        }
+        if (player.invulnerable <= 0 && dist(shot.x, shot.y, player.x, player.y) < player.size * 0.7 + shot.r) {
+          enemyShots.splice(index, 1);
+          hurt(E, 0.55, player.x, player.y, 'EVASIVE FAILURE');
+        }
+      }
+
+      for (let index = tracers.length - 1; index >= 0; index -= 1) {
+        tracers[index].life -= dt;
+        if (tracers[index].life <= 0) tracers.splice(index, 1);
+      }
     }
 
     function updatePlayer(E, dt) {
@@ -102,5 +76,37 @@
       player.invulnerable = Math.max(0, player.invulnerable - dt);
     }
 
-    function updateCombat(E, dt) {
-      wrongShotCooldown = Math.max(0, wrongShotCooldown - dt);
+    function failEncounter(E) {
+      if (!encounter || encounter.solved || encounter.failed) return;
+      encounter.failed = true;
+      stats.errors['late-relational-acquisition'] = (stats.errors['late-relational-acquisition'] || 0) + 1;
+      hurt(E, 1.05, (anchors[0].sx + anchors[1].sx) * 0.5, (anchors[0].sy + anchors[1].sy) * 0.5, 'FIELD BROKE THROUGH');
+      for (const jet of allEnemyJets()) jet.alive = false;
+      resolveTimer = 0.72;
+      wave += 1;
+      writeProfile({
+        at: Date.now(),
+        type: 'formation',
+        completed: false,
+        level,
+        errorType: 'late-relational-acquisition',
+        successfulOpenings: encounter.hits,
+        requiredOpenings: encounter.config.hitsRequired,
+        roleMigrations: encounter.roleMigrations,
+      });
+    }
+
+    function resetUiDefinition() {
+      const definition = GAME_BY_KEY['machine:0'];
+      if (!definition) return;
+      Object.assign(definition, {
+        id: 'parallax-wing-causal-interposition',
+        name: 'PARALLAX WING',
+        glyph: '✦',
+        rule: 'Watch the linked formation change. Fire when a shield gives way.',
+        hint: 'MOVE / AIM · TAP OR SPACE TO FIRE',
+        factory: createPerceptionAerialGame,
+      });
+    }
+
+    resetUiDefinition();
