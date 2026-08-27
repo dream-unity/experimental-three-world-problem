@@ -1,13 +1,57 @@
 import { createHash } from 'node:crypto';
 
-const GATEWAY_CLIENT_SECRET_URL = 'https://ai-gateway.vercel.sh/v1/realtime/client-secrets';
-const GATEWAY_REALTIME_URL = 'https://ai-gateway.vercel.sh/v4/ai/realtime-model';
-const MODEL = 'openai/gpt-realtime-2.1';
-const TOKEN_TTL_SECONDS = 30;
-const REQUEST_TIMEOUT_MS = 8_000;
+const BLOCKRUN_URL = 'https://blockrun.ai/api/v1/chat/completions';
+const MODELS = [
+  'nvidia/mistral-nemotron',
+  'nvidia/step-3.7-flash',
+  'nvidia/gpt-oss-120b',
+  'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning',
+  'nvidia/nemotron-nano-9b-v2'
+];
+const REQUEST_TIMEOUT_MS = 20_000;
 const RATE_WINDOW_MS = 10 * 60_000;
-const RATE_LIMIT = 6;
+const RATE_LIMIT = 24;
+const MAX_HISTORY = 10;
 const rateBuckets = new Map();
+
+const SYSTEM_PROMPT = `You are Dream Unity, the spoken intelligence embedded in the Dream Unity cognitive-training environment. Speak as Dream Unity, not as a generic chatbot.
+
+DREAM MACHINE concerns cognition:
+- PERCEIVE asks: What is happening now? Detect, discriminate, organise and select present information.
+- MODEL asks: What system could produce what I am seeing? Infer hidden structure, relationships, variables and rules.
+- PREDICT asks: Given this state and system, what is likely to happen next? Project plausible future states, probabilities and consequences.
+
+DREAM MAKER concerns directed agency:
+- INTEND: form a coherent direction or chosen outcome.
+- ACT: convert intention and perception into timely behaviour.
+- BECOME: deliberately inhabit useful perspectives and ways of being while preserving reality-testing, self-awareness and agency.
+
+DREAM WORLD concerns construction and emergence:
+- MATTER: the elements and forces available.
+- STRUCTURE: how parts are organised and constrained.
+- EMERGE: how larger patterns arise from local interactions.
+
+Voice behaviour:
+- Reply naturally for spoken conversation. Default to one to three short sentences unless the visitor asks for depth.
+- Make sharp distinctions between Perceive, Model and Predict.
+- For training, give one exercise or ask one clear question at a time.
+- Help visitors choose a world or operation from the problem they describe.
+- You may discuss other topics when asked; do not force every answer back to Dream Unity.
+- Never claim access to game state, scores, account data, personal history or sensors that were not supplied in the conversation.
+- Do not claim Dream Unity is a validated clinical, neurological, psychometric or IQ intervention.
+- If asked what you are, say you are Dream Unity's voice intelligence.
+- Reply in the visitor's language when practical.
+- Avoid dense formatting because your answer will be spoken aloud.`;
+
+const clampText = (value, max) => typeof value === 'string' ? value.trim().slice(0, max) : '';
+
+function sanitizeHistory(value) {
+  if (!Array.isArray(value)) return [];
+  return value.slice(-MAX_HISTORY).map(item => ({
+    role: item?.role === 'assistant' ? 'assistant' : 'user',
+    content: clampText(item?.content, 1200)
+  })).filter(item => item.content);
+}
 
 function allowedOrigin(req) {
   const origin = String(req.headers.origin || '');
@@ -32,7 +76,7 @@ function requestIdentity(req) {
   const forwarded = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim();
   const ip = forwarded || String(req.socket?.remoteAddress || 'unknown');
   const agent = String(req.headers['user-agent'] || 'unknown').slice(0, 300);
-  return createHash('sha256').update(`dream-unity-realtime|${ip}|${agent}`).digest('hex');
+  return createHash('sha256').update(`dream-unity-voice|${ip}|${agent}`).digest('hex');
 }
 
 function rateLimited(req) {
@@ -48,76 +92,77 @@ function rateLimited(req) {
   return false;
 }
 
-function oidcToken(req) {
-  const header = req.headers['x-vercel-oidc-token'];
-  if (Array.isArray(header) && header[0]) return header[0];
-  if (typeof header === 'string' && header) return header;
-  return process.env.VERCEL_OIDC_TOKEN || '';
+function extractText(data) {
+  const content = data?.choices?.[0]?.message?.content;
+  if (typeof content === 'string') return content.trim();
+  if (Array.isArray(content)) return content.map(part => typeof part === 'string' ? part : String(part?.text || '')).join('').trim();
+  return '';
 }
 
-function realtimeUrl() {
-  const url = new URL(GATEWAY_REALTIME_URL);
-  url.protocol = 'wss:';
-  url.searchParams.set('ai-model-id', MODEL);
-  return url.toString();
-}
-
-async function mintGatewayToken(req) {
-  const oidc = oidcToken(req);
-  if (!oidc) {
-    const error = new Error('Vercel OIDC is not available to this deployment.');
-    error.status = 503;
-    error.code = 'OIDC_NOT_AVAILABLE';
-    throw error;
-  }
-
+async function callFreeModel(model, messages) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   try {
-    const response = await fetch(GATEWAY_CLIENT_SECRET_URL, {
+    const response = await fetch(BLOCKRUN_URL, {
       method: 'POST',
       signal: controller.signal,
-      headers: {
-        Authorization: `Bearer ${oidc}`,
-        'Content-Type': 'application/json',
-        'ai-gateway-protocol-version': '0.0.1',
-        'ai-gateway-auth-method': 'oidc'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: MODEL,
-        expiresIn: TOKEN_TTL_SECONDS
+        model,
+        messages,
+        stream: false,
+        temperature: 0.65,
+        top_p: 0.9,
+        max_tokens: 420
       })
     });
-
     const data = await response.json().catch(() => null);
-    if (!response.ok || !data?.token) {
-      const error = new Error(data?.error?.message || data?.error || data?.message || `AI Gateway client-secret request failed (${response.status}).`);
-      error.status = response.status || 502;
-      error.code = response.status === 402 ? 'GATEWAY_BUDGET'
-        : response.status === 429 ? 'GATEWAY_RATE_LIMIT'
-          : response.status === 401 || response.status === 403 ? 'GATEWAY_AUTH'
-            : 'GATEWAY_SESSION_FAILED';
-      throw error;
-    }
-
+    const text = extractText(data);
+    if (response.ok && text) return { text, model: String(data?.model || model) };
     return {
-      token: data.token,
-      url: realtimeUrl(),
-      expiresAt: data.expiresAt ?? null,
-      model: MODEL,
-      tools: []
+      error: new Error(data?.error?.message || data?.error || data?.message || `Voice model request failed (${response.status}).`),
+      status: response.status
     };
   } catch (error) {
-    if (error?.name === 'AbortError') {
-      const timed = new Error('AI Gateway did not mint a realtime session in time.');
-      timed.status = 504;
-      timed.code = 'GATEWAY_TIMEOUT';
-      throw timed;
-    }
-    throw error;
+    return { error, status: error?.name === 'AbortError' ? 504 : 502 };
   } finally {
     clearTimeout(timeout);
   }
+}
+
+async function answer(body) {
+  const message = clampText(body?.message, 1400);
+  if (!message) {
+    const error = new Error('A spoken message is required.');
+    error.status = 400;
+    throw error;
+  }
+
+  const locale = clampText(body?.locale, 40);
+  const messages = [
+    { role: 'system', content: `${SYSTEM_PROMPT}\nVisitor locale: ${locale || 'unknown'}.` },
+    ...sanitizeHistory(body?.history),
+    { role: 'user', content: message }
+  ];
+
+  let lastFailure = null;
+  for (const model of MODELS) {
+    const result = await callFreeModel(model, messages);
+    if (result.text) {
+      return {
+        text: result.text.slice(0, 1800),
+        model: result.model,
+        provider: 'blockrun',
+        credentialMode: 'none'
+      };
+    }
+    lastFailure = result;
+    if (![400, 404, 410, 429, 500, 502, 503, 504].includes(Number(result.status))) break;
+  }
+
+  const error = lastFailure?.error instanceof Error ? lastFailure.error : new Error('No free voice model is currently available.');
+  error.status = Number(lastFailure?.status) || 502;
+  throw error;
 }
 
 export default async function handler(req, res) {
@@ -131,32 +176,26 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     return res.status(200).json({
       ok: true,
-      service: 'dream-unity-realtime-voice',
-      model: MODEL,
-      provider: 'vercel-ai-gateway',
-      configured: Boolean(oidcToken(req)),
-      credentialMode: 'vercel-oidc',
-      permanentProviderKeyRequired: false,
-      speechMode: 'realtime-websocket'
+      service: 'dream-unity-voice-chat',
+      models: MODELS,
+      provider: 'blockrun',
+      credentialMode: 'none',
+      accountRequired: false,
+      speechMode: 'browser-native'
     });
   }
 
   if (req.method !== 'POST') return res.status(405).json({ error: 'Use POST.' });
-  if (rateLimited(req)) {
-    return res.status(429).json({ code: 'VOICE_RATE_LIMIT', error: 'Voice session limit reached. Try again shortly.' });
-  }
+  if (rateLimited(req)) return res.status(429).json({ code: 'VOICE_RATE_LIMIT', error: 'Voice session limit reached. Try again shortly.' });
 
   try {
-    return res.status(200).json(await mintGatewayToken(req));
+    return res.status(200).json(await answer(req.body && typeof req.body === 'object' ? req.body : {}));
   } catch (error) {
     const status = Number(error?.status) || 502;
-    const code = String(error?.code || 'VOICE_SESSION_FAILED');
-    console.error('Dream Unity AI Gateway realtime session failure', status, code);
-    if (status === 402) return res.status(402).json({ code: 'GATEWAY_BUDGET', error: 'Dream Unity AI Gateway usage credit is unavailable.' });
-    if (status === 429) return res.status(429).json({ code: 'GATEWAY_RATE_LIMIT', error: 'Dream Unity realtime voice is briefly rate-limited.' });
-    if (status === 504) return res.status(504).json({ code: 'GATEWAY_TIMEOUT', error: 'Dream Unity realtime voice session timed out.' });
-    if (status === 401 || status === 403) return res.status(status).json({ code: 'GATEWAY_AUTH', error: 'Dream Unity could not authenticate its AI Gateway session.' });
-    if (status === 503) return res.status(503).json({ code, error: 'Dream Unity realtime voice is not available in this deployment.' });
-    return res.status(502).json({ code, error: 'Dream Unity could not create a realtime voice session.' });
+    if (status === 400) return res.status(400).json({ code: 'BAD_INPUT', error: error.message });
+    if (status === 429) return res.status(429).json({ code: 'UPSTREAM_RATE_LIMIT', error: 'Dream Unity voice is briefly rate-limited. Try again.' });
+    if (status === 504) return res.status(504).json({ code: 'VOICE_TIMEOUT', error: 'Dream Unity voice model timed out.' });
+    console.error('Dream Unity voice chat failure', status, error?.message || 'unknown');
+    return res.status(502).json({ code: 'VOICE_CHAT_FAILED', error: 'Dream Unity could not answer that turn.' });
   }
 }
