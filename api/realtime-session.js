@@ -1,15 +1,11 @@
-import { createHash } from 'node:crypto';
-
 const BLOCKRUN_URL = 'https://blockrun.ai/api/v1/chat/completions';
 const MODELS = [
   'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning',
-  'nvidia/nemotron-nano-9b-v2'
+  'nvidia/nemotron-nano-9b-v2',
+  'nvidia/mistral-nemotron'
 ];
-const REQUEST_TIMEOUT_MS = 22_000;
-const RATE_WINDOW_MS = 10 * 60_000;
-const RATE_LIMIT = 24;
+const REQUEST_TIMEOUT_MS = 14_000;
 const MAX_HISTORY = 10;
-const rateBuckets = new Map();
 
 const SYSTEM_PROMPT = `You are Unity Oracle, the spoken intelligence at the centre of Dream Unity. Speak naturally as Unity.
 
@@ -73,26 +69,6 @@ function applyCors(req, res) {
   return origin;
 }
 
-function requestIdentity(req) {
-  const forwarded = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim();
-  const ip = forwarded || String(req.socket?.remoteAddress || 'unknown');
-  const agent = String(req.headers['user-agent'] || 'unknown').slice(0, 300);
-  return createHash('sha256').update(`dream-unity-voice|${ip}|${agent}`).digest('hex');
-}
-
-function rateLimited(req) {
-  const key = requestIdentity(req);
-  const now = Date.now();
-  const recent = (rateBuckets.get(key) || []).filter(time => now - time < RATE_WINDOW_MS);
-  if (recent.length >= RATE_LIMIT) {
-    rateBuckets.set(key, recent);
-    return true;
-  }
-  recent.push(now);
-  rateBuckets.set(key, recent);
-  return false;
-}
-
 function extractText(data) {
   const content = data?.choices?.[0]?.message?.content;
   if (typeof content === 'string') return content.trim();
@@ -144,24 +120,18 @@ async function callFreeModel(model, messages, parentSignal) {
 }
 
 async function firstCleanAnswer(models, messages) {
-  const controller = new AbortController();
-  const attempts = models.map(model => callFreeModel(model, messages, controller.signal).then(result => {
-    if (result.text) return result;
-    const error = result.error instanceof Error ? result.error : new Error('Voice model did not return a clean answer.');
-    error.status = Number(result.status) || 502;
-    throw error;
-  }));
+  let lastFailure = {
+    error: new Error('No voice model returned a clean answer.'),
+    status: 502
+  };
 
-  try {
-    const winner = await Promise.any(attempts);
-    controller.abort();
-    return winner;
-  } catch (failure) {
-    controller.abort();
-    const errors = Array.isArray(failure?.errors) ? failure.errors : [];
-    const error = errors.find(item => Number(item?.status) === 429) || errors[0] || new Error('No voice model returned a clean answer.');
-    return { error, status: Number(error?.status) || 502 };
+  for (const model of models) {
+    const result = await callFreeModel(model, messages);
+    if (result.text) return result;
+    lastFailure = result;
   }
+
+  return lastFailure;
 }
 
 async function answer(body) {
@@ -214,19 +184,19 @@ export default async function handler(req, res) {
       credentialMode: 'none',
       accountRequired: false,
       speechMode: 'browser-native',
-      responseStrategy: 'fastest-clean-answer'
+      responseStrategy: 'sequential-provider-failover',
+      applicationRateLimit: 'none'
     });
   }
 
   if (req.method !== 'POST') return res.status(405).json({ error: 'Use POST.' });
-  if (rateLimited(req)) return res.status(429).json({ code: 'VOICE_RATE_LIMIT', error: 'Voice session limit reached. Try again shortly.' });
 
   try {
     return res.status(200).json(await answer(req.body && typeof req.body === 'object' ? req.body : {}));
   } catch (error) {
     const status = Number(error?.status) || 502;
     if (status === 400) return res.status(400).json({ code: 'BAD_INPUT', error: error.message });
-    if (status === 429) return res.status(429).json({ code: 'UPSTREAM_RATE_LIMIT', error: 'Dream Unity voice is briefly rate-limited. Try again.' });
+    if (status === 429) return res.status(503).json({ code: 'VOICE_BACKENDS_BUSY', error: 'Unity is reconnecting to an answer service.' });
     if (status === 504) return res.status(504).json({ code: 'VOICE_TIMEOUT', error: 'Dream Unity voice model timed out.' });
     console.error('Dream Unity voice chat failure', status, error?.message || 'unknown');
     return res.status(502).json({ code: 'VOICE_CHAT_FAILED', error: 'Dream Unity could not answer that turn.' });

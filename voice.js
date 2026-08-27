@@ -3,7 +3,7 @@
 
   const VOICE_ENDPOINT = 'https://dream-unity-voice-live.vercel.app/api/realtime-session';
   const MAX_SESSION_MS = 8 * 60 * 1000;
-  const TURN_TIMEOUT_MS = 30_000;
+  const TURN_TIMEOUT_MS = 45_000;
   const MAX_HISTORY = 10;
   const ARRIVAL_GREETING = 'Hello, my name is Unity. What dream would you like to unify?';
   const DEFAULT_COPY = 'Ask Unity anything. Speak naturally, and Unity will answer you aloud.';
@@ -113,10 +113,8 @@
       copy.textContent = 'Microphone or speech-recognition permission was not granted. Allow it, then try again.';
     } else if (/unsupported|SpeechRecognition/i.test(text)) {
       copy.textContent = 'This browser does not expose speech recognition. Try the current Chrome, Edge or Safari browser.';
-    } else if (/429|rate/i.test(text)) {
-      copy.textContent = 'Dream Unity voice is briefly rate-limited. Try again shortly.';
     } else {
-      copy.textContent = 'The voice conversation could not continue. Tap retry to reconnect.';
+      copy.textContent = 'Unity could not reach an answer service. Tap retry to reconnect.';
     }
   }
 
@@ -238,23 +236,46 @@
     const turnTimeout = window.setTimeout(() => controller.abort(), TURN_TIMEOUT_MS);
 
     try {
-      const response = await fetch(VOICE_ENDPOINT, {
-        method: 'POST',
-        cache: 'no-store',
-        credentials: 'omit',
-        signal: controller.signal,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message,
-          history: history.slice(-MAX_HISTORY),
-          locale: navigator.language || 'en-US'
-        })
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok || !data?.text) {
+      let data = null;
+      let response = null;
+
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          response = await fetch(VOICE_ENDPOINT, {
+            method: 'POST',
+            cache: 'no-store',
+            credentials: 'omit',
+            signal: controller.signal,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              message,
+              history: history.slice(-MAX_HISTORY),
+              locale: navigator.language || 'en-US'
+            })
+          });
+          data = await response.json().catch(() => ({}));
+        } catch (error) {
+          if (attempt === 0 && error?.name !== 'AbortError') {
+            setPanelState('connecting', 'RECONNECTING');
+            copy.textContent = 'Unity is reconnecting to an answer service…';
+            await new Promise(resolve => window.setTimeout(resolve, 500));
+            continue;
+          }
+          throw error;
+        }
+
+        if (response.ok && data?.text) break;
+        const retryable = [429, 502, 503, 504].includes(response.status);
+        if (attempt === 0 && retryable) {
+          setPanelState('connecting', 'RECONNECTING');
+          copy.textContent = 'Unity is reconnecting to an answer service…';
+          await new Promise(resolve => window.setTimeout(resolve, 500));
+          continue;
+        }
         throw new Error(String(data?.code || data?.error || `Voice request failed (${response.status}).`));
       }
 
+      if (!response?.ok || !data?.text) throw new Error('Unity answer service unavailable.');
       const answer = String(data.text).trim();
       history.push({ role: 'user', content: message }, { role: 'assistant', content: answer });
       if (history.length > MAX_HISTORY) history = history.slice(-MAX_HISTORY);

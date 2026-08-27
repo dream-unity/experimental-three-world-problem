@@ -12,8 +12,8 @@ const pkg = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.ur
 assert.match(index, /class="unity-label du-unity-oracle"[^>]*data-voice-launcher/, 'the central Unity symbol must be the voice launcher');
 assert.match(index, /id="duVoicePanel"/, 'front page must include voice panel');
 assert.doesNotMatch(index, /du-voice-launcher-copy|<strong>TALK<\/strong>/, 'the detached TALK pill must not return');
-assert.match(index, /voice\.css\?v=20260827-unity-oracle-6/, 'front page must load Unity Oracle CSS');
-assert.match(index, /voice\.js\?v=20260827-unity-oracle-6/, 'front page must load Unity Oracle runtime');
+assert.match(index, /voice\.css\?v=20260827-unity-oracle-7/, 'front page must load Unity Oracle CSS');
+assert.match(index, /voice\.js\?v=20260827-unity-oracle-7/, 'front page must load Unity Oracle runtime');
 assert.match(index, /id="duOracleInvite"[^>]*>TAP TO SPEAK</, 'Unity must visibly invite a first-time visitor to speak');
 assert.match(index, /UNITY · LIVE VOICE/, 'the arrival bubble must identify itself as live voice');
 assert.doesNotMatch(index, /type="module" src="\.\/voice\.js/, 'voice must not depend on external module imports');
@@ -27,16 +27,18 @@ assert.match(voice, /SpeechSynthesisUtterance/, 'voice must synthesize model res
 assert.match(voice, /dream-unity-voice-live\.vercel\.app\/api\/realtime-session/, 'voice must use the dedicated voice backend');
 assert.match(voice, /MAX_SESSION_MS = 8 \* 60 \* 1000/, 'public voice sessions must have a client duration ceiling');
 assert.match(voice, /prewarmVoiceEndpoint\(\)/, 'voice backend must warm while Unity greets the visitor');
-assert.match(voice, /TURN_TIMEOUT_MS = 30_000/, 'voice turns must fail promptly instead of hanging');
+assert.match(voice, /TURN_TIMEOUT_MS = 45_000/, 'voice turns must fail promptly instead of hanging');
 assert.match(voice, /history: history\.slice/, 'voice must preserve bounded conversational context');
 assert.doesNotMatch(voice, /OPENAI_API_KEY|AI_GATEWAY_API_KEY|sk-[A-Za-z0-9]|experimental_useRealtime|api\.openai\.com/, 'browser voice must not depend on static provider secrets or blocked realtime transports');
 
 assert.match(api, /https:\/\/blockrun\.ai\/api\/v1\/chat\/completions/, 'backend must use the zero-key live inference route');
 assert.match(api, /nvidia\/nemotron-3-nano-omni-30b-a3b-reasoning/, 'backend must use a model observed returning clean public answers');
-assert.match(api, /nvidia\/nemotron-nano-9b-v2/, 'backend must race a second clean model for speed and availability');
+assert.match(api, /nvidia\/nemotron-nano-9b-v2/, 'backend must keep a second clean fallback model');
+assert.match(api, /nvidia\/mistral-nemotron/, 'backend must keep a third clean fallback model');
 assert.doesNotMatch(api, /nvidia\/step-3\.7-flash/, 'backend must exclude the model observed leaking private process text');
-assert.match(api, /Promise\.any\(attempts\)/, 'backend must race clean free models for low latency');
-assert.match(api, /firstCleanAnswer\(MODELS, messages\)/, 'backend must perform one bounded race rather than slow serial retries');
+assert.doesNotMatch(api, /Promise\.any\(attempts\)/, 'backend must not multiply provider traffic with simultaneous free-model calls');
+assert.match(api, /for \(const model of models\)/, 'backend must fail over across models sequentially');
+assert.match(api, /firstCleanAnswer\(MODELS, messages\)/, 'backend must perform bounded provider failover');
 assert.match(api, /actual question on any topic they choose/, 'Unity must answer general questions instead of imposing a Dream Unity topic gate');
 assert.match(api, /Unless the visitor explicitly asks about Dream Unity/, 'unrelated answers must not be forced through Dream Unity categories');
 assert.match(api, /Output only the final visitor-facing answer/, 'Unity must never expose private response planning');
@@ -46,7 +48,11 @@ assert.equal(publicAnswer('<think>I should plan this</think>The public answer.')
 assert.equal(publicAnswer('<think>I should plan this without closing the tag'), '', 'an unclosed private thinking block must be rejected');
 assert.match(api, /credentialMode: 'none'/, 'backend must require no provider credential');
 assert.match(api, /speechMode: 'browser-native'/, 'backend health must describe browser-native speech mode');
-assert.match(api, /RATE_LIMIT = 24/, 'backend must rate-limit public voice turns');
+assert.doesNotMatch(api, /RATE_LIMIT|RATE_WINDOW|rateBuckets|rateLimited/, 'backend must not impose an application voice-turn limit');
+assert.match(api, /applicationRateLimit: 'none'/, 'backend health must report that the application limiter is disabled');
+assert.match(voice, /for \(let attempt = 0; attempt < 2; attempt\+\+\)/, 'voice must reconnect automatically once when an answer provider is unavailable');
+assert.match(voice, /\[429, 502, 503, 504\]\.includes/, 'voice must retry transient provider failures');
+assert.doesNotMatch(voice, /briefly rate-limited/, 'voice UI must not strand visitors on a rate-limit message');
 assert.match(api, /https:\/\/dream-unity\.github\.io/, 'backend must allow the GitHub Pages origin');
 assert.doesNotMatch(api, /process\.env\.|OPENAI_API_KEY|AI_GATEWAY_API_KEY/, 'voice backend must not require environment secrets');
 
