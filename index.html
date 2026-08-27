@@ -30,7 +30,7 @@
       <p class="du-voice-status" id="duVoiceStatus" aria-live="polite">READY TO CONNECT</p>
       <p class="du-voice-copy" id="duVoiceCopy">Speak naturally. Ask what to train, how the worlds differ, or anything you want Dream Unity to reason through with you.</p>
       <button class="du-voice-action" id="duVoiceAction" type="button">START VOICE</button>
-      <small class="du-voice-privacy">MICROPHONE AUDIO IS SENT TO OPENAI ONLY WHILE CONNECTED</small>
+      <small class="du-voice-privacy">MICROPHONE AUDIO IS ROUTED THROUGH VERCEL AI GATEWAY TO OPENAI ONLY WHILE CONNECTED</small>
       <audio id="duVoiceAudio" autoplay playsinline></audio>
     </section>
     <button class="back" id="back" type="button" aria-label="Return to Dream Unity overview"><span>←</span><b>UNITY</b></button>
@@ -67,6 +67,6 @@
   <script src="./light-theme.js?v=20260826-white-overview-4"></script>
   <script src="./main.js?v=20260826-white-overview-4"></script>
   <script src="./arcade.js?v=20260826-become-imagine-opening-17"></script>
-  <script src="./voice.js?v=20260827-realtime-voice-1"></script>
+  <script type="module" src="./voice.js?v=20260827-realtime-voice-2"></script>
 </body>
 </html>
