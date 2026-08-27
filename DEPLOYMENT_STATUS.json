@@ -1,7 +1,7 @@
 {
   "project": "Dream Unity \u2014 Experimental Three-World Problem",
   "deployment": "verified-live",
-  "source_sha": "446d75afeac0a124ab289914c26f4b1e4fc9f15d",
+  "source_sha": "b35d3f1307737bbe6758cec9d499249b8f9004e2",
   "page_url": "https://dream-unity.github.io/experimental-three-world-problem/",
   "nine_portal_compatibility": "validated",
   "overview": {
@@ -31,11 +31,7 @@
     "detached_talk_pill": false,
     "arrival_greeting": "Hello, my name is Unity. What dream would you like to unify?",
     "visual_affordance": "3d_oracle_iris_sound_shells_and_inline_tap_invite",
-    "speech_mode": "realtime_websocket",
-    "model": "openai/gpt-realtime-2.1",
-    "provider": "vercel_ai_gateway",
-    "credential_mode": "vercel_oidc",
-    "permanent_provider_key_required": false,
+    "speech_mode": "browser_native",
     "backend": "dream-unity-voice-live.vercel.app"
   },
   "become": {
@@ -56,7 +52,7 @@
     "original_scenario_bank_used_as_fallback": false
   },
   "sha256": [
-    "71ee587a3f48369bced399fb1711d7d5f4e6e516a682a768d811e541c919b565  /tmp/dream-unity-live/index.html",
+    "9e02334e6d54c701e9795f17f23699fe02e89d146c8c2691b5baed710c6884f5  /tmp/dream-unity-live/index.html",
     "008f907be470e8b387badb2534fa4df0c55b5bfc1c71c75d1beb9ef9ed963191  /tmp/dream-unity-live/styles.css",
     "ad8dc6788a87c34201b132b88d8e5eb3ed439a0644f54a9610d2398d1b877536  /tmp/dream-unity-live/become.css",
     "9a8816ba7bf5a610294d3f1183ddcded684cf2998fa6a3a3a2e610dd6c2c3498  /tmp/dream-unity-live/light-theme.css",
@@ -64,7 +60,7 @@
     "102896afd7e928412963037859843e811d107379858f3687b1e309ef600fcd3a  /tmp/dream-unity-live/main.js",
     "4e4dbd47aa1483e6c302ef83fd4f79107d3a31f55548672cb2547a4f7dbadb41  /tmp/dream-unity-live/arcade.js",
     "88d62a6058f5ac42de47e4cd4643b9ac8fac830efcd71b691bceff918bf4f895  /tmp/dream-unity-live/voice.css",
-    "1250feb126661b60319d0f2a33c7712b6d8b7a6d38e1762101302919d704b809  /tmp/dream-unity-live/voice.js",
+    "410ef93a7ecd12f5d975d84c47becc5a53cb919646f5f8896c56dd54cf1aa71d  /tmp/dream-unity-live/voice.js",
     "2ea98c1bf75fa2ba2babe1722d0c1bd70c0a38199ec47dca53f0150cb5fdd25f  /tmp/dream-unity-live/visual-parts/light-overview-07.txt",
     "56721366312283387c98c07da9086f9a7b4b68e6d349ede5080d53159673236b  /tmp/dream-unity-live/visual-parts/part-01.txt",
     "cf1092cd154f27e634fed6eaee0a59b49a6784a6e0dcbc07e503a652be964f65  /tmp/dream-unity-live/visual-parts/part-02.txt",
@@ -94,5 +90,5 @@
     "c5a8ea262274f0a64821aae3c304e7410293b66ac1c1665c38ca44eae0ed7488  /tmp/dream-unity-live/arcade-parts/perceive-aerial-08.txt",
     "6545873de0d833976a46ffa52666c6629e94e6fdda4f30c3a1720f738cb3b892  /tmp/dream-unity-live/arcade-parts/perceive-role-logic.txt"
   ],
-  "verified_at": "2026-08-27T11:03:10.848316+00:00"
+  "verified_at": "2026-08-27T11:22:58.793008+00:00"
 }
