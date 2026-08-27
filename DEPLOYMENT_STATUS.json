@@ -1,7 +1,7 @@
 {
   "project": "Dream Unity \u2014 Experimental Three-World Problem",
   "deployment": "verified-live",
-  "source_sha": "d1db0ab2f035c72a430400c2a118f821b42e659b",
+  "source_sha": "893c6f060d8b151d69c887f549801dc58da89aae",
   "page_url": "https://dream-unity.github.io/experimental-three-world-problem/",
   "nine_portal_compatibility": "validated",
   "overview": {
@@ -43,7 +43,7 @@
     "original_scenario_bank_used_as_fallback": false
   },
   "sha256": [
-    "67f542f342c63983f293f59da41e253db8f94ef2fb2df753b63cc72bb00a7b5f  /tmp/dream-unity-live/index.html",
+    "087b069f93eaed3790d7e3c6f4de039107e696295ecc7ec3d07ea5c25ec67fe7  /tmp/dream-unity-live/index.html",
     "008f907be470e8b387badb2534fa4df0c55b5bfc1c71c75d1beb9ef9ed963191  /tmp/dream-unity-live/styles.css",
     "ad8dc6788a87c34201b132b88d8e5eb3ed439a0644f54a9610d2398d1b877536  /tmp/dream-unity-live/become.css",
     "9a8816ba7bf5a610294d3f1183ddcded684cf2998fa6a3a3a2e610dd6c2c3498  /tmp/dream-unity-live/light-theme.css",
@@ -79,5 +79,5 @@
     "b675b4a09a5fae66938b1b5b83889357dcc45d08641f11901f80fe46aa9f12b7  /tmp/dream-unity-live/arcade-parts/perceive-aerial-08.txt",
     "08b62c2248bed6690890881f12d4e9a157690329aaff6f3a253a3723aaa69245  /tmp/dream-unity-live/arcade-parts/perceive-role-logic.txt"
   ],
-  "verified_at": "2026-08-26T05:46:16.993358+00:00"
+  "verified_at": "2026-08-27T08:34:11.813467+00:00"
 }
