@@ -79,7 +79,7 @@ await run('portal navigation opens every portal and all nine game factories load
   const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   const { page, errors } = await openPage(context);
   const worlds = [
-    ['machine', ['PARALLAX WING', 'MODEL FORGE', 'ORACLE GATES']],
+    ['machine', ['FIGHTER JET', 'MODEL FORGE', 'ORACLE GATES']],
     ['maker', ['VECTOR VOW', 'IMPULSE RUN', 'BECOME']],
     ['reality', ['GRAVITY FOUNDRY', 'LATTICE LOCK', 'GENESIS BLOOM']],
   ];
@@ -178,11 +178,11 @@ await run('best scores and Become novelty state use localStorage', async () => {
   await context.close();
 });
 
-await run('Parallax Wing completes a basic start, move, fire, pause, and restart loop', async () => {
+await run('Fighter Jet completes a basic start, move, fire, pause, and restart loop', async () => {
   const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   const { page, errors } = await openPage(context);
   await launch(page, 'machine', 0);
-  assert.equal(await page.locator('#gameName').textContent(), 'PARALLAX WING');
+  assert.equal(await page.locator('#gameName').textContent(), 'FIGHTER JET');
   await page.locator('#gameStart').click();
   await page.waitForFunction(() => document.querySelector('#gameMetric')?.textContent?.includes('5'));
   const canvas = page.locator('#gameCanvas');

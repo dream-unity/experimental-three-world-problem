@@ -3,7 +3,7 @@
   "version": "1.13.0",
   "private": true,
   "type": "module",
-  "description": "Nine compatible Dream Unity games with Parallax Wing relational identity drift, objective-driven social-agency Become training, and zero-key browser-native voice.",
+  "description": "Nine compatible Dream Unity games with Fighter Jet relational identity drift, objective-driven social-agency Become training, and zero-key browser-native voice.",
   "scripts": {
     "test": "node tests/role-drift.test.mjs && node tests/validate-imagine-17.mjs && node tests/voice.test.mjs",
     "test:browser": "node tests/browser-regression.mjs",

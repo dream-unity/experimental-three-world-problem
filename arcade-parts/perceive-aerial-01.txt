@@ -1,5 +1,5 @@
 
-  // Dream Machine / PERCEIVE: PARALLAX WING — RELATIONAL IDENTITY DRIFT.
+  // Dream Machine / PERCEIVE: FIGHTER JET — RELATIONAL IDENTITY DRIFT.
   // The target is never an unusual aircraft. It is the escort currently
   // occupying a live relational role: nearest to the leader on the outside
   // of the leader's turn. As the formation crosses, that role moves.

@@ -103,7 +103,7 @@
   if (perceiveAerialDefinition) {
     Object.assign(perceiveAerialDefinition, {
       id: 'parallax-wing-role-drift',
-      name: 'PARALLAX WING',
+      name: 'FIGHTER JET',
       glyph: '✦',
       rule: 'Infer the hidden rule from symbolic relationship ledgers, then identify the matching call sign in new systems. Position and motion are irrelevant.',
       hint: 'READ RELATIONS · INFER RULE · TARGET CALL SIGN',

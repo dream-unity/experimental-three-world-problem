@@ -12,7 +12,7 @@ The overview can be orbited by mouse or touch. Selecting a world exposes its int
 
 | Portal | Game | Primary operation |
 |---|---|---|
-| **PERCEIVE** | **Parallax Wing** | Identify which fighter currently occupies a continuously changing relational role. |
+| **PERCEIVE** | **Fighter Jet** | Identify which fighter currently occupies a continuously changing relational role. |
 | **MODEL** | **Model Forge** | Encode and reconstruct a hidden network. |
 | **PREDICT** | **Oracle Gates** | Extrapolate motion through an occluded interval. |
 | **INTEND** | **Vector Vow** | Select, charge and commit a planned trajectory. |
@@ -22,9 +22,9 @@ The overview can be orbited by mouse or touch. Selecting a world exposes its int
 | **STRUCTURE** | **Lattice Lock** | Construct coherent connectivity across a grid. |
 | **EMERGE** | **Genesis Bloom** | Produce global cascades from local interactions. |
 
-## Parallax Wing — Relational Identity Drift
+## Fighter Jet — Relational Identity Drift
 
-Parallax Wing occupies **Dream Machine → PERCEIVE**.
+Fighter Jet occupies **Dream Machine → PERCEIVE**.
 
 A visibly distinct leader jet flies with visually identical escorts joined by a changing network. Each encounter samples a hidden position-invariant graph rule. The player watches marked worked examples, infers which topological role is being selected, then transfers that rule to unmarked networks with new aircraft identities, connections and layouts.
 
@@ -169,7 +169,7 @@ The governing distinction remains controlled as-if conviction, not literal confu
 - **Two-finger twist:** roll.
 - **Tap a world, then an internal title:** open its game.
 
-### Parallax Wing
+### Fighter Jet
 
 - **Mouse:** move to aim; click to fire.
 - **Touch:** drag to manoeuvre; tap to fire.
@@ -190,7 +190,7 @@ The governing distinction remains controlled as-if conviction, not literal confu
 - `arcade.js` — lean versioned loader for the active game layers.
 - `arcade-parts/part-01.txt` … `part-05.txt` — shared nine-game runtime.
 - `arcade-parts/perceive-role-logic.txt` — relational-role geometry and diagnostics.
-- `arcade-parts/perceive-aerial-01.txt` … `perceive-aerial-08.txt` — Parallax Wing combat, telemetry and rendering.
+- `arcade-parts/perceive-aerial-01.txt` … `perceive-aerial-08.txt` — Fighter Jet combat, telemetry and rendering.
 - `arcade-parts/become-lab-01.txt` — Become timers, scoring, transfer, entry-latency measurement and rendering.
 - `arcade-parts/become-diversity-09.txt` — twenty-six orthogonal world families and world-distance primitives.
 - `arcade-parts/become-social-agency-10.txt` — forty social architectures, joint maximin selection, social prompts and prewarming.

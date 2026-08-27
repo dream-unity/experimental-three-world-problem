@@ -113,4 +113,4 @@ for(const rule of rules)assert.equal(roleGraphSelect(relocated,rule)?.id,roleGra
 for(const rule of rules)assert.ok(roleGraphRank(graph,rule).length,`${rule.id} must rank a graph role`);
 assert.deepEqual([...new Set(rules.map(rule => rule.complexity))], [1, 2, 3]);
 
-console.log('Parallax relations: legacy geometry diagnostics plus position-invariant graph roles and three complexity tiers validated.');
+console.log('Fighter Jet relations: legacy geometry diagnostics plus position-invariant graph roles and three complexity tiers validated.');

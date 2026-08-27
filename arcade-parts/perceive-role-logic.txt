@@ -1,5 +1,5 @@
 
-  // Pure relational geometry used by Parallax Wing and its deterministic tests.
+  // Pure relational geometry used by Fighter Jet and its deterministic tests.
   function roleDriftGeometry(escorts, outsideAxis, options = {}) {
     const threshold = Number.isFinite(options.threshold) ? options.threshold : 0.018;
     const yScale = Number.isFinite(options.yScale) ? options.yScale : 0.84;
