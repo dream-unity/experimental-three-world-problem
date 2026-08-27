@@ -85,10 +85,7 @@
     updateLabels();
 
     ctx.globalCompositeOperation = 'source-over';
-    const vignette = ctx.createRadialGradient(width * 0.5, height * 0.48, unit * 0.2, width * 0.5, height * 0.5, unit * 0.82);
-    vignette.addColorStop(0, 'rgba(0,0,0,0)');
-    vignette.addColorStop(1, 'rgba(0,0,0,.44)');
-    ctx.fillStyle = vignette;
+    ctx.fillStyle = vignetteGradient || 'rgba(0,0,0,0)';
     ctx.fillRect(0, 0, width, height);
   }
 

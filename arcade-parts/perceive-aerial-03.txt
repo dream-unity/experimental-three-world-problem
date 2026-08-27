@@ -54,7 +54,7 @@
     }
 
     function updateRelationalRole(dt, force = false) {
-      const next = roleGraphSelect(activeEscorts(), encounter.rule);
+      const next = encounter.relationalTarget || roleGraphSelect(activeEscorts(), encounter.rule);
       if (!next) {
         encounter.target = null;
         return;

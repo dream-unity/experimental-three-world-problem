@@ -29,6 +29,7 @@
   ]);
 
   const clamp01 = value => Math.max(0, Math.min(1, value));
+  const colorCache = new Map();
   const parseRgba = value => {
     if (typeof value !== 'string') return null;
     const match = value.match(/^rgba?\(\s*(\d+(?:\.\d+)?)\s*,\s*(\d+(?:\.\d+)?)\s*,\s*(\d+(?:\.\d+)?)(?:\s*,\s*([\d.]+))?\s*\)$/i);
@@ -38,6 +39,9 @@
 
   function remapColor(value, alphaScale = 1) {
     if (typeof value !== 'string') return value;
+    const cacheKey = `${alphaScale}|${value}`;
+    const cached = colorCache.get(cacheKey);
+    if (cached !== undefined) return cached;
     if (value.toLowerCase() === '#02040a' || value.toLowerCase() === '#010309') return '#ffffff';
     const parsed = parseRgba(value);
     if (!parsed) return value;
@@ -49,7 +53,10 @@
     else if (r >= 248 && g >= 220 && b <= 215) [r,g,b] = [245,158,11];
 
     a = clamp01(a * alphaScale);
-    return `rgba(${Math.round(r)},${Math.round(g)},${Math.round(b)},${a})`;
+    const result = `rgba(${Math.round(r)},${Math.round(g)},${Math.round(b)},${a})`;
+    if (colorCache.size >= 1024) colorCache.clear();
+    colorCache.set(cacheKey, result);
+    return result;
   }
 
   HTMLCanvasElement.prototype.getContext = function(type, options) {

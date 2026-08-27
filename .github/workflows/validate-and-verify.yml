@@ -28,7 +28,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          grep -q "VERSION = '20260827-unity-oracle-4'" main.js
+          grep -q "VERSION = '20260827-unity-oracle-performance-5'" main.js
           grep -q 'light-overview-07.txt' main.js
           grep -q "ctx.fillStyle = '#ffffff'" visual-parts/light-overview-07.txt
           grep -q 'render = function kineticWhiteRender' visual-parts/light-overview-07.txt
@@ -79,7 +79,7 @@ jobs:
           done
           test "$matched" = true
 
-          grep -q 'main.js?v=20260827-unity-oracle-4' /tmp/dream-unity-live/index.html
+          grep -q 'main.js?v=20260827-unity-oracle-performance-5' /tmp/dream-unity-live/index.html
           grep -q 'light-theme.css?v=20260826-white-overview-4' /tmp/dream-unity-live/index.html
           grep -q 'light-overview-07.txt' /tmp/dream-unity-live/main.js
           grep -q "ctx.fillStyle = '#ffffff'" /tmp/dream-unity-live/visual-parts/light-overview-07.txt
@@ -98,7 +98,7 @@ jobs:
           grep -q "WORLD.reality.css = '#7A36F5'" /tmp/dream-unity-live/visual-parts/light-overview-07.txt
           grep -q 'display:none!important' /tmp/dream-unity-live/light-theme.css
 
-          grep -q 'arcade.js?v=20260827-fighter-jet-19' /tmp/dream-unity-live/index.html
+          grep -q 'arcade.js?v=20260827-fighter-jet-performance-20' /tmp/dream-unity-live/index.html
           grep -q 'become-activation-objectives-14.txt' /tmp/dream-unity-live/arcade.js
           grep -q "S14_VERSION='20260826-activation-objectives-2'" /tmp/dream-unity-live/arcade-parts/become-activation-objectives-14.txt
           grep -q 'SOCIAL WIN' /tmp/dream-unity-live/arcade-parts/become-activation-objectives-14.txt
@@ -137,7 +137,7 @@ jobs:
               'unity_core_scale':'0.026 * viewport unit',
               'unity_orbit_planes':3,
               'renderer_override':'visual-parts/light-overview-07.txt',
-              'main_cache_version':'20260827-unity-oracle-4'
+              'main_cache_version':'20260827-unity-oracle-performance-5'
             },
             'voice':{
               'launcher':'central_unity_oracle',

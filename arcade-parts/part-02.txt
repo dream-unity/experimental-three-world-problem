@@ -11,10 +11,7 @@ sy);
     }
 
     ctx.globalCompositeOperation = 'source-over';
-    const vignette = ctx.createRadialGradient(W * .5, H * .48, U * .16, W * .5, H * .5, U * .84);
-    vignette.addColorStop(0, 'rgba(0,0,0,0)');
-    vignette.addColorStop(1, 'rgba(0,0,0,.5)');
-    ctx.fillStyle = vignette;
+    ctx.fillStyle = vignetteGradient || 'rgba(0,0,0,0)';
     ctx.fillRect(0, 0, W, H);
     updateHud(dt);
   }
@@ -37,7 +34,7 @@ sy);
   }
 
   function canvasPoint(event) {
-    const rect = canvas.getBoundingClientRect();
+    const rect = canvasRect || (canvasRect = canvas.getBoundingClientRect());
     return { x: event.clientX - rect.left, y: event.clientY - rect.top };
   }
 
@@ -457,4 +454,3 @@ sy);
         if (rounds % 4 === 0) { level++; E.level(`ORBIT ${level}`); }
       } else {
         lives--;
-  

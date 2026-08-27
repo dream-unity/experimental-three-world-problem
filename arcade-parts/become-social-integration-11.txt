@@ -26,8 +26,8 @@
   }
 
   const s11BaseComboScore=s10ComboScore;
-  s10ComboScore=function(combo,selected,baseRefs,socialRefs,coverage,baseUse,profileUse){
-    const baseScore=s11BaseComboScore(combo,selected,baseRefs,socialRefs,coverage,baseUse,profileUse);
+  s10ComboScore=function(combo,selected,baseRefs,socialRefs,coverage,baseUse,profileUse,recentBaseFamilies,recentProfiles){
+    const baseScore=s11BaseComboScore(combo,selected,baseRefs,socialRefs,coverage,baseUse,profileUse,recentBaseFamilies,recentProfiles);
     return baseScore+(s11Compatibility(combo.world,combo.profile)?0.055:-1.5);
   };
 

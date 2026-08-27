@@ -73,6 +73,12 @@
   let metricLabel = '';
   let worldCanvasWidth = 0;
   let worldCanvasHeight = 0;
+  let vignetteGradient = null;
+  let canvasRect = null;
+  let backdropGradient = null;
+  let backdropGradientX = -Infinity;
+  let backdropGradientY = -Infinity;
+  let backdropGradientColor = null;
 
   const particles = [];
   const floaters = [];
@@ -109,6 +115,11 @@
     canvas.style.width = `${W}px`;
     canvas.style.height = `${H}px`;
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    vignetteGradient = ctx.createRadialGradient(W * .5, H * .48, U * .16, W * .5, H * .5, U * .84);
+    vignetteGradient.addColorStop(0, 'rgba(0,0,0,0)');
+    vignetteGradient.addColorStop(1, 'rgba(0,0,0,.5)');
+    canvasRect = null;
+    backdropGradient = null;
     E.w = W; E.h = H; E.u = U; E.top = Math.min(76, H * .12); E.bottom = H - Math.min(28, H * .05);
     game?.resize?.(E);
   }
@@ -214,11 +225,16 @@
 
     const gx = W * (.5 + Math.sin(t * .07 + variant) * .12);
     const gy = H * (.48 + Math.cos(t * .05 + variant * .7) * .1);
-    const grad = c.createRadialGradient(gx, gy, 0, gx, gy, U * .78);
-    grad.addColorStop(0, rgba(rgb, .11));
-    grad.addColorStop(.38, rgba(rgb, .035));
-    grad.addColorStop(1, 'rgba(0,0,0,0)');
-    c.fillStyle = grad;
+    if (!backdropGradient || Math.abs(gx - backdropGradientX) >= 1 || Math.abs(gy - backdropGradientY) >= 1 || rgb !== backdropGradientColor) {
+      backdropGradient = c.createRadialGradient(gx, gy, 0, gx, gy, U * .78);
+      backdropGradient.addColorStop(0, rgba(rgb, .11));
+      backdropGradient.addColorStop(.38, rgba(rgb, .035));
+      backdropGradient.addColorStop(1, 'rgba(0,0,0,0)');
+      backdropGradientX = gx;
+      backdropGradientY = gy;
+      backdropGradientColor = rgb;
+    }
+    c.fillStyle = backdropGradient;
     c.fillRect(0, 0, W, H);
 
     c.globalCompositeOperation = 'lighter';
@@ -237,12 +253,10 @@
     c.lineWidth = 1;
     const spacing = Math.max(42, U * .075);
     const offset = (t * 8) % spacing;
-    for (let x = -spacing + offset; x < W + spacing; x += spacing) {
-      c.beginPath(); c.moveTo(x, E.top); c.lineTo(x, H); c.stroke();
-    }
-    for (let y = E.top + offset; y < H + spacing; y += spacing) {
-      c.beginPath(); c.moveTo(0, y); c.lineTo(W, y); c.stroke();
-    }
+    c.beginPath();
+    for (let x = -spacing + offset; x < W + spacing; x += spacing) { c.moveTo(x, E.top); c.lineTo(x, H); }
+    for (let y = E.top + offset; y < H + spacing; y += spacing) { c.moveTo(0, y); c.lineTo(W, y); }
+    c.stroke();
   }
 
   function burst(x, y, rgb, count = 14, speed = 170, size = 3) {
@@ -404,6 +418,7 @@
     state = 'playing';
     shell.classList.remove('ready', 'paused', 'over');
     last = performance.now();
+    if (!raf) raf = requestAnimationFrame(loop);
     sfx('launch');
   }
 
@@ -416,11 +431,15 @@
       if (gameStateCopy) gameStateCopy.textContent = 'FIELD HELD';
       if (gameAgain) gameAgain.textContent = 'CONTINUE';
       if (audioCtx?.state === 'running') audioCtx.suspend().catch(() => {});
+      if (raf) cancelAnimationFrame(raf);
+      raf = 0;
+      drawFrame(0);
     } else if (state === 'paused') {
       state = 'playing';
       shell.classList.remove('paused');
       ensureAudio();
       last = performance.now();
+      if (!raf) raf = requestAnimationFrame(loop);
     }
   }
 
@@ -489,4 +508,4 @@
     const sx = shake > .1 ? rand(shake, -shake) : 0;
     const sy = shake > .1 ? rand(shake, -shake) : 0;
     ctx.save();
-    ctx.translate(sx, 
+    ctx.translate(sx,

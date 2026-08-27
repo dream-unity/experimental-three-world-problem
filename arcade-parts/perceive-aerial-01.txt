@@ -124,6 +124,13 @@
     function newRelationalFormation() {
       escorts = Array.from({ length: encounter.config.escortCount }, (_, index) => makeEscort(index, encounter.config.escortCount));
       buildRelationalNetwork(encounter.rule);
+      encounter.relationalTarget = roleGraphSelect(escorts, encounter.rule);
+      const byId = new Map(escorts.map(escort => [escort.id, escort]));
+      encounter.relationshipFacts = [];
+      for (const escort of escorts) for (const id of escort.links || []) {
+        const peer = byId.get(id);
+        if (peer && String(escort.id) < String(peer.id)) encounter.relationshipFacts.push(`${escort.code} EXCHANGES WITH ${peer.code}`);
+      }
       encounter.target = null;
       encounter.previousTarget = null;
       encounter.candidate = null;

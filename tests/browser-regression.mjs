@@ -201,6 +201,46 @@ await run('Fighter Jet completes a basic start, move, fire, pause, and restart l
   await context.close();
 });
 
+await run('all nine games keep responsive frame scheduling without long tasks', async () => {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+  const { page, errors } = await openPage(context);
+  const games = ['machine', 'maker', 'reality'].flatMap(world => [0, 1, 2].map(index => [world, index]));
+  for (const [world, index] of games) {
+    await launch(page, world, index);
+    await page.locator('#gameStart').click();
+    await page.evaluate(() => {
+      const probe = window.__dreamUnityPerformanceProbe = { frames: 0, maxGap: 0, last: performance.now(), running: true, longTasks: 0 };
+      try {
+        probe.observer = new PerformanceObserver(list => {
+          probe.longTasks += list.getEntries().filter(entry => entry.duration >= 120).length;
+        });
+        probe.observer.observe({ type: 'longtask', buffered: false });
+      } catch { /* Long Task API is optional. */ }
+      requestAnimationFrame(function tick(now) {
+        if (!probe.running) return;
+        probe.maxGap = Math.max(probe.maxGap, now - probe.last);
+        probe.last = now;
+        probe.frames++;
+        requestAnimationFrame(tick);
+      });
+    });
+    await page.waitForTimeout(350);
+    const probe = await page.evaluate(() => {
+      const value = window.__dreamUnityPerformanceProbe;
+      value.running = false;
+      value.observer?.disconnect();
+      return { frames: value.frames, maxGap: value.maxGap, longTasks: value.longTasks };
+    });
+    console.log(`PERF ${world}:${index} ${probe.frames} frames · ${probe.maxGap.toFixed(1)}ms max gap · ${probe.longTasks} long tasks`);
+    assert.ok(probe.maxGap < 140, `${world}:${index} stalled for ${probe.maxGap.toFixed(1)}ms across ${probe.frames} frames`);
+    assert.ok(probe.frames >= 3, `${world}:${index} stopped scheduling frames; max gap ${probe.maxGap.toFixed(1)}ms`);
+    assert.equal(probe.longTasks, 0, `${world}:${index} produced a long task`);
+    await close(page);
+  }
+  assert.deepEqual(errors, []);
+  await context.close();
+});
+
 for (const viewport of [
   { width: 390, height: 844 },
   { width: 768, height: 1024 },

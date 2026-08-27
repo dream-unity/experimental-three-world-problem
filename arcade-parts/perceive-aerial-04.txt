@@ -96,13 +96,7 @@
       if (!encounter || !leader) return;
       c.save();
       c.globalCompositeOperation = 'lighter';
-      const network = activeEscorts();
-      const networkById = new Map(network.map(escort => [escort.id, escort]));
-      const facts = [];
-      for (const escort of network) for (const id of escort.links || []) {
-        const peer = networkById.get(id);
-        if (peer && String(escort.id) < String(peer.id)) facts.push(`${escort.code} EXCHANGES WITH ${peer.code}`);
-      }
+      const facts = encounter.relationshipFacts || [];
       const ledgerWidth = Math.min(E.w - 24, 900);
       const columns = Math.min(3, Math.max(1, Math.floor(ledgerWidth / 250)));
       const columnWidth = (ledgerWidth - 24) / columns;

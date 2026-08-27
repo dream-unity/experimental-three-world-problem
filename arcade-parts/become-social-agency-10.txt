@@ -259,19 +259,24 @@
     return base;
   }
 
-  function s10ComboScore(combo,selected,baseRefs,socialRefs,coverage,baseUse,profileUse){
-    const selectedDistances=selected.map(ref=>s10CombinedDistance(combo,ref));
-    const pairMin=selectedDistances.length?Math.min(...selectedDistances):1;
-    const pairAvg=selectedDistances.length?selectedDistances.reduce((a,b)=>a+b,0)/selectedDistances.length:1;
-    const baseDistances=baseRefs.map(ref=>d9SigDistance(combo.baseSignature,ref.signature||ref.baseSignature||{}));
-    const socialDistances=socialRefs.map(ref=>s10SocialDistance(combo.socialSignature,ref.socialSignature||{}));
-    const baseMin=baseDistances.length?Math.min(...baseDistances):1;
-    const socialMin=socialDistances.length?Math.min(...socialDistances):1;
-    const selectedSocialAxes=selected.length?Math.min(...selected.map(ref=>s10SocialAxisDiff(combo.socialSignature,ref.socialSignature))):S10_AXES.length;
+  function s10ComboScore(combo,selected,baseRefs,socialRefs,coverage,baseUse,profileUse,recentBaseFamilies,recentProfiles){
+    let pairMin=1,pairTotal=0,selectedSocialAxes=S10_AXES.length;
+    for(const ref of selected){
+      const distance=s10CombinedDistance(combo,ref);
+      if(distance<pairMin)pairMin=distance;
+      pairTotal+=distance;
+      const axes=s10SocialAxisDiff(combo.socialSignature,ref.socialSignature);
+      if(axes<selectedSocialAxes)selectedSocialAxes=axes;
+    }
+    const pairAvg=selected.length?pairTotal/selected.length:1;
+    let baseMin=1;
+    for(const ref of baseRefs){const distance=d9SigDistance(combo.baseSignature,ref.signature||ref.baseSignature||{});if(distance<baseMin)baseMin=distance;}
+    let socialMin=1;
+    for(const ref of socialRefs){const distance=s10SocialDistance(combo.socialSignature,ref.socialSignature||{});if(distance<socialMin)socialMin=distance;}
     let score=pairMin*0.46+pairAvg*0.08+baseMin*0.16+socialMin*0.22+(selectedSocialAxes/S10_AXES.length)*0.08;
     for(const axis of S10_COVERAGE_AXES)if(!coverage[axis].has(combo.socialSignature[axis]))score+=0.018;
-    const recentBase=baseRefs.slice(-D9_WORLDS.length).some(ref=>(ref.signature||ref.baseSignature)?.family===combo.world.id);
-    const recentProfile=socialRefs.slice(-S10_RECENT_HARD).some(ref=>ref.profileId===combo.profile.id||ref.socialSignature?.profile===combo.profile.id);
+    const recentBase=recentBaseFamilies.has(combo.world.id);
+    const recentProfile=recentProfiles.has(combo.profile.id);
     if(recentBase)score-=0.34;
     if(recentProfile)score-=0.48;
     score-=(baseUse.get(combo.world.id)||0)*0.025;
@@ -287,6 +292,8 @@
     const usedWorlds=new Set(),usedProfiles=new Set();
     const coverage=Object.fromEntries(S10_COVERAGE_AXES.map(axis=>[axis,new Set()]));
     const baseUse=new Map(),profileUse=new Map();
+    const recentBaseFamilies=new Set(baseRefs.slice(-D9_WORLDS.length).map(ref=>(ref.signature||ref.baseSignature)?.family).filter(Boolean));
+    const recentProfiles=new Set(socialRefs.slice(-S10_RECENT_HARD).map(ref=>ref.profileId||ref.socialSignature?.profile).filter(Boolean));
     for(const ref of baseRefs){const id=ref.signature?.family;if(id)baseUse.set(id,(baseUse.get(id)||0)+1);}
     for(const ref of socialRefs){const id=ref.profileId||ref.socialSignature?.profile;if(id)profileUse.set(id,(profileUse.get(id)||0)+1);}
     for(let slot=0;slot<count;slot++){
@@ -297,7 +304,7 @@
         for(const profile of S10_PROFILES){
           if(usedProfiles.has(profile.id))continue;
           const combo={world,profile,baseSignature,socialSignature:s10SocialSig(profile)};
-          const score=s10ComboScore(combo,selected,baseRefs,socialRefs,coverage,baseUse,profileUse);
+          const score=s10ComboScore(combo,selected,baseRefs,socialRefs,coverage,baseUse,profileUse,recentBaseFamilies,recentProfiles);
           if(score>bestScore){best=combo;bestScore=score;}
         }
       }
@@ -324,6 +331,46 @@
     s10PlanQueue.lastMs=Math.max(0,ended-started);
     return queue;
   }
+  async function s10PlanQueueResponsive(count,token){
+    const started=typeof performance!=='undefined'?performance.now():Date.now();
+    const baseRefs=d9MemoryRead(),socialRefs=s10MemoryRead(),selected=[];
+    const usedWorlds=new Set(),usedProfiles=new Set();
+    const coverage=Object.fromEntries(S10_COVERAGE_AXES.map(axis=>[axis,new Set()]));
+    const baseUse=new Map(),profileUse=new Map();
+    const recentBaseFamilies=new Set(baseRefs.slice(-D9_WORLDS.length).map(ref=>(ref.signature||ref.baseSignature)?.family).filter(Boolean));
+    const recentProfiles=new Set(socialRefs.slice(-S10_RECENT_HARD).map(ref=>ref.profileId||ref.socialSignature?.profile).filter(Boolean));
+    for(const ref of baseRefs){const id=ref.signature?.family;if(id)baseUse.set(id,(baseUse.get(id)||0)+1);}
+    for(const ref of socialRefs){const id=ref.profileId||ref.socialSignature?.profile;if(id)profileUse.set(id,(profileUse.get(id)||0)+1);}
+    let sliceStarted=typeof performance!=='undefined'?performance.now():Date.now();
+    const yieldFrame=()=>new Promise(resolve=>setTimeout(resolve,0));
+    for(let slot=0;slot<count;slot++){
+      let best=null,bestScore=-Infinity;
+      for(const world of D9_WORLDS){
+        if(usedWorlds.has(world.id))continue;
+        const baseSignature={...world.sig,family:world.id};
+        for(const profile of S10_PROFILES){
+          if(usedProfiles.has(profile.id))continue;
+          if(token!==s10PrewarmToken)throw new Error('Become planning superseded.');
+          const combo={world,profile,baseSignature,socialSignature:s10SocialSig(profile)};
+          const score=s10ComboScore(combo,selected,baseRefs,socialRefs,coverage,baseUse,profileUse,recentBaseFamilies,recentProfiles);
+          if(score>bestScore){best=combo;bestScore=score;}
+          const now=typeof performance!=='undefined'?performance.now():Date.now();
+          if(now-sliceStarted>=6){await yieldFrame();sliceStarted=typeof performance!=='undefined'?performance.now():Date.now();}
+        }
+      }
+      if(!best)throw new Error('Social agency planner exhausted its orthogonal world/profile space.');
+      selected.push(best);usedWorlds.add(best.world.id);usedProfiles.add(best.profile.id);
+      for(const axis of S10_COVERAGE_AXES)coverage[axis].add(best.socialSignature[axis]);
+      baseRefs.push({signature:best.baseSignature});
+      socialRefs.push({baseSignature:best.baseSignature,socialSignature:best.socialSignature,profileId:best.profile.id});
+      baseUse.set(best.world.id,(baseUse.get(best.world.id)||0)+1);
+      profileUse.set(best.profile.id,(profileUse.get(best.profile.id)||0)+1);
+    }
+    const queue=selected.map(combo=>s10ApplySocial(d9Candidate(combo.world),combo.profile));
+    const ended=typeof performance!=='undefined'?performance.now():Date.now();
+    s10PlanQueue.lastMs=Math.max(0,ended-started);
+    return queue;
+  }
   function s10CommitQueue(queue){
     const baseMemory=d9MemoryRead();
     d9MemoryWrite([...baseMemory,...queue.map(d9Summary)]);
@@ -334,13 +381,17 @@
   function s10BuildQueue(count){const queue=s10PlanQueue(count);s10CommitQueue(queue);return queue;}
 
   let s10Prewarm=null;
+  let s10PrewarmPromise=null;
   let s10PrewarmToken=0;
   function s10SchedulePrewarm(count){
     const token=++s10PrewarmToken;
     const fingerprint=s10MemoryFingerprint();
     const run=()=>{
       if(token!==s10PrewarmToken)return;
-      try{s10Prewarm={count,fingerprint,queue:s10PlanQueue(count)};}catch{s10Prewarm=null;}
+      s10PrewarmPromise=s10PlanQueueResponsive(count,token).then(queue=>{
+        if(token===s10PrewarmToken)s10Prewarm={count,fingerprint,queue};
+        return queue;
+      }).catch(()=>null).finally(()=>{if(token===s10PrewarmToken)s10PrewarmPromise=null;});
     };
     if(typeof requestIdleCallback==='function')requestIdleCallback(run,{timeout:350});else setTimeout(run,0);
   }
@@ -351,6 +402,16 @@
     s10CommitQueue(queue);
     return queue;
   }
+  async function s10ConsumeQueueResponsive(count){
+    const fingerprint=s10MemoryFingerprint();
+    let queue;
+    if(s10Prewarm&&s10Prewarm.count===count&&s10Prewarm.fingerprint===fingerprint){queue=s10Prewarm.queue;s10Prewarm=null;}
+    else if(s10PrewarmPromise){queue=await s10PrewarmPromise;}
+    if(!queue){const token=++s10PrewarmToken;queue=await s10PlanQueueResponsive(count,token);}
+    s10CommitQueue(queue);
+    return queue;
+  }
+  window.addEventListener('dreamunity:game-closed',()=>{++s10PrewarmToken;s10Prewarm=null;s10PrewarmPromise=null;});
 
   const S10_METRIC_PATCHES={
     sensory:{title:'SOCIAL EVIDENCE',question:'Could you perceive both the physical scene and social cues without converting observation into certainty about motive?'},
@@ -412,10 +473,10 @@
     bPanel(`${bHeader(`SCENARIO ${becomeState.scenarioIndex+1} OF ${becomeState.queue.length}`,s.title,0)}<p class="become-kicker">${bEscape(s.tag)}</p><h2 class="become-title compact">${bEscape(s.title)}</h2><div class="become-premise">${bEscape(s.premise)}</div><div class="become-grid three"><div class="become-card"><small>SELF MODEL</small><strong>WHAT IS MOVING ME?</strong><p>${bEscape(social.self)}</p></div><div class="become-card"><small>OTHER MODEL</small><strong>KEEP 2+ POSSIBILITIES</strong><p>${bEscape(social.other)}</p></div><div class="become-card"><small>OUTSIDE VIEW</small><strong>WHAT PATTERN ARE WE MAKING?</strong><p>${bEscape(social.observer)}</p></div></div><p class="become-rule"><b>AGENCY MOVE:</b> ${bEscape(social.action)}. Act from self-awareness and empathy together; then update from feedback instead of defending your first interpretation.</p><div class="become-facts"><span class="become-fact">FIRST PERSON</span><span class="become-fact">OTHER-MIND UNCERTAINTY</span><span class="become-fact">BOUNDARIES RETAINED</span><span class="become-fact">17 SOCIAL FACULTIES</span></div><div class="become-actions"><button class="become-primary" type="button" data-become-action="begin-scenario">BEGIN FACULTIES</button></div>`);
   };
 
-  bBeginSession=function(){
+  bBeginSession=async function(){
     try{
-      ++s10PrewarmToken;
-      const queue=s10ConsumeQueue(becomeState.count);
+      bPanel(`${bHeader('BUILDING SESSION','MAXIMIN SOCIAL WORLDS')}<h2 class="become-title compact">COMPOSING<br>WITHOUT REPETITION</h2><p class="become-copy">Comparing relational structures while keeping the interface responsive.</p>`);
+      const queue=await s10ConsumeQueueResponsive(becomeState.count);
       becomeState.queue=queue;becomeState.scenarioIndex=0;becomeState.results=[];becomeState.transferScores={};
       bRenderBrief();
     }catch(error){s10Error(error);}
