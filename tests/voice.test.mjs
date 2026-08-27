@@ -26,7 +26,7 @@ assert.match(api, /providerCredentialsRequired: false/, 'backend must not requir
 assert.match(api, /openai\/gpt-realtime-2\.1/, 'voice backend must use current realtime model');
 assert.match(api, /https:\/\/dream-unity\.github\.io/, 'backend must allow the GitHub Pages origin');
 assert.doesNotMatch(api, /process\.env\.OPENAI_API_KEY|process\.env\.AI_GATEWAY_API_KEY/, 'backend must rely on Vercel OIDC instead of static secrets');
-assert.equal(pkg.dependencies?.ai, '7.0.79', 'Vercel backend must pin the AI SDK used for Gateway token minting');
+assert.equal(pkg.devDependencies?.ai, '7.0.79', 'Vercel backend must pin the AI SDK used for Gateway token minting');
 
 assert.match(css, /#app\.detail>.*du-voice-launcher/, 'voice must be limited to the overview');
 assert.match(css, /#app\.game-open>.*du-voice-launcher/, 'voice must hide inside games');
