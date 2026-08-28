@@ -3,8 +3,8 @@
 
   const VOICE_ENDPOINT = 'https://dream-unity-voice-live.vercel.app/api/realtime-session';
   const MAX_SESSION_MS = 8 * 60 * 1000;
-  const TURN_TIMEOUT_MS = 45_000;
-  const MAX_HISTORY = 10;
+  const TURN_TIMEOUT_MS = 12_000;
+  const MAX_HISTORY = 6;
   const ARRIVAL_GREETING = 'Hello, my name is Unity. What dream would you like to unify?';
   const DEFAULT_COPY = 'Ask Unity anything. Speak naturally, and Unity will answer you aloud.';
   const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -28,6 +28,64 @@
   let restartTimer = 0;
   let history = [];
   let endpointWarmup = null;
+
+  const NUMBER_WORDS = Object.freeze({
+    zero: 0, one: 1, two: 2, three: 3, four: 4, five: 5,
+    six: 6, seven: 7, eight: 8, nine: 9, ten: 10,
+    eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15,
+    sixteen: 16, seventeen: 17, eighteen: 18, nineteen: 19, twenty: 20
+  });
+  const SPOKEN_NUMBERS = Object.freeze(Object.fromEntries(Object.entries(NUMBER_WORDS).map(([word, number]) => [number, word])));
+
+  function parseOperand(value) {
+    const token = String(value || '').trim().toLowerCase();
+    if (Object.hasOwn(NUMBER_WORDS, token)) return NUMBER_WORDS[token];
+    if (/^-?\d+(?:\.\d+)?$/.test(token)) return Number(token);
+    return null;
+  }
+
+  function formatCalculation(value) {
+    if (!Number.isFinite(value)) return '';
+    const rounded = Math.abs(value) < 1e-12 ? 0 : Number(value.toFixed(8));
+    if (Number.isInteger(rounded) && Object.hasOwn(SPOKEN_NUMBERS, rounded)) {
+      const word = SPOKEN_NUMBERS[rounded];
+      return `${word[0].toUpperCase()}${word.slice(1)}.`;
+    }
+    return `${rounded}.`;
+  }
+
+  function localCalculation(message) {
+    const operand = '(?:-?\\d+(?:\\.\\d+)?|zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty)';
+    const pattern = new RegExp(`^(?:what(?:'s| is)|calculate|work out)?\\s*(${operand})\\s*(plus|minus|times|multiplied by|divided by|over|[+\\-x×*÷/])\\s*(${operand})[?.!]*$`, 'i');
+    const match = String(message || '').match(pattern);
+    if (!match) return '';
+    const left = parseOperand(match[1]);
+    const right = parseOperand(match[3]);
+    if (left === null || right === null) return '';
+    const operator = match[2].toLowerCase();
+    if ((operator === 'divided by' || operator === 'over' || operator === '/' || operator === '÷') && right === 0) return "You can't divide by zero.";
+    if (operator === 'plus' || operator === '+') return formatCalculation(left + right);
+    if (operator === 'minus' || operator === '-') return formatCalculation(left - right);
+    if (operator === 'times' || operator === 'multiplied by' || ['x', '×', '*'].includes(operator)) return formatCalculation(left * right);
+    return formatCalculation(left / right);
+  }
+
+  function instantVoiceAnswer(value) {
+    const normalized = String(value || '').toLowerCase().replace(/[’]/g, "'").replace(/\s+/g, ' ').trim();
+    if (/^(?:(?:hi|hello|hey)[, ]+)?(?:how (?:are you|are you doing|are you going|is it going)|how's it going)[?.!]*$/.test(normalized)) return "I'm doing well, thank you. How are you?";
+    if (/^(?:hi|hello|hey|good morning|good afternoon|good evening)(?:,? unity| there)?[?.!]*$/.test(normalized)) return 'Hello.';
+    if (/^(?:are you there|can you hear me)[?.!]*$/.test(normalized)) return "Yes, I'm here.";
+    if (/^(?:who|what) are you[?.!]*$|^what(?:'s| is) your name[?.!]*$/.test(normalized)) return "I'm Unity Oracle, Dream Unity's voice intelligence.";
+    if (/^(?:thanks|thank you|cheers)(?: very much| so much)?[?.!]*$/.test(normalized)) return "You're welcome.";
+    if (/^(?:goodbye|bye|see you|see you later)[?.!]*$/.test(normalized)) return 'Goodbye.';
+    if (/^(?:what(?:'s| is) the time|what time is it|tell me the time)[?.!]*$/.test(normalized)) {
+      return `It's ${new Intl.DateTimeFormat(navigator.language || 'en-AU', { hour: 'numeric', minute: '2-digit' }).format(new Date())}.`;
+    }
+    if (/^(?:what(?:'s| is) (?:today's )?date|what day is it|tell me the date)[?.!]*$/.test(normalized)) {
+      return `It's ${new Intl.DateTimeFormat(navigator.language || 'en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date())}.`;
+    }
+    return localCalculation(normalized);
+  }
 
   function prewarmVoiceEndpoint() {
     if (!endpointWarmup) {
@@ -129,7 +187,7 @@
       || null;
   }
 
-  function speak(text) {
+  function speak(text, turnStartedAt = 0, responsePath = 'model') {
     return new Promise(resolve => {
       const synth = window.speechSynthesis;
       if (!synth || !window.SpeechSynthesisUtterance) {
@@ -156,6 +214,14 @@
       };
       utterance.onend = done;
       utterance.onerror = done;
+      utterance.onstart = () => {
+        if (turnStartedAt) {
+          console.info('[unity-voice] first audio', {
+            path: responsePath,
+            millisecondsAfterTranscript: Math.round(performance.now() - turnStartedAt)
+          });
+        }
+      };
       window.setTimeout(done, 30_000);
       synth.speak(utterance);
     });
@@ -217,6 +283,11 @@
       fail(code);
     };
 
+    next.onspeechend = () => {
+      if (!active || busy) return;
+      try { next.stop(); } catch (_) {}
+    };
+
     next.onend = () => {
       if (recognition === next) recognition = null;
       if (active && !busy && !speaking) scheduleListen(260);
@@ -230,59 +301,46 @@
   }
 
   async function handleUtterance(message) {
+    const turnStartedAt = performance.now();
     setPanelState('connected', 'THINKING');
     copy.textContent = 'Dream Unity is thinking…';
+
+    const instant = instantVoiceAnswer(message);
+    if (instant) {
+      history.push({ role: 'user', content: message }, { role: 'assistant', content: instant });
+      if (history.length > MAX_HISTORY) history = history.slice(-MAX_HISTORY);
+      copy.textContent = instant;
+      await speak(instant, turnStartedAt, 'instant');
+      busy = false;
+      if (active) scheduleListen(160);
+      return;
+    }
+
     const controller = new AbortController();
     const turnTimeout = window.setTimeout(() => controller.abort(), TURN_TIMEOUT_MS);
 
     try {
-      let data = null;
-      let response = null;
-
-      for (let attempt = 0; attempt < 2; attempt++) {
-        try {
-          response = await fetch(VOICE_ENDPOINT, {
-            method: 'POST',
-            cache: 'no-store',
-            credentials: 'omit',
-            signal: controller.signal,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              message,
-              history: history.slice(-MAX_HISTORY),
-              locale: navigator.language || 'en-US'
-            })
-          });
-          data = await response.json().catch(() => ({}));
-        } catch (error) {
-          if (attempt === 0 && error?.name !== 'AbortError') {
-            setPanelState('connecting', 'RECONNECTING');
-            copy.textContent = 'Unity is reconnecting to an answer service…';
-            await new Promise(resolve => window.setTimeout(resolve, 500));
-            continue;
-          }
-          throw error;
-        }
-
-        if (response.ok && data?.text) break;
-        const retryable = [429, 502, 503, 504].includes(response.status);
-        if (attempt === 0 && retryable) {
-          setPanelState('connecting', 'RECONNECTING');
-          copy.textContent = 'Unity is reconnecting to an answer service…';
-          await new Promise(resolve => window.setTimeout(resolve, 500));
-          continue;
-        }
-        throw new Error(String(data?.code || data?.error || `Voice request failed (${response.status}).`));
-      }
-
-      if (!response?.ok || !data?.text) throw new Error('Unity answer service unavailable.');
+      const response = await fetch(VOICE_ENDPOINT, {
+        method: 'POST',
+        cache: 'no-store',
+        credentials: 'omit',
+        signal: controller.signal,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message,
+          history: history.slice(-MAX_HISTORY),
+          locale: navigator.language || 'en-US'
+        })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data?.text) throw new Error(String(data?.code || data?.error || `Voice request failed (${response.status}).`));
       const answer = String(data.text).trim();
       history.push({ role: 'user', content: message }, { role: 'assistant', content: answer });
       if (history.length > MAX_HISTORY) history = history.slice(-MAX_HISTORY);
       copy.textContent = answer.slice(-520);
-      await speak(answer);
+      await speak(answer, turnStartedAt, String(data.path || 'model'));
       busy = false;
-      if (active) scheduleListen(260);
+      if (active) scheduleListen(160);
     } catch (error) {
       busy = false;
       fail(error instanceof Error ? error.message : String(error));
