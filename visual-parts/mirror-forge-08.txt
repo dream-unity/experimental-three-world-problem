@@ -1,0 +1,585 @@
+
+  // Dream Unity — The Mirror Forge renderer.
+  // One connected instrument on a true-white field: body below, agency above,
+  // and three visually distinct worlds revolving around an obsidian/coral core.
+
+  WORLD.machine.css = '#00BFE8';
+  WORLD.machine.rgb = [0, 191, 232];
+  WORLD.maker.css = '#00B86F';
+  WORLD.maker.rgb = [0, 184, 111];
+  WORLD.reality.css = '#713BFF';
+  WORLD.reality.rgb = [113, 59, 255];
+
+  const FORGE_INK = [8, 11, 16];
+  const FORGE_LINE = [205, 216, 224];
+  const FORGE_CORAL = [241, 79, 75];
+  const FORGE_IVORY = [255, 242, 208];
+  const FORGE_GOLD = [191, 129, 45];
+  const forgeTexture = document.getElementById('forgeTexture');
+
+  function fCenter() {
+    if (width > 1100) return { x: width * 0.625, y: height * 0.515 };
+    if (width > 760) return { x: width * 0.5, y: height * 0.59 };
+    return { x: width * 0.5, y: height * 0.57 };
+  }
+
+  function fProject(point, scale = 1, cameraZ = 12.3) {
+    const depth = cameraZ - point.z;
+    const perspective = scale * cameraZ / Math.max(2.7, depth);
+    const center = fCenter();
+    const spread = width > 1100 ? 0.079 : width > 760 ? 0.076 : 0.075;
+    return {
+      x: center.x + point.x * unit * spread * perspective,
+      y: center.y - point.y * unit * spread * perspective,
+      f: perspective,
+      z: point.z,
+      depth
+    };
+  }
+
+  overviewBasePositions = function mirrorForgeBasePositions() {
+    const portrait = height > width * 1.08;
+    return portrait
+      ? {
+          machine: { x: -2.65, y: 2.25, z: 0.55 },
+          maker: { x: 2.7, y: 1.95, z: -0.35 },
+          reality: { x: 0.45, y: -3.05, z: 0.1 }
+        }
+      : {
+          machine: { x: -3.45, y: 1.72, z: 0.55 },
+          maker: { x: 3.5, y: 1.48, z: -0.42 },
+          reality: { x: 0.72, y: -3.05, z: 0.12 }
+        };
+  };
+
+  overviewPositions = function mirrorForgePositions(t) {
+    const portrait = height > width * 1.08;
+    const base = overviewBasePositions();
+    const positions = {};
+    worldKeys.forEach((key, index) => {
+      const point = base[key];
+      const tension = reduced ? 0 : 0.025 * Math.sin(t * 0.31 + index * 2.15);
+      const rotated = rotate3(
+        { x: point.x, y: point.y + tension, z: point.z },
+        overviewYaw,
+        overviewPitch,
+        overviewRoll
+      );
+      const projected = fProject(rotated, overviewZoom, 12.3);
+      positions[key] = {
+        x: projected.x,
+        y: projected.y,
+        r: unit * (portrait ? 0.067 : 0.073) * projected.f,
+        f: projected.f,
+        z: rotated.z,
+        world: rotated
+      };
+    });
+    return positions;
+  };
+
+  drawBackground = function mirrorForgeBackground() {
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, width, height);
+
+    const center = fCenter();
+    ctx.lineCap = 'butt';
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = rgba(FORGE_INK, 0.045);
+    ctx.beginPath();
+    ctx.moveTo(Math.max(18, center.x - unit * 0.49), center.y + unit * 0.235);
+    ctx.lineTo(Math.min(width - 18, center.x + unit * 0.49), center.y + unit * 0.235);
+    ctx.stroke();
+
+    ctx.strokeStyle = rgba(FORGE_LINE, 0.28);
+    ctx.beginPath();
+    ctx.moveTo(center.x, Math.max(72, center.y - unit * 0.39));
+    ctx.lineTo(center.x, Math.min(height - 36, center.y + unit * 0.34));
+    ctx.stroke();
+  };
+
+  function fBezierPoint(a, c1, c2, b, u) {
+    const o = 1 - u;
+    return {
+      x: o * o * o * a.x + 3 * o * o * u * c1.x + 3 * o * u * u * c2.x + u * u * u * b.x,
+      y: o * o * o * a.y + 3 * o * o * u * c1.y + 3 * o * u * u * c2.y + u * u * u * b.y
+    };
+  }
+
+  drawCurve = function forgeTensionLine(a, b, rgb, alpha, seed, t, packets = true) {
+    if (alpha <= 0.002) return;
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const length = Math.max(1, Math.hypot(dx, dy));
+    const nx = -dy / length;
+    const ny = dx / length;
+    const bow = unit * (0.028 + 0.008 * Math.sin(seed * 1.7 + t * 0.22));
+    const c1 = { x: a.x + dx * 0.32 + nx * bow, y: a.y + dy * 0.32 + ny * bow };
+    const c2 = { x: a.x + dx * 0.68 - nx * bow * 0.55, y: a.y + dy * 0.68 - ny * bow * 0.55 };
+    const depth = clamp(0.79 + ((a.z || 0) + (b.z || 0)) * 0.035, 0.6, 1.05);
+
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = rgba(FORGE_INK, alpha * 0.065 * depth);
+    ctx.lineWidth = 3.2;
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y);
+    ctx.bezierCurveTo(c1.x, c1.y, c2.x, c2.y, b.x, b.y);
+    ctx.stroke();
+
+    ctx.strokeStyle = rgba(rgb, alpha * 0.62 * depth);
+    ctx.lineWidth = 1.05;
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y);
+    ctx.bezierCurveTo(c1.x, c1.y, c2.x, c2.y, b.x, b.y);
+    ctx.stroke();
+
+    if (!packets) return;
+    const u = (t * 0.038 + seed * 0.117) % 1;
+    const point = fBezierPoint(a, c1, c2, b, u);
+    ctx.fillStyle = rgba(rgb, 0.9 * alpha * depth);
+    ctx.fillRect(point.x - 2.2, point.y - 2.2, 4.4, 4.4);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(point.x - 0.65, point.y - 0.65, 1.3, 1.3);
+  };
+
+  function fFocusBrackets(radius, color, alpha) {
+    const r = radius * 1.58;
+    const cut = radius * 0.24;
+    ctx.strokeStyle = rgba(color, alpha);
+    ctx.lineWidth = 1.2;
+    for (let i = 0; i < 4; i++) {
+      ctx.save();
+      ctx.rotate(i * Math.PI * 0.5);
+      ctx.beginPath();
+      ctx.moveTo(-cut, -r);
+      ctx.lineTo(-r, -r);
+      ctx.lineTo(-r, -cut);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  function fMachine(radius, color, t) {
+    ctx.fillStyle = 'rgba(255,255,255,.96)';
+    ctx.strokeStyle = rgba(FORGE_INK, 0.82);
+    ctx.lineWidth = 1.15;
+    ctx.beginPath();
+    ctx.arc(0, 0, radius * 0.84, 0, TAU);
+    ctx.fill();
+    ctx.stroke();
+
+    for (let ring = 0; ring < 3; ring++) {
+      ctx.save();
+      ctx.rotate(t * (0.055 + ring * 0.018) + ring * 0.92);
+      ctx.scale(1, 0.29 + ring * 0.17);
+      ctx.strokeStyle = rgba(color, 0.72 - ring * 0.1);
+      ctx.lineWidth = ring === 0 ? 1.7 : 1.05;
+      ctx.beginPath();
+      ctx.arc(0, 0, radius * (0.98 + ring * 0.22), 0, TAU);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    const nodes = [];
+    for (let i = 0; i < 7; i++) {
+      const angle = t * 0.08 + i * TAU / 7;
+      nodes.push({ x: Math.cos(angle) * radius * 0.53, y: Math.sin(angle * 1.19) * radius * 0.43 });
+    }
+    ctx.strokeStyle = rgba(color, 0.48);
+    ctx.lineWidth = 0.8;
+    nodes.forEach((node, index) => {
+      const next = nodes[(index + 3) % nodes.length];
+      ctx.beginPath();
+      ctx.moveTo(node.x, node.y);
+      ctx.lineTo(next.x, next.y);
+      ctx.stroke();
+    });
+    nodes.forEach((node, index) => {
+      ctx.fillStyle = index === 0 ? rgba(FORGE_INK, 0.92) : rgba(color, 0.88);
+      ctx.fillRect(node.x - 1.8, node.y - 1.8, 3.6, 3.6);
+    });
+  }
+
+  function fMaker(radius, color, t) {
+    ctx.fillStyle = 'rgba(255,255,255,.97)';
+    ctx.strokeStyle = rgba(FORGE_INK, 0.78);
+    ctx.lineWidth = 1.1;
+    ctx.beginPath();
+    for (let i = 0; i < 3; i++) {
+      const a = -Math.PI * 0.5 + i * TAU / 3 + t * 0.015;
+      const x = Math.cos(a) * radius * 0.92;
+      const y = Math.sin(a) * radius * 0.92;
+      i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.strokeStyle = rgba(color, 0.86);
+    ctx.lineWidth = 1.55;
+    ctx.beginPath();
+    for (let i = 0; i <= 70; i++) {
+      const u = i / 70;
+      const angle = u * TAU * 2.65 + t * 0.13;
+      const rr = radius * (0.08 + u * 0.64);
+      const x = Math.cos(angle) * rr;
+      const y = Math.sin(angle) * rr;
+      i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+    }
+    ctx.stroke();
+
+    for (let i = 0; i < 3; i++) {
+      const a = t * 0.12 + i * TAU / 3;
+      ctx.fillStyle = i === 0 ? rgba(FORGE_CORAL, 0.9) : rgba(color, 0.84);
+      ctx.beginPath();
+      ctx.arc(Math.cos(a) * radius * 0.69, Math.sin(a) * radius * 0.69, radius * 0.055, 0, TAU);
+      ctx.fill();
+    }
+  }
+
+  function fReality(radius, color, t) {
+    const s = radius * 0.62;
+    const top = [{ x: 0, y: -s }, { x: s, y: -s * 0.48 }, { x: 0, y: 0.05 * s }, { x: -s, y: -s * 0.48 }];
+    const bottom = top.map((point) => ({ x: point.x, y: point.y + s * 1.05 }));
+    ctx.fillStyle = rgba(color, 0.065);
+    ctx.strokeStyle = rgba(FORGE_INK, 0.76);
+    ctx.lineWidth = 1.05;
+    ctx.beginPath();
+    ctx.moveTo(top[0].x, top[0].y);
+    top.slice(1).forEach((point) => ctx.lineTo(point.x, point.y));
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    for (let i = 0; i < 4; i++) {
+      ctx.strokeStyle = rgba(color, 0.62);
+      ctx.beginPath();
+      ctx.moveTo(top[i].x, top[i].y);
+      ctx.lineTo(bottom[i].x, bottom[i].y);
+      ctx.stroke();
+    }
+    ctx.beginPath();
+    ctx.moveTo(bottom[0].x, bottom[0].y);
+    bottom.slice(1).forEach((point) => ctx.lineTo(point.x, point.y));
+    ctx.closePath();
+    ctx.stroke();
+
+    for (let i = 1; i < 4; i++) {
+      const u = i / 4;
+      ctx.strokeStyle = rgba(color, 0.24 + i * 0.06);
+      ctx.beginPath();
+      ctx.moveTo(lerp(top[0].x, top[1].x, u), lerp(top[0].y, top[1].y, u));
+      ctx.lineTo(lerp(top[3].x, top[2].x, u), lerp(top[3].y, top[2].y, u));
+      ctx.stroke();
+    }
+    ctx.save();
+    ctx.rotate(t * 0.045);
+    ctx.strokeStyle = rgba(FORGE_CORAL, 0.72);
+    ctx.strokeRect(-radius * 0.12, -radius * 0.12, radius * 0.24, radius * 0.24);
+    ctx.restore();
+  }
+
+  drawOrb = function forgeInstrument(x, y, radius, config, kind, t, alpha = 1, focus = 0, depth = 0) {
+    if (alpha <= 0.002 || radius <= 1) return;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate((kind === 'maker' ? -0.06 : kind === 'reality' ? 0.04 : 0) + depth * 0.015);
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = alpha * clamp(0.82 + depth * 0.045, 0.64, 1.05);
+    if (kind === 'machine') fMachine(radius, config.rgb, t);
+    else if (kind === 'maker') fMaker(radius, config.rgb, t);
+    else fReality(radius, config.rgb, t);
+    if (focus) fFocusBrackets(radius, config.rgb, 0.5 + focus * 0.3);
+    ctx.restore();
+  };
+
+  function fDrawOrbit(t, alpha) {
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.strokeStyle = rgba(FORGE_INK, 0.115 * alpha);
+    ctx.lineWidth = 0.85;
+    ctx.beginPath();
+    for (let i = 0; i <= 120; i++) {
+      const a = i / 120 * TAU;
+      const point = rotate3(
+        { x: Math.cos(a) * 4.35, y: Math.sin(a) * 3.0, z: Math.sin(a + 0.55) * 1.2 },
+        overviewYaw,
+        overviewPitch,
+        overviewRoll
+      );
+      const projected = fProject(point, overviewZoom, 12.3);
+      i ? ctx.lineTo(projected.x, projected.y) : ctx.moveTo(projected.x, projected.y);
+    }
+    ctx.stroke();
+
+    ctx.setLineDash([2, 10]);
+    ctx.strokeStyle = rgba(FORGE_GOLD, 0.2 * alpha);
+    ctx.beginPath();
+    for (let i = 0; i <= 90; i++) {
+      const a = i / 90 * TAU;
+      const point = rotate3(
+        { x: Math.cos(a) * 3.55, y: Math.sin(a) * 2.45, z: Math.cos(a) * 1.45 },
+        overviewYaw - 0.35,
+        overviewPitch + 0.18,
+        overviewRoll + 0.2
+      );
+      const projected = fProject(point, overviewZoom, 12.3);
+      i ? ctx.lineTo(projected.x, projected.y) : ctx.moveTo(projected.x, projected.y);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  function fDrawGround(center, t, alpha) {
+    const groundY = center.y + unit * 0.235;
+    ctx.globalCompositeOperation = 'source-over';
+    for (let i = 0; i < 4; i++) {
+      ctx.strokeStyle = rgba(i % 2 ? WORLD.maker.rgb : FORGE_INK, alpha * (0.09 - i * 0.012));
+      ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      ctx.ellipse(center.x, groundY + i * unit * 0.011, unit * (0.11 + i * 0.045), unit * (0.021 + i * 0.009), 0, 0, TAU);
+      ctx.stroke();
+    }
+    const shift = reduced ? 0 : Math.sin(t * 0.22) * unit * 0.004;
+    ctx.strokeStyle = rgba(FORGE_CORAL, 0.36 * alpha);
+    ctx.lineWidth = 1.25;
+    ctx.beginPath();
+    ctx.moveTo(center.x - unit * 0.18, groundY + shift);
+    ctx.lineTo(center.x + unit * 0.18, groundY - shift);
+    ctx.stroke();
+  }
+
+  function fDrawSky(center, t, alpha) {
+    ctx.globalCompositeOperation = 'source-over';
+    const colors = [WORLD.machine.rgb, WORLD.reality.rgb, FORGE_GOLD];
+    for (let i = 0; i < 3; i++) {
+      const y = center.y - unit * (0.175 + i * 0.035);
+      ctx.strokeStyle = rgba(colors[i], alpha * (0.2 - i * 0.035));
+      ctx.lineWidth = i === 0 ? 1.2 : 0.85;
+      ctx.beginPath();
+      ctx.arc(center.x, y, unit * (0.115 + i * 0.045), Math.PI * 1.08, Math.PI * 1.92);
+      ctx.stroke();
+    }
+    const spark = reduced ? 0 : Math.sin(t * 0.75) * unit * 0.004;
+    ctx.fillStyle = rgba(FORGE_GOLD, 0.7 * alpha);
+    ctx.fillRect(center.x - 1.5 + spark, center.y - unit * 0.31, 3, 3);
+  }
+
+  function fDrawFallbackCore(center, t, alpha) {
+    const h = unit * 0.37;
+    const w = unit * 0.112;
+    const squeeze = 0.84 + 0.16 * Math.cos(overviewYaw);
+    ctx.save();
+    ctx.translate(center.x, center.y - unit * 0.01);
+    ctx.scale(squeeze, 1);
+    const gradient = ctx.createLinearGradient(-w, 0, w, 0);
+    gradient.addColorStop(0, '#05070a');
+    gradient.addColorStop(0.48, '#2b3139');
+    gradient.addColorStop(0.54, '#080b10');
+    gradient.addColorStop(1, '#020305');
+    ctx.fillStyle = gradient;
+    ctx.strokeStyle = rgba(FORGE_GOLD, 0.52 * alpha);
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, w, h * 0.5, 0, 0, TAU);
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function fDrawCore(center, t, alpha) {
+    fDrawGround(center, t, alpha);
+    fDrawSky(center, t, alpha);
+    const ready = forgeTexture && forgeTexture.complete && forgeTexture.naturalWidth > 0;
+    if (!ready) {
+      fDrawFallbackCore(center, t, alpha);
+      return;
+    }
+    const targetH = unit * (width > 1100 ? 0.46 : width > 760 ? 0.42 : 0.405);
+    const targetW = targetH * forgeTexture.naturalWidth / forgeTexture.naturalHeight;
+    const yawScale = 0.9 + 0.1 * Math.cos(overviewYaw);
+    const lean = reduced ? 0 : Math.sin(overviewYaw) * 0.022;
+    ctx.save();
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = alpha;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.translate(center.x, center.y - unit * 0.015);
+    ctx.rotate(lean);
+    ctx.scale(yawScale, 1);
+    ctx.drawImage(forgeTexture, -targetW * 0.5, -targetH * 0.5, targetW, targetH);
+    ctx.restore();
+
+    ctx.strokeStyle = rgba(FORGE_CORAL, 0.34 * alpha);
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    ctx.moveTo(center.x, center.y - targetH * 0.43);
+    ctx.lineTo(center.x, center.y + targetH * 0.44);
+    ctx.stroke();
+  }
+
+  drawOverview = function mirrorForgeOverview(t, alpha) {
+    const positions = overviewPositions(t);
+    worldKeys.forEach((key) => Object.assign(worldScreen[key], positions[key]));
+    const center = fCenter();
+    const unity = { x: center.x, y: center.y, r: unit * 0.08, z: 0 };
+
+    ctx.globalAlpha = alpha;
+    fDrawOrbit(t, alpha);
+
+    const pairs = [['machine', 'maker'], ['maker', 'reality'], ['reality', 'machine']];
+    pairs.forEach((pair, index) => drawCurve(positions[pair[0]], positions[pair[1]], WORLD[pair[0]].rgb, alpha * 0.54, index + 1, t, false));
+    worldKeys.forEach((key, index) => drawCurve(unity, positions[key], WORLD[key].rgb, alpha * 0.78, 7 + index, t, true));
+
+    const depthOrder = [...worldKeys].sort((a, b) => positions[a].z - positions[b].z);
+    depthOrder.filter((key) => positions[key].z < 0).forEach((key) => {
+      const point = positions[key];
+      drawOrb(point.x, point.y, point.r, WORLD[key], key, t, alpha, hoverWorld === key ? 1 : 0, point.z);
+    });
+    fDrawCore(center, t, alpha);
+    depthOrder.filter((key) => positions[key].z >= 0).forEach((key) => {
+      const point = positions[key];
+      drawOrb(point.x, point.y, point.r, WORLD[key], key, t, alpha, hoverWorld === key ? 1 : 0, point.z);
+    });
+    ctx.globalAlpha = 1;
+  };
+
+  function fMachineField(t, alpha) {
+    const points = [];
+    for (let i = 0; i < machineNodes.length; i += 2) {
+      const rotated = rotate3(machineNodes[i], detailYaw + t * 0.025, detailPitch, detailRoll);
+      points.push(project(rotated, detailZoom * 0.79, 11));
+    }
+    ctx.strokeStyle = rgba(WORLD.machine.rgb, 0.12 * alpha);
+    ctx.lineWidth = 0.7;
+    for (let i = 0; i < points.length; i++) {
+      const a = points[i];
+      const b = points[(i + 7) % points.length];
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+    }
+    ctx.fillStyle = rgba(FORGE_INK, 0.34 * alpha);
+    points.forEach((point, i) => ctx.fillRect(point.x, point.y, i % 6 ? 1 : 2.2, i % 6 ? 1 : 2.2));
+  }
+
+  function fMakerField(t, alpha) {
+    for (let i = 0; i < makerShards.length; i += 2) {
+      const shard = makerShards[i];
+      const angle = shard.angle + t * 0.035;
+      const rotated = rotate3({ x: Math.cos(angle) * shard.radius, y: shard.y * 0.55, z: Math.sin(angle) * shard.radius }, detailYaw, detailPitch, detailRoll);
+      const point = project(rotated, detailZoom * 0.74, 11);
+      const size = 1.4 + (i % 5) * 0.35;
+      ctx.fillStyle = rgba(i % 8 ? WORLD.maker.rgb : FORGE_CORAL, (0.13 + (i % 7) * 0.025) * alpha);
+      ctx.beginPath();
+      ctx.moveTo(point.x, point.y - size * 1.4);
+      ctx.lineTo(point.x + size, point.y + size);
+      ctx.lineTo(point.x - size, point.y + size);
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
+
+  function fRealityField(t, alpha) {
+    realityCells.forEach((cell, index) => {
+      const distance = Math.hypot(cell.x, cell.z);
+      const wave = 0.5 + 0.5 * Math.sin(t * 0.65 - distance * 1.8 + cell.phase + activeSub * 0.8);
+      const rotated = rotate3({ x: cell.x, y: -1.45 + wave * 0.62, z: cell.z }, detailYaw, detailPitch, detailRoll);
+      const point = project(rotated, detailZoom * 0.72, 11);
+      const side = unit * 0.0058 * clamp(point.f, 0.55, 1.5);
+      const heightBlock = unit * 0.019 * (0.6 + wave) * clamp(point.f, 0.55, 1.5);
+      ctx.fillStyle = rgba(WORLD.reality.rgb, (0.06 + wave * 0.14) * alpha);
+      ctx.fillRect(point.x - side * 0.5, point.y - heightBlock, side, heightBlock);
+      ctx.strokeStyle = rgba(index % 8 ? FORGE_INK : FORGE_CORAL, 0.17 * alpha);
+      ctx.strokeRect(point.x - side * 0.5, point.y - heightBlock, side, heightBlock);
+    });
+  }
+
+  drawDetail = function mirrorForgeDetail(t, alpha) {
+    if (!activeWorld || alpha <= 0.002) return;
+    const config = WORLD[activeWorld];
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = alpha;
+
+    if (activeWorld === 'machine') fMachineField(t, alpha);
+    else if (activeWorld === 'maker') fMakerField(t, alpha);
+    else fRealityField(t, alpha);
+
+    drawOrb(width * 0.5, height * 0.5, unit * 0.105, config, activeWorld, t, alpha * 0.34, 0, 0);
+    const points = detailPoints();
+    points.forEach((point, index) => Object.assign(subScreen[index], point));
+    for (let i = 0; i < 3; i++) drawCurve(points[i], points[(i + 1) % 3], config.rgb, alpha * 0.65, 20 + i, t, false);
+
+    const depthOrder = [...points].sort((a, b) => a.z - b.z);
+    depthOrder.forEach((point) => {
+      const index = point.index;
+      const selected = index === activeSub;
+      const hover = index === hoverSub;
+      const radius = point.r * (selected ? 1.08 : 0.96) * (hover ? 1.08 : 1);
+      drawOrb(point.x, point.y, radius, config, activeWorld, t + index * 0.8, alpha, selected || hover ? 1 : 0, point.z);
+      if (selected) {
+        ctx.strokeStyle = rgba(FORGE_CORAL, 0.48 * alpha);
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, radius * 1.7, -Math.PI * 0.32, Math.PI * 0.72);
+        ctx.stroke();
+      }
+    });
+    ctx.globalAlpha = 1;
+  };
+
+  updateLabels = function mirrorForgeLabels() {
+    if (++labelTick % 2) return;
+    const mix = ease(viewMix);
+    worldKeys.forEach((key) => {
+      const element = labels[key];
+      const point = worldScreen[key];
+      if (!element) return;
+      element.style.left = `${point.x}px`;
+      element.style.top = `${point.y - point.r * 1.55}px`;
+      element.style.opacity = String(clamp(1 - mix * 2.1, 0, 1));
+      element.style.pointerEvents = mix < 0.25 ? 'auto' : 'none';
+    });
+    if (unityLabel) {
+      const center = fCenter();
+      unityLabel.style.left = `${center.x}px`;
+      unityLabel.style.top = `${center.y + unit * 0.275}px`;
+      unityLabel.style.opacity = String(clamp(1 - mix * 2.2, 0, 1));
+    }
+
+    if (activeWorld && mix > 0.22) {
+      subLabels.forEach((element, index) => {
+        const point = subScreen[index];
+        element.style.left = `${point.x}px`;
+        element.style.top = `${point.y - point.r * 1.55}px`;
+        element.style.opacity = String(ease((mix - 0.22) / 0.5));
+        element.style.pointerEvents = mix > 0.65 ? 'auto' : 'none';
+        element.classList.toggle('active', index === activeSub);
+      });
+    } else {
+      subLabels.forEach((element) => {
+        element.style.opacity = '0';
+        element.style.pointerEvents = 'none';
+      });
+    }
+    app?.classList.toggle('detail', Boolean(activeWorld && mix > 0.05));
+  };
+
+  setHint = function mirrorForgeHint() {
+    if (!hint || window.__dreamUnityGameActive) return;
+    hint.textContent = activeWorld
+      ? 'ROTATE THE WORLD · CHOOSE A CAPACITY'
+      : 'MOVE THE INSTRUMENT · ENTER A WORLD';
+  };
+
+  render = function mirrorForgeRender(t) {
+    drawBackground(t);
+    const mix = ease(viewMix);
+    drawOverview(t, 1 - mix);
+    drawDetail(t, mix);
+    updateLabels();
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = 1;
+  };
