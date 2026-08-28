@@ -28,7 +28,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          grep -q "VERSION = '20260828-remembered-tomorrow-3'" main.js
+          grep -q "VERSION = '20260828-remembered-tomorrow-4'" main.js
           grep -q 'remembered-tomorrow-10.txt' main.js
           grep -q "ctx.fillStyle = '#ffffff'" visual-parts/remembered-tomorrow-10.txt
           grep -q 'render = function rememberedTomorrowRender' visual-parts/remembered-tomorrow-10.txt
@@ -37,6 +37,7 @@ jobs:
           grep -q 'function rtDrawTemporalGhost' visual-parts/remembered-tomorrow-10.txt
           grep -q 'function rtDrawPossibleFutures' visual-parts/remembered-tomorrow-10.txt
           grep -q 'function rtDrawLivingPath' visual-parts/remembered-tomorrow-10.txt
+          grep -q 'function rtDrawDreamMembrane' visual-parts/remembered-tomorrow-10.txt
           grep -q 'function rtDrawCompressionBraid' visual-parts/remembered-tomorrow-10.txt
           grep -q 'function rtDrawMatter' visual-parts/remembered-tomorrow-10.txt
           grep -q 'function rtDrawUnity' visual-parts/remembered-tomorrow-10.txt
@@ -95,14 +96,15 @@ jobs:
           done
           test "$matched" = true
 
-          grep -q 'main.js?v=20260828-remembered-tomorrow-3' /tmp/dream-unity-live/index.html
-          grep -q 'unity-cycle.css?v=20260828-remembered-tomorrow-3' /tmp/dream-unity-live/index.html
+          grep -q 'main.js?v=20260828-remembered-tomorrow-4' /tmp/dream-unity-live/index.html
+          grep -q 'unity-cycle.css?v=20260828-remembered-tomorrow-4' /tmp/dream-unity-live/index.html
           grep -q 'remembered-tomorrow-10.txt' /tmp/dream-unity-live/main.js
           grep -q "ctx.fillStyle = '#ffffff'" /tmp/dream-unity-live/visual-parts/remembered-tomorrow-10.txt
           grep -q 'render = function rememberedTomorrowRender' /tmp/dream-unity-live/visual-parts/remembered-tomorrow-10.txt
           grep -q 'drawOverview = function rememberedTomorrowOverview' /tmp/dream-unity-live/visual-parts/remembered-tomorrow-10.txt
           grep -q 'function rtDrawTemporalGhost' /tmp/dream-unity-live/visual-parts/remembered-tomorrow-10.txt
           grep -q 'function rtDrawPossibleFutures' /tmp/dream-unity-live/visual-parts/remembered-tomorrow-10.txt
+          grep -q 'function rtDrawDreamMembrane' /tmp/dream-unity-live/visual-parts/remembered-tomorrow-10.txt
           grep -q 'I REMEMBER TOMORROW' /tmp/dream-unity-live/index.html
           ! grep -Eq 'du-voice|data-voice|voice\.js|voice\.css|realtime-session|dream-unity-voice-live|TAP TO SPEAK|SpeechRecognition|speechSynthesis' /tmp/dream-unity-live/index.html
           ! grep -Eq 'voiceState|Projected sound shells|oracle iris|coralTexture|black architectural wound' /tmp/dream-unity-live/visual-parts/remembered-tomorrow-10.txt
@@ -150,7 +152,7 @@ jobs:
               'homepage_score':'assets/i-remember-tomorrow.mp3',
               'voice_interface_active':False,
               'renderer_override':'visual-parts/remembered-tomorrow-10.txt',
-              'main_cache_version':'20260828-remembered-tomorrow-3'
+              'main_cache_version':'20260828-remembered-tomorrow-4'
             },
             'become':{
               'scenario_source':'instant_objective_driven_social_agency_maximin_synthesis',
