@@ -1,27 +1,30 @@
 {
   "project": "Dream Unity \u2014 Experimental Three-World Problem",
   "deployment": "verified-live",
-  "source_sha": "bfac620d76de1f28add7262ec7e879fc6e3cbb43",
+  "source_sha": "b82598524f609d7a53113538f8d3042937ea1a9e",
   "page_url": "https://dream-unity.github.io/experimental-three-world-problem/",
   "nine_portal_compatibility": "validated",
   "overview": {
-    "theme": "mirror_forge",
-    "canvas_background": "#ffffff",
+    "theme": "stage_coral_sovereignty_system",
+    "canvas_background": "#EEE9DC",
     "legacy_render_vignette_active": false,
     "nebula_fog_active": false,
     "world_palette": {
-      "machine": "#00BFE8",
-      "maker": "#00B86F",
-      "reality": "#713BFF",
-      "unity": "#F14F4B"
+      "machine": "#C6D7DC",
+      "maker": "#ED4036",
+      "reality": "#C38A3E",
+      "unity": "#ED4036"
     },
     "connected_instrument": true,
     "distinct_world_geometries": true,
-    "generated_core_asset": "assets/mirror-forge-core.png",
+    "mirror_conditioning_field": true,
+    "agency_driven_fracture": true,
+    "shards_become_structure": true,
+    "generated_core_asset": "assets/coral-sovereign-engine.webp",
     "homepage_score": "assets/i-remember-tomorrow.mp3",
     "voice_interface_active": false,
-    "renderer_override": "visual-parts/mirror-forge-08.txt",
-    "main_cache_version": "20260828-mirror-forge-1"
+    "renderer_override": "visual-parts/sovereign-coral-09.txt",
+    "main_cache_version": "20260828-stage-coral-2"
   },
   "become": {
     "scenario_source": "instant_objective_driven_social_agency_maximin_synthesis",
@@ -41,22 +44,22 @@
     "original_scenario_bank_used_as_fallback": false
   },
   "sha256": [
-    "7defda2ba2fc1813ac58cbacbedacf0ed4d58993930e115e02663af290c186b5  /tmp/dream-unity-live/index.html",
+    "01aa533ab04e051b055b1ad1ce349de04f8e3d735bad43a736c42d3a8427aaaf  /tmp/dream-unity-live/index.html",
     "008f907be470e8b387badb2534fa4df0c55b5bfc1c71c75d1beb9ef9ed963191  /tmp/dream-unity-live/styles.css",
     "ad8dc6788a87c34201b132b88d8e5eb3ed439a0644f54a9610d2398d1b877536  /tmp/dream-unity-live/become.css",
-    "2358a4430fb1cf357fe1b125011f14e33a24ec85756f3efcfd4d1c3629dad5ff  /tmp/dream-unity-live/forge-theme.css",
-    "fffc3a8905569c6b3385505dd649b254369d2bc31f94ce95b77706140d5cb3bf  /tmp/dream-unity-live/forge-ui.js",
-    "e94828b7e3fc43197a367a1e99466d3b4b7e83eb809fd85c48f839da397253e1  /tmp/dream-unity-live/main.js",
+    "96e16dec790107783dffd00574282c9af471481ccdd1e218b60e4c4fa2892092  /tmp/dream-unity-live/coral-theme.css",
+    "7ee1504e8b111bd3c46e98f72f3362fee921ebfbe84ebf3aa3ffe3fd2aa983a1  /tmp/dream-unity-live/coral-ui.js",
+    "ca31b3578d5ff367e6bdc308812d23e3ae2af884a815525595e6a70cd898a7c1  /tmp/dream-unity-live/main.js",
     "4e4dbd47aa1483e6c302ef83fd4f79107d3a31f55548672cb2547a4f7dbadb41  /tmp/dream-unity-live/arcade.js",
+    "a9a4dfa850e8dd8f4081759d49412cbdd2190f22fb094c5a73e428a68104a42e  /tmp/dream-unity-live/assets/coral-sovereign-engine.webp",
     "621ea2851f570523470594ae6f1e3dcd7e9e325c134fa6fea794c2fbdbbfdc32  /tmp/dream-unity-live/assets/i-remember-tomorrow.mp3",
-    "a323bead6049a23cf4683f341ef2ae9244e257781812981b92aec87bc36481f8  /tmp/dream-unity-live/assets/mirror-forge-core.png",
-    "8ca363f1b9c5cf33946aa01b9273b7cfd724795757dcaad7af9d0dec21f66162  /tmp/dream-unity-live/visual-parts/mirror-forge-08.txt",
     "56721366312283387c98c07da9086f9a7b4b68e6d349ede5080d53159673236b  /tmp/dream-unity-live/visual-parts/part-01.txt",
     "cf1092cd154f27e634fed6eaee0a59b49a6784a6e0dcbc07e503a652be964f65  /tmp/dream-unity-live/visual-parts/part-02.txt",
     "96e934b79b31db20b58453e4246101b98246c981c86032259d390df51c9bfb50  /tmp/dream-unity-live/visual-parts/part-03.txt",
     "f91050909c1d1273adb79287ab72a97c3edb7be7aba8cfb5f32fedbfd57ec48b  /tmp/dream-unity-live/visual-parts/part-04.txt",
     "89fbc4d3fd257fe31d07aa25d9309116abe8cb8f592cb439af8e0321a597a83c  /tmp/dream-unity-live/visual-parts/part-05.txt",
     "d0bfbe2ac2c8e00d382d6f3f25a4be119a5697b9cdf77e6fea3ffdfb4f67ab3c  /tmp/dream-unity-live/visual-parts/part-06.txt",
+    "3f36cd3a11671bdc77a770405f8bcf4623c1f6766219d4483fbddfbc4a72ccc9  /tmp/dream-unity-live/visual-parts/sovereign-coral-09.txt",
     "ad5bb93ac121c585cfec3db4e1e3c2914e2ed8b8a0459d98781bcd8e8a462df1  /tmp/dream-unity-live/arcade-parts/become-activation-objectives-14.txt",
     "53b6481086fa2be2aba90a9570c78162e8e3b0bfa856632d3cbfb62b9f317c7a  /tmp/dream-unity-live/arcade-parts/become-compressed-12.txt",
     "ddc1eae5b9d4b4d92c6b2548be18a77a9ae944a84890c1c4bf6a9d788f054848  /tmp/dream-unity-live/arcade-parts/become-diversity-09.txt",
@@ -79,5 +82,5 @@
     "c5a8ea262274f0a64821aae3c304e7410293b66ac1c1665c38ca44eae0ed7488  /tmp/dream-unity-live/arcade-parts/perceive-aerial-08.txt",
     "6545873de0d833976a46ffa52666c6629e94e6fdda4f30c3a1720f738cb3b892  /tmp/dream-unity-live/arcade-parts/perceive-role-logic.txt"
   ],
-  "verified_at": "2026-08-28T08:22:31.738144+00:00"
+  "verified_at": "2026-08-28T10:22:14.739528+00:00"
 }
