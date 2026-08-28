@@ -120,9 +120,7 @@
     });
     if (unityLabel) {
       unityLabel.style.left = `${width * 0.5}px`;
-      // The complete voice launcher is centred over Unity's 3D core; its text
-      // sits inside the hitbox instead of displacing the interactive target.
-      unityLabel.style.top = `${height * 0.5}px`;
+      unityLabel.style.top = `${height * 0.5 + unit * 0.045}px`;
       unityLabel.style.opacity = String(clamp(1 - mix * 2.2, 0, 1));
     }
 

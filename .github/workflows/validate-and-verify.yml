@@ -28,22 +28,21 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          grep -q "VERSION = '20260827-unity-oracle-performance-6'" main.js
+          grep -q "VERSION = '20260828-static-unity-1'" main.js
           grep -q 'light-overview-07.txt' main.js
           grep -q "ctx.fillStyle = '#ffffff'" visual-parts/light-overview-07.txt
           grep -q 'render = function kineticWhiteRender' visual-parts/light-overview-07.txt
           grep -q 'drawBackground = function whiteKineticBackground' visual-parts/light-overview-07.txt
           grep -q 'drawCurve = function fluidLongCurve' visual-parts/light-overview-07.txt
           grep -q 'function wDrawUnity' visual-parts/light-overview-07.txt
-          grep -q 'oracleState=app&&app.dataset' visual-parts/light-overview-07.txt
-          grep -q 'Projected sound shells' visual-parts/light-overview-07.txt
-          grep -q 'TAP TO SPEAK' index.html
-          grep -q 'Hello, my name is Unity. What dream would you like to unify?' voice.js
-          grep -q 'ARRIVAL_GREETING' voice.js
-          grep -q 'prewarmVoiceEndpoint' voice.js
-          grep -q 'data-voice-launcher' index.html
-          ! grep -q 'du-voice-launcher-copy' index.html
-          grep -q 'coreR=unit\*0.032' visual-parts/light-overview-07.txt
+          grep -q '<div class="unity-label" id="unityLabel"><span></span><b>UNITY</b></div>' index.html
+          ! grep -Eq 'du-voice|data-voice|voice\.js|voice\.css|realtime-session|dream-unity-voice-live|TAP TO SPEAK|SpeechRecognition|speechSynthesis' index.html
+          ! grep -Eq 'voiceState|Projected sound shells|oracle iris' visual-parts/light-overview-07.txt
+          test ! -e voice.js
+          test ! -e voice.css
+          test ! -e api/realtime-session.js
+          test ! -e tests/voice.test.mjs
+          grep -q 'coreR=unit\*0.026' visual-parts/light-overview-07.txt
           grep -q 'reach=Math.min' visual-parts/light-overview-07.txt
           grep -q "WORLD.machine.css = '#009DFF'" visual-parts/light-overview-07.txt
           grep -q "WORLD.maker.css = '#00C97A'" visual-parts/light-overview-07.txt
@@ -67,7 +66,8 @@ jobs:
           PAGE_URL: https://dream-unity.github.io/experimental-three-world-problem
         run: |
           set -euo pipefail
-          files=(index.html styles.css become.css light-theme.css light-theme.js main.js arcade.js voice.css voice.js visual-parts/part-01.txt visual-parts/part-02.txt visual-parts/part-03.txt visual-parts/part-04.txt visual-parts/part-05.txt visual-parts/part-06.txt visual-parts/light-overview-07.txt arcade-parts/part-01.txt arcade-parts/part-02.txt arcade-parts/part-03.txt arcade-parts/part-04.txt arcade-parts/part-05.txt arcade-parts/perceive-role-logic.txt arcade-parts/perceive-aerial-01.txt arcade-parts/perceive-aerial-02.txt arcade-parts/perceive-aerial-03.txt arcade-parts/perceive-aerial-04.txt arcade-parts/perceive-aerial-05.txt arcade-parts/perceive-aerial-06.txt arcade-parts/perceive-aerial-07.txt arcade-parts/perceive-aerial-08.txt arcade-parts/become-lab-01.txt arcade-parts/become-diversity-09.txt arcade-parts/become-social-agency-10.txt arcade-parts/become-social-integration-11.txt arcade-parts/become-compressed-12.txt arcade-parts/become-rapid-entry-13.txt arcade-parts/become-activation-objectives-14.txt)
+          files=(index.html styles.css become.css light-theme.css light-theme.js main.js arcade.js visual-parts/part-01.txt visual-parts/part-02.txt visual-parts/part-03.txt visual-parts/part-04.txt visual-parts/part-05.txt visual-parts/part-06.txt visual-parts/light-overview-07.txt arcade-parts/part-01.txt arcade-parts/part-02.txt arcade-parts/part-03.txt arcade-parts/part-04.txt arcade-parts/part-05.txt arcade-parts/perceive-role-logic.txt arcade-parts/perceive-aerial-01.txt arcade-parts/perceive-aerial-02.txt arcade-parts/perceive-aerial-03.txt arcade-parts/perceive-aerial-04.txt arcade-parts/perceive-aerial-05.txt arcade-parts/perceive-aerial-06.txt arcade-parts/perceive-aerial-07.txt arcade-parts/perceive-aerial-08.txt arcade-parts/become-lab-01.txt arcade-parts/become-diversity-09.txt arcade-parts/become-social-agency-10.txt arcade-parts/become-social-integration-11.txt arcade-parts/become-compressed-12.txt arcade-parts/become-rapid-entry-13.txt arcade-parts/become-activation-objectives-14.txt)
+          retired_files=(voice.js voice.css api/realtime-session.js tests/voice.test.mjs)
           rm -rf /tmp/dream-unity-live
           mkdir -p /tmp/dream-unity-live/arcade-parts /tmp/dream-unity-live/visual-parts
           matched=false
@@ -77,29 +77,28 @@ jobs:
               if ! curl --fail --location --silent --show-error --retry 3 --retry-all-errors --retry-delay 2 "$PAGE_URL/$path?source=${GITHUB_SHA}" --output "/tmp/dream-unity-live/$path"; then matched=false; break; fi
               if ! cmp --silent "$path" "/tmp/dream-unity-live/$path"; then matched=false; break; fi
             done
+            if [ "$matched" = true ]; then
+              for path in "${retired_files[@]}"; do
+                if curl --fail --location --silent --head "$PAGE_URL/$path?source=${GITHUB_SHA}" >/dev/null; then matched=false; break; fi
+              done
+            fi
             if [ "$matched" = true ]; then break; fi
             echo "Pages has not propagated yet (attempt $attempt/60)."
             sleep 5
           done
           test "$matched" = true
 
-          grep -q 'main.js?v=20260827-unity-oracle-performance-6' /tmp/dream-unity-live/index.html
+          grep -q 'main.js?v=20260828-static-unity-1' /tmp/dream-unity-live/index.html
           grep -q 'light-theme.css?v=20260826-white-overview-4' /tmp/dream-unity-live/index.html
           grep -q 'light-overview-07.txt' /tmp/dream-unity-live/main.js
           grep -q "ctx.fillStyle = '#ffffff'" /tmp/dream-unity-live/visual-parts/light-overview-07.txt
           grep -q 'render = function kineticWhiteRender' /tmp/dream-unity-live/visual-parts/light-overview-07.txt
           grep -q 'drawCurve = function fluidLongCurve' /tmp/dream-unity-live/visual-parts/light-overview-07.txt
           grep -q 'function wDrawUnity' /tmp/dream-unity-live/visual-parts/light-overview-07.txt
-          grep -q 'oracleState=app&&app.dataset' /tmp/dream-unity-live/visual-parts/light-overview-07.txt
-          grep -q 'Projected sound shells' /tmp/dream-unity-live/visual-parts/light-overview-07.txt
-          grep -q 'voice.js?v=20260828-unity-oracle-8' /tmp/dream-unity-live/index.html
-          grep -q 'data-voice-launcher' /tmp/dream-unity-live/index.html
-          grep -q 'TAP TO SPEAK' /tmp/dream-unity-live/index.html
-          grep -q 'ARRIVAL_GREETING' /tmp/dream-unity-live/voice.js
-          grep -q 'prewarmVoiceEndpoint' /tmp/dream-unity-live/voice.js
-          grep -q 'Hello, my name is Unity. What dream would you like to unify?' /tmp/dream-unity-live/voice.js
-          ! grep -q 'du-voice-launcher-copy' /tmp/dream-unity-live/index.html
-          grep -q 'coreR=unit\*0.032' /tmp/dream-unity-live/visual-parts/light-overview-07.txt
+          grep -q '<div class="unity-label" id="unityLabel"><span></span><b>UNITY</b></div>' /tmp/dream-unity-live/index.html
+          ! grep -Eq 'du-voice|data-voice|voice\.js|voice\.css|realtime-session|dream-unity-voice-live|TAP TO SPEAK|SpeechRecognition|speechSynthesis' /tmp/dream-unity-live/index.html
+          ! grep -Eq 'voiceState|Projected sound shells|oracle iris' /tmp/dream-unity-live/visual-parts/light-overview-07.txt
+          grep -q 'coreR=unit\*0.026' /tmp/dream-unity-live/visual-parts/light-overview-07.txt
           grep -q 'reach=Math.min' /tmp/dream-unity-live/visual-parts/light-overview-07.txt
           grep -q "WORLD.machine.css = '#009DFF'" /tmp/dream-unity-live/visual-parts/light-overview-07.txt
           grep -q "WORLD.maker.css = '#00C97A'" /tmp/dream-unity-live/visual-parts/light-overview-07.txt
@@ -112,7 +111,7 @@ jobs:
           grep -q 'SOCIAL WIN' /tmp/dream-unity-live/arcade-parts/become-activation-objectives-14.txt
           grep -q 'SOLVED WHEN' /tmp/dream-unity-live/arcade-parts/become-activation-objectives-14.txt
           ! grep -q 'bShuffle(BECOME_SCENARIOS)' /tmp/dream-unity-live/arcade-parts/become-activation-objectives-14.txt
-          sha256sum /tmp/dream-unity-live/index.html /tmp/dream-unity-live/styles.css /tmp/dream-unity-live/become.css /tmp/dream-unity-live/light-theme.css /tmp/dream-unity-live/light-theme.js /tmp/dream-unity-live/main.js /tmp/dream-unity-live/arcade.js /tmp/dream-unity-live/voice.css /tmp/dream-unity-live/voice.js /tmp/dream-unity-live/visual-parts/*.txt /tmp/dream-unity-live/arcade-parts/*.txt > /tmp/live-checksums.txt
+          sha256sum /tmp/dream-unity-live/index.html /tmp/dream-unity-live/styles.css /tmp/dream-unity-live/become.css /tmp/dream-unity-live/light-theme.css /tmp/dream-unity-live/light-theme.js /tmp/dream-unity-live/main.js /tmp/dream-unity-live/arcade.js /tmp/dream-unity-live/visual-parts/*.txt /tmp/dream-unity-live/arcade-parts/*.txt > /tmp/live-checksums.txt
 
       - name: Record kinetic white overview and Become deployment
         shell: bash
@@ -142,19 +141,11 @@ jobs:
               'braided_echo_arcs':True,
               'world_orbit_ribbons':5,
               'world_satellites':True,
-              'unity_core_scale':'0.032 * viewport unit',
+              'unity_core_scale':'0.026 * viewport unit',
               'unity_orbit_planes':3,
-              'unity_orbit_depth_occlusion':True,
+              'unity_orbit_depth_occlusion':False,
               'renderer_override':'visual-parts/light-overview-07.txt',
-              'main_cache_version':'20260827-unity-oracle-performance-6'
-            },
-            'voice':{
-              'launcher':'central_unity_oracle',
-              'detached_talk_pill':False,
-              'arrival_greeting':'Hello, my name is Unity. What dream would you like to unify?',
-              'visual_affordance':'3d_oracle_iris_sound_shells_and_inline_tap_invite',
-              'speech_mode':'browser_native',
-              'backend':'dream-unity-voice-live.vercel.app'
+              'main_cache_version':'20260828-static-unity-1'
             },
             'become':{
               'scenario_source':'instant_objective_driven_social_agency_maximin_synthesis',

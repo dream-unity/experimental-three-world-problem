@@ -183,86 +183,32 @@
 
   function wDrawUnity(unity,t,alpha){
     const amber=[245,158,11],orange=[255,105,0];
-    const coreR=unit*0.032*overviewZoom;
-    const oracleState=app&&app.dataset?app.dataset.voiceState||'idle':'idle';
-    const oracleSpeaking=oracleState==='speaking';
-    const oracleListening=oracleState==='listening'||oracleState==='connected';
-    const oracleHover=app&&app.dataset?app.dataset.voiceHover==='true':false;
-    const oraclePress=app&&app.dataset?app.dataset.voicePress==='true':false;
-    const reduceMotion=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const motionT=reduceMotion?0:t;
-    const oraclePulse=oracleSpeaking ? .5+.5*Math.sin(motionT*8.4) : oracleListening ? .5+.5*Math.sin(motionT*2.2) : .5+.5*Math.sin(motionT*1.35);
-    const engaged=oracleSpeaking||oracleListening||oracleHover;
-    const bodyR=coreR*(1+(oracleSpeaking ? .065*oraclePulse : oracleListening ? .028*oraclePulse : 0)+(oracleHover ? .055 : 0)-(oraclePress ? .035 : 0));
-    const rings=[
-      [unit*.075,unit*.025,motionT*.11+overviewRoll],
-      [unit*.105,unit*.034,-motionT*.075-overviewRoll*.7],
-      [unit*.135,unit*.043,motionT*.048+1.05]
-    ];
+    const coreR=unit*0.026*overviewZoom;
 
-    // Split orbit planes around the sphere: rear arcs first, front arcs last.
-    // The resulting occlusion makes Unity read as a dimensional object.
-    const drawOrbitStage=front=>rings.forEach((r,i)=>{
-      ctx.save();ctx.translate(unity.x,unity.y);ctx.rotate(r[2]);ctx.lineCap='round';
-      const oracleLift=oracleSpeaking ? .19*oraclePulse : oracleListening ? .09*oraclePulse : oracleHover ? .07 : 0;
-      ctx.strokeStyle=rgba(i===2?orange:amber,(front ? .58-i*.085 : .30-i*.045+oracleLift)*alpha);
-      ctx.lineWidth=(front ? (i===0?2:1.3) : .82)+(oracleSpeaking ? .24*oraclePulse : 0);
-      ctx.beginPath();ctx.ellipse(0,0,r[0]*overviewZoom,r[1]*overviewZoom,0,front?0:Math.PI,front?Math.PI:TAU);ctx.stroke();
-      const nodeA=motionT*(.55+i*.13)+i*2.1;
-      const nodeFront=Math.sin(nodeA)>=0;
-      if(nodeFront===front){
-        const sx=Math.cos(nodeA)*r[0]*overviewZoom,sy=Math.sin(nodeA)*r[1]*overviewZoom;
-        const nodeScale=front?1.12:.78;
-        ctx.fillStyle=rgba(i===2?orange:amber,(front ? .96 : .55)*alpha);
-        ctx.beginPath();ctx.arc(sx,sy,(2.1+i*.25)*nodeScale,0,TAU);ctx.fill();
-        if(front){ctx.fillStyle=rgba([255,255,255],.72*alpha);ctx.beginPath();ctx.arc(sx-.55,sy-.55,.65,0,TAU);ctx.fill();}
-      }
-      ctx.restore();
-    });
-    drawOrbitStage(false);
-
-    // Projected sound shells make the core visibly transmit and receive voice.
-    const shellCount=oracleSpeaking?3:engaged?2:1;
-    for(let i=0;i<shellCount;i++){
-      const rawPhase=reduceMotion?(i+1)/(shellCount+1):(motionT*(oracleSpeaking?1.35:.34)+i/shellCount)%1;
-      const phase=oraclePress?Math.min(rawPhase,.16):rawPhase;
-      const shellR=bodyR*(1.34+phase*(oracleSpeaking?1.48:.78));
-      const shellAlpha=(oracleSpeaking ? .52 : engaged ? .34 : .23)*(1-phase*.76)*alpha;
-      ctx.save();ctx.translate(unity.x,unity.y);ctx.rotate(-.11);ctx.lineCap='round';
-      ctx.strokeStyle=rgba(i%2?orange:amber,shellAlpha);ctx.lineWidth=(oracleSpeaking?1.8:1.35)*(1-phase*.22);
-      ctx.beginPath();ctx.ellipse(0,0,shellR,shellR*.72,0,-.67,.67);ctx.stroke();
-      ctx.beginPath();ctx.ellipse(0,0,shellR,shellR*.72,0,Math.PI-.67,Math.PI+.67);ctx.stroke();
-      ctx.restore();
-    }
-
-    // Enlarged spherical core with a local aura and grounded shadow.
-    const aura=coreR*(2.55+(oracleSpeaking ? .42*oraclePulse : oracleListening ? .2*oraclePulse : oracleHover ? .22 : 0));
+    // Larger central body with local halo and multiple orbit planes.
+    const aura=coreR*2.25;
     const g=ctx.createRadialGradient(unity.x,unity.y,0,unity.x,unity.y,aura);
-    g.addColorStop(0,rgba(amber,.25*alpha));g.addColorStop(.45,rgba(amber,.085*alpha));g.addColorStop(1,rgba(amber,0));
+    g.addColorStop(0,rgba(amber,.20*alpha));g.addColorStop(.45,rgba(amber,.065*alpha));g.addColorStop(1,rgba(amber,0));
     ctx.fillStyle=g;ctx.beginPath();ctx.arc(unity.x,unity.y,aura,0,TAU);ctx.fill();
 
-    ctx.fillStyle=rgba([116,65,0],.14*alpha);ctx.beginPath();ctx.ellipse(unity.x,unity.y+bodyR*.88,bodyR*.82,bodyR*.22,0,0,TAU);ctx.fill();
-    const sphere=ctx.createRadialGradient(unity.x-bodyR*.38,unity.y-bodyR*.43,bodyR*.06,unity.x,unity.y,bodyR*1.12);
-    sphere.addColorStop(0,rgba([255,241,184],.99*alpha));
-    sphere.addColorStop(.24,rgba([255,200,68],.99*alpha));
-    sphere.addColorStop(.7,rgba(amber,.98*alpha));
-    sphere.addColorStop(1,rgba([185,91,0],.98*alpha));
-    ctx.save();ctx.shadowColor=rgba(orange,.28*alpha);ctx.shadowBlur=bodyR*.58;ctx.fillStyle=sphere;ctx.beginPath();ctx.arc(unity.x,unity.y,bodyR,0,TAU);ctx.fill();ctx.restore();
-    ctx.strokeStyle=rgba([134,75,0],.34*alpha);ctx.lineWidth=1.15;ctx.beginPath();ctx.arc(unity.x,unity.y,bodyR-.65,0,TAU);ctx.stroke();
+    ctx.fillStyle=rgba(amber,.96*alpha);ctx.beginPath();ctx.arc(unity.x,unity.y,coreR,0,TAU);ctx.fill();
+    ctx.fillStyle=rgba(orange,.82*alpha);ctx.beginPath();ctx.arc(unity.x+coreR*.18,unity.y-coreR*.12,coreR*.42,0,TAU);ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,.94)';ctx.beginPath();ctx.arc(unity.x-coreR*.22,unity.y-coreR*.26,Math.max(1.6,coreR*.12),0,TAU);ctx.fill();
 
-    // Preserve the familiar orange nucleus, now as a glassy oracle iris.
-    const irisX=unity.x+bodyR*.16,irisY=unity.y-bodyR*.07;
-    const nucleus=ctx.createRadialGradient(irisX-bodyR*.13,irisY-bodyR*.15,0,irisX,irisY,bodyR*.52);
-    nucleus.addColorStop(0,rgba([255,171,35],.98*alpha));nucleus.addColorStop(.62,rgba(orange,.96*alpha));nucleus.addColorStop(1,rgba([203,68,0],.93*alpha));
-    ctx.fillStyle=nucleus;ctx.beginPath();ctx.arc(irisX,irisY,bodyR*.46,0,TAU);ctx.fill();
-    const irisOpen=bodyR*(.075+(oracleSpeaking ? .105*oraclePulse : oracleListening ? .045*oraclePulse : oracleHover ? .035 : 0));
-    const iris=ctx.createRadialGradient(irisX-bodyR*.05,irisY,0,irisX,irisY,bodyR*.31);
-    iris.addColorStop(0,rgba([35,24,13],.96*alpha));iris.addColorStop(.62,rgba([91,43,0],.92*alpha));iris.addColorStop(1,rgba([178,76,0],.45*alpha));
-    ctx.fillStyle=iris;ctx.beginPath();ctx.ellipse(irisX,irisY+bodyR*.045,bodyR*.27,Math.max(1.25,irisOpen),-.08,0,TAU);ctx.fill();
-    ctx.strokeStyle=rgba([255,231,169],.72*alpha);ctx.lineWidth=1;ctx.beginPath();ctx.ellipse(irisX,irisY+bodyR*.03,bodyR*.31,Math.max(2,irisOpen*1.45),-.08,Math.PI*.12,Math.PI*.88);ctx.stroke();
-    ctx.fillStyle=rgba([255,255,255],.92*alpha);ctx.beginPath();ctx.arc(unity.x-bodyR*.35,unity.y-bodyR*.4,Math.max(1.7,bodyR*.11),0,TAU);ctx.fill();
-
-    drawOrbitStage(true);
+    const rings=[
+      [unit*.075,unit*.025,t*.11+overviewRoll],
+      [unit*.105,unit*.034,-t*.075-overviewRoll*.7],
+      [unit*.135,unit*.043,t*.048+1.05]
+    ];
+    rings.forEach((r,i)=>{
+      ctx.save();ctx.translate(unity.x,unity.y);ctx.rotate(r[2]);
+      ctx.strokeStyle=rgba(i===2?orange:amber,(.52-i*.09)*alpha);ctx.lineWidth=i===0?1.7:1.05;
+      ctx.beginPath();ctx.ellipse(0,0,r[0]*overviewZoom,r[1]*overviewZoom,0,0,TAU);ctx.stroke();
+      const a=t*(.55+i*.13)+i*2.1;
+      const sx=Math.cos(a)*r[0]*overviewZoom,sy=Math.sin(a)*r[1]*overviewZoom;
+      ctx.fillStyle=rgba(i===2?orange:amber,.9*alpha);ctx.beginPath();ctx.arc(sx,sy,2.1+i*.25,0,TAU);ctx.fill();
+      ctx.restore();
+    });
   }
 
   drawOverview = function kineticWhiteOverview(t, alpha) {

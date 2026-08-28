@@ -6,12 +6,9 @@
   <meta name="theme-color" content="#ffffff" />
   <meta name="description" content="Dream Unity — nine living games inside three worlds of mind, including Fighter Jet relational-role combat and Become objective-driven social-agency perspective training." />
   <title>Dream Unity</title>
-  <link rel="dns-prefetch" href="//dream-unity-voice-live.vercel.app" />
-  <link rel="preconnect" href="https://dream-unity-voice-live.vercel.app" crossorigin />
   <link rel="stylesheet" href="./styles.css?v=20260824-9" />
   <link rel="stylesheet" href="./become.css?v=20260825-role-drift-become-1" />
   <link rel="stylesheet" href="./light-theme.css?v=20260826-white-overview-4" />
-  <link rel="stylesheet" href="./voice.css?v=20260827-unity-oracle-7" />
 </head>
 <body>
   <main id="app" aria-label="Dream Unity interactive simulation">
@@ -19,24 +16,12 @@
     <div class="vignette" aria-hidden="true"></div>
     <div class="brand"><i></i><span>DREAM UNITY</span></div>
     <div class="live"><i></i><span>LIVE</span></div>
-    <section class="du-voice-panel" id="duVoicePanel" aria-label="Dream Unity voice" aria-hidden="true">
-      <header class="du-voice-head">
-        <div><small>DREAM UNITY</small><strong>UNITY ORACLE</strong></div>
-        <button class="du-voice-close" id="duVoiceClose" type="button" aria-label="Close Dream Unity voice">×</button>
-      </header>
-      <p class="du-voice-status" id="duVoiceStatus" aria-live="polite">READY TO CONNECT</p>
-      <span class="du-arrival-kicker" aria-hidden="true">UNITY · LIVE VOICE</span>
-      <p class="du-voice-copy" id="duVoiceCopy">Ask Unity anything. Speak naturally, and Unity will answer you aloud.</p>
-      <button class="du-voice-action" id="duVoiceAction" type="button">START CONVERSATION</button>
-      <small class="du-voice-privacy">SPEECH RECOGNITION IS HANDLED BY YOUR BROWSER · ONLY THE TRANSCRIPT IS SENT TO DREAM UNITY</small>
-      <audio id="duVoiceAudio" autoplay playsinline></audio>
-    </section>
     <button class="back" id="back" type="button" aria-label="Return to Dream Unity overview"><span>←</span><b>UNITY</b></button>
     <div class="detail-title" id="detailTitle" aria-live="polite"><small id="detailNumber">01</small><strong id="detailName">DREAM MACHINE</strong></div>
     <button class="world-label" id="label-machine" data-world="machine" type="button"><span>01</span><strong>DREAM MACHINE</strong></button>
     <button class="world-label" id="label-maker" data-world="maker" type="button"><span>02</span><strong>DREAM MAKER</strong></button>
     <button class="world-label" id="label-reality" data-world="reality" type="button"><span>03</span><strong>DREAM WORLD</strong></button>
-    <button class="unity-label du-unity-oracle" id="unityLabel" data-voice-launcher type="button" aria-label="Talk with Unity — starts microphone" aria-controls="duVoicePanel" aria-expanded="false"><b>UNITY</b><small class="du-oracle-invite" id="duOracleInvite" aria-hidden="true">TAP TO SPEAK</small></button>
+    <div class="unity-label" id="unityLabel"><span></span><b>UNITY</b></div>
     <button class="sub-label" id="sub-0" type="button"><strong>PERCEIVE</strong></button>
     <button class="sub-label" id="sub-1" type="button"><strong>MODEL</strong></button>
     <button class="sub-label" id="sub-2" type="button"><strong>PREDICT</strong></button>
@@ -63,8 +48,7 @@
   <noscript>This experience requires JavaScript.</noscript>
   <script>window.setTimeout(function(){var el=document.getElementById('loading');if(el)el.classList.add('hide');},1800);</script>
   <script src="./light-theme.js?v=20260827-performance-2"></script>
-  <script src="./main.js?v=20260827-unity-oracle-performance-6"></script>
+  <script src="./main.js?v=20260828-static-unity-1"></script>
   <script src="./arcade.js?v=20260827-fighter-jet-performance-20"></script>
-  <script src="./voice.js?v=20260828-unity-oracle-8"></script>
 </body>
 </html>

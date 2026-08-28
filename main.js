@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const VERSION = '20260827-unity-oracle-performance-6';
+  const VERSION = '20260828-static-unity-1';
   const baseParts = Array.from({ length: 6 }, (_, index) =>
     `./visual-parts/part-${String(index + 1).padStart(2, '0')}.txt?v=${VERSION}`
   );

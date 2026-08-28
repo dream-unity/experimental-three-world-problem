@@ -164,7 +164,6 @@ The governing distinction remains controlled as-if conviction, not literal confu
 
 ### Dream Unity overview
 
-- **Unity Oracle:** the central orange Unity core introduces itself on arrival, then its 3D iris, live sound shells, and integrated **TAP TO SPEAK** cue invite you to grant microphone access and answer it.
 - **Mouse or touch drag:** orbit the three-world structure.
 - **Pinch or wheel:** zoom.
 - **Two-finger twist:** roll.
