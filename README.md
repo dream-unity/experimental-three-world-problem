@@ -1,12 +1,14 @@
 # Dream Unity — Experimental Three-World Problem
 
-A visual-first, mobile-compatible 3D portal containing nine distinct arcade experiences across three coupled worlds. The homepage is presented as **The Mirror Forge**: one connected instrument built around an obsidian, coral and ivory Unity core rather than three disconnected planets.
+A visual-first, mobile-compatible 3D portal containing nine distinct arcade experiences across three coupled worlds. The homepage is presented as a **Stage Coral sovereignty system**: awareness, agency and matter operate as one self-authoring body rather than three disconnected planets or a decorative spiritual emblem.
 
 1. **Dream Machine** — Perceive, Model, Predict.
 2. **Dream Maker** — Intend, Act, Become.
 3. **Dream World** — Matter, Structure, Emerge.
 
-The overview can be orbited by mouse or touch. Dream Machine is rendered as a precision gyroscope/network, Dream Maker as a generative spiral, and Dream World as an isometric material lattice. Selecting a world exposes its internal triad; selecting an internal label opens the corresponding game.
+The overview can be orbited by mouse or touch. Its black-mirror shell deliberately lags behind direct manipulation, representing the conditioned reflection that begins to govern its maker. Continued physical interaction increases the system's agency state: the mirror fractures, the ghost loses coherence, coral neural architecture expands and the shards are repurposed as load-bearing matter. The process is **Ghost → Pressure → Break → Make**. It is enacted by the visual system rather than explained as a static symbol.
+
+Dream Machine is a recursive mirror-lens that discriminates and models; Dream Maker is a thorned generative organ that converts pressure into direction; Dream World is a tectonic block field in which fragments become structure. A grounded obsidian root, vertebral awareness spine and branching coral crown make the three worlds organs of one organism-machine. Selecting a world exposes its internal triad; selecting an internal label opens the corresponding game.
 
 The homepage attempts to begin **I Remember Tomorrow** automatically and exposes a persistent score control. Browsers that defer audible autoplay start it on the visitor's first interaction. An explicit off choice is remembered locally. The former voice/oracle interface remains fully removed.
 
@@ -166,7 +168,7 @@ The governing distinction remains controlled as-if conviction, not literal confu
 
 ### Dream Unity overview
 
-- **Mouse or touch drag:** orbit the three-world structure.
+- **Mouse or touch drag:** orbit the three-world structure, strain the delayed mirror field and advance the sovereignty process.
 - **Pinch or wheel:** zoom.
 - **Two-finger twist:** roll.
 - **Tap a world, then an internal title:** open its game.
@@ -189,10 +191,10 @@ The governing distinction remains controlled as-if conviction, not literal confu
 ## Key files
 
 - `main.js` — versioned three-world visual loader.
-- `visual-parts/mirror-forge-08.txt` — Mirror Forge renderer, world instruments and detail-field presentation.
-- `forge-theme.css` — white-gallery brand system and forge-styled arcade shell.
-- `forge-ui.js` — homepage score control, autoplay recovery and keyboard world navigation.
-- `assets/mirror-forge-core.png` — original people-free obsidian/coral core artwork.
+- `visual-parts/sovereign-coral-09.txt` — agency-driven mirror fracture, vertebral root/crown simulation, three world organs and immersive detail fields.
+- `coral-theme.css` — hard editorial Stage Coral presentation and pressurised arcade shell.
+- `coral-ui.js` — homepage score control, autoplay recovery and keyboard world navigation.
+- `assets/coral-sovereign-engine.webp` — original people-free organism-machine sculpture integrated into the procedural 3D system.
 - `assets/i-remember-tomorrow.mp3` — homepage score.
 - `styles.css` — common Dream Unity and arcade styling.
 - `become.css` — responsive Become interface and training readouts.
