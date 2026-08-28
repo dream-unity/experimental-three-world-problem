@@ -3,46 +3,45 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <meta name="theme-color" content="#eee9dc" />
-  <meta name="description" content="Dream Unity — a living sovereignty system where awareness, agency and matter become one world-making force." />
+  <meta name="theme-color" content="#ffffff" />
+  <meta name="description" content="Dream Unity — the returning dream: ether compressed through agency into matter, then released to possibility again." />
   <title>Dream Unity</title>
   <link rel="stylesheet" href="./styles.css?v=20260824-9" />
   <link rel="stylesheet" href="./become.css?v=20260825-role-drift-become-1" />
-  <link rel="stylesheet" href="./coral-theme.css?v=20260828-stage-coral-2" />
+  <link rel="stylesheet" href="./unity-cycle.css?v=20260828-remembered-tomorrow-3" />
 </head>
 <body>
   <main id="app" aria-label="Dream Unity interactive simulation">
     <canvas id="world" aria-label="Interactive Dream Unity field"></canvas>
-    <img id="coralTexture" src="./assets/coral-sovereign-engine.webp" alt="" aria-hidden="true" hidden />
     <audio id="scoreAudio" src="./assets/i-remember-tomorrow.mp3" preload="auto" autoplay loop></audio>
     <div class="vignette" aria-hidden="true"></div>
-    <div class="brand"><i></i><span>DREAM UNITY</span><small>SOVEREIGN SYSTEM</small></div>
-    <div class="live"><i></i><span>CORAL · EXPRESSIVE</span></div>
+    <div class="brand"><i></i><span>DREAM UNITY</span><small>THE RETURNING DREAM</small></div>
+    <div class="live"><i></i><span>CORAL · I—V</span></div>
     <button class="score-control" id="scoreControl" type="button" aria-label="Turn the Dream Unity score off" aria-pressed="true">
       <span class="score-mark" aria-hidden="true"><i></i><i></i><i></i></span>
       <small>SCORE</small><b id="scoreState">LOADING</b>
     </button>
-    <section class="manifesto" aria-labelledby="coralTitle">
-      <p>THE GHOST IN THE MIRROR · OF SLAVERY AND FREEDOM</p>
-      <h1 id="coralTitle">MAKE THE<br />MIRROR<br /><em>OBEY.</em></h1>
-      <div class="manifesto-copy">Awareness without agency is another reflection. Body, imagination, intelligence and will become one force—or the world dreams through you.</div>
-      <div class="manifesto-rule"><i></i><span>UNITY IS GRACE WITH TEETH</span></div>
+    <section class="manifesto" aria-label="I Remember Tomorrow — lyric fragment">
+      <p>I REMEMBER TOMORROW</p>
+      <div class="manifesto-copy">Neither prophecy nor fate.<br />Only something I must answer:<br /><em>a call from the core I must own.</em></div>
+      <div class="manifesto-rule"><i></i><span>THE GHOST IN THE MIRROR · OF SLAVERY AND FREEDOM</span></div>
     </section>
-    <aside class="phase-rail" aria-label="Sovereignty process">
-      <div class="phase-state"><small>STATE</small><strong id="coralPhase">GHOST</strong></div>
-      <div class="phase-track" aria-hidden="true"><i id="coralPhaseFill"></i></div>
-      <ol aria-hidden="true"><li>GHOST</li><li>PRESSURE</li><li>BREAK</li><li>MAKE</li></ol>
+    <aside class="cycle-index" aria-label="The returning dream cycle">
+      <span><i>01</i><b>DREAM</b></span>
+      <span><i>02</i><b>COMPRESS</b></span>
+      <span><i>03</i><b>REALISE</b></span>
+      <span><i>04</i><b>RETURN</b></span>
     </aside>
     <button class="back" id="back" type="button" aria-label="Return to Dream Unity overview"><span>←</span><b>UNITY</b></button>
     <div class="detail-title" id="detailTitle" aria-live="polite"><small id="detailNumber">01</small><strong id="detailName">DREAM MACHINE</strong></div>
     <button class="world-label" id="label-machine" data-world="machine" type="button"><span class="world-index">01</span><span class="world-copy"><strong>DREAM MACHINE</strong><small>PERCEIVE · MODEL · PREDICT</small></span><i aria-hidden="true"></i></button>
     <button class="world-label" id="label-maker" data-world="maker" type="button"><span class="world-index">02</span><span class="world-copy"><strong>DREAM MAKER</strong><small>INTEND · ACT · BECOME</small></span><i aria-hidden="true"></i></button>
     <button class="world-label" id="label-reality" data-world="reality" type="button"><span class="world-index">03</span><span class="world-copy"><strong>DREAM WORLD</strong><small>MATTER · STRUCTURE · EMERGE</small></span><i aria-hidden="true"></i></button>
-    <div class="unity-label" id="unityLabel"><span></span><b>UNITY</b><small>THE SOVEREIGN AXIS</small></div>
+    <div class="unity-label" id="unityLabel"><span></span><b>UNITY</b><small>THE OWNED CORE</small></div>
     <button class="sub-label" id="sub-0" type="button"><strong>PERCEIVE</strong></button>
     <button class="sub-label" id="sub-1" type="button"><strong>MODEL</strong></button>
     <button class="sub-label" id="sub-2" type="button"><strong>PREDICT</strong></button>
-    <div class="hint" id="hint">DRAG TO BREAK THE MIRROR · ENTER A WORLD</div>
+    <div class="hint" id="hint">DRAG THE DREAM · ENTER A WORLD</div>
     <div class="loading" id="loading"><span></span></div>
     <section class="arcade" id="arcade" aria-hidden="true" aria-label="Dream Unity arcade">
       <canvas id="gameCanvas" aria-label="Playable Dream Unity game"></canvas>
@@ -64,8 +63,8 @@
   </main>
   <noscript>This experience requires JavaScript.</noscript>
   <script>window.setTimeout(function(){var el=document.getElementById('loading');if(el)el.classList.add('hide');},1800);</script>
-  <script src="./coral-ui.js?v=20260828-stage-coral-2"></script>
-  <script src="./main.js?v=20260828-stage-coral-2"></script>
+  <script src="./unity-ui.js?v=20260828-remembered-tomorrow-3"></script>
+  <script src="./main.js?v=20260828-remembered-tomorrow-3"></script>
   <script src="./arcade.js?v=20260827-fighter-jet-performance-20"></script>
 </body>
 </html>
