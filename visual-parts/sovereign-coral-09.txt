@@ -1,0 +1,818 @@
+
+  // Dream Unity — Stage Coral / Sovereign System renderer.
+  // The mirror is a lagging conditioning field. Direct agency fractures it;
+  // the fragments become load-bearing matter inside one self-authoring body.
+
+  WORLD.machine.css = '#C6D7DC';
+  WORLD.machine.rgb = [198, 215, 220];
+  WORLD.maker.css = '#ED4036';
+  WORLD.maker.rgb = [237, 64, 54];
+  WORLD.reality.css = '#C38A3E';
+  WORLD.reality.rgb = [195, 138, 62];
+
+  const CS_BONE = [238, 233, 220];
+  const CS_BRIGHT = [255, 253, 245];
+  const CS_SOOT = [8, 8, 7];
+  const CS_ASH = [119, 113, 102];
+  const CS_CORAL = [237, 64, 54];
+  const CS_DEEP = [143, 23, 24];
+  const CS_IVORY = [233, 221, 191];
+  const CS_GOLD = [180, 122, 44];
+  const csTexture = document.getElementById('coralTexture');
+  const csPhaseElement = document.getElementById('coralPhase');
+  const csPhaseFill = document.getElementById('coralPhaseFill');
+  let csAgency = reduced ? 0.72 : 0.34;
+  let csGhostYaw = overviewYaw - 0.22;
+  let csGhostPitch = overviewPitch + 0.08;
+  let csGhostRoll = overviewRoll - 0.04;
+  let csLastYaw = overviewYaw;
+  let csLastPitch = overviewPitch;
+  let csLastRoll = overviewRoll;
+  let csLastRenderTime = 0;
+  let csPressing = false;
+  let csPhaseName = '';
+
+  function csSeed(index, salt = 0) {
+    const value = Math.sin(index * 127.1 + salt * 311.7) * 43758.5453;
+    return value - Math.floor(value);
+  }
+
+  function csAngleDistance(a, b) {
+    let value = (a - b) % TAU;
+    if (value > Math.PI) value -= TAU;
+    if (value < -Math.PI) value += TAU;
+    return Math.abs(value);
+  }
+
+  function csSmooth(min, max, value) {
+    return ease((value - min) / Math.max(0.0001, max - min));
+  }
+
+  function csCenter() {
+    if (width > 1160) return { x: width * 0.67, y: height * 0.515 };
+    if (width > 760) return { x: width * 0.5, y: height * 0.615 };
+    return { x: width * 0.5, y: height * 0.59 };
+  }
+
+  function csProject(point, scale = 1, cameraZ = 12.8, center = csCenter()) {
+    const depth = cameraZ - point.z;
+    const perspective = scale * cameraZ / Math.max(2.8, depth);
+    const spread = width > 1160 ? 0.082 : width > 760 ? 0.078 : 0.077;
+    return {
+      x: center.x + point.x * unit * spread * perspective,
+      y: center.y - point.y * unit * spread * perspective,
+      f: perspective,
+      z: point.z,
+      depth
+    };
+  }
+
+  function csRotateProject(point, scale = overviewZoom, yaw = overviewYaw, pitch = overviewPitch, roll = overviewRoll) {
+    const rotated = rotate3(point, yaw, pitch, roll);
+    const projected = csProject(rotated, scale, 12.8);
+    projected.world = rotated;
+    return projected;
+  }
+
+  overviewBasePositions = function coralBasePositions() {
+    const portrait = height > width * 1.06;
+    return portrait
+      ? {
+          machine: { x: -2.78, y: 2.0, z: 0.62 },
+          maker: { x: 2.8, y: 1.72, z: -0.42 },
+          reality: { x: 0.42, y: -3.12, z: 0.14 }
+        }
+      : {
+          machine: { x: -3.68, y: 1.58, z: 0.68 },
+          maker: { x: 3.7, y: 1.34, z: -0.5 },
+          reality: { x: 0.62, y: -3.24, z: 0.16 }
+        };
+  };
+
+  overviewPositions = function coralPositions(t) {
+    const portrait = height > width * 1.06;
+    const base = overviewBasePositions();
+    const positions = {};
+    worldKeys.forEach((key, index) => {
+      const source = base[key];
+      const breath = reduced ? 0 : Math.sin(t * 0.37 + index * 2.19) * 0.035;
+      const rotated = rotate3(
+        { x: source.x, y: source.y + breath, z: source.z },
+        overviewYaw,
+        overviewPitch,
+        overviewRoll
+      );
+      const projected = csProject(rotated, overviewZoom, 12.8);
+      positions[key] = {
+        x: projected.x,
+        y: projected.y,
+        r: unit * (portrait ? 0.067 : 0.075) * projected.f,
+        f: projected.f,
+        z: rotated.z,
+        world: rotated
+      };
+    });
+    return positions;
+  };
+
+  function csPolygon(points, fill, stroke, widthValue = 1) {
+    if (!points.length) return;
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, points[0].y);
+    for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y);
+    ctx.closePath();
+    if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+    if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = widthValue; ctx.stroke(); }
+  }
+
+  drawBackground = function coralBackground(t) {
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#eee9dc';
+    ctx.fillRect(0, 0, width, height);
+
+    const center = csCenter();
+    const scale = unit;
+    const activeColor = activeWorld ? WORLD[activeWorld].rgb : CS_CORAL;
+    const lean = Math.sin((activeWorld ? detailYaw : overviewYaw) * 0.62) * scale * 0.055;
+
+    // A hard black architectural wound replaces atmospheric fog.
+    ctx.fillStyle = '#0a0a08';
+    ctx.beginPath();
+    ctx.moveTo(center.x - scale * 0.205 + lean, Math.max(0, center.y - scale * 0.47));
+    ctx.lineTo(center.x + scale * 0.245 + lean * 0.12, Math.max(0, center.y - scale * 0.42));
+    ctx.lineTo(center.x + scale * 0.29 - lean * 0.36, Math.min(height, center.y + scale * 0.47));
+    ctx.lineTo(center.x - scale * 0.265 - lean * 0.1, Math.min(height, center.y + scale * 0.42));
+    ctx.closePath();
+    ctx.fill();
+
+    // Mirror planes: severe, reflective, and visibly displaced by rotation.
+    const strips = [
+      [-0.22, -0.39, -0.115, 0.4, CS_IVORY, 0.11],
+      [0.135, -0.42, 0.235, 0.42, CS_BRIGHT, 0.085],
+      [-0.03, -0.46, 0.055, 0.45, activeColor, 0.13]
+    ];
+    strips.forEach((strip, index) => {
+      const wobble = Math.sin(t * 0.11 + index * 2.1) * scale * 0.006;
+      ctx.strokeStyle = rgba(strip[4], strip[5]);
+      ctx.lineWidth = index === 2 ? 2.2 : 0.8;
+      ctx.beginPath();
+      ctx.moveTo(center.x + scale * strip[0] + lean * 0.4 + wobble, center.y + scale * strip[1]);
+      ctx.lineTo(center.x + scale * strip[2] - lean * 0.24 - wobble, center.y + scale * strip[3]);
+      ctx.stroke();
+    });
+
+    // The body plane: compressed strata below, open field above.
+    const groundY = center.y + scale * 0.31;
+    ctx.strokeStyle = rgba(CS_SOOT, 0.2);
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(Math.max(14, center.x - scale * 0.48), groundY);
+    ctx.lineTo(Math.min(width - 14, center.x + scale * 0.48), groundY);
+    ctx.stroke();
+    for (let i = 0; i < 9; i++) {
+      const y = groundY + i * scale * 0.012;
+      ctx.strokeStyle = rgba(i % 3 ? CS_ASH : CS_CORAL, 0.07 + i * 0.008);
+      ctx.beginPath();
+      ctx.moveTo(center.x - scale * (0.31 + i * 0.024), y);
+      ctx.lineTo(center.x + scale * (0.31 + i * 0.024), y);
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = rgba(activeColor, activeWorld ? 0.72 : 0.88);
+    ctx.fillRect(center.x - scale * 0.003, Math.max(0, center.y - scale * 0.455), scale * 0.006, scale * 0.045);
+  };
+
+  function csBezierPoint(a, c1, c2, b, u) {
+    const o = 1 - u;
+    return {
+      x: o * o * o * a.x + 3 * o * o * u * c1.x + 3 * o * u * u * c2.x + u * u * u * b.x,
+      y: o * o * o * a.y + 3 * o * o * u * c1.y + 3 * o * u * u * c2.y + u * u * u * b.y
+    };
+  }
+
+  drawCurve = function coralSinew(a, b, rgb, alpha, seed, t, packets = true) {
+    if (alpha <= 0.002) return;
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const length = Math.max(1, Math.hypot(dx, dy));
+    const nx = -dy / length;
+    const ny = dx / length;
+    const bow = unit * (0.026 + 0.011 * Math.sin(seed * 1.77 + t * 0.19));
+    const c1 = { x: a.x + dx * 0.29 + nx * bow, y: a.y + dy * 0.29 + ny * bow };
+    const c2 = { x: a.x + dx * 0.71 - nx * bow * 0.63, y: a.y + dy * 0.71 - ny * bow * 0.63 };
+    const depth = clamp(0.76 + ((a.z || 0) + (b.z || 0)) * 0.04, 0.52, 1.08);
+
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.lineCap = 'round';
+    [-2.4, 0, 2.4].forEach((offset, index) => {
+      ctx.strokeStyle = rgba(index === 0 ? CS_SOOT : index === 1 ? rgb : CS_IVORY, alpha * depth * (index === 1 ? 0.76 : 0.34));
+      ctx.lineWidth = index === 1 ? 1.25 : 0.65;
+      ctx.beginPath();
+      ctx.moveTo(a.x + nx * offset, a.y + ny * offset);
+      ctx.bezierCurveTo(c1.x + nx * offset, c1.y + ny * offset, c2.x + nx * offset, c2.y + ny * offset, b.x + nx * offset, b.y + ny * offset);
+      ctx.stroke();
+    });
+
+    if (!packets) return;
+    const u = (t * 0.052 + seed * 0.137) % 1;
+    const point = csBezierPoint(a, c1, c2, b, u);
+    ctx.save();
+    ctx.translate(point.x, point.y);
+    ctx.rotate(Math.atan2(dy, dx) + Math.PI * 0.25);
+    ctx.fillStyle = rgba(CS_CORAL, alpha * depth);
+    ctx.fillRect(-2.5, -2.5, 5, 5);
+    ctx.fillStyle = rgba(CS_IVORY, alpha * depth);
+    ctx.fillRect(-0.7, -0.7, 1.4, 1.4);
+    ctx.restore();
+  };
+
+  function csFocusTeeth(radius, color, alpha) {
+    const outer = radius * 1.46;
+    ctx.strokeStyle = rgba(color, alpha);
+    ctx.lineWidth = 1.1;
+    for (let i = 0; i < 8; i++) {
+      const angle = i * TAU / 8;
+      const inner = outer * (i % 2 ? 0.83 : 0.72);
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(angle) * outer, Math.sin(angle) * outer);
+      ctx.lineTo(Math.cos(angle) * inner, Math.sin(angle) * inner);
+      ctx.stroke();
+    }
+  }
+
+  function csMachinePortal(radius, color, t) {
+    const sides = 10;
+    const outer = [];
+    for (let i = 0; i < sides; i++) {
+      const angle = i * TAU / sides + t * 0.018;
+      outer.push({ x: Math.cos(angle) * radius, y: Math.sin(angle) * radius });
+    }
+    csPolygon(outer, 'rgba(5,6,6,.94)', rgba(color, 0.86), 1.05);
+    for (let ring = 0; ring < 4; ring++) {
+      ctx.save();
+      ctx.rotate((ring % 2 ? -1 : 1) * t * (0.04 + ring * 0.012) + ring * 0.31);
+      ctx.scale(1, 0.42 + ring * 0.105);
+      ctx.strokeStyle = rgba(ring === 2 ? CS_CORAL : color, 0.72 - ring * 0.1);
+      ctx.lineWidth = ring === 2 ? 1.5 : 0.8;
+      ctx.beginPath();
+      ctx.arc(0, 0, radius * (0.46 + ring * 0.16), 0, TAU);
+      ctx.stroke();
+      ctx.restore();
+    }
+    for (let i = 0; i < 6; i++) {
+      const angle = -t * 0.052 + i * TAU / 6;
+      const r1 = radius * 0.18;
+      const r2 = radius * 0.63;
+      ctx.strokeStyle = rgba(i % 3 ? CS_IVORY : CS_CORAL, 0.68);
+      ctx.lineWidth = i % 3 ? 0.7 : 1.25;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(angle) * r1, Math.sin(angle) * r1);
+      ctx.lineTo(Math.cos(angle + 0.36) * r2, Math.sin(angle + 0.36) * r2);
+      ctx.stroke();
+    }
+    ctx.save();
+    ctx.rotate(-t * 0.08);
+    ctx.fillStyle = rgba(CS_IVORY, 0.88);
+    ctx.fillRect(-radius * 0.085, -radius * 0.085, radius * 0.17, radius * 0.17);
+    ctx.restore();
+  }
+
+  function csMakerPortal(radius, color, t) {
+    ctx.fillStyle = 'rgba(12,5,4,.96)';
+    ctx.strokeStyle = rgba(CS_CORAL, 0.88);
+    ctx.lineWidth = 1.15;
+    ctx.beginPath();
+    for (let i = 0; i < 12; i++) {
+      const angle = -Math.PI * 0.5 + i * TAU / 12 + t * 0.014;
+      const rr = radius * (i % 2 ? 0.69 : 1.03);
+      const x = Math.cos(angle) * rr;
+      const y = Math.sin(angle) * rr;
+      i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    for (let branch = 0; branch < 7; branch++) {
+      const base = branch * TAU / 7 - t * 0.035;
+      let x = 0;
+      let y = 0;
+      ctx.strokeStyle = rgba(branch % 3 ? CS_CORAL : CS_IVORY, 0.7);
+      ctx.lineWidth = branch % 3 ? 1.4 : 0.8;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      for (let step = 1; step <= 5; step++) {
+        const rr = radius * step * 0.135;
+        const angle = base + step * 0.16 * (branch % 2 ? 1 : -1);
+        x = Math.cos(angle) * rr;
+        y = Math.sin(angle) * rr;
+        ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      ctx.fillStyle = rgba(branch % 2 ? CS_GOLD : CS_CORAL, 0.9);
+      ctx.fillRect(x - 1.7, y - 1.7, 3.4, 3.4);
+    }
+    ctx.save();
+    ctx.rotate(t * 0.11);
+    csPolygon([
+      { x: 0, y: -radius * 0.22 },
+      { x: radius * 0.2, y: radius * 0.16 },
+      { x: -radius * 0.2, y: radius * 0.16 }
+    ], rgba(CS_CORAL, 0.9), rgba(CS_IVORY, 0.75), 0.8);
+    ctx.restore();
+  }
+
+  function csIsoCube(x, y, size, heightValue, fill, alpha = 1) {
+    const sx = size;
+    const sy = size * 0.48;
+    const h = heightValue;
+    const top = [
+      { x, y: y - h },
+      { x: x + sx, y: y + sy - h },
+      { x, y: y + sy * 2 - h },
+      { x: x - sx, y: y + sy - h }
+    ];
+    const left = [top[3], top[2], { x, y: y + sy * 2 }, { x: x - sx, y: y + sy }];
+    const right = [top[1], top[2], { x, y: y + sy * 2 }, { x: x + sx, y: y + sy }];
+    csPolygon(left, rgba(CS_SOOT, 0.78 * alpha), rgba(CS_IVORY, 0.2 * alpha), 0.6);
+    csPolygon(right, rgba(CS_DEEP, 0.45 * alpha), rgba(CS_GOLD, 0.28 * alpha), 0.6);
+    csPolygon(top, rgba(fill, 0.72 * alpha), rgba(CS_BRIGHT, 0.44 * alpha), 0.7);
+  }
+
+  function csRealityPortal(radius, color, t) {
+    ctx.save();
+    ctx.translate(0, radius * 0.12);
+    for (let row = 2; row >= 0; row--) {
+      for (let col = -1; col <= 1; col++) {
+        const size = radius * 0.19;
+        const wave = 0.5 + 0.5 * Math.sin(t * 0.55 + row * 1.7 + col * 0.9);
+        const x = (col - row * 0.18) * size * 1.55;
+        const y = row * size * 0.72 - Math.abs(col) * size * 0.18;
+        csIsoCube(x, y, size, radius * (0.18 + wave * 0.19), col === 0 && row === 0 ? CS_CORAL : color, 0.9);
+      }
+    }
+    ctx.strokeStyle = rgba(CS_IVORY, 0.66);
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(-radius * 0.72, radius * 0.69);
+    ctx.lineTo(radius * 0.72, radius * 0.69);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  drawOrb = function coralOrgan(x, y, radius, config, kind, t, alpha = 1, focus = 0, depth = 0) {
+    if (alpha <= 0.002 || radius <= 1) return;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate((kind === 'maker' ? -0.055 : kind === 'reality' ? 0.035 : 0) + depth * 0.012);
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = alpha * clamp(0.78 + depth * 0.05, 0.58, 1.08);
+    if (kind === 'machine') csMachinePortal(radius, config.rgb, t);
+    else if (kind === 'maker') csMakerPortal(radius, config.rgb, t);
+    else csRealityPortal(radius, config.rgb, t);
+    if (focus) csFocusTeeth(radius, kind === 'maker' ? CS_IVORY : CS_CORAL, 0.52 + focus * 0.32);
+    ctx.restore();
+  };
+
+  function csMirrorFacet(index, yaw, pitch, roll, fracture = 0) {
+    const total = 19;
+    const y = 1 - (index + 0.5) * 2 / total;
+    const radial = Math.sqrt(Math.max(0, 1 - y * y));
+    const angle = index * 2.399963 + 0.35;
+    const base = {
+      x: Math.cos(angle) * radial * 1.72,
+      y: y * 2.62,
+      z: Math.sin(angle) * radial * 1.32
+    };
+    const normalLength = Math.max(0.001, Math.hypot(base.x, base.y * 0.62, base.z));
+    const normal = { x: base.x / normalLength, y: base.y * 0.62 / normalLength, z: base.z / normalLength };
+    const tangent = { x: -normal.z, y: 0.12 * Math.sin(angle * 2.1), z: normal.x };
+    const bitangent = {
+      x: normal.y * tangent.z - normal.z * tangent.y,
+      y: normal.z * tangent.x - normal.x * tangent.z,
+      z: normal.x * tangent.y - normal.y * tangent.x
+    };
+    const explosion = fracture * (0.62 + csSeed(index, 3) * 0.86);
+    const center = {
+      x: base.x + normal.x * explosion,
+      y: base.y + normal.y * explosion + fracture * (csSeed(index, 6) - 0.4) * 0.5,
+      z: base.z + normal.z * explosion
+    };
+    const w = 0.29 + csSeed(index, 2) * 0.19;
+    const h = 0.42 + csSeed(index, 5) * 0.28;
+    const skew = (csSeed(index, 8) - 0.5) * 0.26;
+    const corners = [
+      { a: -w, b: -h },
+      { a: w * 0.88, b: -h + skew },
+      { a: w, b: h },
+      { a: -w * 0.72, b: h - skew }
+    ].map((corner) => rotate3({
+      x: center.x + tangent.x * corner.a + bitangent.x * corner.b,
+      y: center.y + tangent.y * corner.a + bitangent.y * corner.b,
+      z: center.z + tangent.z * corner.a + bitangent.z * corner.b
+    }, yaw, pitch, roll));
+    return {
+      points: corners.map((corner) => csProject(corner, overviewZoom, 12.8)),
+      z: corners.reduce((sum, corner) => sum + corner.z, 0) / corners.length,
+      index
+    };
+  }
+
+  function csDrawMirrorCage(t, alpha, ghost = false) {
+    const breakage = ghost ? 0 : csSmooth(0.38, 0.92, csAgency);
+    const yaw = ghost ? csGhostYaw : overviewYaw;
+    const pitch = ghost ? csGhostPitch : overviewPitch;
+    const roll = ghost ? csGhostRoll : overviewRoll;
+    const facets = [];
+    for (let i = 0; i < 19; i++) {
+      const local = clamp((breakage * 1.38 - i / 19 * 0.46), 0, 1);
+      facets.push(csMirrorFacet(i, yaw + (ghost ? 0 : local * (csSeed(i, 9) - 0.5) * 0.35), pitch, roll, local * local));
+    }
+    facets.sort((a, b) => a.z - b.z).forEach((facet) => {
+      const light = facet.index % 4 === 0;
+      const fill = ghost
+        ? rgba(CS_IVORY, 0.035 * alpha * (1 - csAgency * 0.55))
+        : light
+          ? rgba(CS_BRIGHT, (0.17 - breakage * 0.08) * alpha)
+          : rgba(CS_SOOT, (0.5 - breakage * 0.18) * alpha);
+      const stroke = ghost
+        ? rgba(CS_CORAL, 0.14 * alpha * (1 - csAgency * 0.4))
+        : rgba(facet.index % 3 ? CS_IVORY : CS_CORAL, (0.34 + breakage * 0.22) * alpha);
+      csPolygon(facet.points, fill, stroke, ghost ? 0.55 : 0.82);
+      if (!ghost && breakage > 0.2 && facet.index % 4 === 0) {
+        const a = facet.points[0];
+        const b = facet.points[2];
+        ctx.strokeStyle = rgba(CS_GOLD, 0.46 * alpha * breakage);
+        ctx.lineWidth = 0.7;
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+      }
+    });
+  }
+
+  function csDrawRoots(t, alpha) {
+    const bloom = 0.7 + csAgency * 0.3;
+    for (let branch = 0; branch < 11; branch++) {
+      const angle = branch * TAU / 11 + 0.22;
+      ctx.strokeStyle = rgba(branch % 4 ? CS_SOOT : CS_GOLD, alpha * (0.48 + (branch % 3) * 0.1));
+      ctx.lineWidth = branch % 4 ? 1.3 : 2.1;
+      ctx.beginPath();
+      for (let step = 0; step <= 7; step++) {
+        const u = step / 7;
+        const point = {
+          x: Math.cos(angle + u * 0.28 * (branch % 2 ? 1 : -1)) * u * (1.15 + branch % 3 * 0.16) * bloom,
+          y: -2.52 - u * (1.12 + (branch % 4) * 0.12),
+          z: Math.sin(angle - u * 0.2) * u * (0.9 + branch % 2 * 0.2)
+        };
+        const projected = csRotateProject(point);
+        step ? ctx.lineTo(projected.x, projected.y) : ctx.moveTo(projected.x, projected.y);
+      }
+      ctx.stroke();
+    }
+  }
+
+  function csDrawSpine(t, alpha) {
+    const strands = [
+      { phase: 0, color: CS_CORAL, width: 2.6 },
+      { phase: Math.PI, color: CS_IVORY, width: 1.5 },
+      { phase: Math.PI * 0.5, color: CS_GOLD, width: 0.8 }
+    ];
+    strands.forEach((strand) => {
+      ctx.strokeStyle = rgba(strand.color, alpha * 0.82);
+      ctx.lineWidth = strand.width;
+      ctx.beginPath();
+      for (let i = 0; i <= 38; i++) {
+        const u = i / 38;
+        const y = -2.72 + u * 5.55;
+        const waist = 0.2 + Math.abs(u - 0.48) * 0.36;
+        const angle = u * TAU * 2.75 + strand.phase + (reduced ? 0 : t * 0.035);
+        const point = {
+          x: Math.cos(angle) * waist,
+          y,
+          z: Math.sin(angle) * waist * 0.76
+        };
+        const projected = csRotateProject(point);
+        i ? ctx.lineTo(projected.x, projected.y) : ctx.moveTo(projected.x, projected.y);
+      }
+      ctx.stroke();
+    });
+
+    for (let i = 0; i <= 15; i++) {
+      const u = i / 15;
+      const y = -2.48 + u * 5.04;
+      const angle = u * TAU * 2.75 + (reduced ? 0 : t * 0.035);
+      const radius = 0.22 + Math.abs(u - 0.48) * 0.33;
+      const a = csRotateProject({ x: Math.cos(angle) * radius, y, z: Math.sin(angle) * radius * 0.76 });
+      const b = csRotateProject({ x: -Math.cos(angle) * radius, y, z: -Math.sin(angle) * radius * 0.76 });
+      ctx.strokeStyle = rgba(i % 4 ? CS_SOOT : CS_CORAL, alpha * 0.46);
+      ctx.lineWidth = i % 4 ? 0.65 : 1.3;
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+    }
+  }
+
+  function csDrawCrown(t, alpha) {
+    const bloom = 0.36 + csAgency * 0.82;
+    for (let branch = 0; branch < 13; branch++) {
+      const baseAngle = branch * TAU / 13 + 0.4;
+      const reach = (0.7 + csSeed(branch, 4) * 0.9) * bloom;
+      ctx.strokeStyle = rgba(branch % 5 ? CS_CORAL : CS_IVORY, alpha * (0.48 + csSeed(branch, 7) * 0.34));
+      ctx.lineWidth = branch % 5 ? 1.2 + csSeed(branch, 8) * 1.4 : 0.85;
+      ctx.beginPath();
+      for (let step = 0; step <= 8; step++) {
+        const u = step / 8;
+        const curl = baseAngle + u * (0.42 + csSeed(branch, 11) * 0.72) * (branch % 2 ? 1 : -1);
+        const point = {
+          x: Math.cos(curl) * u * reach,
+          y: 2.55 + u * (0.95 + csSeed(branch, 5) * 1.15) * bloom,
+          z: Math.sin(curl) * u * reach * 0.72
+        };
+        const projected = csRotateProject(point);
+        step ? ctx.lineTo(projected.x, projected.y) : ctx.moveTo(projected.x, projected.y);
+      }
+      ctx.stroke();
+
+      for (let fork = 0; fork < 2; fork++) {
+        const u = 0.58 + fork * 0.18;
+        const curl = baseAngle + u * (0.42 + csSeed(branch, 11) * 0.72) * (branch % 2 ? 1 : -1);
+        const parent = {
+          x: Math.cos(curl) * u * reach,
+          y: 2.55 + u * (0.95 + csSeed(branch, 5) * 1.15) * bloom,
+          z: Math.sin(curl) * u * reach * 0.72
+        };
+        const tip = {
+          x: parent.x + Math.cos(curl + (fork ? 0.72 : -0.72)) * reach * 0.34,
+          y: parent.y + (0.22 + fork * 0.1) * bloom,
+          z: parent.z + Math.sin(curl + (fork ? 0.72 : -0.72)) * reach * 0.23
+        };
+        const a = csRotateProject(parent);
+        const b = csRotateProject(tip);
+        ctx.strokeStyle = rgba(branch % 3 ? CS_CORAL : CS_GOLD, alpha * 0.54);
+        ctx.lineWidth = 0.75;
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+        ctx.save();
+        ctx.translate(b.x, b.y);
+        ctx.rotate(Math.PI * 0.25 + curl);
+        ctx.fillStyle = rgba(fork ? CS_IVORY : CS_CORAL, alpha * (0.52 + csAgency * 0.35));
+        const size = 2 + csAgency * 2.2;
+        ctx.fillRect(-size * 0.5, -size * 0.5, size, size);
+        ctx.restore();
+      }
+    }
+  }
+
+  function csDrawTexture(t, alpha, ghost = false) {
+    const ready = csTexture && csTexture.complete && csTexture.naturalWidth > 0;
+    if (!ready) return;
+    const center = csCenter();
+    const targetH = unit * (width > 1160 ? 0.61 : width > 760 ? 0.55 : 0.52);
+    const targetW = targetH * csTexture.naturalWidth / csTexture.naturalHeight;
+    const yaw = ghost ? csGhostYaw : overviewYaw;
+    const yawScale = ghost ? 0.88 : 0.91 + Math.cos(yaw) * 0.09;
+    const lean = Math.sin(yaw) * 0.04;
+    ctx.save();
+    ctx.globalCompositeOperation = ghost ? 'multiply' : 'source-over';
+    ctx.globalAlpha = alpha * (ghost ? (0.12 + (1 - csAgency) * 0.13) : 0.48 + csAgency * 0.24);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.translate(center.x + (ghost ? -Math.sin(yaw - overviewYaw) * unit * 0.055 : 0), center.y - unit * 0.018);
+    ctx.rotate(lean + (ghost ? -0.028 : 0));
+    ctx.scale((ghost ? -1 : 1) * yawScale, 1);
+    ctx.drawImage(csTexture, -targetW * 0.5, -targetH * 0.5, targetW, targetH);
+    ctx.restore();
+  }
+
+  function csUpdateAgency(t) {
+    const motion = csAngleDistance(overviewYaw, csLastYaw) + csAngleDistance(overviewPitch, csLastPitch) + csAngleDistance(overviewRoll, csLastRoll);
+    if (viewMix < 0.42 && motion > 0.0002) csAgency = clamp(csAgency + motion * 0.46, 0.34, 1);
+    const dt = Math.min(0.05, Math.max(0.001, t - csLastRenderTime));
+    csGhostYaw = damp(csGhostYaw, overviewYaw, 0.62 + csAgency * 1.1, dt);
+    csGhostPitch = damp(csGhostPitch, overviewPitch, 0.58 + csAgency, dt);
+    csGhostRoll = damp(csGhostRoll, overviewRoll, 0.54 + csAgency, dt);
+    csLastYaw = overviewYaw;
+    csLastPitch = overviewPitch;
+    csLastRoll = overviewRoll;
+    csLastRenderTime = t;
+
+    const nextPhase = csAgency < 0.45 ? 'GHOST' : csAgency < 0.68 ? 'PRESSURE' : csAgency < 0.9 ? 'BREAK' : 'MAKE';
+    if (nextPhase !== csPhaseName) {
+      csPhaseName = nextPhase;
+      if (csPhaseElement) csPhaseElement.textContent = nextPhase;
+    }
+    if (csPhaseFill) csPhaseFill.style.width = `${Math.round(csAgency * 100)}%`;
+    app?.setAttribute('data-sovereignty', nextPhase.toLowerCase());
+  }
+
+  canvas.addEventListener('pointerdown', () => {
+    if (window.__dreamUnityGameActive || viewMix > 0.48) return;
+    csPressing = true;
+    csAgency = clamp(csAgency + 0.025, 0.34, 1);
+  }, { passive: true });
+  canvas.addEventListener('pointermove', (event) => {
+    if (!csPressing || window.__dreamUnityGameActive || viewMix > 0.48) return;
+    csAgency = clamp(csAgency + Math.hypot(event.movementX || 0, event.movementY || 0) * 0.00115, 0.34, 1);
+  }, { passive: true });
+  const csRelease = () => { csPressing = false; };
+  canvas.addEventListener('pointerup', csRelease, { passive: true });
+  canvas.addEventListener('pointercancel', csRelease, { passive: true });
+
+  drawOverview = function sovereignCoralOverview(t, alpha) {
+    const positions = overviewPositions(t);
+    worldKeys.forEach((key) => Object.assign(worldScreen[key], positions[key]));
+    const center = csCenter();
+    const unity = { x: center.x, y: center.y, r: unit * 0.075, z: 0 };
+
+    ctx.globalAlpha = alpha;
+    csDrawMirrorCage(t, alpha * 0.72, true);
+    csDrawTexture(t, alpha, true);
+    csDrawRoots(t, alpha);
+    csDrawMirrorCage(t, alpha, false);
+
+    const pairs = [['machine', 'maker'], ['maker', 'reality'], ['reality', 'machine']];
+    pairs.forEach((pair, index) => drawCurve(positions[pair[0]], positions[pair[1]], index === 1 ? CS_GOLD : CS_IVORY, alpha * 0.52, index + 1, t, false));
+    worldKeys.forEach((key, index) => drawCurve(unity, positions[key], WORLD[key].rgb, alpha * 0.84, 8 + index, t, true));
+
+    const depthOrder = [...worldKeys].sort((a, b) => positions[a].z - positions[b].z);
+    depthOrder.filter((key) => positions[key].z < 0).forEach((key) => {
+      const point = positions[key];
+      drawOrb(point.x, point.y, point.r, WORLD[key], key, t, alpha, hoverWorld === key ? 1 : 0, point.z);
+    });
+
+    csDrawTexture(t, alpha, false);
+    csDrawSpine(t, alpha);
+    csDrawCrown(t, alpha);
+
+    depthOrder.filter((key) => positions[key].z >= 0).forEach((key) => {
+      const point = positions[key];
+      drawOrb(point.x, point.y, point.r, WORLD[key], key, t, alpha, hoverWorld === key ? 1 : 0, point.z);
+    });
+    ctx.globalAlpha = 1;
+  };
+
+  function csMachineChamber(t, alpha) {
+    const center = { x: width * 0.5, y: height * 0.52 };
+    for (let shell = 5; shell >= 0; shell--) {
+      const points = [];
+      const sides = 7 + shell;
+      for (let i = 0; i < sides; i++) {
+        const angle = i * TAU / sides + t * (shell % 2 ? -0.025 : 0.019);
+        const point = rotate3({
+          x: Math.cos(angle) * (1.1 + shell * 0.38),
+          y: Math.sin(angle) * (0.72 + shell * 0.23),
+          z: Math.sin(angle * 2 + shell) * 0.52
+        }, detailYaw, detailPitch, detailRoll);
+        points.push(csProject(point, detailZoom * 0.82, 12, center));
+      }
+      ctx.strokeStyle = rgba(shell % 3 ? WORLD.machine.rgb : CS_CORAL, alpha * (0.12 + shell * 0.035));
+      ctx.lineWidth = shell % 3 ? 0.7 : 1.3;
+      csPolygon(points, shell === 0 ? rgba(CS_SOOT, 0.22 * alpha) : null, ctx.strokeStyle, ctx.lineWidth);
+      for (let i = 0; i < points.length; i += 2) {
+        const a = points[i];
+        const b = points[(i + 3 + shell) % points.length];
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+      }
+    }
+  }
+
+  function csMakerChamber(t, alpha) {
+    const center = { x: width * 0.5, y: height * 0.52 };
+    for (let branch = 0; branch < 34; branch++) {
+      const phase = branch * 2.399963 + t * 0.035;
+      const reach = 0.85 + (branch % 9) * 0.17;
+      ctx.strokeStyle = rgba(branch % 6 ? CS_CORAL : CS_IVORY, alpha * (0.15 + (branch % 5) * 0.045));
+      ctx.lineWidth = branch % 6 ? 0.8 : 1.45;
+      ctx.beginPath();
+      for (let step = 0; step <= 7; step++) {
+        const u = step / 7;
+        const point = rotate3({
+          x: Math.cos(phase + u * 0.78) * u * reach,
+          y: -1.1 + u * 2.5 + Math.sin(phase * 1.3) * 0.5,
+          z: Math.sin(phase + u * 0.78) * u * reach
+        }, detailYaw, detailPitch, detailRoll);
+        const projected = csProject(point, detailZoom * 0.84, 12, center);
+        step ? ctx.lineTo(projected.x, projected.y) : ctx.moveTo(projected.x, projected.y);
+      }
+      ctx.stroke();
+    }
+  }
+
+  function csRealityChamber(t, alpha) {
+    const cells = [];
+    realityCells.forEach((cell, index) => {
+      const distance = Math.hypot(cell.x, cell.z);
+      const pulse = 0.5 + 0.5 * Math.sin(t * 0.54 - distance * 1.7 + cell.phase + activeSub * 0.92);
+      const rise = 0.28 + pulse * 1.12 + impulse * Math.max(0, 1 - distance / 2.7) * 0.82;
+      const rotated = rotate3({ x: cell.x, y: -1.62 + rise * 0.5, z: cell.z }, detailYaw, detailPitch, detailRoll);
+      cells.push({ projected: project(rotated, detailZoom * 0.74, 11), rise, index });
+    });
+    cells.sort((a, b) => a.projected.z - b.projected.z).forEach(({ projected, rise, index }) => {
+      const size = unit * 0.0052 * clamp(projected.f, 0.55, 1.5);
+      csIsoCube(projected.x, projected.y, size, unit * 0.016 * rise * clamp(projected.f, 0.55, 1.5), index % 8 ? CS_GOLD : CS_CORAL, alpha * 0.92);
+    });
+  }
+
+  drawDetail = function sovereignCoralDetail(t, alpha) {
+    if (!activeWorld || alpha <= 0.002) return;
+    const config = WORLD[activeWorld];
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = alpha;
+
+    if (activeWorld === 'machine') csMachineChamber(t, alpha);
+    else if (activeWorld === 'maker') csMakerChamber(t, alpha);
+    else csRealityChamber(t, alpha);
+
+    drawOrb(width * 0.5, height * 0.51, unit * 0.11, config, activeWorld, t, alpha * 0.42, 0, 0);
+    const points = detailPoints();
+    points.forEach((point, index) => Object.assign(subScreen[index], point));
+    for (let i = 0; i < 3; i++) drawCurve(points[i], points[(i + 1) % 3], config.rgb, alpha * 0.72, 30 + i, t, true);
+
+    const depthOrder = [...points].sort((a, b) => a.z - b.z);
+    depthOrder.forEach((point) => {
+      const index = point.index;
+      const selected = index === activeSub;
+      const hover = index === hoverSub;
+      const radius = point.r * (selected ? 1.08 : 0.96) * (hover ? 1.08 : 1);
+      drawOrb(point.x, point.y, radius, config, activeWorld, t + index * 0.86, alpha, selected || hover ? 1 : 0, point.z);
+      if (selected) {
+        ctx.strokeStyle = rgba(CS_CORAL, 0.68 * alpha);
+        ctx.lineWidth = 1.1;
+        ctx.setLineDash([2, 6]);
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, radius * 1.72, -Math.PI * 0.37, Math.PI * 1.38);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    });
+    ctx.globalAlpha = 1;
+  };
+
+  updateLabels = function sovereignCoralLabels() {
+    if (++labelTick % 2) return;
+    const mix = ease(viewMix);
+    worldKeys.forEach((key) => {
+      const element = labels[key];
+      const point = worldScreen[key];
+      if (!element) return;
+      element.style.left = `${point.x}px`;
+      element.style.top = `${point.y - point.r * 1.5}px`;
+      element.style.opacity = String(clamp(1 - mix * 2.1, 0, 1));
+      element.style.pointerEvents = mix < 0.25 ? 'auto' : 'none';
+    });
+    if (unityLabel) {
+      const center = csCenter();
+      unityLabel.style.left = `${center.x}px`;
+      unityLabel.style.top = `${center.y + unit * 0.01}px`;
+      unityLabel.style.opacity = String(clamp(1 - mix * 2.2, 0, 1));
+    }
+
+    if (activeWorld && mix > 0.22) {
+      subLabels.forEach((element, index) => {
+        const point = subScreen[index];
+        element.style.left = `${point.x}px`;
+        element.style.top = `${point.y - point.r * 1.52}px`;
+        element.style.opacity = String(ease((mix - 0.22) / 0.5));
+        element.style.pointerEvents = mix > 0.65 ? 'auto' : 'none';
+        element.classList.toggle('active', index === activeSub);
+      });
+    } else {
+      subLabels.forEach((element) => {
+        element.style.opacity = '0';
+        element.style.pointerEvents = 'none';
+      });
+    }
+    app?.classList.toggle('detail', Boolean(activeWorld && mix > 0.05));
+  };
+
+  setHint = function sovereignCoralHint() {
+    if (!hint || window.__dreamUnityGameActive) return;
+    hint.textContent = activeWorld
+      ? 'ROTATE THE ORGAN · CHOOSE A CAPACITY'
+      : csAgency < 0.68
+        ? 'DRAG TO BREAK THE MIRROR · ENTER A WORLD'
+        : csAgency < 0.9
+          ? 'THE GHOST IS LOSING FORM · KEEP MOVING'
+          : 'THE SHARDS ARE NOW MATERIAL · ENTER A WORLD';
+  };
+
+  render = function sovereignCoralRender(t) {
+    csUpdateAgency(t);
+    drawBackground(t);
+    const mix = ease(viewMix);
+    drawOverview(t, 1 - mix);
+    drawDetail(t, mix);
+    updateLabels();
+    if (frame % 12 === 0) setHint();
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = 1;
+  };

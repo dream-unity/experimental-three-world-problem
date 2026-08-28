@@ -3,41 +3,46 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <meta name="theme-color" content="#ffffff" />
-  <meta name="description" content="Dream Unity — The Mirror Forge. Enter three living worlds where perception, agency and reality become one instrument." />
+  <meta name="theme-color" content="#eee9dc" />
+  <meta name="description" content="Dream Unity — a living sovereignty system where awareness, agency and matter become one world-making force." />
   <title>Dream Unity</title>
   <link rel="stylesheet" href="./styles.css?v=20260824-9" />
   <link rel="stylesheet" href="./become.css?v=20260825-role-drift-become-1" />
-  <link rel="stylesheet" href="./forge-theme.css?v=20260828-mirror-forge-1" />
+  <link rel="stylesheet" href="./coral-theme.css?v=20260828-stage-coral-2" />
 </head>
 <body>
   <main id="app" aria-label="Dream Unity interactive simulation">
     <canvas id="world" aria-label="Interactive Dream Unity field"></canvas>
-    <img id="forgeTexture" src="./assets/mirror-forge-core.png" alt="" aria-hidden="true" hidden />
+    <img id="coralTexture" src="./assets/coral-sovereign-engine.webp" alt="" aria-hidden="true" hidden />
     <audio id="scoreAudio" src="./assets/i-remember-tomorrow.mp3" preload="auto" autoplay loop></audio>
     <div class="vignette" aria-hidden="true"></div>
-    <div class="brand"><i></i><span>DREAM UNITY</span><small>THE MIRROR FORGE</small></div>
-    <div class="live"><i></i><span>GRACE WITH TEETH</span></div>
+    <div class="brand"><i></i><span>DREAM UNITY</span><small>SOVEREIGN SYSTEM</small></div>
+    <div class="live"><i></i><span>CORAL · EXPRESSIVE</span></div>
     <button class="score-control" id="scoreControl" type="button" aria-label="Turn the Dream Unity score off" aria-pressed="true">
       <span class="score-mark" aria-hidden="true"><i></i><i></i><i></i></span>
       <small>SCORE</small><b id="scoreState">LOADING</b>
     </button>
-    <section class="manifesto" aria-labelledby="forgeTitle">
-      <p>THE GHOST IN THE MIRROR</p>
-      <h1 id="forgeTitle"><span>THE</span> MIRROR<br />FORGE</h1>
-      <div class="manifesto-copy">Body anchors mind. Mind directs power. Power makes the next dream real.</div>
+    <section class="manifesto" aria-labelledby="coralTitle">
+      <p>THE GHOST IN THE MIRROR · OF SLAVERY AND FREEDOM</p>
+      <h1 id="coralTitle">MAKE THE<br />MIRROR<br /><em>OBEY.</em></h1>
+      <div class="manifesto-copy">Awareness without agency is another reflection. Body, imagination, intelligence and will become one force—or the world dreams through you.</div>
       <div class="manifesto-rule"><i></i><span>UNITY IS GRACE WITH TEETH</span></div>
     </section>
+    <aside class="phase-rail" aria-label="Sovereignty process">
+      <div class="phase-state"><small>STATE</small><strong id="coralPhase">GHOST</strong></div>
+      <div class="phase-track" aria-hidden="true"><i id="coralPhaseFill"></i></div>
+      <ol aria-hidden="true"><li>GHOST</li><li>PRESSURE</li><li>BREAK</li><li>MAKE</li></ol>
+    </aside>
     <button class="back" id="back" type="button" aria-label="Return to Dream Unity overview"><span>←</span><b>UNITY</b></button>
     <div class="detail-title" id="detailTitle" aria-live="polite"><small id="detailNumber">01</small><strong id="detailName">DREAM MACHINE</strong></div>
     <button class="world-label" id="label-machine" data-world="machine" type="button"><span class="world-index">01</span><span class="world-copy"><strong>DREAM MACHINE</strong><small>PERCEIVE · MODEL · PREDICT</small></span><i aria-hidden="true"></i></button>
     <button class="world-label" id="label-maker" data-world="maker" type="button"><span class="world-index">02</span><span class="world-copy"><strong>DREAM MAKER</strong><small>INTEND · ACT · BECOME</small></span><i aria-hidden="true"></i></button>
     <button class="world-label" id="label-reality" data-world="reality" type="button"><span class="world-index">03</span><span class="world-copy"><strong>DREAM WORLD</strong><small>MATTER · STRUCTURE · EMERGE</small></span><i aria-hidden="true"></i></button>
-    <div class="unity-label" id="unityLabel"><span></span><b>UNITY</b><small>GRACE WITH TEETH</small></div>
+    <div class="unity-label" id="unityLabel"><span></span><b>UNITY</b><small>THE SOVEREIGN AXIS</small></div>
     <button class="sub-label" id="sub-0" type="button"><strong>PERCEIVE</strong></button>
     <button class="sub-label" id="sub-1" type="button"><strong>MODEL</strong></button>
     <button class="sub-label" id="sub-2" type="button"><strong>PREDICT</strong></button>
-    <div class="hint" id="hint">MOVE THE INSTRUMENT · ENTER A WORLD</div>
+    <div class="hint" id="hint">DRAG TO BREAK THE MIRROR · ENTER A WORLD</div>
     <div class="loading" id="loading"><span></span></div>
     <section class="arcade" id="arcade" aria-hidden="true" aria-label="Dream Unity arcade">
       <canvas id="gameCanvas" aria-label="Playable Dream Unity game"></canvas>
@@ -59,8 +64,8 @@
   </main>
   <noscript>This experience requires JavaScript.</noscript>
   <script>window.setTimeout(function(){var el=document.getElementById('loading');if(el)el.classList.add('hide');},1800);</script>
-  <script src="./forge-ui.js?v=20260828-mirror-forge-1"></script>
-  <script src="./main.js?v=20260828-mirror-forge-1"></script>
+  <script src="./coral-ui.js?v=20260828-stage-coral-2"></script>
+  <script src="./main.js?v=20260828-stage-coral-2"></script>
   <script src="./arcade.js?v=20260827-fighter-jet-performance-20"></script>
 </body>
 </html>
