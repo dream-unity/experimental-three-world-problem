@@ -1,10 +1,10 @@
 (() => {
   'use strict';
-  const VERSION = '20260828-static-unity-1';
+  const VERSION = '20260828-mirror-forge-1';
   const baseParts = Array.from({ length: 6 }, (_, index) =>
     `./visual-parts/part-${String(index + 1).padStart(2, '0')}.txt?v=${VERSION}`
   );
-  const overridePath = `./visual-parts/light-overview-07.txt?v=${VERSION}`;
+  const overridePath = `./visual-parts/mirror-forge-08.txt?v=${VERSION}`;
   const parts = [...baseParts, overridePath];
   const loader = document.getElementById('loading');
   const hint = document.getElementById('hint');

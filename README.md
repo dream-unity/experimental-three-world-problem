@@ -1,12 +1,14 @@
 # Dream Unity — Experimental Three-World Problem
 
-A visual-first, mobile-compatible 3D portal containing nine distinct arcade experiences across three coupled worlds:
+A visual-first, mobile-compatible 3D portal containing nine distinct arcade experiences across three coupled worlds. The homepage is presented as **The Mirror Forge**: one connected instrument built around an obsidian, coral and ivory Unity core rather than three disconnected planets.
 
 1. **Dream Machine** — Perceive, Model, Predict.
 2. **Dream Maker** — Intend, Act, Become.
 3. **Dream World** — Matter, Structure, Emerge.
 
-The overview can be orbited by mouse or touch. Selecting a world exposes its internal triad; selecting an internal label opens the corresponding game.
+The overview can be orbited by mouse or touch. Dream Machine is rendered as a precision gyroscope/network, Dream Maker as a generative spiral, and Dream World as an isometric material lattice. Selecting a world exposes its internal triad; selecting an internal label opens the corresponding game.
+
+The homepage attempts to begin **I Remember Tomorrow** automatically and exposes a persistent score control. Browsers that defer audible autoplay start it on the visitor's first interaction. An explicit off choice is remembered locally. The former voice/oracle interface remains fully removed.
 
 ## Nine-game cognitive division of labour
 
@@ -168,6 +170,8 @@ The governing distinction remains controlled as-if conviction, not literal confu
 - **Pinch or wheel:** zoom.
 - **Two-finger twist:** roll.
 - **Tap a world, then an internal title:** open its game.
+- **Arrow keys:** move focus between the currently available worlds or capacities.
+- **Score control:** stop or resume *I Remember Tomorrow*.
 
 ### Fighter Jet
 
@@ -184,7 +188,12 @@ The governing distinction remains controlled as-if conviction, not literal confu
 
 ## Key files
 
-- `main.js` — three-world 3D overview and portal interaction.
+- `main.js` — versioned three-world visual loader.
+- `visual-parts/mirror-forge-08.txt` — Mirror Forge renderer, world instruments and detail-field presentation.
+- `forge-theme.css` — white-gallery brand system and forge-styled arcade shell.
+- `forge-ui.js` — homepage score control, autoplay recovery and keyboard world navigation.
+- `assets/mirror-forge-core.png` — original people-free obsidian/coral core artwork.
+- `assets/i-remember-tomorrow.mp3` — homepage score.
 - `styles.css` — common Dream Unity and arcade styling.
 - `become.css` — responsive Become interface and training readouts.
 - `arcade.js` — lean versioned loader for the active game layers.
