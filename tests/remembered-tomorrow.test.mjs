@@ -33,7 +33,7 @@ assert.match(index, /assets\/i-remember-tomorrow\.mp3/);
 assert.match(index, /id="scoreControl"/);
 assert.doesNotMatch(index, /MAKE THE<br \/>MIRROR|coralTexture|coral-sovereign-engine|phase-rail/);
 assert.doesNotMatch(index, /du-voice|data-voice|voice\.js|voice\.css|realtime-session|TAP TO SPEAK|SpeechRecognition|speechSynthesis/i);
-assert.match(loader, /VERSION = '20260828-remembered-tomorrow-3'/);
+assert.match(loader, /VERSION = '20260828-remembered-tomorrow-4'/);
 assert.match(loader, /remembered-tomorrow-10\.txt/);
 assert.match(theme, /--paper:#fff/);
 assert.match(theme, /--machine:#00bde8/);
@@ -49,6 +49,7 @@ for (const marker of [
   'rtDrawTemporalGhost',
   'rtDrawPossibleFutures',
   'rtDrawLivingPath',
+  'rtDrawDreamMembrane',
   'rtDrawCompressionBraid',
   'rtDrawEtherParticles',
   'rtDrawMatter',
