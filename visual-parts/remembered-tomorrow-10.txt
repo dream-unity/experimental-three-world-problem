@@ -1,0 +1,636 @@
+
+  // Dream Unity — The Returning Dream / Stage Coral (I—V).
+  // A single temporal body carries three worlds through four conditions:
+  // possibility, compression, matter, and return. The pale delayed geometry is
+  // inherited reflection; direct manipulation moves the living structure first.
+
+  WORLD.machine.css = '#00BDE8';
+  WORLD.machine.rgb = [0, 189, 232];
+  WORLD.maker.css = '#00C983';
+  WORLD.maker.rgb = [0, 201, 131];
+  WORLD.reality.css = '#7448FF';
+  WORLD.reality.rgb = [116, 72, 255];
+
+  const RT_INK = [11, 16, 32];
+  const RT_GREY = [151, 158, 171];
+  const RT_PALE = [223, 226, 232];
+  const RT_GOLD = [231, 164, 41];
+  const RT_WHITE = [255, 255, 255];
+  const RT_PATH = [
+    { x: -3.28, y: 1.42, z: 0.72 },
+    { x: -2.30, y: 2.72, z: -0.56 },
+    { x: 0.02, y: 2.48, z: -1.52 },
+    { x: 2.88, y: 1.50, z: -0.42 },
+    { x: 3.34, y: 0.05, z: 0.82 },
+    { x: 1.25, y: -0.34, z: 1.72 },
+    { x: 0.04, y: -0.16, z: 0.02 },
+    { x: 0.32, y: -2.82, z: 0.64 },
+    { x: -1.30, y: -2.54, z: -0.54 },
+    { x: -3.15, y: -1.28, z: -1.46 },
+    { x: -2.38, y: 0.04, z: -0.38 },
+    { x: 0.06, y: 0.20, z: -0.84 }
+  ];
+  const RT_PHASE = { machine: 0, maker: 0.25, reality: 7 / 12 };
+  let rtGhostYaw = overviewYaw - 0.31;
+  let rtGhostPitch = overviewPitch + 0.13;
+  let rtGhostRoll = overviewRoll - 0.08;
+  let rtLastTime = 0;
+
+  function rtSeed(index, salt = 0) {
+    const value = Math.sin(index * 127.1 + salt * 311.7) * 43758.5453123;
+    return value - Math.floor(value);
+  }
+
+  function rtMixColor(a, b, amount) {
+    const u = clamp(amount, 0, 1);
+    return [
+      Math.round(lerp(a[0], b[0], u)),
+      Math.round(lerp(a[1], b[1], u)),
+      Math.round(lerp(a[2], b[2], u))
+    ];
+  }
+
+  function rtColorAt(value) {
+    const s = ((value % 1) + 1) % 1;
+    if (s < 0.25) return rtMixColor(WORLD.machine.rgb, WORLD.maker.rgb, ease(s / 0.25));
+    if (s < 0.585) return rtMixColor(WORLD.maker.rgb, WORLD.reality.rgb, ease((s - 0.25) / 0.335));
+    if (s < 0.88) return rtMixColor(WORLD.reality.rgb, WORLD.machine.rgb, ease((s - 0.585) / 0.295));
+    return WORLD.machine.rgb;
+  }
+
+  function rtCenter() {
+    return {
+      x: width > 1060 ? width * 0.53 : width * 0.5,
+      y: width > 760 ? height * 0.505 : height * 0.56
+    };
+  }
+
+  function rtProject(point, scale = 1, cameraZ = 12.6, center = rtCenter()) {
+    const depth = cameraZ - point.z;
+    const perspective = scale * cameraZ / Math.max(3.1, depth);
+    const spread = width > 1060 ? 0.081 : width > 760 ? 0.075 : 0.073;
+    return {
+      x: center.x + point.x * unit * spread * perspective,
+      y: center.y - point.y * unit * spread * perspective,
+      f: perspective,
+      z: point.z,
+      depth
+    };
+  }
+
+  function rtCatmull(value) {
+    const wrapped = ((value % 1) + 1) % 1;
+    const scaled = wrapped * RT_PATH.length;
+    const index = Math.floor(scaled);
+    const u = scaled - index;
+    const p0 = RT_PATH[(index - 1 + RT_PATH.length) % RT_PATH.length];
+    const p1 = RT_PATH[index % RT_PATH.length];
+    const p2 = RT_PATH[(index + 1) % RT_PATH.length];
+    const p3 = RT_PATH[(index + 2) % RT_PATH.length];
+    const u2 = u * u;
+    const u3 = u2 * u;
+    const coordinate = (key) => 0.5 * (
+      2 * p1[key] +
+      (-p0[key] + p2[key]) * u +
+      (2 * p0[key] - 5 * p1[key] + 4 * p2[key] - p3[key]) * u2 +
+      (-p0[key] + 3 * p1[key] - 3 * p2[key] + p3[key]) * u3
+    );
+    return { x: coordinate('x'), y: coordinate('y'), z: coordinate('z') };
+  }
+
+  function rtNormalize(vector) {
+    const length = Math.max(0.0001, Math.hypot(vector.x, vector.y, vector.z));
+    return { x: vector.x / length, y: vector.y / length, z: vector.z / length };
+  }
+
+  function rtCross(a, b) {
+    return {
+      x: a.y * b.z - a.z * b.y,
+      y: a.z * b.x - a.x * b.z,
+      z: a.x * b.y - a.y * b.x
+    };
+  }
+
+  function rtFrameAt(value) {
+    const before = rtCatmull(value - 0.0015);
+    const after = rtCatmull(value + 0.0015);
+    const tangent = rtNormalize({ x: after.x - before.x, y: after.y - before.y, z: after.z - before.z });
+    let side = rtCross(tangent, { x: 0, y: 1, z: 0 });
+    if (Math.hypot(side.x, side.y, side.z) < 0.08) side = rtCross(tangent, { x: 1, y: 0, z: 0 });
+    side = rtNormalize(side);
+    const up = rtNormalize(rtCross(side, tangent));
+    return { tangent, side, up };
+  }
+
+  function rtOffsetPoint(value, sideAmount = 0, upAmount = 0) {
+    const point = rtCatmull(value);
+    const frameAt = rtFrameAt(value);
+    return {
+      x: point.x + frameAt.side.x * sideAmount + frameAt.up.x * upAmount,
+      y: point.y + frameAt.side.y * sideAmount + frameAt.up.y * upAmount,
+      z: point.z + frameAt.side.z * sideAmount + frameAt.up.z * upAmount
+    };
+  }
+
+  function rtRotateProject(point, yaw = overviewYaw, pitch = overviewPitch, roll = overviewRoll, scale = overviewZoom) {
+    const rotated = rotate3(point, yaw, pitch, roll);
+    const projected = rtProject(rotated, scale, 12.6);
+    projected.world = rotated;
+    return projected;
+  }
+
+  function rtLine(a, b, color, alpha, lineWidth = 1) {
+    if (alpha <= 0.002) return;
+    ctx.strokeStyle = rgba(color, alpha);
+    ctx.lineWidth = lineWidth;
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(b.x, b.y);
+    ctx.stroke();
+  }
+
+  overviewBasePositions = function rememberedTomorrowBasePositions() {
+    return {
+      machine: rtCatmull(RT_PHASE.machine),
+      maker: rtCatmull(RT_PHASE.maker),
+      reality: rtCatmull(RT_PHASE.reality)
+    };
+  };
+
+  overviewPositions = function rememberedTomorrowPositions(t) {
+    const positions = {};
+    worldKeys.forEach((key, index) => {
+      const phase = RT_PHASE[key];
+      const breathe = reduced ? 0 : Math.sin(t * 0.42 + index * 2.1) * 0.035;
+      const model = rtOffsetPoint(phase, 0, breathe);
+      const projected = rtRotateProject(model);
+      positions[key] = {
+        x: projected.x,
+        y: projected.y,
+        r: unit * (width < 760 ? 0.052 : 0.061) * projected.f,
+        f: projected.f,
+        z: projected.z,
+        world: projected.world
+      };
+    });
+    return positions;
+  };
+
+  drawBackground = function rememberedTomorrowBackground(t) {
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, width, height);
+
+    const center = rtCenter();
+    const reach = unit * (width > 1060 ? 0.41 : 0.45);
+    ctx.strokeStyle = 'rgba(11,16,32,.045)';
+    ctx.lineWidth = 0.7;
+    ctx.beginPath();
+    ctx.moveTo(center.x - reach, center.y);
+    ctx.lineTo(center.x + reach, center.y);
+    ctx.moveTo(center.x, center.y - reach * 0.82);
+    ctx.lineTo(center.x, center.y + reach * 0.82);
+    ctx.stroke();
+
+    for (let index = -4; index <= 4; index++) {
+      if (index === 0) continue;
+      const tick = center.x + index * reach / 4;
+      ctx.strokeStyle = index % 2 ? 'rgba(11,16,32,.035)' : 'rgba(11,16,32,.065)';
+      ctx.beginPath();
+      ctx.moveTo(tick, center.y - 3);
+      ctx.lineTo(tick, center.y + 3);
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = 'rgba(11,16,32,.34)';
+    for (let index = 0; index < 8; index++) {
+      const angle = index * TAU / 8 + t * 0.003;
+      const radius = reach * (0.89 + (index % 3) * 0.025);
+      ctx.fillRect(center.x + Math.cos(angle) * radius, center.y + Math.sin(angle) * radius * 0.74, 1, 1);
+    }
+  };
+
+  function rtDrawTemporalGhost(alpha) {
+    const count = lowCPU || coarse ? 92 : 150;
+    const segments = [];
+    for (let index = 0; index < count; index++) {
+      const a = index / count;
+      const b = (index + 1) / count;
+      const pa = rtRotateProject(rtCatmull(a), rtGhostYaw, rtGhostPitch, rtGhostRoll, overviewZoom * 0.997);
+      const pb = rtRotateProject(rtCatmull(b), rtGhostYaw, rtGhostPitch, rtGhostRoll, overviewZoom * 0.997);
+      segments.push({ a: pa, b: pb, z: (pa.z + pb.z) * 0.5, index });
+    }
+    segments.sort((a, b) => a.z - b.z);
+    ctx.setLineDash([1.2, 5.5]);
+    segments.forEach((segment) => {
+      const depth = clamp(0.62 + segment.z * 0.055, 0.34, 0.88);
+      rtLine(segment.a, segment.b, RT_GREY, alpha * 0.25 * depth, 0.65);
+    });
+    ctx.setLineDash([]);
+  }
+
+  function rtDrawPossibleFutures(t, alpha) {
+    const branches = [-1, 0, 1];
+    ctx.setLineDash([1, 7]);
+    branches.forEach((branch, branchIndex) => {
+      let previous = null;
+      for (let index = 0; index <= 54; index++) {
+        const s = 0.27 + index / 54 * 0.39;
+        const corridor = Math.sin((s - 0.27) / 0.39 * Math.PI);
+        const drift = branch * corridor * (0.34 + 0.08 * Math.sin(t * 0.23 + branchIndex));
+        const lift = corridor * (branch === 0 ? -0.06 : 0.09);
+        const projected = rtRotateProject(rtOffsetPoint(s, drift, lift));
+        if (previous) rtLine(previous, projected, branch === 0 ? RT_GOLD : RT_GREY, alpha * (branch === 0 ? 0.23 : 0.12), branch === 0 ? 0.85 : 0.6);
+        previous = projected;
+      }
+    });
+    ctx.setLineDash([]);
+  }
+
+  function rtDrawLivingPath(alpha) {
+    const count = lowCPU || coarse ? 130 : 220;
+    const segments = [];
+    for (let index = 0; index < count; index++) {
+      const s = index / count;
+      const next = (index + 1) / count;
+      const a = rtRotateProject(rtCatmull(s));
+      const b = rtRotateProject(rtCatmull(next));
+      segments.push({ s, a, b, z: (a.z + b.z) * 0.5, color: rtColorAt(s) });
+    }
+    segments.sort((a, b) => a.z - b.z);
+    segments.forEach((segment) => {
+      const material = segment.s > 0.50 && segment.s < 0.72;
+      const depth = clamp(0.58 + segment.z * 0.085, 0.34, 1);
+      const widthValue = (material ? 2.35 : segment.s > 0.16 && segment.s < 0.44 ? 1.35 : 0.85) * clamp(segment.a.f, 0.7, 1.35);
+      rtLine(segment.a, segment.b, segment.color, alpha * depth * (material ? 0.72 : 0.58), widthValue);
+      if (material) rtLine(segment.a, segment.b, RT_WHITE, alpha * depth * 0.58, Math.max(0.45, widthValue * 0.24));
+    });
+  }
+
+  function rtDrawCompressionBraid(t, alpha) {
+    for (let strand = 0; strand < 3; strand++) {
+      let previous = null;
+      for (let index = 0; index <= 76; index++) {
+        const s = 0.14 + index / 76 * 0.34;
+        const envelope = Math.sin(index / 76 * Math.PI);
+        const angle = index / 76 * TAU * 5.5 + strand * TAU / 3 + t * 0.16;
+        const radius = (0.09 + envelope * 0.17) * (1 - index / 76 * 0.42);
+        const projected = rtRotateProject(rtOffsetPoint(s, Math.cos(angle) * radius, Math.sin(angle) * radius));
+        if (previous) rtLine(previous, projected, strand === 0 ? WORLD.machine.rgb : strand === 1 ? WORLD.maker.rgb : RT_GOLD, alpha * 0.64, strand === 2 ? 0.85 : 1.05);
+        previous = projected;
+      }
+    }
+  }
+
+  function rtDrawEtherParticles(t, alpha) {
+    const count = lowCPU || coarse ? 74 : 132;
+    for (let index = 0; index < count; index++) {
+      const returning = index % 2 === 0;
+      const local = rtSeed(index, 2);
+      const s = returning ? 0.73 + local * 0.27 : local * 0.15;
+      const spread = returning ? ease((s - 0.73) / 0.27) : 1 - ease(s / 0.15);
+      const frameAt = rtFrameAt(s);
+      const angle = rtSeed(index, 4) * TAU + (reduced ? 0 : t * (0.025 + rtSeed(index, 6) * 0.025));
+      const radius = (0.08 + rtSeed(index, 5) * 0.52) * (0.35 + spread);
+      const base = rtCatmull(s);
+      const model = {
+        x: base.x + frameAt.side.x * Math.cos(angle) * radius + frameAt.up.x * Math.sin(angle) * radius,
+        y: base.y + frameAt.side.y * Math.cos(angle) * radius + frameAt.up.y * Math.sin(angle) * radius,
+        z: base.z + frameAt.side.z * Math.cos(angle) * radius + frameAt.up.z * Math.sin(angle) * radius
+      };
+      const point = rtRotateProject(model);
+      const size = (0.55 + rtSeed(index, 8) * 1.25) * clamp(point.f, 0.7, 1.3);
+      const color = returning ? rtMixColor(WORLD.reality.rgb, WORLD.machine.rgb, spread) : WORLD.machine.rgb;
+      ctx.fillStyle = rgba(color, alpha * (0.22 + rtSeed(index, 9) * 0.46));
+      if (index % 5 === 0) {
+        ctx.strokeStyle = rgba(color, alpha * 0.32);
+        ctx.lineWidth = 0.6;
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, size * 1.7, 0, TAU);
+        ctx.stroke();
+      } else {
+        ctx.fillRect(point.x - size * 0.5, point.y - size * 0.5, size, size);
+      }
+    }
+  }
+
+  function rtDrawCube(model, size, color, alpha, yaw = overviewYaw, pitch = overviewPitch, roll = overviewRoll, zoom = overviewZoom) {
+    const signs = [-1, 1];
+    const vertices = [];
+    signs.forEach((x) => signs.forEach((y) => signs.forEach((z) => {
+      vertices.push(rtRotateProject({ x: model.x + x * size, y: model.y + y * size, z: model.z + z * size }, yaw, pitch, roll, zoom));
+    })));
+    const faces = [
+      [0, 1, 3, 2], [4, 6, 7, 5], [0, 4, 5, 1],
+      [2, 3, 7, 6], [0, 2, 6, 4], [1, 5, 7, 3]
+    ].map((indices) => ({ indices, z: indices.reduce((sum, index) => sum + vertices[index].z, 0) / 4 }));
+    faces.sort((a, b) => a.z - b.z);
+    faces.forEach((face, faceIndex) => {
+      const points = face.indices.map((index) => vertices[index]);
+      ctx.beginPath();
+      ctx.moveTo(points[0].x, points[0].y);
+      for (let index = 1; index < points.length; index++) ctx.lineTo(points[index].x, points[index].y);
+      ctx.closePath();
+      ctx.fillStyle = rgba(faceIndex % 2 ? color : RT_WHITE, alpha * (faceIndex % 2 ? 0.12 : 0.42));
+      ctx.fill();
+      ctx.strokeStyle = rgba(color, alpha * 0.58);
+      ctx.lineWidth = 0.65;
+      ctx.stroke();
+    });
+  }
+
+  function rtDrawMatter(alpha) {
+    const count = lowCPU || coarse ? 8 : 13;
+    for (let index = 0; index < count; index++) {
+      const s = 0.51 + index / Math.max(1, count - 1) * 0.20;
+      const side = (rtSeed(index, 12) - 0.5) * 0.42;
+      const up = (rtSeed(index, 13) - 0.5) * 0.30;
+      const model = rtOffsetPoint(s, side, up);
+      const size = 0.075 + rtSeed(index, 14) * 0.105;
+      rtDrawCube(model, size, WORLD.reality.rgb, alpha * (0.52 + rtSeed(index, 15) * 0.38));
+    }
+  }
+
+  function rtDrawNode(position, kind, t, alpha = 1, focus = 0) {
+    if (!position || position.r <= 1 || alpha <= 0.002) return;
+    const radius = position.r * (1 + focus * 0.055);
+    const color = WORLD[kind].rgb;
+    ctx.save();
+    ctx.translate(position.x, position.y);
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = 'rgba(255,255,255,.86)';
+    ctx.beginPath();
+    ctx.arc(0, 0, radius * 0.70, 0, TAU);
+    ctx.fill();
+    ctx.strokeStyle = rgba(color, 0.56 + focus * 0.22);
+    ctx.lineWidth = focus ? 1.35 : 0.85;
+    ctx.beginPath();
+    ctx.arc(0, 0, radius * 0.72, 0, TAU);
+    ctx.stroke();
+
+    if (kind === 'machine') {
+      const points = [];
+      for (let index = 0; index < 12; index++) {
+        const angle = index * TAU / 12 + t * 0.025;
+        const ring = index % 3 === 0 ? 0.52 : index % 3 === 1 ? 0.35 : 0.19;
+        points.push({ x: Math.cos(angle) * radius * ring, y: Math.sin(angle * 1.7) * radius * ring * 0.8 });
+      }
+      ctx.strokeStyle = rgba(color, 0.34);
+      ctx.lineWidth = 0.65;
+      points.forEach((point, index) => {
+        const next = points[(index + 5) % points.length];
+        ctx.beginPath();ctx.moveTo(point.x, point.y);ctx.lineTo(next.x, next.y);ctx.stroke();
+      });
+      points.forEach((point, index) => {
+        ctx.fillStyle = rgba(index % 4 === 0 ? RT_GOLD : color, 0.78);
+        ctx.beginPath();ctx.arc(point.x, point.y, index % 4 === 0 ? 1.5 : 0.85, 0, TAU);ctx.fill();
+      });
+    } else if (kind === 'maker') {
+      for (let strand = 0; strand < 3; strand++) {
+        ctx.strokeStyle = rgba(strand === 2 ? RT_GOLD : color, 0.66 - strand * 0.10);
+        ctx.lineWidth = strand === 1 ? 1.2 : 0.75;
+        ctx.beginPath();
+        for (let index = 0; index <= 38; index++) {
+          const u = index / 38;
+          const angle = u * TAU * 2.7 + strand * TAU / 3 + t * 0.11;
+          const rr = radius * (0.49 - u * 0.34);
+          const x = Math.cos(angle) * rr;
+          const y = (u - 0.5) * radius * 0.92 + Math.sin(angle) * radius * 0.08;
+          index ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+        }
+        ctx.stroke();
+      }
+      ctx.fillStyle = rgba(color, 0.84);ctx.fillRect(-2, -2, 4, 4);
+    } else {
+      const diamond = [[0,-.52],[.46,-.18],[.34,.43],[0,.57],[-.34,.43],[-.46,-.18]];
+      ctx.strokeStyle = rgba(color, 0.72);ctx.lineWidth = 0.85;
+      ctx.beginPath();
+      diamond.forEach((point,index) => { const x=point[0]*radius,y=point[1]*radius; index?ctx.lineTo(x,y):ctx.moveTo(x,y); });
+      ctx.closePath();ctx.stroke();
+      [[0,-.52],[.46,-.18],[.34,.43],[0,.57],[-.34,.43],[-.46,-.18]].forEach((point) => {
+        ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(point[0]*radius,point[1]*radius);ctx.stroke();
+      });
+      ctx.fillStyle = rgba(color, 0.16);ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(.46*radius,-.18*radius);ctx.lineTo(.34*radius,.43*radius);ctx.closePath();ctx.fill();
+      ctx.fillStyle = rgba(RT_GOLD, 0.76);ctx.fillRect(-1.5,-1.5,3,3);
+    }
+    ctx.restore();
+  }
+
+  drawOrb = function rememberedTomorrowOrb(x, y, radius, config, kind, t, alpha = 1, focus = 0, depth = 0) {
+    rtDrawNode({ x, y, r: radius, z: depth }, kind, t, alpha, focus);
+  };
+
+  function rtDrawUnity(t, alpha) {
+    const loops = [
+      { color: RT_GOLD, phase: 0, width: 1.25 },
+      { color: RT_INK, phase: 1.7, width: 0.65 },
+      { color: RT_PALE, phase: 3.1, width: 0.85 }
+    ];
+    loops.forEach((loop, loopIndex) => {
+      let previous = null;
+      for (let index = 0; index <= 86; index++) {
+        const angle = index / 86 * TAU;
+        const model = {
+          x: Math.cos(angle) * (0.72 + loopIndex * 0.12),
+          y: Math.sin(angle) * (0.24 + loopIndex * 0.035),
+          z: Math.sin(angle * 2 + loop.phase + t * (reduced ? 0 : 0.08)) * (0.42 + loopIndex * 0.08)
+        };
+        const projected = rtRotateProject(model);
+        if (previous) rtLine(previous, projected, loop.color, alpha * (loopIndex === 0 ? 0.72 : 0.40), loop.width);
+        previous = projected;
+      }
+    });
+    const core = rtRotateProject({ x: 0, y: 0, z: 0 });
+    ctx.fillStyle = '#fff';ctx.beginPath();ctx.arc(core.x,core.y,5.2,0,TAU);ctx.fill();
+    ctx.strokeStyle = rgba(RT_GOLD, alpha * 0.88);ctx.lineWidth = 1;ctx.stroke();
+    ctx.fillStyle = rgba(RT_INK, alpha * 0.74);ctx.beginPath();ctx.arc(core.x,core.y,1.25,0,TAU);ctx.fill();
+    return core;
+  }
+
+  drawOverview = function rememberedTomorrowOverview(t, alpha) {
+    if (alpha <= 0.002) return;
+    const dt = Math.min(0.05, Math.max(0, t - rtLastTime));
+    rtLastTime = t;
+    const lag = reduced ? 0.10 : 1 - Math.exp(-Math.max(0.003, dt) * 1.35);
+    rtGhostYaw = lerp(rtGhostYaw, overviewYaw, lag);
+    rtGhostPitch = lerp(rtGhostPitch, overviewPitch, lag);
+    rtGhostRoll = lerp(rtGhostRoll, overviewRoll, lag);
+
+    const positions = overviewPositions(t);
+    worldKeys.forEach((key) => Object.assign(worldScreen[key], positions[key]));
+    ctx.globalCompositeOperation = 'source-over';
+    rtDrawTemporalGhost(alpha);
+    rtDrawPossibleFutures(t, alpha);
+    rtDrawEtherParticles(t, alpha);
+    rtDrawLivingPath(alpha);
+    rtDrawCompressionBraid(t, alpha);
+    rtDrawMatter(alpha);
+    const core = rtDrawUnity(t, alpha);
+
+    const depthOrder = [...worldKeys].sort((a, b) => positions[a].z - positions[b].z);
+    depthOrder.forEach((key) => rtDrawNode(positions[key], key, t, alpha, hoverWorld === key ? 1 : 0));
+
+    worldKeys.forEach((key, index) => {
+      const point = positions[key];
+      rtLine(core, point, WORLD[key].rgb, alpha * 0.085, 0.55);
+      const travel = (t * 0.028 + index / 3) % 1;
+      const x = lerp(core.x, point.x, travel);
+      const y = lerp(core.y, point.y, travel);
+      ctx.fillStyle = rgba(WORLD[key].rgb, alpha * 0.58);
+      ctx.fillRect(x - 1, y - 1, 2, 2);
+    });
+    ctx.globalAlpha = 1;
+  };
+
+  detailPoints = function rememberedTomorrowDetailPoints() {
+    const center = { x: width * 0.5, y: height * 0.52 };
+    const base = height > width * 1.05
+      ? [{x:0,y:2.25,z:.25},{x:-1.9,y:-1.35,z:.25},{x:1.9,y:-1.35,z:-.25}]
+      : [{x:0,y:2.38,z:.25},{x:-2.38,y:-1.25,z:.25},{x:2.38,y:-1.25,z:-.25}];
+    return base.map((point, index) => {
+      const rotated = rotate3(point, detailYaw, detailPitch, detailRoll);
+      const projected = rtProject(rotated, detailZoom, 11.8, center);
+      return { x: projected.x, y: projected.y, r: unit * 0.053 * projected.f, index, z: rotated.z, f: projected.f };
+    });
+  };
+
+  drawMachineField = function rememberedTomorrowMachineField(t, alpha) {
+    const center = { x: width * 0.5, y: height * 0.52 };
+    const points = machineNodes.map((node, index) => {
+      const scale = 1.23 + 0.14 * Math.sin(index * 1.7 + t * 0.18);
+      const rotated = rotate3({x:node.x*scale,y:node.y*scale,z:node.z*scale}, detailYaw + t * 0.025, detailPitch, detailRoll);
+      return rtProject(rotated, detailZoom * 0.78, 11.8, center);
+    });
+    ctx.lineWidth = 0.6;
+    points.forEach((point, index) => {
+      const a = points[(index + 11) % points.length];
+      const b = points[(index + 23) % points.length];
+      rtLine(point, a, WORLD.machine.rgb, alpha * 0.13, 0.55);
+      if (index % 3 === 0) rtLine(point, b, RT_GOLD, alpha * 0.07, 0.5);
+      ctx.fillStyle = rgba(index % 9 === 0 ? RT_GOLD : WORLD.machine.rgb, alpha * (index % 9 === 0 ? 0.55 : 0.34));
+      const size = index % 9 === 0 ? 2 : 1;
+      ctx.fillRect(point.x - size * .5, point.y - size * .5, size, size);
+    });
+  };
+
+  drawMakerField = function rememberedTomorrowMakerField(t, alpha) {
+    const center = { x: width * 0.5, y: height * 0.52 };
+    for (let strand = 0; strand < 7; strand++) {
+      let previous = null;
+      for (let index = 0; index <= 90; index++) {
+        const u = index / 90;
+        const angle = u * TAU * 3.3 + strand * TAU / 7 + t * 0.12;
+        const radius = (2.4 * (1 - u) + 0.16) * (0.78 + strand * 0.03);
+        const model = {x:Math.cos(angle)*radius,y:(u-.5)*4.5,z:Math.sin(angle)*radius};
+        const rotated = rotate3(model, detailYaw, detailPitch, detailRoll);
+        const projected = rtProject(rotated, detailZoom * 0.68, 11.8, center);
+        if (previous) rtLine(previous, projected, strand === 6 ? RT_GOLD : WORLD.maker.rgb, alpha * (strand === 6 ? .28 : .19), strand === 6 ? 1 : .7);
+        previous = projected;
+      }
+    }
+  };
+
+  drawRealityField = function rememberedTomorrowRealityField(t, alpha) {
+    const center = { x: width * 0.5, y: height * 0.52 };
+    for (let index = 0; index < 21; index++) {
+      const ring = Math.floor(index / 7);
+      const angle = (index % 7) / 7 * TAU + ring * .4;
+      const distance = .55 + ring * .72;
+      const model = {x:Math.cos(angle)*distance,y:Math.sin(angle)*distance*.65,z:(rtSeed(index,31)-.5)*1.5};
+      const rotated = rotate3(model, detailYaw, detailPitch, detailRoll);
+      const projectedModel = {
+        x: rotated.x,
+        y: rotated.y,
+        z: rotated.z
+      };
+      const pulse = reduced ? 0 : Math.sin(t * .7 + index) * .02;
+      rtDrawCube(projectedModel, .13 + ring * .045 + pulse, index % 5 === 0 ? RT_GOLD : WORLD.reality.rgb, alpha * (.48 + ring*.08), 0, 0, 0, detailZoom * .78);
+    }
+  };
+
+  drawDetail = function rememberedTomorrowDetail(t, alpha) {
+    if (!activeWorld || alpha <= 0.002) return;
+    if (activeWorld === 'machine') drawMachineField(t, alpha);
+    else if (activeWorld === 'maker') drawMakerField(t, alpha);
+    else drawRealityField(t, alpha);
+
+    const config = WORLD[activeWorld];
+    const points = detailPoints();
+    points.forEach((point, index) => Object.assign(subScreen[index], point));
+    for (let index = 0; index < points.length; index++) {
+      rtLine(points[index], points[(index + 1) % points.length], config.rgb, alpha * 0.20, 0.7);
+    }
+    const ordered = [...points].sort((a,b) => a.z-b.z);
+    ordered.forEach((point) => rtDrawNode(point, activeWorld, t + point.index * .5, alpha, point.index === activeSub || point.index === hoverSub ? 1 : 0));
+
+    const center = {x:width*.5,y:height*.52};
+    ctx.fillStyle = '#fff';ctx.beginPath();ctx.arc(center.x,center.y,5,0,TAU);ctx.fill();
+    ctx.strokeStyle = rgba(config.rgb, alpha*.72);ctx.lineWidth = 1;ctx.stroke();
+    ctx.fillStyle = rgba(RT_GOLD, alpha*.8);ctx.fillRect(center.x-1,center.y-1,2,2);
+    ctx.globalAlpha = 1;
+  };
+
+  updateLabels = function rememberedTomorrowLabels() {
+    if (++labelTick % 2) return;
+    const mix = ease(viewMix);
+    const portrait = width < 760;
+    worldKeys.forEach((key) => {
+      const element = labels[key];
+      const point = worldScreen[key];
+      if (!element) return;
+      let left = point.x;
+      let top = point.y - point.r * 1.25;
+      if (!portrait) {
+        const outward = point.r + 74;
+        if (key === 'machine') left = point.x - outward;
+        else if (key === 'maker') left = point.x + outward;
+        else { left = point.x + outward * .92; top = point.y + point.r * .48; }
+      } else {
+        if (key === 'machine') left -= point.r * .55;
+        if (key === 'maker') left += point.r * .65;
+        if (key === 'reality') { left += point.r * .8; top += point.r * .65; }
+      }
+      element.style.left = `${clamp(left, portrait ? 55 : 82, width - (portrait ? 55 : 82))}px`;
+      element.style.top = `${clamp(top, 72, height - 62)}px`;
+      element.style.opacity = String(clamp(1 - mix * 2.1, 0, 1));
+      element.style.pointerEvents = mix < 0.25 ? 'auto' : 'none';
+    });
+    if (unityLabel) {
+      const core = rtRotateProject({x:0,y:0,z:0});
+      unityLabel.style.left = `${core.x}px`;
+      unityLabel.style.top = `${core.y + unit * .055}px`;
+      unityLabel.style.opacity = String(clamp(1 - mix * 2.2, 0, 1));
+    }
+    if (activeWorld && mix > 0.22) {
+      subLabels.forEach((element, index) => {
+        const point = subScreen[index];
+        element.style.left = `${point.x}px`;
+        element.style.top = `${point.y - point.r * 1.5}px`;
+        element.style.opacity = String(ease((mix - .22) / .5));
+        element.style.pointerEvents = mix > .65 ? 'auto' : 'none';
+        element.classList.toggle('active', index === activeSub);
+      });
+    } else {
+      subLabels.forEach((element) => { element.style.opacity = '0'; element.style.pointerEvents = 'none'; });
+    }
+    app?.classList.toggle('detail', Boolean(activeWorld && mix > .05));
+  };
+
+  setHint = function rememberedTomorrowHint() {
+    if (!hint || window.__dreamUnityGameActive) return;
+    hint.textContent = activeWorld
+      ? 'ORBIT THE WORLD · CHOOSE A FORCE'
+      : 'DRAG THE DREAM · ENTER A WORLD';
+  };
+
+  render = function rememberedTomorrowRender(t) {
+    drawBackground(t);
+    const mix = ease(viewMix);
+    drawOverview(t, 1 - mix);
+    drawDetail(t, mix);
+    updateLabels();
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = 1;
+  };

@@ -1,10 +1,10 @@
 (() => {
   'use strict';
-  const VERSION = '20260828-stage-coral-2';
+  const VERSION = '20260828-remembered-tomorrow-3';
   const baseParts = Array.from({ length: 6 }, (_, index) =>
     `./visual-parts/part-${String(index + 1).padStart(2, '0')}.txt?v=${VERSION}`
   );
-  const overridePath = `./visual-parts/sovereign-coral-09.txt?v=${VERSION}`;
+  const overridePath = `./visual-parts/remembered-tomorrow-10.txt?v=${VERSION}`;
   const parts = [...baseParts, overridePath];
   const loader = document.getElementById('loading');
   const hint = document.getElementById('hint');
