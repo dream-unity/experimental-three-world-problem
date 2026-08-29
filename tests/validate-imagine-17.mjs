@@ -76,5 +76,5 @@ function inspect(queue,label){
 const started=performance.now();const first=api.buildQueue(10);const elapsed=performance.now()-started;const a=inspect(first,'first');assert.ok(elapsed<1000,`build ${elapsed}ms`);
 const second=api.buildQueue(10),b=inspect(second,'second');
 assert.equal([...a.families].filter(x=>b.families.has(x)).length,0);assert.equal([...a.profiles].filter(x=>b.profiles.has(x)).length,0);assert.equal([...a.wins].filter(x=>b.wins.has(x)).length,0);
-assert.equal(pkg.dependencies,undefined);
+assert.deepEqual(pkg.dependencies,{ai:'^6.0.271'});
 console.log(`Imagine-opening Become validated: 20/20 generated scenarios begin with Imagine that you/you're; scene ≤${a.maxScene}/34; 10 scenarios ${elapsed.toFixed(1)}ms; social min ${a.minSocial.toFixed(3)}; combined min ${a.minCombined.toFixed(3)}.`);

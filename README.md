@@ -10,7 +10,15 @@ The overview can be orbited by mouse or touch. One continuous 3D knot moves thro
 
 Three temporal layers inhabit the same geometry. A colourless delayed path is the inherited ghost: reflection and history following after the living system. Several faint paths ahead are remembered tomorrows—possibilities rather than prophecy or fate. The vivid present responds first to the visitor's hand, and its lower passage becomes a crystalline body-anchor. At the centre, an amber three-dimensional aperture is the owned core where awareness becomes agency. Dream Machine is a polyhedral cognition field; Dream Maker is a converging braid; Dream World is a material lattice. Selecting a world exposes its internal triad; selecting an internal label opens the corresponding game.
 
-The homepage attempts to begin **I Remember Tomorrow** automatically and exposes a persistent score control. Browsers that defer audible autoplay start it on the visitor's first interaction. An explicit off choice is remembered locally. The former voice/oracle interface remains fully removed.
+The homepage attempts to begin **I Remember Tomorrow** automatically and exposes a persistent score control. Browsers that defer audible autoplay start it on the visitor's first interaction. An explicit off choice is remembered locally. Unity temporarily ducks the score while speaking and restores the visitor's prior audio choice afterwards.
+
+## Unity voice assistant
+
+The amber owned core is also an accessible voice and text launcher. Unity can listen, speak, retain a short bounded conversation, answer questions, explain the three-world system, open any world or game, return home, and control the score or active game. The canvas responds independently while Unity is listening, thinking and speaking.
+
+Speech recognition and synthesis remain in the browser. Unity ranks installed `en-GB` voices for a calm, precise, original British delivery; the exact timbre depends on the visitor's browser and operating system. Typing remains available when microphone access is unavailable, declined or simply unwanted.
+
+Conversational turns first use the browser's built-in language model when it is supported and already installed; Unity never silently initiates the large model download. Other turns use a layered, latency-bounded service: Vercel AI Gateway through deployment identity when available, fast public encyclopaedic grounding for suitable factual questions, then zero-key generative capacity. Local navigation, time, date, arithmetic and Dream Unity explanations do not depend on an upstream model. Browser assets contain no provider credentials, and only recognised text—not microphone audio—is sent to the reply service.
 
 ## Nine-game cognitive division of labour
 
@@ -172,6 +180,8 @@ The governing distinction remains controlled as-if conviction, not literal confu
 - **Pinch or wheel:** zoom.
 - **Two-finger twist:** roll.
 - **Tap a world, then an internal title:** open its game.
+- **Tap the amber Unity core:** open voice mode and begin listening; the same panel accepts typed questions.
+- **Speak a site command:** open a world or game, return to Unity, control the score, or pause/restart the active game.
 - **Arrow keys:** move focus between the currently available worlds or capacities.
 - **Score control:** stop or resume *I Remember Tomorrow*.
 
@@ -194,6 +204,9 @@ The governing distinction remains controlled as-if conviction, not literal confu
 - `visual-parts/remembered-tomorrow-10.txt` — procedural temporal knot, delayed ghost, plural future paths, compression braid, matter crystallisation, Unity aperture and three immersive world fields.
 - `unity-cycle.css` — pure-white, low-interface visual presentation with crisp cyan, emerald, ultraviolet and amber phase identities.
 - `unity-ui.js` — homepage score control, autoplay recovery and keyboard world navigation.
+- `voice.js` — browser voice lifecycle, short conversation memory, local commands, resilient knowledge fallback and score ducking.
+- `voice.css` — responsive Unity console and listening/thinking/speaking states.
+- `api/realtime-session.js` — bounded Vercel reply service with Gateway, zero-key and public-knowledge fallback layers.
 - `assets/i-remember-tomorrow.mp3` — homepage score.
 - `styles.css` — common Dream Unity and arcade styling.
 - `become.css` — responsive Become interface and training readouts.
@@ -206,6 +219,7 @@ The governing distinction remains controlled as-if conviction, not literal confu
 - `arcade-parts/become-social-agency-10.txt` — forty social architectures, joint maximin selection, social prompts and prewarming.
 - `tests/role-drift.test.mjs` — deterministic relational-role tests.
 - `tests/validate.mjs` — syntax, nine-portal compatibility, speed, diversity, empathy and cross-session anti-repetition tests.
+- `tests/voice.test.mjs` — deterministic assistant, security, accessibility, provider-fallback and visual-state contract tests.
 
 ## Validation and deployment
 
@@ -213,6 +227,6 @@ The governing distinction remains controlled as-if conviction, not literal confu
 npm test
 ```
 
-GitHub Actions validates every push, waits for GitHub Pages to match the tested source byte-for-byte, verifies that the lean loader excludes the obsolete cloud path, checks the active social-agency markers and writes a machine-readable deployment receipt.
+GitHub Actions validates every push, waits for GitHub Pages to match the tested source byte-for-byte, verifies the assistant and lean game loader, checks the active social-agency markers, probes the voice service and writes a machine-readable deployment receipt.
 
 This is experimental cognitive-training gameplay, not a validated clinical, neurological or psychometric intervention.

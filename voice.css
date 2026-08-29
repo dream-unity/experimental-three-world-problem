@@ -1,0 +1,471 @@
+/* Unity Console — a voice and text surface grown from the owned core. */
+.du-unity-oracle,
+.du-voice-panel {
+  font-family: Inter, "Helvetica Neue", Arial, ui-sans-serif, system-ui, sans-serif;
+}
+
+.du-unity-oracle {
+  appearance: none;
+  width: clamp(106px, 14vmin, 138px);
+  height: clamp(106px, 14vmin, 138px);
+  padding: 0 8px 11px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 3px;
+  color: var(--ink);
+  cursor: pointer;
+  pointer-events: auto !important;
+  touch-action: manipulation;
+  isolation: isolate;
+  transition: opacity .25s ease, box-shadow .2s ease;
+}
+
+.du-unity-oracle::before,
+.du-unity-oracle::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: 50%;
+  top: 50%;
+  border-radius: 50%;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  transition: border-color .2s ease, box-shadow .2s ease, opacity .2s ease, transform .2s ease;
+}
+
+.du-unity-oracle::before {
+  width: 82%;
+  height: 82%;
+  border: 1px solid rgba(231, 164, 41, .2);
+  background: radial-gradient(circle, rgba(231, 164, 41, .075), rgba(231, 164, 41, 0) 68%);
+  box-shadow: 0 0 0 8px rgba(231, 164, 41, .018), 0 0 30px rgba(231, 164, 41, .08);
+}
+
+.du-unity-oracle::after {
+  width: 59%;
+  height: 59%;
+  border: 1px dashed rgba(11, 16, 32, .2);
+  opacity: .64;
+}
+
+.du-unity-oracle:hover::before,
+.du-unity-oracle:focus-visible::before {
+  border-color: rgba(231, 164, 41, .52);
+  box-shadow: 0 0 0 9px rgba(231, 164, 41, .035), 0 0 36px rgba(231, 164, 41, .16);
+  transform: translate(-50%, -50%) scale(1.045);
+}
+
+.du-unity-oracle:hover::after,
+.du-unity-oracle:focus-visible::after {
+  border-color: rgba(11, 16, 32, .38);
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(.94);
+}
+
+.du-unity-oracle:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px rgba(11, 16, 32, .66);
+}
+
+.du-unity-oracle .du-unity-signal {
+  width: 23px;
+  height: 1px;
+  flex: 0 0 1px;
+  border-radius: 0;
+  background: var(--unity);
+  box-shadow: none;
+  transition: width .2s ease, background .2s ease, box-shadow .2s ease;
+}
+
+.du-unity-oracle b {
+  margin-top: 2px;
+  color: var(--ink);
+  font: 850 6px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .25em;
+}
+
+.du-unity-oracle .du-unity-role {
+  color: #898f9a;
+  font: 500 4px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .16em;
+}
+
+.du-unity-oracle .du-oracle-invite {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 3px;
+  color: #9b711e;
+  font: 800 4.5px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .17em;
+  white-space: nowrap;
+  transition: color .2s ease, letter-spacing .2s ease;
+}
+
+.du-oracle-invite::before,
+.du-oracle-invite::after {
+  content: "";
+  width: 8px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(155, 113, 30, .58));
+}
+
+.du-oracle-invite::after { transform: scaleX(-1); }
+
+body[data-voice-state="listening"] .du-unity-oracle::before,
+#app[data-voice-state="listening"] > .du-unity-oracle::before {
+  border-color: rgba(0, 189, 232, .58);
+  box-shadow: 0 0 0 9px rgba(0, 189, 232, .04), 0 0 40px rgba(0, 189, 232, .2);
+  animation: du-core-listen 1.35s ease-in-out infinite;
+}
+
+body[data-voice-state="listening"] .du-unity-oracle::after,
+#app[data-voice-state="listening"] > .du-unity-oracle::after {
+  border-color: rgba(0, 189, 232, .46);
+  animation: du-core-iris 1.35s ease-in-out infinite reverse;
+}
+
+body[data-voice-state="listening"] .du-unity-signal,
+#app[data-voice-state="listening"] > .du-unity-oracle .du-unity-signal {
+  width: 34px;
+  background: var(--machine);
+  box-shadow: 0 0 10px rgba(0, 189, 232, .42);
+}
+
+body[data-voice-state="thinking"] .du-unity-oracle::before,
+#app[data-voice-state="thinking"] > .du-unity-oracle::before {
+  border-color: rgba(116, 72, 255, .48);
+  box-shadow: 0 0 0 9px rgba(116, 72, 255, .035), 0 0 38px rgba(116, 72, 255, .17);
+  animation: du-core-think 1.9s linear infinite;
+}
+
+body[data-voice-state="thinking"] .du-unity-oracle::after,
+#app[data-voice-state="thinking"] > .du-unity-oracle::after {
+  border-color: rgba(116, 72, 255, .4);
+  animation: du-core-think 2.7s linear infinite reverse;
+}
+
+body[data-voice-state="speaking"] .du-unity-oracle::before,
+#app[data-voice-state="speaking"] > .du-unity-oracle::before {
+  border-color: rgba(231, 164, 41, .7);
+  box-shadow: 0 0 0 9px rgba(231, 164, 41, .045), 0 0 46px rgba(231, 164, 41, .24);
+  animation: du-core-speak .72s ease-in-out infinite alternate;
+}
+
+body[data-voice-state="speaking"] .du-unity-oracle::after,
+#app[data-voice-state="speaking"] > .du-unity-oracle::after {
+  border-color: rgba(231, 164, 41, .6);
+  animation: du-core-iris .95s ease-in-out infinite alternate;
+}
+
+body[data-voice-state="speaking"] .du-unity-signal,
+#app[data-voice-state="speaking"] > .du-unity-oracle .du-unity-signal {
+  width: 40px;
+  box-shadow: 0 0 11px rgba(231, 164, 41, .5);
+}
+
+body[data-voice-state="listening"] .du-oracle-invite,
+body[data-voice-state="thinking"] .du-oracle-invite,
+body[data-voice-state="speaking"] .du-oracle-invite,
+#app[data-voice-state="listening"] > .du-unity-oracle .du-oracle-invite,
+#app[data-voice-state="thinking"] > .du-unity-oracle .du-oracle-invite,
+#app[data-voice-state="speaking"] > .du-unity-oracle .du-oracle-invite {
+  color: var(--ink);
+  letter-spacing: .2em;
+}
+
+.du-voice-panel {
+  position: absolute;
+  z-index: 34;
+  left: 50%;
+  top: calc(50% + clamp(76px, 9vmin, 100px));
+  width: min(350px, calc(100vw - 30px));
+  max-height: calc(50dvh - 28px);
+  padding: 14px 15px 12px;
+  overflow: auto;
+  border: 1px solid rgba(11, 16, 32, .2);
+  border-top: 2px solid var(--unity);
+  border-radius: 2px;
+  background: rgba(255, 255, 255, .965);
+  color: var(--ink);
+  box-shadow: 0 19px 58px rgba(11, 16, 32, .13);
+  backdrop-filter: blur(16px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translate(-50%, 9px);
+  transform-origin: 50% 0;
+  transition: opacity .2s ease, visibility .2s ease, transform .2s ease;
+}
+
+.du-voice-panel::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -12px;
+  width: 1px;
+  height: 10px;
+  background: linear-gradient(var(--unity), rgba(231, 164, 41, 0));
+}
+
+.du-voice-panel.open,
+.du-voice-panel[aria-hidden="false"] {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translate(-50%, 0);
+}
+
+.du-voice-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(11, 16, 32, .11);
+}
+
+.du-voice-head > div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.du-voice-head small {
+  color: #858b96;
+  font: 650 5px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .19em;
+}
+
+.du-voice-head strong {
+  font: 850 9px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .2em;
+}
+
+.du-voice-close {
+  appearance: none;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  display: grid;
+  place-items: center;
+  padding: 0 0 2px;
+  border: 1px solid rgba(11, 16, 32, .18);
+  border-radius: 0;
+  background: #fff;
+  color: #6f7580;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.du-voice-close:hover,
+.du-voice-close:focus-visible,
+.du-voice-action:hover,
+.du-voice-action:focus-visible,
+.du-voice-composer button:hover,
+.du-voice-composer button:focus-visible {
+  outline: none;
+  border-color: var(--ink);
+}
+
+.du-voice-status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 10px;
+  margin: 10px 0 0;
+  color: #777e8b;
+  font: 750 5.5px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .16em;
+}
+
+.du-voice-status::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  flex: 0 0 6px;
+  border: 1px solid var(--unity);
+  border-radius: 50%;
+  background: transparent;
+}
+
+body[data-voice-state="listening"] .du-voice-status::before,
+#app[data-voice-state="listening"] .du-voice-status::before { border-color: var(--machine); background: var(--machine); }
+body[data-voice-state="thinking"] .du-voice-status::before,
+#app[data-voice-state="thinking"] .du-voice-status::before { border-color: var(--reality); background: var(--reality); }
+body[data-voice-state="speaking"] .du-voice-status::before,
+#app[data-voice-state="speaking"] .du-voice-status::before { border-color: var(--unity); background: var(--unity); }
+body[data-voice-state="error"] .du-voice-status::before,
+#app[data-voice-state="error"] .du-voice-status::before { border-color: #ef7469; background: #ef7469; }
+
+body[data-voice-state="error"] .du-unity-oracle::before,
+#app[data-voice-state="error"] > .du-unity-oracle::before {
+  border-color: rgba(239, 116, 105, .58);
+  box-shadow: 0 0 0 9px rgba(239, 116, 105, .035), 0 0 34px rgba(239, 116, 105, .16);
+}
+
+.du-voice-transcript {
+  min-height: 39px;
+  margin: 9px 0 11px;
+  color: #353b47;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 11px;
+  line-height: 1.48;
+}
+
+.du-voice-action {
+  appearance: none;
+  width: 100%;
+  min-height: 36px;
+  padding: 8px 10px;
+  border: 1px solid rgba(11, 16, 32, .24);
+  border-left: 2px solid var(--unity);
+  border-radius: 0;
+  background: #fff;
+  color: var(--ink);
+  font: 800 6px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .19em;
+  cursor: pointer;
+  transition: background .18s ease, border-color .18s ease;
+}
+
+.du-voice-action:hover,
+.du-voice-action:focus-visible { background: #fffaf0; }
+.du-voice-action:disabled { cursor: wait; opacity: .55; }
+
+.du-voice-text {
+  margin-top: 10px;
+}
+
+.du-voice-text > label {
+  display: block;
+  margin-bottom: 5px;
+  color: #858b96;
+  font: 700 5px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .18em;
+}
+
+.du-voice-composer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 55px;
+}
+
+.du-voice-composer input,
+.du-voice-composer button {
+  appearance: none;
+  height: 36px;
+  border: 1px solid rgba(11, 16, 32, .2);
+  border-radius: 0;
+  background: rgba(255, 255, 255, .96);
+  color: var(--ink);
+}
+
+.du-voice-composer input {
+  min-width: 0;
+  padding: 0 10px;
+  border-right: 0;
+  outline: none;
+  font-size: 10px;
+}
+
+.du-voice-composer input::placeholder { color: #9da2ac; }
+.du-voice-composer input:focus { border-color: var(--ink); box-shadow: inset 2px 0 0 var(--machine); }
+
+.du-voice-composer button {
+  padding: 0;
+  font: 800 5.5px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .13em;
+  cursor: pointer;
+}
+
+.du-voice-privacy {
+  display: block;
+  margin-top: 8px;
+  color: #979ca6;
+  font: 600 4.5px/1.35 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .1em;
+}
+
+#app.detail > .du-voice-panel,
+#app.game-open > .du-voice-panel {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+@keyframes du-core-listen {
+  0%, 100% { transform: translate(-50%, -50%) scale(.98); }
+  50% { transform: translate(-50%, -50%) scale(1.07); }
+}
+
+@keyframes du-core-think {
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes du-core-speak {
+  from { transform: translate(-50%, -50%) scale(.97); }
+  to { transform: translate(-50%, -50%) scale(1.09); }
+}
+
+@keyframes du-core-iris {
+  from { transform: translate(-50%, -50%) scale(.92); opacity: .52; }
+  to { transform: translate(-50%, -50%) scale(1.05); opacity: 1; }
+}
+
+@media (min-width: 1061px) {
+  .du-voice-panel { left: 53%; }
+}
+
+@media (max-width: 760px) {
+  .du-unity-oracle {
+    width: 100px;
+    height: 100px;
+    padding-bottom: 7px;
+  }
+
+  .du-voice-panel {
+    top: auto;
+    right: 12px;
+    bottom: max(12px, env(safe-area-inset-bottom));
+    left: 12px;
+    width: auto;
+    max-height: min(42dvh, 280px);
+    transform: translateY(9px);
+  }
+
+  .du-voice-panel::before { display: none; }
+  .du-voice-panel.open,
+  .du-voice-panel[aria-hidden="false"] { transform: translateY(0); }
+}
+
+@media (max-width: 470px) {
+  .du-unity-oracle {
+    width: 92px;
+    height: 92px;
+  }
+
+  .du-unity-oracle .du-oracle-invite { font-size: 4px; }
+  .du-voice-panel { padding: 12px 12px 10px; }
+  .du-voice-transcript { min-height: 31px; margin: 8px 0 9px; font-size: 10.5px; }
+  .du-voice-action, .du-voice-composer input, .du-voice-composer button { height: 34px; min-height: 34px; }
+  .du-voice-privacy { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .du-unity-oracle,
+  .du-unity-oracle::before,
+  .du-unity-oracle::after,
+  .du-unity-signal,
+  .du-oracle-invite,
+  .du-voice-panel {
+    animation: none !important;
+    transition: none !important;
+  }
+}

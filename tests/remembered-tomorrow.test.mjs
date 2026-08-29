@@ -14,6 +14,8 @@ for (const path of [
   'index.html',
   'unity-cycle.css',
   'unity-ui.js',
+  'voice.css',
+  'voice.js',
   'main.js',
   override,
   'assets/i-remember-tomorrow.mp3',
@@ -32,8 +34,10 @@ assert.match(index, /DREAM[\s\S]*COMPRESS[\s\S]*REALISE[\s\S]*RETURN/);
 assert.match(index, /assets\/i-remember-tomorrow\.mp3/);
 assert.match(index, /id="scoreControl"/);
 assert.doesNotMatch(index, /MAKE THE<br \/>MIRROR|coralTexture|coral-sovereign-engine|phase-rail/);
-assert.doesNotMatch(index, /du-voice|data-voice|voice\.js|voice\.css|realtime-session|TAP TO SPEAK|SpeechRecognition|speechSynthesis/i);
-assert.match(loader, /VERSION = '20260828-remembered-tomorrow-4'/);
+assert.match(index, /data-voice-launcher/);
+assert.match(index, /voice\.css\?v=20260829-unity-console-1/);
+assert.match(index, /voice\.js\?v=20260829-unity-console-1/);
+assert.match(loader, /VERSION = '20260829-unity-voice-1'/);
 assert.match(loader, /remembered-tomorrow-10\.txt/);
 assert.match(theme, /--paper:#fff/);
 assert.match(theme, /--machine:#00bde8/);
@@ -54,6 +58,7 @@ for (const marker of [
   'rtDrawEtherParticles',
   'rtDrawMatter',
   'rtDrawUnity',
+  'Projected sound shells',
   "ctx.fillStyle = '#ffffff'",
   "WORLD.machine.css = '#00BDE8'",
   "WORLD.maker.css = '#00C983'",
@@ -72,4 +77,4 @@ execFileSync(process.execPath, ['--check', temporary], { stdio: 'inherit' });
 execFileSync(process.execPath, ['--check', new URL('../unity-ui.js', import.meta.url).pathname], { stdio: 'inherit' });
 assert.ok(statSync(new URL('../assets/i-remember-tomorrow.mp3', import.meta.url)).size > 1_000_000, 'homepage score is unexpectedly small');
 
-console.log('Returning Dream validated: pure-white field, temporal ghost/future/present, ether-to-matter cycle, owned Unity core, score, no voice, and nine-world contracts preserved.');
+console.log('Returning Dream validated: temporal dream field, voice-reactive owned Unity core, score, and nine-world contracts preserved.');

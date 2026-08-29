@@ -6,9 +6,12 @@
   <meta name="theme-color" content="#ffffff" />
   <meta name="description" content="Dream Unity — the returning dream: ether compressed through agency into matter, then released to possibility again." />
   <title>Dream Unity</title>
+  <link rel="dns-prefetch" href="//dream-unity-voice-live.vercel.app" />
+  <link rel="preconnect" href="https://dream-unity-voice-live.vercel.app" crossorigin />
   <link rel="stylesheet" href="./styles.css?v=20260824-9" />
   <link rel="stylesheet" href="./become.css?v=20260825-role-drift-become-1" />
-  <link rel="stylesheet" href="./unity-cycle.css?v=20260828-remembered-tomorrow-4" />
+  <link rel="stylesheet" href="./unity-cycle.css?v=20260829-unity-voice-1" />
+  <link rel="stylesheet" href="./voice.css?v=20260829-unity-console-1" />
 </head>
 <body>
   <main id="app" aria-label="Dream Unity interactive simulation">
@@ -37,7 +40,32 @@
     <button class="world-label" id="label-machine" data-world="machine" type="button"><span class="world-index">01</span><span class="world-copy"><strong>DREAM MACHINE</strong><small>PERCEIVE · MODEL · PREDICT</small></span><i aria-hidden="true"></i></button>
     <button class="world-label" id="label-maker" data-world="maker" type="button"><span class="world-index">02</span><span class="world-copy"><strong>DREAM MAKER</strong><small>INTEND · ACT · BECOME</small></span><i aria-hidden="true"></i></button>
     <button class="world-label" id="label-reality" data-world="reality" type="button"><span class="world-index">03</span><span class="world-copy"><strong>DREAM WORLD</strong><small>MATTER · STRUCTURE · EMERGE</small></span><i aria-hidden="true"></i></button>
-    <div class="unity-label" id="unityLabel"><span></span><b>UNITY</b><small>THE OWNED CORE</small></div>
+    <button class="unity-label du-unity-oracle" id="unityLabel" data-voice-launcher type="button" aria-label="Speak with Unity" aria-controls="duVoicePanel" aria-expanded="false">
+      <span class="du-unity-signal" aria-hidden="true"></span>
+      <b>UNITY</b>
+      <small class="du-unity-role">THE OWNED CORE</small>
+      <small class="du-oracle-invite" id="duOracleInvite" aria-hidden="true">SPEAK TO UNITY</small>
+    </button>
+    <section class="du-voice-panel" id="duVoicePanel" role="dialog" aria-label="Unity assistant" aria-describedby="duVoiceTranscript" aria-hidden="true">
+      <header class="du-voice-head">
+        <div>
+          <small>DREAM UNITY · ASSISTANT</small>
+          <strong id="duVoiceTitle">UNITY CONSOLE</strong>
+        </div>
+        <button class="du-voice-close" id="duVoiceClose" type="button" aria-label="Close Unity console">×</button>
+      </header>
+      <p class="du-voice-status" id="duVoiceStatus" aria-live="polite">STANDBY · READY WHEN YOU ARE</p>
+      <p class="du-voice-transcript" id="duVoiceTranscript" aria-live="polite">I’m Unity. Tap the core or type a thought to begin.</p>
+      <button class="du-voice-action" id="duVoiceAction" type="button">BEGIN LISTENING</button>
+      <form class="du-voice-text" id="duVoiceForm">
+        <label id="duVoiceTextLabel" for="duVoiceInput">TYPE TO UNITY</label>
+        <div class="du-voice-composer">
+          <input id="duVoiceInput" type="text" inputmode="text" enterkeyhint="send" autocomplete="off" maxlength="900" placeholder="Ask, navigate, or make a plan…" />
+          <button id="duVoiceSend" type="submit">SEND</button>
+        </div>
+      </form>
+      <small class="du-voice-privacy">YOUR BROWSER HANDLES THE MICROPHONE AND SPEECH · ONLY TEXT IS SENT FOR A REPLY</small>
+    </section>
     <button class="sub-label" id="sub-0" type="button"><strong>PERCEIVE</strong></button>
     <button class="sub-label" id="sub-1" type="button"><strong>MODEL</strong></button>
     <button class="sub-label" id="sub-2" type="button"><strong>PREDICT</strong></button>
@@ -63,8 +91,9 @@
   </main>
   <noscript>This experience requires JavaScript.</noscript>
   <script>window.setTimeout(function(){var el=document.getElementById('loading');if(el)el.classList.add('hide');},1800);</script>
-  <script src="./unity-ui.js?v=20260828-remembered-tomorrow-4"></script>
-  <script src="./main.js?v=20260828-remembered-tomorrow-4"></script>
+  <script src="./unity-ui.js?v=20260829-unity-voice-1"></script>
+  <script src="./main.js?v=20260829-unity-voice-1"></script>
   <script src="./arcade.js?v=20260827-fighter-jet-performance-20"></script>
+  <script src="./voice.js?v=20260829-unity-console-1" defer></script>
 </body>
 </html>

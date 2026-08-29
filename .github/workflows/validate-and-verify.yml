@@ -28,7 +28,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          grep -q "VERSION = '20260828-remembered-tomorrow-4'" main.js
+          grep -q "VERSION = '20260829-unity-voice-1'" main.js
           grep -q 'remembered-tomorrow-10.txt' main.js
           grep -q "ctx.fillStyle = '#ffffff'" visual-parts/remembered-tomorrow-10.txt
           grep -q 'render = function rememberedTomorrowRender' visual-parts/remembered-tomorrow-10.txt
@@ -45,12 +45,19 @@ jobs:
           grep -q 'Neither prophecy nor fate' index.html
           grep -q 'THE GHOST IN THE MIRROR' index.html
           grep -q 'assets/i-remember-tomorrow.mp3' index.html
-          ! grep -Eq 'du-voice|data-voice|voice\.js|voice\.css|realtime-session|dream-unity-voice-live|TAP TO SPEAK|SpeechRecognition|speechSynthesis' index.html
-          ! grep -Eq 'voiceState|Projected sound shells|oracle iris|coralTexture|black architectural wound' visual-parts/remembered-tomorrow-10.txt
-          test ! -e voice.js
-          test ! -e voice.css
-          test ! -e api/realtime-session.js
-          test ! -e tests/voice.test.mjs
+          grep -q 'data-voice-launcher' index.html
+          grep -q 'voice.css?v=20260829-unity-console-1' index.html
+          grep -q 'voice.js?v=20260829-unity-console-1' index.html
+          grep -q 'dream-unity-voice-live.vercel.app' voice.js
+          grep -q 'SpeechRecognition' voice.js
+          grep -q 'speechSynthesis' voice.js
+          grep -q 'LanguageModel.availability' voice.js
+          grep -q 'voiceState' visual-parts/remembered-tomorrow-10.txt
+          grep -q 'Projected sound shells' visual-parts/remembered-tomorrow-10.txt
+          test -s voice.js
+          test -s voice.css
+          test -s api/realtime-session.js
+          test -s tests/voice.test.mjs
           grep -q "WORLD.machine.css = '#00BDE8'" visual-parts/remembered-tomorrow-10.txt
           grep -q "WORLD.maker.css = '#00C983'" visual-parts/remembered-tomorrow-10.txt
           grep -q "WORLD.reality.css = '#7448FF'" visual-parts/remembered-tomorrow-10.txt
@@ -74,8 +81,7 @@ jobs:
           PAGE_URL: https://dream-unity.github.io/experimental-three-world-problem
         run: |
           set -euo pipefail
-          files=(index.html styles.css become.css unity-cycle.css unity-ui.js main.js arcade.js assets/i-remember-tomorrow.mp3 visual-parts/part-01.txt visual-parts/part-02.txt visual-parts/part-03.txt visual-parts/part-04.txt visual-parts/part-05.txt visual-parts/part-06.txt visual-parts/remembered-tomorrow-10.txt arcade-parts/part-01.txt arcade-parts/part-02.txt arcade-parts/part-03.txt arcade-parts/part-04.txt arcade-parts/part-05.txt arcade-parts/perceive-role-logic.txt arcade-parts/perceive-aerial-01.txt arcade-parts/perceive-aerial-02.txt arcade-parts/perceive-aerial-03.txt arcade-parts/perceive-aerial-04.txt arcade-parts/perceive-aerial-05.txt arcade-parts/perceive-aerial-06.txt arcade-parts/perceive-aerial-07.txt arcade-parts/perceive-aerial-08.txt arcade-parts/become-lab-01.txt arcade-parts/become-diversity-09.txt arcade-parts/become-social-agency-10.txt arcade-parts/become-social-integration-11.txt arcade-parts/become-compressed-12.txt arcade-parts/become-rapid-entry-13.txt arcade-parts/become-activation-objectives-14.txt)
-          retired_files=(voice.js voice.css api/realtime-session.js tests/voice.test.mjs)
+          files=(index.html styles.css become.css unity-cycle.css unity-ui.js voice.css voice.js main.js arcade.js assets/i-remember-tomorrow.mp3 visual-parts/part-01.txt visual-parts/part-02.txt visual-parts/part-03.txt visual-parts/part-04.txt visual-parts/part-05.txt visual-parts/part-06.txt visual-parts/remembered-tomorrow-10.txt arcade-parts/part-01.txt arcade-parts/part-02.txt arcade-parts/part-03.txt arcade-parts/part-04.txt arcade-parts/part-05.txt arcade-parts/perceive-role-logic.txt arcade-parts/perceive-aerial-01.txt arcade-parts/perceive-aerial-02.txt arcade-parts/perceive-aerial-03.txt arcade-parts/perceive-aerial-04.txt arcade-parts/perceive-aerial-05.txt arcade-parts/perceive-aerial-06.txt arcade-parts/perceive-aerial-07.txt arcade-parts/perceive-aerial-08.txt arcade-parts/become-lab-01.txt arcade-parts/become-diversity-09.txt arcade-parts/become-social-agency-10.txt arcade-parts/become-social-integration-11.txt arcade-parts/become-compressed-12.txt arcade-parts/become-rapid-entry-13.txt arcade-parts/become-activation-objectives-14.txt)
           rm -rf /tmp/dream-unity-live
           mkdir -p /tmp/dream-unity-live/arcade-parts /tmp/dream-unity-live/visual-parts /tmp/dream-unity-live/assets
           matched=false
@@ -85,19 +91,14 @@ jobs:
               if ! curl --fail --location --silent --show-error --retry 3 --retry-all-errors --retry-delay 2 "$PAGE_URL/$path?source=${GITHUB_SHA}" --output "/tmp/dream-unity-live/$path"; then matched=false; break; fi
               if ! cmp --silent "$path" "/tmp/dream-unity-live/$path"; then matched=false; break; fi
             done
-            if [ "$matched" = true ]; then
-              for path in "${retired_files[@]}"; do
-                if curl --fail --location --silent --head "$PAGE_URL/$path?source=${GITHUB_SHA}" >/dev/null; then matched=false; break; fi
-              done
-            fi
             if [ "$matched" = true ]; then break; fi
             echo "Pages has not propagated yet (attempt $attempt/60)."
             sleep 5
           done
           test "$matched" = true
 
-          grep -q 'main.js?v=20260828-remembered-tomorrow-4' /tmp/dream-unity-live/index.html
-          grep -q 'unity-cycle.css?v=20260828-remembered-tomorrow-4' /tmp/dream-unity-live/index.html
+          grep -q 'main.js?v=20260829-unity-voice-1' /tmp/dream-unity-live/index.html
+          grep -q 'unity-cycle.css?v=20260829-unity-voice-1' /tmp/dream-unity-live/index.html
           grep -q 'remembered-tomorrow-10.txt' /tmp/dream-unity-live/main.js
           grep -q "ctx.fillStyle = '#ffffff'" /tmp/dream-unity-live/visual-parts/remembered-tomorrow-10.txt
           grep -q 'render = function rememberedTomorrowRender' /tmp/dream-unity-live/visual-parts/remembered-tomorrow-10.txt
@@ -106,8 +107,12 @@ jobs:
           grep -q 'function rtDrawPossibleFutures' /tmp/dream-unity-live/visual-parts/remembered-tomorrow-10.txt
           grep -q 'function rtDrawDreamMembrane' /tmp/dream-unity-live/visual-parts/remembered-tomorrow-10.txt
           grep -q 'I REMEMBER TOMORROW' /tmp/dream-unity-live/index.html
-          ! grep -Eq 'du-voice|data-voice|voice\.js|voice\.css|realtime-session|dream-unity-voice-live|TAP TO SPEAK|SpeechRecognition|speechSynthesis' /tmp/dream-unity-live/index.html
-          ! grep -Eq 'voiceState|Projected sound shells|oracle iris|coralTexture|black architectural wound' /tmp/dream-unity-live/visual-parts/remembered-tomorrow-10.txt
+          grep -q 'data-voice-launcher' /tmp/dream-unity-live/index.html
+          grep -q 'voice.js?v=20260829-unity-console-1' /tmp/dream-unity-live/index.html
+          grep -q 'SpeechRecognition' /tmp/dream-unity-live/voice.js
+          grep -q 'speechSynthesis' /tmp/dream-unity-live/voice.js
+          grep -q 'voiceState' /tmp/dream-unity-live/visual-parts/remembered-tomorrow-10.txt
+          grep -q 'Projected sound shells' /tmp/dream-unity-live/visual-parts/remembered-tomorrow-10.txt
           grep -q "WORLD.machine.css = '#00BDE8'" /tmp/dream-unity-live/visual-parts/remembered-tomorrow-10.txt
           grep -q "WORLD.maker.css = '#00C983'" /tmp/dream-unity-live/visual-parts/remembered-tomorrow-10.txt
           grep -q "WORLD.reality.css = '#7448FF'" /tmp/dream-unity-live/visual-parts/remembered-tomorrow-10.txt
@@ -118,7 +123,8 @@ jobs:
           grep -q 'SOCIAL WIN' /tmp/dream-unity-live/arcade-parts/become-activation-objectives-14.txt
           grep -q 'SOLVED WHEN' /tmp/dream-unity-live/arcade-parts/become-activation-objectives-14.txt
           ! grep -q 'bShuffle(BECOME_SCENARIOS)' /tmp/dream-unity-live/arcade-parts/become-activation-objectives-14.txt
-          sha256sum /tmp/dream-unity-live/index.html /tmp/dream-unity-live/styles.css /tmp/dream-unity-live/become.css /tmp/dream-unity-live/unity-cycle.css /tmp/dream-unity-live/unity-ui.js /tmp/dream-unity-live/main.js /tmp/dream-unity-live/arcade.js /tmp/dream-unity-live/assets/* /tmp/dream-unity-live/visual-parts/*.txt /tmp/dream-unity-live/arcade-parts/*.txt > /tmp/live-checksums.txt
+          curl --fail --silent --show-error --retry 3 --retry-all-errors https://dream-unity-voice-live.vercel.app/api/realtime-session | grep -q '"ok":true'
+          sha256sum /tmp/dream-unity-live/index.html /tmp/dream-unity-live/styles.css /tmp/dream-unity-live/become.css /tmp/dream-unity-live/unity-cycle.css /tmp/dream-unity-live/unity-ui.js /tmp/dream-unity-live/voice.css /tmp/dream-unity-live/voice.js /tmp/dream-unity-live/main.js /tmp/dream-unity-live/arcade.js /tmp/dream-unity-live/assets/* /tmp/dream-unity-live/visual-parts/*.txt /tmp/dream-unity-live/arcade-parts/*.txt > /tmp/live-checksums.txt
 
       - name: Record Returning Dream and Become deployment
         shell: bash
@@ -150,9 +156,20 @@ jobs:
               'ether_compression_matter_return_cycle':True,
               'generated_core_asset':None,
               'homepage_score':'assets/i-remember-tomorrow.mp3',
-              'voice_interface_active':False,
+              'voice_interface_active':True,
+              'voice_assistant':{
+                'name':'Unity',
+                'speech_mode':'browser_native_en_gb_preferred',
+                'text_fallback':True,
+                'local_site_commands':True,
+                'on_device_prompt_api_when_ready':True,
+                'score_ducking':True,
+                'renderer_states':['idle','listening','thinking','speaking'],
+                'backend':'https://dream-unity-voice-live.vercel.app/api/realtime-session',
+                'provider_strategy':'on_device_then_vercel_gateway_then_public_knowledge_then_zero_key'
+              },
               'renderer_override':'visual-parts/remembered-tomorrow-10.txt',
-              'main_cache_version':'20260828-remembered-tomorrow-4'
+              'main_cache_version':'20260829-unity-voice-1'
             },
             'become':{
               'scenario_source':'instant_objective_driven_social_agency_maximin_synthesis',
