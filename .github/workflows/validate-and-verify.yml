@@ -37,7 +37,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          grep -q "VERSION = '20260829-unity-voice-2'" main.js
+          grep -q "VERSION = '20260829-unity-voice-3'" main.js
           grep -q 'remembered-tomorrow-10.txt' main.js
           grep -q "ctx.fillStyle = '#ffffff'" visual-parts/remembered-tomorrow-10.txt
           grep -q 'render = function rememberedTomorrowRender' visual-parts/remembered-tomorrow-10.txt
@@ -55,14 +55,16 @@ jobs:
           grep -q 'THE GHOST IN THE MIRROR' index.html
           grep -q 'assets/i-remember-tomorrow.mp3' index.html
           grep -q 'data-voice-launcher' index.html
-          grep -q 'voice.css?v=20260829-unity-console-2' index.html
-          grep -q 'voice.js?v=20260829-unity-console-2' index.html
+          grep -q 'styles.css?v=20260829-unity-voice-3' index.html
+          grep -q 'voice.css?v=20260829-unity-console-3' index.html
+          grep -q 'voice.js?v=20260829-unity-console-3' index.html
           grep -q 'dream-unity-voice-live.vercel.app' voice.js
           grep -q 'SpeechRecognition' voice.js
           grep -q 'speechSynthesis' voice.js
           grep -q 'LanguageModel.availability' voice.js
-          grep -q 'ENABLE ENHANCED UNITY' index.html
+          grep -q 'NEURAL VOICE LOADING' index.html
           grep -q 'puter.ai.speech2txt' voice.js
+          grep -q 'min-height:min(480px,100dvh)' styles.css
           grep -q 'voiceState' visual-parts/remembered-tomorrow-10.txt
           grep -q 'Projected sound shells' visual-parts/remembered-tomorrow-10.txt
           test -s voice.js
@@ -120,8 +122,8 @@ jobs:
           done
           test "$matched" = true
 
-          grep -q 'main.js?v=20260829-unity-voice-2' /tmp/dream-unity-live/index.html
-          grep -q 'unity-cycle.css?v=20260829-unity-voice-2' /tmp/dream-unity-live/index.html
+          grep -q 'main.js?v=20260829-unity-voice-3' /tmp/dream-unity-live/index.html
+          grep -q 'unity-cycle.css?v=20260829-unity-voice-3' /tmp/dream-unity-live/index.html
           grep -q 'remembered-tomorrow-10.txt' /tmp/dream-unity-live/main.js
           grep -q "ctx.fillStyle = '#ffffff'" /tmp/dream-unity-live/visual-parts/remembered-tomorrow-10.txt
           grep -q 'render = function rememberedTomorrowRender' /tmp/dream-unity-live/visual-parts/remembered-tomorrow-10.txt
@@ -131,7 +133,8 @@ jobs:
           grep -q 'function rtDrawDreamMembrane' /tmp/dream-unity-live/visual-parts/remembered-tomorrow-10.txt
           grep -q 'I REMEMBER TOMORROW' /tmp/dream-unity-live/index.html
           grep -q 'data-voice-launcher' /tmp/dream-unity-live/index.html
-          grep -q 'voice.js?v=20260829-unity-console-2' /tmp/dream-unity-live/index.html
+          grep -q 'styles.css?v=20260829-unity-voice-3' /tmp/dream-unity-live/index.html
+          grep -q 'voice.js?v=20260829-unity-console-3' /tmp/dream-unity-live/index.html
           grep -q 'SpeechRecognition' /tmp/dream-unity-live/voice.js
           grep -q 'speechSynthesis' /tmp/dream-unity-live/voice.js
           grep -q 'voiceState' /tmp/dream-unity-live/visual-parts/remembered-tomorrow-10.txt
@@ -309,7 +312,7 @@ jobs:
                 }
               },
               'renderer_override':'visual-parts/remembered-tomorrow-10.txt',
-              'main_cache_version':'20260829-unity-voice-2'
+              'main_cache_version':'20260829-unity-voice-3'
             },
             'become':{
               'scenario_source':'instant_objective_driven_social_agency_maximin_synthesis',

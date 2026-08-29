@@ -12,7 +12,7 @@
 *{box-sizing:border-box}
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 button{font:inherit;color:inherit;-webkit-tap-highlight-color:transparent}
-#app{position:relative;width:100vw;height:100dvh;min-height:480px;overflow:hidden;background:#02040a;isolation:isolate}
+#app{position:relative;width:100vw;height:100dvh;min-height:min(480px,100dvh);overflow:hidden;background:#02040a;isolation:isolate}
 #world{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:default}
 .vignette{position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 50% 46%,transparent 46%,rgba(0,0,0,.2) 76%,rgba(0,0,0,.7) 125%);z-index:2}
 .brand,.live{position:absolute;z-index:8;top:clamp(16px,3.2vh,30px);display:flex;align-items:center;gap:9px;font-size:9px;letter-spacing:.23em;font-weight:850;color:#aeb8d1;pointer-events:none;transition:opacity .25s ease}

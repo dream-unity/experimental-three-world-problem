@@ -24,6 +24,7 @@ for (const path of [
 
 const index = read('index.html');
 const loader = read('main.js');
+const baseStyles = read('styles.css');
 const theme = read('unity-cycle.css');
 const renderer = read(override);
 
@@ -35,9 +36,12 @@ assert.match(index, /assets\/i-remember-tomorrow\.mp3/);
 assert.match(index, /id="scoreControl"/);
 assert.doesNotMatch(index, /MAKE THE<br \/>MIRROR|coralTexture|coral-sovereign-engine|phase-rail/);
 assert.match(index, /data-voice-launcher/);
-assert.match(index, /voice\.css\?v=20260829-unity-console-2/);
-assert.match(index, /voice\.js\?v=20260829-unity-console-2/);
-assert.match(loader, /VERSION = '20260829-unity-voice-2'/);
+assert.match(index, /styles\.css\?v=20260829-unity-voice-3/);
+assert.match(index, /voice\.css\?v=20260829-unity-console-3/);
+assert.match(index, /voice\.js\?v=20260829-unity-console-3/);
+assert.match(index, /interactive-widget=resizes-content/);
+assert.match(baseStyles, /min-height:min\(480px,100dvh\)/, 'the keyboard-resized viewport must not be forced below 480px');
+assert.match(loader, /VERSION = '20260829-unity-voice-3'/);
 assert.match(loader, /remembered-tomorrow-10\.txt/);
 assert.match(theme, /--paper:#fff/);
 assert.match(theme, /--machine:#00bde8/);

@@ -183,11 +183,14 @@ body[data-voice-state="speaking"] .du-oracle-invite,
   position: absolute;
   z-index: 34;
   left: 50%;
-  top: calc(50% + clamp(76px, 9vmin, 100px));
+  top: auto;
+  bottom: max(12px, env(safe-area-inset-bottom));
   width: min(350px, calc(100vw - 30px));
-  max-height: calc(50dvh - 28px);
+  max-height: min(560px, calc(100dvh - max(24px, env(safe-area-inset-bottom))));
   padding: 14px 15px 12px;
   overflow: auto;
+  overscroll-behavior: contain;
+  scroll-padding-block: 12px 96px;
   border: 1px solid rgba(11, 16, 32, .2);
   border-top: 2px solid var(--unity);
   border-radius: 2px;
@@ -528,8 +531,12 @@ body[data-voice-state="error"] .du-unity-oracle::before,
     bottom: max(12px, env(safe-area-inset-bottom));
     left: 12px;
     width: auto;
-    max-height: min(42dvh, 280px);
+    max-height: min(72dvh, 520px);
     transform: translateY(9px);
+  }
+
+  .du-voice-panel:focus-within {
+    max-height: calc(100dvh - max(24px, env(safe-area-inset-bottom)));
   }
 
   .du-voice-panel::before { display: none; }

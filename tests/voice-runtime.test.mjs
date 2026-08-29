@@ -82,6 +82,7 @@ class FakeElement extends FakeEventTarget {
     this.textContent = '';
     this.value = '';
     this.volume = 1;
+    this.focusCalls = [];
   }
 
   setAttribute(name, value) {
@@ -94,6 +95,10 @@ class FakeElement extends FakeEventTarget {
 
   click() {
     this.dispatchEvent(new FakeEvent('click'));
+  }
+
+  focus(options) {
+    this.focusCalls.push(options);
   }
 }
 
@@ -181,7 +186,7 @@ const DEFAULT_VOICES = [
   },
 ];
 
-function createRecognition({ startFailure = null } = {}) {
+function createRecognition({ startFailure = null, emitStart = true } = {}) {
   const instances = [];
   class FakeRecognition {
     constructor() {
@@ -201,7 +206,7 @@ function createRecognition({ startFailure = null } = {}) {
 
     start() {
       if (startFailure) throw startFailure;
-      queueMicrotask(() => this.onstart?.());
+      if (emitStart) queueMicrotask(() => this.onstart?.());
     }
 
     stop() {
@@ -260,6 +265,7 @@ function createElements() {
 let activeHarness = null;
 
 function createHarness({
+  AudioContext,
   fetchImpl,
   MediaRecorder,
   mediaDevices,
@@ -313,6 +319,7 @@ function createHarness({
   sandbox.removeEventListener = windowEvents.removeEventListener.bind(windowEvents);
   sandbox.dispatchEvent = windowEvents.dispatchEvent.bind(windowEvents);
   if (MediaRecorder) sandbox.MediaRecorder = MediaRecorder;
+  if (AudioContext) sandbox.AudioContext = AudioContext;
   if (puter) sandbox.puter = puter;
   if (recognition?.Recognition) sandbox.SpeechRecognition = recognition.Recognition;
   document.onScriptAppend = (script) => {
@@ -351,6 +358,12 @@ function event(type, init = {}) {
 function finalRecognitionEvent(text) {
   const result = [{ transcript: text }];
   result.isFinal = true;
+  return { resultIndex: 0, results: [result] };
+}
+
+function interimRecognitionEvent(text) {
+  const result = [{ transcript: text }];
+  result.isFinal = false;
   return { resultIndex: 0, results: [result] };
 }
 
@@ -418,6 +431,29 @@ await run('typed form submission and SEND both produce visible local replies', a
   return harness;
 });
 
+await run('an active text-only launcher click visibly restores and focuses text mode', async () => {
+  const harness = createHarness();
+  const launcher = harness.elements.get('unityLabel');
+  const panel = harness.elements.get('duVoicePanel');
+  const input = harness.elements.get('duVoiceInput');
+  const status = harness.elements.get('duVoiceStatus');
+  const transcript = harness.elements.get('duVoiceTranscript');
+
+  launcher.click();
+  await waitFor(() => status.textContent === 'TEXT MODE READY', 'the first launcher click did not open text mode');
+  enterText(harness, 'unfinished thought');
+  transcript.textContent = 'sentinel that the active launcher must replace';
+
+  launcher.click();
+  assert.equal(panel.getAttribute('aria-hidden'), 'false');
+  assert.equal(status.textContent, 'TEXT MODE READY');
+  assert.match(transcript.textContent, /browser does not expose speech recognition.*text mode/i);
+  assert.equal(input.value, 'unfinished thought', 'returning to text mode should retain the draft');
+  assert.equal(input.focusCalls.length, 1, 'the active text-only launcher did not focus the composer');
+  assert.equal(input.focusCalls[0]?.preventScroll, true);
+  return harness;
+});
+
 await run('a synchronous recognition start failure visibly falls back to text', async () => {
   const startFailure = new DOMException('Recognition could not start.', 'NotAllowedError');
   const recognition = createRecognition({ startFailure });
@@ -441,6 +477,45 @@ await run('a synchronous recognition start failure visibly falls back to text', 
   enterText(harness, 'hello');
   harness.elements.get('duVoiceForm').dispatchEvent(event('submit'));
   await waitFor(() => transcript.textContent === 'Hello. I am ready.', 'text fallback was not usable after recognition failed');
+  return harness;
+});
+
+await run('recognition that never starts is bounded by a visible text-ready watchdog', async () => {
+  const recognition = createRecognition({ emitStart: false });
+  const harness = createHarness({ recognition });
+  const status = harness.elements.get('duVoiceStatus');
+  const transcript = harness.elements.get('duVoiceTranscript');
+
+  harness.elements.get('unityLabel').click();
+  await waitFor(
+    () => status.textContent === 'MICROPHONE DID NOT START · TEXT READY',
+    'silent browser recognition was not recovered by the start watchdog',
+    3_900
+  );
+  assert.match(transcript.textContent, /did not start speech recognition.*Type below/i);
+
+  enterText(harness, 'hello');
+  harness.elements.get('duVoiceForm').dispatchEvent(event('submit'));
+  await waitFor(() => transcript.textContent === 'Hello. I am ready.', 'text was not usable after the recognition watchdog');
+  await waitFor(() => status.textContent === 'READY FOR TEXT', 'watchdog recovery did not return to text-ready state');
+  return harness;
+});
+
+await run('the final interim transcript is submitted when recognition ends', async () => {
+  const recognition = createRecognition();
+  const harness = createHarness({ recognition });
+  const status = harness.elements.get('duVoiceStatus');
+  const transcript = harness.elements.get('duVoiceTranscript');
+
+  harness.elements.get('unityLabel').click();
+  await waitFor(() => status.textContent === 'LISTENING', 'native recognition never entered listening state');
+  const instance = recognition.instances.at(-1);
+  instance.onresult(interimRecognitionEvent('hello'));
+  assert.equal(transcript.textContent, 'hello');
+  instance.onend();
+
+  await waitFor(() => transcript.textContent === 'Hello. I am ready.', 'the last interim transcript was discarded on end');
+  await waitFor(() => status.textContent === 'READY FOR TEXT', 'interim finalisation did not finish the turn');
   return harness;
 });
 
@@ -487,7 +562,7 @@ await run('voices loaded after startup select Microsoft Ryan in British English'
   return harness;
 });
 
-await run('Enhanced Unity lazy-loads without auth, then authorises on a second direct click and answers', async () => {
+await run('Neural Unity prewarms without auth, then authorises on one direct click and answers', async () => {
   let signedIn = false;
   const signInCalls = [];
   const chatCalls = [];
@@ -503,7 +578,14 @@ await run('Enhanced Unity lazy-loads without auth, then authorises on a second d
     ai: {
       chat: async (messages, options) => {
         chatCalls.push({ messages, options });
-        return { message: { content: '<think>Private comparison that must never be exposed.</think>Titanium keeps its strength with remarkably little weight.' } };
+        return {
+          message: {
+            content: [
+              { type: 'text', text: '<think>Private comparison that must never be exposed.</think>' },
+              { type: 'text', text: 'Titanium keeps its strength with remarkably little weight.' },
+            ],
+          },
+        };
       },
     },
   };
@@ -513,25 +595,23 @@ await run('Enhanced Unity lazy-loads without auth, then authorises on a second d
   const status = harness.elements.get('duVoiceStatus');
   const transcript = harness.elements.get('duVoiceTranscript');
 
-  assert.equal(harness.document.appendedScripts.length, 0, 'Puter must not load before explicit consent');
-  enhanced.click();
-  await waitFor(
-    () => enhanced.textContent === 'CONNECT ENHANCED UNITY',
-    'the first click did not finish the lazy SDK setup'
-  );
-  assert.equal(harness.document.appendedScripts.length, 1, 'the first click should append exactly one SDK script');
+  assert.equal(harness.document.appendedScripts.length, 1, 'startup should prewarm exactly one Puter SDK script');
   assert.equal(harness.document.appendedScripts[0].src, 'https://js.puter.com/v2/');
-  assert.equal(signInCalls.length, 0, 'lazy SDK setup must not open authentication');
-  assert.match(hint.textContent, /Puter is ready.*Tap Connect Enhanced Unity/i);
+  assert.equal(signInCalls.length, 0, 'SDK prewarming must not open authentication');
+  await waitFor(
+    () => enhanced.textContent === 'ACTIVATE NEURAL UNITY',
+    'the prewarmed SDK did not expose the one-tap activation control'
+  );
+  assert.match(hint.textContent, /One tap creates a temporary Puter session or connects an existing one/i);
 
   enhanced.click();
   await waitFor(
     () => enhanced.dataset.connected === 'true',
-    'the second direct click did not activate Enhanced Unity'
+    'one direct click did not activate Neural Unity'
   );
   assert.equal(signInCalls.length, 1);
   assert.equal(signInCalls[0].attempt_temp_user_creation, true);
-  assert.equal(status.textContent, 'ENHANCED UNITY ONLINE');
+  assert.equal(enhanced.textContent, 'NEURAL UNITY · ACTIVE');
 
   enterText(harness, 'Write one sentence about titanium.');
   harness.elements.get('duVoiceForm').dispatchEvent(event('submit'));
@@ -539,30 +619,119 @@ await run('Enhanced Unity lazy-loads without auth, then authorises on a second d
     () => transcript.textContent === 'Titanium keeps its strength with remarkably little weight.',
     'the enhanced chat answer did not become visible'
   );
-  await waitFor(() => status.textContent === 'READY FOR TEXT', 'enhanced chat did not release the text composer');
-  assert.equal(chatCalls.length, 1, 'the enhanced prompt should produce one chat request');
-  assert.equal(chatCalls[0].options.model, 'gpt-5-nano');
+  await waitFor(() => status.textContent === 'READY FOR TEXT', 'neural chat did not release the text composer');
+  assert.equal(chatCalls.length, 1, 'the neural prompt should produce one chat request');
+  assert.equal(chatCalls[0].options.model, 'openai/gpt-5.6-luna');
+  assert.equal(chatCalls[0].options.reasoning_effort, 'none');
+  assert.equal(chatCalls[0].options.verbosity, 'low');
+  assert.equal(chatCalls[0].options.max_tokens, 512);
   assert.equal(chatCalls[0].messages.at(-1).content, 'Write one sentence about titanium.');
   assert.equal(
     harness.speechSynthesis.spoken.at(-1)?.text,
     'Titanium keeps its strength with remarkably little weight.',
-    'native speech should remain available when enhanced TTS is absent'
+    'native speech should remain available when neural TTS is absent'
   );
   return harness;
 });
 
-await run('an Enhanced Unity audio play rejection falls back to native speech without locking', async () => {
+await run('a text turn submitted during Neural Unity auth owns the final answer and audio', async () => {
+  let signedIn = false;
+  let resolveAuth;
+  let resolveBackend;
+  const signInCalls = [];
+  const backendRequests = [];
+  const authRequest = new Promise((resolve) => { resolveAuth = resolve; });
+  const backendResponse = new Promise((resolve) => { resolveBackend = resolve; });
+  const puter = {
+    auth: {
+      isSignedIn: () => signedIn,
+      signIn: (options) => {
+        signInCalls.push(options);
+        return authRequest;
+      },
+    },
+    ai: {},
+  };
+  const harness = createHarness({
+    puter,
+    fetchImpl: async (url, options = {}) => {
+      if ((options.method || 'GET') === 'POST') {
+        backendRequests.push(String(url));
+        return backendResponse;
+      }
+      return { ok: true, status: 200, json: async () => ({ ok: true }) };
+    },
+  });
+  const enhanced = harness.elements.get('duEnhancedButton');
+  const status = harness.elements.get('duVoiceStatus');
+  const transcript = harness.elements.get('duVoiceTranscript');
+
+  await waitFor(() => enhanced.textContent === 'ACTIVATE NEURAL UNITY', 'Neural Unity was not ready to authorise');
+  enhanced.click();
+  await waitFor(() => signInCalls.length === 1, 'the direct activation did not start authorization');
+  assert.equal(enhanced.disabled, true, 'the activation control should be single-flight while authorization is pending');
+
+  enterText(harness, 'Give me a compact systems check.');
+  harness.elements.get('duVoiceForm').dispatchEvent(event('submit'));
+  await waitFor(() => backendRequests.length === 1, 'text did not enter the normal answer path during authorization');
+  assert.equal(transcript.textContent, 'Unity is thinking…');
+
+  signedIn = true;
+  resolveAuth({ success: true });
+  await waitFor(() => enhanced.dataset.connected === 'true', 'authorization did not complete');
+  assert.equal(
+    transcript.textContent,
+    'Unity is thinking…',
+    'authorization completion overwrote the in-flight text turn'
+  );
+  assert.equal(
+    harness.speechSynthesis.spoken.some((utterance) => /Neural Unity is online/i.test(utterance.text)),
+    false,
+    'authorization completion played a stale neural preview over the text turn'
+  );
+
+  resolveBackend({
+    ok: true,
+    status: 200,
+    json: async () => ({ text: 'All core systems are responsive.', path: 'test-backend' }),
+  });
+  await waitFor(
+    () => transcript.textContent === 'All core systems are responsive.',
+    'the text answer did not remain the owning response after authorization'
+  );
+  await waitFor(() => status.textContent === 'READY FOR TEXT', 'the text turn did not return to ready state');
+  assert.deepEqual(
+    harness.speechSynthesis.spoken.map((utterance) => utterance.text),
+    ['All core systems are responsive.'],
+    'only the owning text answer should be spoken'
+  );
+  return harness;
+});
+
+await run('blocked Neural Unity autoplay exposes Play Reply without duplicate native speech', async () => {
   const unhandledAtStart = unhandledRejections.length;
   const ttsCalls = [];
+  let playCalls = 0;
+  const audio = {
+    pause() {},
+    play() {
+      playCalls += 1;
+      if (playCalls === 1) {
+        return Promise.reject(new DOMException('Audio playback was blocked.', 'NotAllowedError'));
+      }
+      queueMicrotask(() => {
+        audio.onplay?.();
+        audio.onended?.();
+      });
+      return Promise.resolve();
+    },
+  };
   const puter = {
     auth: { isSignedIn: () => true, signIn: async () => ({ success: true }) },
     ai: {
       txt2speech: async (text, options) => {
         ttsCalls.push({ text, options });
-        return {
-          pause() {},
-          play: () => Promise.reject(new DOMException('Audio playback was blocked.', 'NotAllowedError')),
-        };
+        return audio;
       },
     },
   };
@@ -571,25 +740,106 @@ await run('an Enhanced Unity audio play rejection falls back to native speech wi
   const send = harness.elements.get('duVoiceSend');
   const status = harness.elements.get('duVoiceStatus');
   const transcript = harness.elements.get('duVoiceTranscript');
+  const preview = harness.elements.get('duVoicePreview');
 
-  enhanced.click();
-  await waitFor(() => enhanced.dataset.connected === 'true', 'pre-authorised enhanced mode did not activate');
+  await waitFor(() => enhanced.dataset.connected === 'true', 'pre-authorised Neural Unity did not auto-activate');
   enterText(harness, 'hello');
   harness.elements.get('duVoiceForm').dispatchEvent(event('submit'));
-  await waitFor(() => ttsCalls.length === 1, 'enhanced TTS was not attempted');
-  await waitFor(
-    () => harness.speechSynthesis.spoken.some((utterance) => utterance.text === 'Hello. I am ready.'),
-    'native synthesis did not take over after enhanced playback failed'
-  );
-  await waitFor(() => status.textContent === 'READY FOR TEXT', 'enhanced playback failure did not release the turn');
+  await waitFor(() => ttsCalls.length === 1, 'neural TTS was not attempted');
+  await waitFor(() => preview.textContent === 'PLAY REPLY', 'blocked autoplay did not expose Play Reply');
+  await waitFor(() => status.textContent === 'READY FOR TEXT', 'blocked autoplay did not release the turn');
   assert.equal(transcript.textContent, 'Hello. I am ready.');
-  assert.equal(ttsCalls[0].options.voice, 'onyx');
-  assert.equal(ttsCalls[0].options.model, 'gpt-4o-mini-tts');
-  await new Promise((resolve) => setTimeout(resolve, 20));
-  enterText(harness, 'where am i');
-  assert.equal(send.disabled, false, 'enhanced playback failure busy-locked the composer');
+  assert.equal(ttsCalls[0].options.provider, 'elevenlabs');
+  assert.equal(ttsCalls[0].options.model, 'eleven_multilingual_v2');
+  assert.equal(ttsCalls[0].options.voice, 'onwK4e9ZLuTAKqWW03F9');
+  assert.equal(
+    harness.speechSynthesis.spoken.filter((utterance) => utterance.text === 'Hello. I am ready.').length,
+    0,
+    'blocked generated audio should not produce a duplicate native reading'
+  );
+  assert.equal(send.disabled, true, 'the cleared composer should remain ready for new input');
   assert.notEqual(harness.document.body.dataset.voiceState, 'speaking');
-  assert.equal(unhandledRejections.length, unhandledAtStart, 'enhanced playback rejection escaped unhandled');
+  assert.equal(unhandledRejections.length, unhandledAtStart, 'blocked autoplay escaped as an unhandled rejection');
+
+  preview.click();
+  await waitFor(() => playCalls === 2, 'Play Reply did not retry the pending generated audio');
+  await waitFor(() => status.textContent === 'READY FOR TEXT', 'manual playback did not return to text-ready state');
+  assert.equal(preview.textContent, 'PREVIEW VOICE');
+  assert.equal(unhandledRejections.length, unhandledAtStart, 'manual playback escaped as an unhandled rejection');
+  return harness;
+});
+
+await run('Neural Unity falls back from ElevenLabs Daniel to OpenAI onyx', async () => {
+  const ttsCalls = [];
+  const audio = {
+    pause() {},
+    play() {
+      queueMicrotask(() => {
+        audio.onplay?.();
+        audio.onended?.();
+      });
+      return Promise.resolve();
+    },
+  };
+  const puter = {
+    auth: { isSignedIn: () => true, signIn: async () => ({ success: true }) },
+    ai: {
+      txt2speech: async (text, options) => {
+        ttsCalls.push({ text, options });
+        if (ttsCalls.length === 1) throw new Error('ElevenLabs unavailable');
+        return audio;
+      },
+    },
+  };
+  const harness = createHarness({ puter });
+  const enhanced = harness.elements.get('duEnhancedButton');
+  const status = harness.elements.get('duVoiceStatus');
+
+  await waitFor(() => enhanced.dataset.connected === 'true', 'pre-authorised Neural Unity did not auto-activate');
+  enterText(harness, 'hello');
+  harness.elements.get('duVoiceForm').dispatchEvent(event('submit'));
+  await waitFor(() => ttsCalls.length === 2, 'OpenAI voice fallback was not attempted');
+  await waitFor(() => status.textContent === 'READY FOR TEXT', 'fallback voice did not finish the turn');
+
+  assert.equal(ttsCalls[0].options.provider, 'elevenlabs');
+  assert.equal(ttsCalls[0].options.model, 'eleven_multilingual_v2');
+  assert.equal(ttsCalls[0].options.voice, 'onwK4e9ZLuTAKqWW03F9');
+  assert.equal(ttsCalls[1].options.provider, 'openai');
+  assert.equal(ttsCalls[1].options.model, 'gpt-4o-mini-tts');
+  assert.equal(ttsCalls[1].options.voice, 'onyx');
+  assert.match(ttsCalls[1].options.instructions, /original adult British male synthetic voice/i);
+  assert.equal(
+    harness.speechSynthesis.spoken.filter((utterance) => utterance.text === 'Hello. I am ready.').length,
+    0,
+    'a successful neural fallback should not also invoke native synthesis'
+  );
+  return harness;
+});
+
+await run('core text replies do not wait for or initiate Puter authentication', async () => {
+  let signInCalls = 0;
+  const puter = {
+    auth: {
+      isSignedIn: () => false,
+      signIn: () => {
+        signInCalls += 1;
+        return new Promise(() => {});
+      },
+    },
+    ai: {},
+  };
+  const harness = createHarness({ puter });
+  const enhanced = harness.elements.get('duEnhancedButton');
+  const status = harness.elements.get('duVoiceStatus');
+  const transcript = harness.elements.get('duVoiceTranscript');
+
+  await waitFor(() => enhanced.textContent === 'ACTIVATE NEURAL UNITY', 'unsigned Puter state was not reflected');
+  enterText(harness, 'hello');
+  harness.elements.get('duVoiceForm').dispatchEvent(event('submit'));
+  await waitFor(() => transcript.textContent === 'Hello. I am ready.', 'core text waited for neural authentication');
+  await waitFor(() => status.textContent === 'READY FOR TEXT', 'core text did not return to ready state');
+  assert.equal(signInCalls, 0, 'text submission must not initiate Puter authentication');
+  assert.equal(enhanced.dataset.connected, 'false');
   return harness;
 });
 
@@ -625,8 +875,7 @@ await run('Enhanced Unity records and transcribes when native SpeechRecognition 
   const status = harness.elements.get('duVoiceStatus');
   const transcript = harness.elements.get('duVoiceTranscript');
 
-  enhanced.click();
-  await waitFor(() => enhanced.dataset.connected === 'true', 'enhanced microphone fallback did not activate');
+  await waitFor(() => enhanced.dataset.connected === 'true', 'pre-authorised neural microphone fallback did not auto-activate');
   action.click();
   await waitFor(
     () => status.textContent === 'LISTENING · TAP FINISH WHEN DONE',
@@ -648,6 +897,94 @@ await run('Enhanced Unity records and transcribes when native SpeechRecognition 
     harness.speechSynthesis.spoken.some((utterance) => utterance.text === 'Hello. I am ready.'),
     'the transcribed turn did not reach reply speech'
   );
+  return harness;
+});
+
+await run('voice activity detection auto-stops after speech followed by silence', async () => {
+  const recorder = createMediaRecorder();
+  const speechToTextCalls = [];
+  let stoppedTracks = 0;
+  let sampleReads = 0;
+  let sourceDisconnects = 0;
+  let analyserDisconnects = 0;
+  let contextCloses = 0;
+  const stream = {
+    getTracks: () => [{ stop: () => { stoppedTracks += 1; } }],
+  };
+  const analyser = {
+    fftSize: 0,
+    smoothingTimeConstant: 0,
+    disconnect() { analyserDisconnects += 1; },
+    getByteTimeDomainData(samples) {
+      sampleReads += 1;
+      // Four loud frames yield two qualifying speech frames after the VAD's
+      // startup guard. All following frames are digital silence.
+      samples.fill(sampleReads <= 4 ? 160 : 128);
+    },
+  };
+  const source = {
+    connect(target) { assert.equal(target, analyser); },
+    disconnect() { sourceDisconnects += 1; },
+  };
+  class FakeAudioContext {
+    createMediaStreamSource(receivedStream) {
+      assert.equal(receivedStream, stream);
+      return source;
+    }
+
+    createAnalyser() {
+      return analyser;
+    }
+
+    resume() {
+      return Promise.resolve();
+    }
+
+    close() {
+      contextCloses += 1;
+      return Promise.resolve();
+    }
+  }
+  const puter = {
+    auth: { isSignedIn: () => true, signIn: async () => ({ success: true }) },
+    ai: {
+      speech2txt: async (blob, options) => {
+        speechToTextCalls.push({ blob, options });
+        return { text: 'hello' };
+      },
+    },
+  };
+  const harness = createHarness({
+    AudioContext: FakeAudioContext,
+    MediaRecorder: recorder.MediaRecorder,
+    mediaDevices: { getUserMedia: async () => stream },
+    puter,
+  });
+  const enhanced = harness.elements.get('duEnhancedButton');
+  const status = harness.elements.get('duVoiceStatus');
+  const transcript = harness.elements.get('duVoiceTranscript');
+
+  await waitFor(() => enhanced.dataset.connected === 'true', 'pre-authorised Neural Unity did not auto-activate');
+  harness.elements.get('duVoiceAction').click();
+  await waitFor(
+    () => status.textContent === 'LISTENING · SPEAK, THEN PAUSE',
+    'AudioContext did not activate automatic silence detection'
+  );
+  assert.equal(recorder.instances.length, 1);
+
+  await waitFor(
+    () => recorder.instances[0].state === 'inactive',
+    'speech followed by silence did not auto-stop recording',
+    2_400
+  );
+  await waitFor(() => speechToTextCalls.length === 1, 'auto-stopped audio was not transcribed');
+  await waitFor(() => transcript.textContent === 'Hello. I am ready.', 'the auto-stopped transcript did not enter the turn path');
+  assert.ok(sampleReads >= 10, 'the VAD did not observe a sustained silent tail');
+  assert.ok(sourceDisconnects >= 1, 'the VAD media source was not disconnected');
+  assert.ok(analyserDisconnects >= 1, 'the VAD analyser was not disconnected');
+  assert.ok(contextCloses >= 1, 'the VAD AudioContext was not closed');
+  assert.ok(stoppedTracks >= 1, 'the VAD auto-stop did not release the microphone stream');
+  assert.ok(speechToTextCalls[0].blob.size > 0);
   return harness;
 });
 
@@ -696,8 +1033,7 @@ await run('a pending microphone grant is single-flight and is discarded when Enh
   const action = harness.elements.get('duVoiceAction');
   const launcher = harness.elements.get('unityLabel');
 
-  enhanced.click();
-  await waitFor(() => enhanced.dataset.connected === 'true', 'Enhanced Unity did not activate');
+  await waitFor(() => enhanced.dataset.connected === 'true', 'pre-authorised Neural Unity did not auto-activate');
   action.click();
   await waitFor(() => getUserMediaCalls === 1, 'the first microphone request did not start');
   assert.equal(action.textContent, 'AWAITING MICROPHONE…');
@@ -742,8 +1078,7 @@ await run('an empty MediaRecorder stop visibly returns to retry and leaves text 
   const status = harness.elements.get('duVoiceStatus');
   const transcript = harness.elements.get('duVoiceTranscript');
 
-  enhanced.click();
-  await waitFor(() => enhanced.dataset.connected === 'true', 'Enhanced Unity did not activate');
+  await waitFor(() => enhanced.dataset.connected === 'true', 'pre-authorised Neural Unity did not auto-activate');
   action.click();
   await waitFor(() => status.textContent === 'LISTENING · TAP FINISH WHEN DONE', 'recording did not start');
   action.click();
@@ -784,8 +1119,7 @@ await run('an asynchronous native recognition network error starts the authorise
   const enhanced = harness.elements.get('duEnhancedButton');
   const status = harness.elements.get('duVoiceStatus');
 
-  enhanced.click();
-  await waitFor(() => enhanced.dataset.connected === 'true', 'Enhanced Unity did not activate');
+  await waitFor(() => enhanced.dataset.connected === 'true', 'pre-authorised Neural Unity did not auto-activate');
   harness.elements.get('duVoiceAction').click();
   await waitFor(() => status.textContent === 'LISTENING', 'native recognition did not begin');
   const instance = recognition.instances.at(-1);
