@@ -1,7 +1,7 @@
 {
   "project": "Dream Unity \u2014 Experimental Three-World Problem",
   "deployment": "verified-live",
-  "source_sha": "09ef67c86cef10034ce4fe8f369785f2c9b2f173",
+  "source_sha": "6216a0b371fedfa1d0e45e73018f718106e9256f",
   "page_url": "https://dream-unity.github.io/experimental-three-world-problem/",
   "nine_portal_compatibility": "validated",
   "overview": {
@@ -22,9 +22,25 @@
     "ether_compression_matter_return_cycle": true,
     "generated_core_asset": null,
     "homepage_score": "assets/i-remember-tomorrow.mp3",
-    "voice_interface_active": false,
+    "voice_interface_active": true,
+    "voice_assistant": {
+      "name": "Unity",
+      "speech_mode": "browser_native_en_gb_preferred",
+      "text_fallback": true,
+      "local_site_commands": true,
+      "on_device_prompt_api_when_ready": true,
+      "score_ducking": true,
+      "renderer_states": [
+        "idle",
+        "listening",
+        "thinking",
+        "speaking"
+      ],
+      "backend": "https://dream-unity-voice-live.vercel.app/api/realtime-session",
+      "provider_strategy": "on_device_then_vercel_gateway_then_public_knowledge_then_zero_key"
+    },
     "renderer_override": "visual-parts/remembered-tomorrow-10.txt",
-    "main_cache_version": "20260828-remembered-tomorrow-4"
+    "main_cache_version": "20260829-unity-voice-1"
   },
   "become": {
     "scenario_source": "instant_objective_driven_social_agency_maximin_synthesis",
@@ -44,12 +60,14 @@
     "original_scenario_bank_used_as_fallback": false
   },
   "sha256": [
-    "e57477b8e03b7a173ec7ef36d7856bda387ab99c8102dbe43fa98436fd198d37  /tmp/dream-unity-live/index.html",
+    "f278372b3f47b2baabd8f44d6534c0a1b2d1fa8e85d0ee6a70da668a5fbfb199  /tmp/dream-unity-live/index.html",
     "008f907be470e8b387badb2534fa4df0c55b5bfc1c71c75d1beb9ef9ed963191  /tmp/dream-unity-live/styles.css",
     "ad8dc6788a87c34201b132b88d8e5eb3ed439a0644f54a9610d2398d1b877536  /tmp/dream-unity-live/become.css",
     "bab36b8ae6791ed17fc0a8a488b358064ced07dab0d73a18cdb774d75213449d  /tmp/dream-unity-live/unity-cycle.css",
     "7ca87e44d81300b985a640ddedb8d76a2a198cee10ff85f2d25304ff90320eae  /tmp/dream-unity-live/unity-ui.js",
-    "be3710caf867b1106627c4de8167cbe9fdae1bfd4ed10089e940454652119081  /tmp/dream-unity-live/main.js",
+    "66aa410220dd4a3a269181f2f9a465538fe8538f874abb3e77092a127182efe7  /tmp/dream-unity-live/voice.css",
+    "e3e1c07ecabce5d456bc69baa126fe5f63c7bf96a0f051c848557f708e9b24c8  /tmp/dream-unity-live/voice.js",
+    "73791926cfec1f9fdf81dbcd1a89d57cbe502e3178687c9bfb66a70aae8fbc02  /tmp/dream-unity-live/main.js",
     "4e4dbd47aa1483e6c302ef83fd4f79107d3a31f55548672cb2547a4f7dbadb41  /tmp/dream-unity-live/arcade.js",
     "621ea2851f570523470594ae6f1e3dcd7e9e325c134fa6fea794c2fbdbbfdc32  /tmp/dream-unity-live/assets/i-remember-tomorrow.mp3",
     "56721366312283387c98c07da9086f9a7b4b68e6d349ede5080d53159673236b  /tmp/dream-unity-live/visual-parts/part-01.txt",
@@ -58,7 +76,7 @@
     "f91050909c1d1273adb79287ab72a97c3edb7be7aba8cfb5f32fedbfd57ec48b  /tmp/dream-unity-live/visual-parts/part-04.txt",
     "89fbc4d3fd257fe31d07aa25d9309116abe8cb8f592cb439af8e0321a597a83c  /tmp/dream-unity-live/visual-parts/part-05.txt",
     "d0bfbe2ac2c8e00d382d6f3f25a4be119a5697b9cdf77e6fea3ffdfb4f67ab3c  /tmp/dream-unity-live/visual-parts/part-06.txt",
-    "6348ac05c80a3a09c8a657d568086711dbb11ba4e9dd5dfd6930c3c849ae29db  /tmp/dream-unity-live/visual-parts/remembered-tomorrow-10.txt",
+    "7461c3b476a2ac5037ae9dfaacfb7ab8be5c9ca6edd20a038447218dc2dbbea4  /tmp/dream-unity-live/visual-parts/remembered-tomorrow-10.txt",
     "ad5bb93ac121c585cfec3db4e1e3c2914e2ed8b8a0459d98781bcd8e8a462df1  /tmp/dream-unity-live/arcade-parts/become-activation-objectives-14.txt",
     "53b6481086fa2be2aba90a9570c78162e8e3b0bfa856632d3cbfb62b9f317c7a  /tmp/dream-unity-live/arcade-parts/become-compressed-12.txt",
     "ddc1eae5b9d4b4d92c6b2548be18a77a9ae944a84890c1c4bf6a9d788f054848  /tmp/dream-unity-live/arcade-parts/become-diversity-09.txt",
@@ -81,5 +99,5 @@
     "c5a8ea262274f0a64821aae3c304e7410293b66ac1c1665c38ca44eae0ed7488  /tmp/dream-unity-live/arcade-parts/perceive-aerial-08.txt",
     "6545873de0d833976a46ffa52666c6629e94e6fdda4f30c3a1720f738cb3b892  /tmp/dream-unity-live/arcade-parts/perceive-role-logic.txt"
   ],
-  "verified_at": "2026-08-28T10:52:10.714157+00:00"
+  "verified_at": "2026-08-29T03:32:35.546447+00:00"
 }
