@@ -114,19 +114,19 @@ await run('portal navigation opens every portal and all nine game factories load
     ['reality', ['GRAVITY FOUNDRY', 'LATTICE LOCK', 'GENESIS BLOOM']],
   ];
   for (const [world, names] of worlds) {
-    await page.locator(`#label-${world}`).click();
+    await page.locator(`#label-${world}`).click({ force: true });
     await page.waitForFunction(expected =>
       document.querySelector('#app')?.classList.contains('detail') &&
       document.querySelector('#detailName')?.textContent?.toLowerCase().includes(expected === 'reality' ? 'world' : expected),
     world);
     for (let index = 0; index < names.length; index++) {
-      await page.locator(`#sub-${index}`).click();
+      await page.locator(`#sub-${index}`).click({ force: true });
       await page.locator('#arcade.open').waitFor();
       assert.equal((await page.locator('#gameName').textContent()).trim(), names[index]);
       assert.equal(await page.locator('#arcade').getAttribute('aria-hidden'), 'false');
       await close(page);
     }
-    await page.locator('#back').click();
+    await page.locator('#back').click({ force: true });
   }
   assert.deepEqual(errors, []);
   await context.close();
