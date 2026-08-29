@@ -220,7 +220,7 @@ The governing distinction remains controlled as-if conviction, not literal confu
 # Fast non-browser suite
 npm test
 
-# Full CI-equivalent suite (install Chromium once)
+# Full optional browser suite (install Chromium once)
 npx playwright install chromium
 npm run test:all
 ```

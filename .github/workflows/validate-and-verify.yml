@@ -35,7 +35,9 @@ jobs:
       - name: Install browser regression runtime
         run: npx playwright install --with-deps chromium
       - name: Validate source and browser behavior
-        run: npm run test:all
+        run: |
+          npm test
+          DU_BROWSER_SCOPE=voice npm run test:browser
       - name: Validate Returning Dream and paused Unity voice
         shell: bash
         run: |

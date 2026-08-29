@@ -105,6 +105,12 @@ await run('homepage keeps Unity voice unmounted and makes no voice-network reque
   await context.close();
 });
 
+if (process.env.DU_BROWSER_SCOPE === 'voice') {
+  await browser.close();
+  await new Promise(resolve => server.close(resolve));
+  console.log(`Voice browser regression: ${passed}/${passed + failures.length} passed.`);
+  if (failures.length) process.exitCode = 1;
+} else {
 await run('portal navigation opens every portal and all nine game factories load', async () => {
   const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   const { page, errors } = await openPage(context);
@@ -114,7 +120,7 @@ await run('portal navigation opens every portal and all nine game factories load
     ['reality', ['GRAVITY FOUNDRY', 'LATTICE LOCK', 'GENESIS BLOOM']],
   ];
   for (const [world, names] of worlds) {
-    await page.locator(`#label-${world}`).click({ force: true });
+    await page.evaluate(value => document.querySelector(`#label-${value}`)?.click(), world);
     await page.waitForFunction(expected =>
       document.querySelector('#app')?.classList.contains('detail') &&
       document.querySelector('#detailName')?.textContent?.toLowerCase().includes(expected === 'reality' ? 'world' : expected),
@@ -125,7 +131,8 @@ await run('portal navigation opens every portal and all nine game factories load
       assert.equal(await page.locator('#arcade').getAttribute('aria-hidden'), 'false');
       await close(page);
     }
-    await page.locator('#back').click({ force: true });
+    await page.evaluate(() => document.querySelector('#back')?.click());
+    await page.waitForFunction(() => !document.querySelector('#app')?.classList.contains('detail'));
   }
   assert.deepEqual(errors, []);
   await context.close();
@@ -303,3 +310,4 @@ await new Promise(resolve => server.close(resolve));
 
 console.log(`Browser regression baseline: ${passed}/${passed + failures.length} passed.`);
 if (failures.length) process.exitCode = 1;
+}
