@@ -10,17 +10,9 @@ The overview can be orbited by mouse or touch. One continuous 3D knot moves thro
 
 Three temporal layers inhabit the same geometry. A colourless delayed path is the inherited ghost: reflection and history following after the living system. Several faint paths ahead are remembered tomorrows—possibilities rather than prophecy or fate. The vivid present responds first to the visitor's hand, and its lower passage becomes a crystalline body-anchor. At the centre, an amber three-dimensional aperture is the owned core where awareness becomes agency. Dream Machine is a polyhedral cognition field; Dream Maker is a converging braid; Dream World is a material lattice. Selecting a world exposes its internal triad; selecting an internal label opens the corresponding game.
 
-The homepage attempts to begin **I Remember Tomorrow** automatically and exposes a persistent score control. Browsers that defer audible autoplay start it on the visitor's first non-voice interaction. Voice-console interactions do not start the score, preventing the site audio from contaminating microphone capture. An explicit off choice is remembered locally. Unity ducks the score while connecting, listening, thinking or speaking and restores the visitor's prior audio choice afterwards.
+The homepage attempts to begin **I Remember Tomorrow** automatically and exposes a persistent score control. Browsers that defer audible autoplay start it on the visitor's first interaction. An explicit off choice is remembered locally.
 
-## Unity voice assistant
-
-The amber owned core is also an accessible voice and text launcher. Unity can listen, speak, retain a short bounded conversation, answer questions, explain the three-world system, open any world or game, return home, and control the score or active game. The canvas responds independently while Unity is listening, thinking and speaking.
-
-Native mode keeps microphone audio, speech recognition and speech synthesis in the browser. Unity waits for the asynchronous system-voice list, ranks installed `en-GB` natural voices, preserves the chosen voice, offers a preview, and uses voice-specific prosody for a calm, precise, original British delivery. The exact native timbre still depends on the browser and operating system; Unity does not impersonate an actor. Typing remains usable even if recognition or synthesis throws, stalls, is blocked, is declined or is unsupported. Non-local typed or recognised text, plus the short recent text conversation, may be sent to Unity's reply service; microphone audio is not.
-
-**Neural Unity** is the explicit one-tap mode for visitors who want dependable general conversation, a consistent AI-generated British voice and recorded-audio transcription in browsers without native recognition. The Puter SDK is prewarmed without transmitting a prompt or audio; one direct tap then creates a temporary Puter session or connects an existing one. After authorization, conversation uses GPT-5.6 Luna with visible-output settings, speech prefers ElevenLabs' deep British Daniel voice and falls back to instruction-steered OpenAI speech, and recorded audio uses OpenAI transcription. Recorded listening detects speech followed by a short silence and continues automatically, while retaining an explicit Finish Listening control and a hard time limit. Native text remains usable if loading, authorization, playback or quota fails, and strict mobile playback policies expose a visible **Play Reply** control instead of failing silently.
-
-Conversational turns use local commands first, then Neural Unity when authorized or an already-installed browser language model where supported. Neural and on-device routes receive a short bounded head start; a stalled neural provider cannot hold the ordinary answer channel hostage. Unity never silently starts a large local-model download. Remaining turns use a short, bounded service: ranked public encyclopaedic grounding for factual questions, explicitly free-tier Vercel AI Gateway models when deployment authentication is available, zero-key generative capacity when available, and an immediate deterministic recovery response instead of a dead `503`. Local navigation, time, date, arithmetic and Dream Unity explanations do not depend on an upstream model. Browser assets contain no provider credential.
+The experimental Unity voice and text console is intentionally paused. It is not mounted on the homepage, no microphone, speech, Puter or assistant runtime is loaded by visitors, and its former public reply endpoint returns a disabled response. The dormant frontend source remains in the repository for later work.
 
 ## Nine-game cognitive division of labour
 
@@ -182,8 +174,6 @@ The governing distinction remains controlled as-if conviction, not literal confu
 - **Pinch or wheel:** zoom.
 - **Two-finger twist:** roll.
 - **Tap a world, then an internal title:** open its game.
-- **Tap the amber Unity core:** open voice mode and begin listening; the same panel accepts typed questions.
-- **Speak a site command:** open a world or game, return to Unity, control the score, or pause/restart the active game.
 - **Arrow keys:** move focus between the currently available worlds or capacities.
 - **Score control:** stop or resume *I Remember Tomorrow*.
 
@@ -206,9 +196,8 @@ The governing distinction remains controlled as-if conviction, not literal confu
 - `visual-parts/remembered-tomorrow-10.txt` — procedural temporal knot, delayed ghost, plural future paths, compression braid, matter crystallisation, Unity aperture and three immersive world fields.
 - `unity-cycle.css` — pure-white, low-interface visual presentation with crisp cyan, emerald, ultraviolet and amber phase identities.
 - `unity-ui.js` — homepage score control, autoplay recovery and keyboard world navigation.
-- `voice.js` — recoverable browser voice lifecycle, installed-voice selection, optional user-authorized Puter chat/STT/TTS, short conversation memory, local commands, resilient knowledge fallback and score ducking.
-- `voice.css` — responsive Unity console and listening/thinking/speaking states.
-- `api/realtime-session.js` — bounded Vercel reply service with ranked public knowledge, Gateway, zero-key and deterministic recovery layers.
+- `voice.js` and `voice.css` — paused, unmounted experimental voice-console source retained for future work.
+- `api/realtime-session.js` — lightweight `410 VOICE_DISABLED` tombstone for the paused public reply endpoint.
 - `assets/i-remember-tomorrow.mp3` — homepage score.
 - `styles.css` — common Dream Unity and arcade styling.
 - `become.css` — responsive Become interface and training readouts.
@@ -221,14 +210,21 @@ The governing distinction remains controlled as-if conviction, not literal confu
 - `arcade-parts/become-social-agency-10.txt` — forty social architectures, joint maximin selection, social prompts and prewarming.
 - `tests/role-drift.test.mjs` — deterministic relational-role tests.
 - `tests/validate.mjs` — syntax, nine-portal compatibility, speed, diversity, empathy and cross-session anti-repetition tests.
-- `tests/voice.test.mjs` — deterministic assistant, security, accessibility, provider-fallback and visual-state contract tests.
+- `tests/voice-disabled.test.mjs` — proves the homepage does not mount or load the paused voice system.
+- `tests/voice-runtime.test.mjs` — offline regression coverage for the retained experimental frontend source.
+- `tests/backend-runtime.test.mjs` — proves the public reply handler remains a no-provider disabled tombstone.
 
 ## Validation and deployment
 
 ```bash
+# Fast non-browser suite
 npm test
+
+# Full CI-equivalent suite (install Chromium once)
+npx playwright install chromium
+npm run test:all
 ```
 
-GitHub Actions validates every push, waits for GitHub Pages to match the tested source byte-for-byte, verifies the assistant and lean game loader, checks the active social-agency markers, probes the voice service and writes a machine-readable deployment receipt.
+GitHub Actions validates every push to `main` and every pull request targeting `main`, proves the voice interface and external loaders are absent, waits for GitHub Pages to match the tested source byte-for-byte, checks the disabled reply endpoint, verifies the lean game loader and active social-agency markers, and writes a machine-readable deployment receipt.
 
 This is experimental cognitive-training gameplay, not a validated clinical, neurological or psychometric intervention.

@@ -19,25 +19,28 @@ concurrency:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout complete repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
           persist-credentials: false
       - name: Use production Node runtime
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
         with:
           node-version: '24.19.0'
           cache: npm
       - name: Install locked dependencies
         run: npm ci
-      - name: Validate Imagine-that openings, social objectives and diversity
-        run: npm test
-      - name: Validate Returning Dream system
+      - name: Install browser regression runtime
+        run: npx playwright install --with-deps chromium
+      - name: Validate source and browser behavior
+        run: npm run test:all
+      - name: Validate Returning Dream and paused Unity voice
         shell: bash
         run: |
           set -euo pipefail
-          grep -q "VERSION = '20260829-unity-voice-3'" main.js
+          grep -q "VERSION = '20260829-unity-no-voice-1'" main.js
           grep -q 'remembered-tomorrow-10.txt' main.js
           grep -q "ctx.fillStyle = '#ffffff'" visual-parts/remembered-tomorrow-10.txt
           grep -q 'render = function rememberedTomorrowRender' visual-parts/remembered-tomorrow-10.txt
@@ -54,24 +57,18 @@ jobs:
           grep -q 'Neither prophecy nor fate' index.html
           grep -q 'THE GHOST IN THE MIRROR' index.html
           grep -q 'assets/i-remember-tomorrow.mp3' index.html
-          grep -q 'data-voice-launcher' index.html
-          grep -q 'styles.css?v=20260829-unity-voice-3' index.html
-          grep -q 'voice.css?v=20260829-unity-console-3' index.html
-          grep -q 'voice.js?v=20260829-unity-console-3' index.html
-          grep -q 'dream-unity-voice-live.vercel.app' voice.js
-          grep -q 'SpeechRecognition' voice.js
-          grep -q 'speechSynthesis' voice.js
-          grep -q 'LanguageModel.availability' voice.js
-          grep -q 'NEURAL VOICE LOADING' index.html
-          grep -q 'puter.ai.speech2txt' voice.js
-          grep -q 'min-height:min(480px,100dvh)' styles.css
-          grep -q 'voiceState' visual-parts/remembered-tomorrow-10.txt
-          grep -q 'Projected sound shells' visual-parts/remembered-tomorrow-10.txt
+          grep -q 'styles.css?v=20260829-unity-no-voice-1' index.html
+          grep -q 'unity-cycle.css?v=20260829-unity-no-voice-1' index.html
+          grep -q 'main.js?v=20260829-unity-no-voice-1' index.html
+          grep -q '<div class="unity-label" id="unityLabel" aria-hidden="true">' index.html
+          ! grep -Eqi 'data-voice|duVoice|du-voice|voice\.css|voice\.js|js\.puter\.com|dream-unity-voice-live\.vercel\.app' index.html
           test -s voice.js
           test -s voice.css
-          test -s api/realtime-session.js
-          test -s tests/voice.test.mjs
           test -s tests/voice-runtime.test.mjs
+          test -s tests/voice-disabled.test.mjs
+          test -s api/realtime-session.js
+          grep -q "API_RELEASE = '20260829-unity-backend-paused-1'" api/realtime-session.js
+          grep -q "code: 'VOICE_DISABLED'" api/realtime-session.js
           grep -q "WORLD.machine.css = '#00BDE8'" visual-parts/remembered-tomorrow-10.txt
           grep -q "WORLD.maker.css = '#00C983'" visual-parts/remembered-tomorrow-10.txt
           grep -q "WORLD.reality.css = '#7448FF'" visual-parts/remembered-tomorrow-10.txt
@@ -79,42 +76,36 @@ jobs:
           test -s assets/i-remember-tomorrow.mp3
 
   verify-live:
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
     needs: validate
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     outputs:
-      backend_release: ${{ steps.backend_health.outputs.release }}
-      backend_response_strategy: ${{ steps.backend_health.outputs.response_strategy }}
-      backend_budget_ms: ${{ steps.backend_health.outputs.budget_ms }}
-      backend_providers: ${{ steps.backend_health.outputs.providers }}
-      backend_configured_providers: ${{ steps.backend_health.outputs.configured_providers }}
-      backend_gateway_auth: ${{ steps.backend_health.outputs.gateway_auth }}
-      backend_smoke_path: ${{ steps.backend_health.outputs.smoke_path }}
-      backend_rate_limit: ${{ steps.backend_health.outputs.rate_limit }}
-      backend_knowledge_routing: ${{ steps.backend_health.outputs.knowledge_routing }}
+      backend_release: ${{ steps.backend_paused.outputs.release }}
     steps:
       - name: Checkout validated source
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Wait for GitHub Pages to match Returning Dream and Become source
+      - name: Wait for GitHub Pages to match the voice-free source
         shell: bash
         env:
           PAGE_URL: https://dream-unity.github.io/experimental-three-world-problem
         run: |
           set -euo pipefail
-          files=(index.html styles.css become.css unity-cycle.css unity-ui.js voice.css voice.js main.js arcade.js assets/i-remember-tomorrow.mp3 visual-parts/part-01.txt visual-parts/part-02.txt visual-parts/part-03.txt visual-parts/part-04.txt visual-parts/part-05.txt visual-parts/part-06.txt visual-parts/remembered-tomorrow-10.txt arcade-parts/part-01.txt arcade-parts/part-02.txt arcade-parts/part-03.txt arcade-parts/part-04.txt arcade-parts/part-05.txt arcade-parts/perceive-role-logic.txt arcade-parts/perceive-aerial-01.txt arcade-parts/perceive-aerial-02.txt arcade-parts/perceive-aerial-03.txt arcade-parts/perceive-aerial-04.txt arcade-parts/perceive-aerial-05.txt arcade-parts/perceive-aerial-06.txt arcade-parts/perceive-aerial-07.txt arcade-parts/perceive-aerial-08.txt arcade-parts/become-lab-01.txt arcade-parts/become-diversity-09.txt arcade-parts/become-social-agency-10.txt arcade-parts/become-social-integration-11.txt arcade-parts/become-compressed-12.txt arcade-parts/become-rapid-entry-13.txt arcade-parts/become-activation-objectives-14.txt)
-          rm -rf /tmp/dream-unity-live
-          mkdir -p /tmp/dream-unity-live/arcade-parts /tmp/dream-unity-live/visual-parts /tmp/dream-unity-live/assets
+          files=(index.html styles.css become.css unity-cycle.css unity-ui.js main.js arcade.js assets/i-remember-tomorrow.mp3 visual-parts/part-01.txt visual-parts/part-02.txt visual-parts/part-03.txt visual-parts/part-04.txt visual-parts/part-05.txt visual-parts/part-06.txt visual-parts/remembered-tomorrow-10.txt arcade-parts/part-01.txt arcade-parts/part-02.txt arcade-parts/part-03.txt arcade-parts/part-04.txt arcade-parts/part-05.txt arcade-parts/perceive-role-logic.txt arcade-parts/perceive-aerial-01.txt arcade-parts/perceive-aerial-02.txt arcade-parts/perceive-aerial-03.txt arcade-parts/perceive-aerial-04.txt arcade-parts/perceive-aerial-05.txt arcade-parts/perceive-aerial-06.txt arcade-parts/perceive-aerial-07.txt arcade-parts/perceive-aerial-08.txt arcade-parts/become-lab-01.txt arcade-parts/become-diversity-09.txt arcade-parts/become-social-agency-10.txt arcade-parts/become-social-integration-11.txt arcade-parts/become-compressed-12.txt arcade-parts/become-rapid-entry-13.txt arcade-parts/become-activation-objectives-14.txt)
+          live_dir=$(mktemp -d)
+          trap 'rm -rf "$live_dir"' EXIT
+          mkdir -p "$live_dir/arcade-parts" "$live_dir/visual-parts" "$live_dir/assets"
           matched=false
           for attempt in $(seq 1 60); do
             matched=true
             for path in "${files[@]}"; do
-              if ! curl --fail --location --silent --show-error --retry 3 --retry-all-errors --retry-delay 2 "$PAGE_URL/$path?source=${GITHUB_SHA}" --output "/tmp/dream-unity-live/$path"; then matched=false; break; fi
-              if ! cmp --silent "$path" "/tmp/dream-unity-live/$path"; then matched=false; break; fi
+              if ! curl --fail --location --silent --show-error --connect-timeout 10 --max-time 30 --retry 3 --retry-all-errors --retry-delay 2 "$PAGE_URL/$path?source=${GITHUB_SHA}" --output "$live_dir/$path"; then matched=false; break; fi
+              if ! cmp --silent "$path" "$live_dir/$path"; then matched=false; break; fi
             done
             if [ "$matched" = true ]; then break; fi
             echo "Pages has not propagated yet (attempt $attempt/60)."
@@ -122,149 +113,105 @@ jobs:
           done
           test "$matched" = true
 
-          grep -q 'main.js?v=20260829-unity-voice-3' /tmp/dream-unity-live/index.html
-          grep -q 'unity-cycle.css?v=20260829-unity-voice-3' /tmp/dream-unity-live/index.html
-          grep -q 'remembered-tomorrow-10.txt' /tmp/dream-unity-live/main.js
-          grep -q "ctx.fillStyle = '#ffffff'" /tmp/dream-unity-live/visual-parts/remembered-tomorrow-10.txt
-          grep -q 'render = function rememberedTomorrowRender' /tmp/dream-unity-live/visual-parts/remembered-tomorrow-10.txt
-          grep -q 'drawOverview = function rememberedTomorrowOverview' /tmp/dream-unity-live/visual-parts/remembered-tomorrow-10.txt
-          grep -q 'function rtDrawTemporalGhost' /tmp/dream-unity-live/visual-parts/remembered-tomorrow-10.txt
-          grep -q 'function rtDrawPossibleFutures' /tmp/dream-unity-live/visual-parts/remembered-tomorrow-10.txt
-          grep -q 'function rtDrawDreamMembrane' /tmp/dream-unity-live/visual-parts/remembered-tomorrow-10.txt
-          grep -q 'I REMEMBER TOMORROW' /tmp/dream-unity-live/index.html
-          grep -q 'data-voice-launcher' /tmp/dream-unity-live/index.html
-          grep -q 'styles.css?v=20260829-unity-voice-3' /tmp/dream-unity-live/index.html
-          grep -q 'voice.js?v=20260829-unity-console-3' /tmp/dream-unity-live/index.html
-          grep -q 'SpeechRecognition' /tmp/dream-unity-live/voice.js
-          grep -q 'speechSynthesis' /tmp/dream-unity-live/voice.js
-          grep -q 'voiceState' /tmp/dream-unity-live/visual-parts/remembered-tomorrow-10.txt
-          grep -q 'Projected sound shells' /tmp/dream-unity-live/visual-parts/remembered-tomorrow-10.txt
-          grep -q "WORLD.machine.css = '#00BDE8'" /tmp/dream-unity-live/visual-parts/remembered-tomorrow-10.txt
-          grep -q "WORLD.maker.css = '#00C983'" /tmp/dream-unity-live/visual-parts/remembered-tomorrow-10.txt
-          grep -q "WORLD.reality.css = '#7448FF'" /tmp/dream-unity-live/visual-parts/remembered-tomorrow-10.txt
+          grep -q 'main.js?v=20260829-unity-no-voice-1' "$live_dir/index.html"
+          grep -q 'unity-cycle.css?v=20260829-unity-no-voice-1' "$live_dir/index.html"
+          grep -q 'styles.css?v=20260829-unity-no-voice-1' "$live_dir/index.html"
+          grep -q '<div class="unity-label" id="unityLabel" aria-hidden="true">' "$live_dir/index.html"
+          ! grep -Eqi 'data-voice|duVoice|du-voice|voice\.css|voice\.js|js\.puter\.com|dream-unity-voice-live\.vercel\.app' "$live_dir/index.html"
+          grep -q 'remembered-tomorrow-10.txt' "$live_dir/main.js"
+          grep -q "ctx.fillStyle = '#ffffff'" "$live_dir/visual-parts/remembered-tomorrow-10.txt"
+          grep -q 'function rtDrawTemporalGhost' "$live_dir/visual-parts/remembered-tomorrow-10.txt"
+          grep -q 'function rtDrawPossibleFutures' "$live_dir/visual-parts/remembered-tomorrow-10.txt"
+          grep -q 'function rtDrawDreamMembrane' "$live_dir/visual-parts/remembered-tomorrow-10.txt"
+          grep -q 'I REMEMBER TOMORROW' "$live_dir/index.html"
+          grep -q "WORLD.machine.css = '#00BDE8'" "$live_dir/visual-parts/remembered-tomorrow-10.txt"
+          grep -q "WORLD.maker.css = '#00C983'" "$live_dir/visual-parts/remembered-tomorrow-10.txt"
+          grep -q "WORLD.reality.css = '#7448FF'" "$live_dir/visual-parts/remembered-tomorrow-10.txt"
+          grep -q 'arcade.js?v=20260827-fighter-jet-performance-20' "$live_dir/index.html"
+          grep -q 'become-activation-objectives-14.txt' "$live_dir/arcade.js"
+          grep -q "S14_VERSION='20260826-activation-objectives-2'" "$live_dir/arcade-parts/become-activation-objectives-14.txt"
+          grep -q 'SOCIAL WIN' "$live_dir/arcade-parts/become-activation-objectives-14.txt"
+          grep -q 'SOLVED WHEN' "$live_dir/arcade-parts/become-activation-objectives-14.txt"
+          ! grep -q 'bShuffle(BECOME_SCENARIOS)' "$live_dir/arcade-parts/become-activation-objectives-14.txt"
 
-          grep -q 'arcade.js?v=20260827-fighter-jet-performance-20' /tmp/dream-unity-live/index.html
-          grep -q 'become-activation-objectives-14.txt' /tmp/dream-unity-live/arcade.js
-          grep -q "S14_VERSION='20260826-activation-objectives-2'" /tmp/dream-unity-live/arcade-parts/become-activation-objectives-14.txt
-          grep -q 'SOCIAL WIN' /tmp/dream-unity-live/arcade-parts/become-activation-objectives-14.txt
-          grep -q 'SOLVED WHEN' /tmp/dream-unity-live/arcade-parts/become-activation-objectives-14.txt
-          ! grep -q 'bShuffle(BECOME_SCENARIOS)' /tmp/dream-unity-live/arcade-parts/become-activation-objectives-14.txt
-
-      - name: Verify exact Unity backend release, security and POST response
-        id: backend_health
+      - name: Verify the Unity reply endpoint remains paused
+        id: backend_paused
         shell: bash
         env:
           BACKEND_URL: https://dream-unity-voice-live.vercel.app/api/realtime-session
-          EXPECTED_RELEASE: 20260829-unity-backend-2
+          EXPECTED_RELEASE: 20260829-unity-backend-paused-1
           PAGE_ORIGIN: https://dream-unity.github.io
         run: |
           set -euo pipefail
-          backend_dir="$RUNNER_TEMP/unity-backend-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          mkdir -p "$backend_dir"
-          health="$backend_dir/health.json"
+          backend_dir=$(mktemp -d)
+          trap 'rm -rf "$backend_dir"' EXIT
+          response="$backend_dir/paused.json"
           ready=false
           for attempt in $(seq 1 36); do
-            if curl --fail --silent --show-error --max-time 20 --retry 2 --retry-all-errors --retry-delay 2 \
-              "$BACKEND_URL?release=$EXPECTED_RELEASE" --output "$health" \
-              && jq -e --arg release "$EXPECTED_RELEASE" '
-                .ok == true
-                and .release == $release
-                and .service == "dream-unity-voice-chat"
-                and .primaryModel == "minimax/minimax-m3-free"
-                and .gatewayModels == ["minimax/minimax-m3-free", "minimax/minimax-m2.7-free"]
-                and (.gatewayAuthentication == "available" or .gatewayAuthentication == "unavailable")
-                and .configuredProviders == ["vercel-ai-gateway", "blockrun", "wikipedia", "resilient-local"]
-                and .totalUpstreamBudgetMs == 4500
-                and .security.postOriginRequired == true
-                and .security.rateLimit.limit == 30
-                and .security.rateLimit.windowMs == 60000
-                and .security.rateLimit.scope == "best-effort-instance-ip"
-                and .knowledge.routing == "clearly-factual-impersonal-v2"
-                and .knowledge.rankedResults == true
-                and .knowledge.relevanceRequired == true
-                and (.providers | index("resilient-local")) != null
-              ' "$health" >/dev/null; then
+            if ! status=$(curl --silent --show-error --connect-timeout 8 --max-time 20 --retry 2 --retry-all-errors --retry-delay 2 --output "$response" --write-out '%{http_code}' "$BACKEND_URL?release=$EXPECTED_RELEASE"); then
+              echo "Unity backend tombstone request failed (attempt $attempt/36)."
+              sleep 5
+              continue
+            fi
+            if [ "$status" = 410 ] && jq -e --arg release "$EXPECTED_RELEASE" '
+              .ok == false
+              and .release == $release
+              and .service == "dream-unity-voice-chat"
+              and .status == "paused"
+              and .code == "VOICE_DISABLED"
+            ' "$response" >/dev/null; then
               ready=true
               break
             fi
-            echo "Unity backend release has not propagated yet (attempt $attempt/36)."
+            echo "Unity backend tombstone has not propagated yet (attempt $attempt/36)."
             sleep 5
           done
           test "$ready" = true
 
-          smoke="$backend_dir/smoke.json"
-          headers="$backend_dir/smoke.headers"
-          status=$(curl --silent --show-error --max-time 20 --retry 2 --retry-all-errors --retry-delay 2 \
-            --request POST \
-            --header "Origin: $PAGE_ORIGIN" \
-            --header 'Content-Type: application/json' \
-            --data '{"message":"Write a haiku about titanium.","history":[],"locale":"en-GB"}' \
-            --dump-header "$headers" \
-            --output "$smoke" \
-            --write-out '%{http_code}' \
-            "$BACKEND_URL")
-          test "$status" = 200
+          post="$backend_dir/post.json"
+          headers="$backend_dir/post.headers"
+          status=$(curl --silent --show-error --max-time 20 --request POST --header "Origin: $PAGE_ORIGIN" --header 'Content-Type: application/json' --data '{"message":"This must not reach a provider."}' --dump-header "$headers" --output "$post" --write-out '%{http_code}' "$BACKEND_URL")
+          test "$status" = 410
           tr -d '\r' < "$headers" | grep -Fqi "Access-Control-Allow-Origin: $PAGE_ORIGIN"
-          jq -e --arg release "$EXPECTED_RELEASE" '
-            .release == $release
-            and (.text | type == "string" and length > 0)
-            and (.path == "model" or .path == "resilient-local")
-          ' "$smoke" >/dev/null
-
-          echo "release=$(jq -r '.release' "$health")" >> "$GITHUB_OUTPUT"
-          echo "response_strategy=$(jq -r '.responseStrategy' "$health")" >> "$GITHUB_OUTPUT"
-          echo "budget_ms=$(jq -r '.totalUpstreamBudgetMs' "$health")" >> "$GITHUB_OUTPUT"
-          echo "providers=$(jq -c '.providers' "$health")" >> "$GITHUB_OUTPUT"
-          echo "configured_providers=$(jq -c '.configuredProviders' "$health")" >> "$GITHUB_OUTPUT"
-          echo "gateway_auth=$(jq -r '.gatewayAuthentication' "$health")" >> "$GITHUB_OUTPUT"
-          echo "smoke_path=$(jq -r '.path' "$smoke")" >> "$GITHUB_OUTPUT"
-          echo "rate_limit=$(jq -c '.security.rateLimit' "$health")" >> "$GITHUB_OUTPUT"
-          echo "knowledge_routing=$(jq -r '.knowledge.routing' "$health")" >> "$GITHUB_OUTPUT"
+          jq -e --arg release "$EXPECTED_RELEASE" '.release == $release and .code == "VOICE_DISABLED"' "$post" >/dev/null
+          echo "release=$(jq -r '.release' "$response")" >> "$GITHUB_OUTPUT"
 
   record-deployment:
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: verify-live
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions:
       contents: write
     steps:
       - name: Checkout the verified source without persisted credentials
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Record Returning Dream, Become and observed Unity backend deployment
+      - name: Record the verified voice-free deployment
         shell: bash
         env:
           SOURCE_SHA: ${{ github.sha }}
           PAGE_URL: https://dream-unity.github.io/experimental-three-world-problem/
           BACKEND_RELEASE: ${{ needs.verify-live.outputs.backend_release }}
-          BACKEND_RESPONSE_STRATEGY: ${{ needs.verify-live.outputs.backend_response_strategy }}
-          BACKEND_BUDGET_MS: ${{ needs.verify-live.outputs.backend_budget_ms }}
-          BACKEND_PROVIDERS: ${{ needs.verify-live.outputs.backend_providers }}
-          BACKEND_CONFIGURED_PROVIDERS: ${{ needs.verify-live.outputs.backend_configured_providers }}
-          BACKEND_GATEWAY_AUTH: ${{ needs.verify-live.outputs.backend_gateway_auth }}
-          BACKEND_SMOKE_PATH: ${{ needs.verify-live.outputs.backend_smoke_path }}
-          BACKEND_RATE_LIMIT: ${{ needs.verify-live.outputs.backend_rate_limit }}
-          BACKEND_KNOWLEDGE_ROUTING: ${{ needs.verify-live.outputs.backend_knowledge_routing }}
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          git fetch --no-tags origin main
+          test "$(git rev-parse origin/main)" = "$SOURCE_SHA"
           checksum_file="$RUNNER_TEMP/dream-unity-source-checksums.txt"
-          sha256sum index.html styles.css become.css unity-cycle.css unity-ui.js voice.css voice.js main.js arcade.js assets/* visual-parts/*.txt arcade-parts/*.txt > "$checksum_file"
+          sha256sum index.html styles.css become.css unity-cycle.css unity-ui.js main.js arcade.js voice.css voice.js api/realtime-session.js assets/* visual-parts/*.txt arcade-parts/*.txt > "$checksum_file"
           export CHECKSUM_FILE="$checksum_file"
           python3 - <<'PY'
           from datetime import datetime, timezone
           from pathlib import Path
           import json, os
           backend_release=os.environ['BACKEND_RELEASE']
-          if backend_release != '20260829-unity-backend-2':
-            raise SystemExit(f'Unexpected verified backend release: {backend_release!r}')
-          backend_providers=json.loads(os.environ['BACKEND_PROVIDERS'])
-          backend_configured_providers=json.loads(os.environ['BACKEND_CONFIGURED_PROVIDERS'])
-          backend_rate_limit=json.loads(os.environ['BACKEND_RATE_LIMIT'])
+          if backend_release != '20260829-unity-backend-paused-1':
+            raise SystemExit(f'Unexpected disabled backend release: {backend_release!r}')
           receipt={
             'project':'Dream Unity — Experimental Three-World Problem',
             'deployment':'verified-live',
@@ -284,35 +231,17 @@ jobs:
               'ether_compression_matter_return_cycle':True,
               'generated_core_asset':None,
               'homepage_score':'assets/i-remember-tomorrow.mp3',
-              'voice_interface_active':True,
-              'voice_assistant':{
-                'name':'Unity',
-                'speech_mode':'ranked_browser_native_with_optional_user_authorized_puter_neural',
-                'text_fallback':True,
-                'runtime_interaction_tests':True,
-                'enhanced_puter_opt_in':True,
-                'recorded_audio_fallback_after_opt_in':True,
-                'local_site_commands':True,
-                'on_device_prompt_api_when_ready':True,
-                'score_ducking':True,
-                'renderer_states':['idle','listening','thinking','speaking'],
-                'backend':'https://dream-unity-voice-live.vercel.app/api/realtime-session',
-                'backend_verification':{
-                  'release':backend_release,
-                  'response_strategy':os.environ['BACKEND_RESPONSE_STRATEGY'],
-                  'total_upstream_budget_ms':int(os.environ['BACKEND_BUDGET_MS']),
-                  'configured_providers':backend_configured_providers,
-                  'active_providers_at_verification':backend_providers,
-                  'gateway_authentication':os.environ['BACKEND_GATEWAY_AUTH'],
-                  'allowed_origin_generic_post_smoke_path':os.environ['BACKEND_SMOKE_PATH'],
-                  'post_origin_required':True,
-                  'rate_limit':backend_rate_limit,
-                  'knowledge_routing':os.environ['BACKEND_KNOWLEDGE_ROUTING'],
-                  'scope':'configuration_and_deterministic_response_not_external_provider_uptime'
-                }
+              'voice_interface_active':False,
+              'voice_archive':{
+                'source_retained':True,
+                'mounted_on_homepage':False,
+                'external_resource_hints':False,
+                'frontend_network_active':False,
+                'backend_status':'paused',
+                'backend_release':backend_release
               },
               'renderer_override':'visual-parts/remembered-tomorrow-10.txt',
-              'main_cache_version':'20260829-unity-voice-3'
+              'main_cache_version':'20260829-unity-no-voice-1'
             },
             'become':{
               'scenario_source':'instant_objective_driven_social_agency_maximin_synthesis',
@@ -328,7 +257,7 @@ jobs:
               'between_scenario_network_wait':False,
               'original_scenario_bank_used_as_fallback':False
             },
-            'sha256':Path(os.environ['CHECKSUM_FILE']).read_text().splitlines(),
+            'source_sha256':Path(os.environ['CHECKSUM_FILE']).read_text().splitlines(),
             'verified_at':datetime.now(timezone.utc).isoformat(),
           }
           Path('DEPLOYMENT_STATUS.json').write_text(json.dumps(receipt,indent=2)+'\n')
@@ -340,5 +269,4 @@ jobs:
           git commit -m 'Record Returning Dream deployment [skip ci]'
           git config --local credential.helper '!f() { if [ "$1" = get ]; then echo "username=x-access-token"; echo "password=$GITHUB_TOKEN"; fi; }; f'
           trap 'git config --local --unset-all credential.helper >/dev/null 2>&1 || true' EXIT
-          git pull --rebase origin main
           git push origin HEAD:main

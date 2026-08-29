@@ -17,7 +17,7 @@ for(const path of ['index.html','styles.css','become.css','main.js','arcade.js',
 
 const base=basePaths.map(read).join(''),role=read(rolePath),perceive=perceivePaths.map(read).join('');
 const [core,diversity,social,integration,compression,rapid,objective]=layers.map(read);
-const loader=read('arcade.js'),index=read('index.html'),pkg=JSON.parse(read('package.json'));
+const loader=read('arcade.js'),index=read('index.html');
 const close=base.lastIndexOf('})();');
 assert.ok(close>0);
 const full=`${base.slice(0,close)}\n${role}\n${perceive}\n${core}\n${diversity}\n${social}\n${integration}\n${compression}\n${rapid}\n${objective}\n${base.slice(close)}`;
@@ -76,5 +76,4 @@ function inspect(queue,label){
 const started=performance.now();const first=api.buildQueue(10);const elapsed=performance.now()-started;const a=inspect(first,'first');assert.ok(elapsed<1000,`build ${elapsed}ms`);
 const second=api.buildQueue(10),b=inspect(second,'second');
 assert.equal([...a.families].filter(x=>b.families.has(x)).length,0);assert.equal([...a.profiles].filter(x=>b.profiles.has(x)).length,0);assert.equal([...a.wins].filter(x=>b.wins.has(x)).length,0);
-assert.deepEqual(pkg.dependencies,{ai:'^6.0.271'});
 console.log(`Imagine-opening Become validated: 20/20 generated scenarios begin with Imagine that you/you're; scene ≤${a.maxScene}/34; 10 scenarios ${elapsed.toFixed(1)}ms; social min ${a.minSocial.toFixed(3)}; combined min ${a.minCombined.toFixed(3)}.`);

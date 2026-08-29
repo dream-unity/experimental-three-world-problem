@@ -68,7 +68,7 @@
   const unlock = (event) => {
     if (
       event.target instanceof Element
-      && event.target.closest('#scoreControl, [data-voice-launcher], #duVoicePanel')
+      && event.target.closest('#scoreControl')
     ) return;
     if (!userMuted && audio?.paused) playScore(true);
   };

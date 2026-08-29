@@ -14,8 +14,6 @@ for (const path of [
   'index.html',
   'unity-cycle.css',
   'unity-ui.js',
-  'voice.css',
-  'voice.js',
   'main.js',
   override,
   'assets/i-remember-tomorrow.mp3',
@@ -24,7 +22,6 @@ for (const path of [
 
 const index = read('index.html');
 const loader = read('main.js');
-const baseStyles = read('styles.css');
 const theme = read('unity-cycle.css');
 const renderer = read(override);
 
@@ -35,13 +32,15 @@ assert.match(index, /DREAM[\s\S]*COMPRESS[\s\S]*REALISE[\s\S]*RETURN/);
 assert.match(index, /assets\/i-remember-tomorrow\.mp3/);
 assert.match(index, /id="scoreControl"/);
 assert.doesNotMatch(index, /MAKE THE<br \/>MIRROR|coralTexture|coral-sovereign-engine|phase-rail/);
-assert.match(index, /data-voice-launcher/);
-assert.match(index, /styles\.css\?v=20260829-unity-voice-3/);
-assert.match(index, /voice\.css\?v=20260829-unity-console-3/);
-assert.match(index, /voice\.js\?v=20260829-unity-console-3/);
-assert.match(index, /interactive-widget=resizes-content/);
-assert.match(baseStyles, /min-height:min\(480px,100dvh\)/, 'the keyboard-resized viewport must not be forced below 480px');
-assert.match(loader, /VERSION = '20260829-unity-voice-3'/);
+assert.match(index, /styles\.css\?v=20260829-unity-no-voice-1/);
+assert.match(index, /unity-cycle\.css\?v=20260829-unity-no-voice-1/);
+assert.match(index, /unity-ui\.js\?v=20260829-unity-no-voice-1/);
+assert.match(index, /main\.js\?v=20260829-unity-no-voice-1/);
+assert.match(index, /<div\b(?=[^>]*\bid=["']unityLabel["'])(?=[^>]*\baria-hidden=["']true["'])[^>]*>/i, 'the owned Unity core must remain a passive visual label');
+assert.doesNotMatch(index, /<button\b[^>]*\bid=["']unityLabel["']/i, 'the disabled Unity core must not remain a dead button');
+assert.doesNotMatch(index, /data-voice-launcher|duVoice|du-voice|duEnhanced|du-enhanced|voice\.css|voice\.js/i, 'the homepage must not mount the archived voice interface');
+assert.doesNotMatch(index, /dream-unity-voice-live\.vercel\.app|js\.puter\.com/i, 'the homepage must not preconnect to an inactive voice service');
+assert.match(loader, /VERSION = '20260829-unity-no-voice-1'/);
 assert.match(loader, /remembered-tomorrow-10\.txt/);
 assert.match(theme, /--paper:#fff/);
 assert.match(theme, /--machine:#00bde8/);
@@ -62,7 +61,6 @@ for (const marker of [
   'rtDrawEtherParticles',
   'rtDrawMatter',
   'rtDrawUnity',
-  'Projected sound shells',
   "ctx.fillStyle = '#ffffff'",
   "WORLD.machine.css = '#00BDE8'",
   "WORLD.maker.css = '#00C983'",
@@ -81,4 +79,4 @@ execFileSync(process.execPath, ['--check', temporary], { stdio: 'inherit' });
 execFileSync(process.execPath, ['--check', new URL('../unity-ui.js', import.meta.url).pathname], { stdio: 'inherit' });
 assert.ok(statSync(new URL('../assets/i-remember-tomorrow.mp3', import.meta.url)).size > 1_000_000, 'homepage score is unexpectedly small');
 
-console.log('Returning Dream validated: temporal dream field, voice-reactive owned Unity core, score, and nine-world contracts preserved.');
+console.log('Returning Dream validated: temporal dream field, passive owned Unity core, score, and nine-world contracts preserved.');

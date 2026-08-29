@@ -53,6 +53,8 @@ async function run(name, callback) {
 async function openPage(context) {
   const page = await context.newPage();
   const errors = [];
+  const requests = [];
+  page.on('request', request => requests.push(request.url()));
   page.on('console', message => {
     if (message.type() === 'error') errors.push(`console: ${message.text()}`);
   });
@@ -60,7 +62,7 @@ async function openPage(context) {
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
   await page.waitForFunction(() => document.querySelector('#label-machine')?.offsetWidth > 0);
   await page.waitForFunction(() => document.querySelector('#gameCanvas')?.width > 1);
-  return { page, errors };
+  return { page, errors, requests };
 }
 
 async function launch(page, world, index) {
@@ -74,6 +76,34 @@ async function close(page) {
   await page.locator('#gameBack').click();
   await page.waitForFunction(() => !document.querySelector('#arcade')?.classList.contains('open'));
 }
+
+await run('homepage keeps Unity voice unmounted and makes no voice-network request', async () => {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+  const { page, errors, requests } = await openPage(context);
+
+  assert.equal(
+    await page.locator('[data-voice-launcher], #duVoicePanel, #duEnhancedButton, link[href*="voice.css"], script[src*="voice.js"]').count(),
+    0,
+    'the homepage mounted a voice control or asset',
+  );
+  assert.equal(
+    await page.locator('button#unityLabel').count(),
+    0,
+    'the disabled owned core remained a dead button',
+  );
+  assert.equal(
+    await page.evaluate(() => document.body.dataset.voiceState || document.querySelector('#app')?.dataset.voiceState || ''),
+    '',
+    'the homepage entered a voice runtime state',
+  );
+
+  const forbidden = requests.filter(url =>
+    /\/voice\.(?:js|css)(?:[?#]|$)|dream-unity-voice-live\.vercel\.app|js\.puter\.com|\/api\/realtime-session(?:[?#]|$)/i.test(url)
+  );
+  assert.deepEqual(forbidden, [], `the homepage made disabled voice requests: ${forbidden.join(', ')}`);
+  assert.deepEqual(errors, []);
+  await context.close();
+});
 
 await run('portal navigation opens every portal and all nine game factories load', async () => {
   const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
