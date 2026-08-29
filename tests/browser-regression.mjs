@@ -120,8 +120,7 @@ await run('portal navigation opens every portal and all nine game factories load
       document.querySelector('#detailName')?.textContent?.toLowerCase().includes(expected === 'reality' ? 'world' : expected),
     world);
     for (let index = 0; index < names.length; index++) {
-      await page.locator(`#sub-${index}`).click({ force: true });
-      await page.locator('#arcade.open').waitFor();
+      await launch(page, world, index);
       assert.equal((await page.locator('#gameName').textContent()).trim(), names[index]);
       assert.equal(await page.locator('#arcade').getAttribute('aria-hidden'), 'false');
       await close(page);
