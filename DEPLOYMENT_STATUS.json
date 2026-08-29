@@ -1,7 +1,7 @@
 {
   "project": "Dream Unity \u2014 Experimental Three-World Problem",
   "deployment": "verified-live",
-  "source_sha": "c72594d180e0c4f3d70f3f86d0db0c31814e2faf",
+  "source_sha": "ffbbdd8210bf4cc5e6d9c27961c310ff67b72c8f",
   "page_url": "https://dream-unity.github.io/experimental-three-world-problem/",
   "nine_portal_compatibility": "validated",
   "overview": {
@@ -68,7 +68,7 @@
       }
     },
     "renderer_override": "visual-parts/remembered-tomorrow-10.txt",
-    "main_cache_version": "20260829-unity-voice-2"
+    "main_cache_version": "20260829-unity-voice-3"
   },
   "become": {
     "scenario_source": "instant_objective_driven_social_agency_maximin_synthesis",
@@ -88,14 +88,14 @@
     "original_scenario_bank_used_as_fallback": false
   },
   "sha256": [
-    "54da5dd3e024a7ae3ec45e5c9a5bdd86846377daa754813c95d4c98301cc402d  index.html",
-    "008f907be470e8b387badb2534fa4df0c55b5bfc1c71c75d1beb9ef9ed963191  styles.css",
+    "16b562ed8fe0a0b9c85428e1dc8c62add1b0db55aa093b9bfda2b974385e6e9a  index.html",
+    "6850f499f7f393c52d1f2b50b8fe862c30172ca93b37c1bed6ce689acd76ab37  styles.css",
     "ad8dc6788a87c34201b132b88d8e5eb3ed439a0644f54a9610d2398d1b877536  become.css",
     "bab36b8ae6791ed17fc0a8a488b358064ced07dab0d73a18cdb774d75213449d  unity-cycle.css",
     "5a39bb335109076094976f35d6ae076ce294aad147179cec744c27b522ec78c1  unity-ui.js",
-    "2972d147c2fd5a6aca69a19e559e504b768adaaa2d90f7d7c4c7d49e9e3fe083  voice.css",
-    "e4edc5c2735f9ab17529718c988266fbb28a0fe4bb104d614ac98bba8311f7bf  voice.js",
-    "e2adc7c690b954afe620a91990b7201545a54defe960b4aaf1b8cbc5f3eecfba  main.js",
+    "4c65c2590ea3840da26767b561b5f49b698e0a63c6f28419a8854c3122a7e610  voice.css",
+    "8b2b8864217845789a3ca094622bebd94a6e156ec020ae58a968c7c578b5cfc2  voice.js",
+    "01f26db98577b2305d2144e4ef9fbd23d5a3863f005a6eed9fe7642c9dfe522f  main.js",
     "4e4dbd47aa1483e6c302ef83fd4f79107d3a31f55548672cb2547a4f7dbadb41  arcade.js",
     "a9a4dfa850e8dd8f4081759d49412cbdd2190f22fb094c5a73e428a68104a42e  assets/coral-sovereign-engine.webp",
     "621ea2851f570523470594ae6f1e3dcd7e9e325c134fa6fea794c2fbdbbfdc32  assets/i-remember-tomorrow.mp3",
@@ -134,5 +134,5 @@
     "c5a8ea262274f0a64821aae3c304e7410293b66ac1c1665c38ca44eae0ed7488  arcade-parts/perceive-aerial-08.txt",
     "6545873de0d833976a46ffa52666c6629e94e6fdda4f30c3a1720f738cb3b892  arcade-parts/perceive-role-logic.txt"
   ],
-  "verified_at": "2026-08-29T05:58:16.366696+00:00"
+  "verified_at": "2026-08-29T07:22:57.366090+00:00"
 }
