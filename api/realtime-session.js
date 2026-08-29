@@ -2,21 +2,35 @@ import { randomBytes } from 'node:crypto';
 
 const BLOCKRUN_URL = 'https://blockrun.ai/api/v1/chat/completions';
 const WIKIPEDIA_URL = 'https://en.wikipedia.org/w/api.php';
-const GATEWAY_MODEL = 'google/gemini-3.1-flash-lite';
+const GATEWAY_MODELS = Object.freeze([
+  'minimax/minimax-m3-free',
+  'minimax/minimax-m2.7-free'
+]);
+const GATEWAY_MODEL = GATEWAY_MODELS[0];
 const BLOCKRUN_MODELS = Object.freeze([
   'nvidia/mistral-nemotron',
   'nvidia/nemotron-nano-9b-v2'
 ]);
 
-const TOTAL_UPSTREAM_BUDGET_MS = 8_000;
-const GATEWAY_ATTEMPT_LIMIT_MS = 2_500;
-const BLOCKRUN_ATTEMPT_LIMIT_MS = 2_750;
+const TOTAL_UPSTREAM_BUDGET_MS = 4_500;
+const GATEWAY_ATTEMPT_LIMIT_MS = 3_000;
+const BLOCKRUN_ATTEMPT_LIMIT_MS = 1_500;
 const KNOWLEDGE_ATTEMPT_LIMIT_MS = 1_800;
 const MIN_ATTEMPT_BUDGET_MS = 650;
 const MAX_HISTORY = 6;
 const MAX_HISTORY_CHARS = 2_400;
 const MAX_MESSAGE_CHARS = 1_400;
 const MAX_PUBLIC_ANSWER_CHARS = 1_800;
+const RATE_LIMIT_MAX_REQUESTS = 30;
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX_IPS = 5_000;
+
+export const API_RELEASE = '20260829-unity-backend-2';
+const KNOWLEDGE_ROUTING = 'clearly-factual-impersonal-v2';
+
+function gatewayCredentialsAvailable() {
+  return Boolean(process.env.VERCEL_OIDC_TOKEN || process.env.AI_GATEWAY_API_KEY);
+}
 
 const UNITY_PERSONA = `You are Unity, the original voice intelligence inside Dream Unity.
 
@@ -67,12 +81,12 @@ function sanitizeHistory(value) {
 }
 
 function allowedOrigin(req) {
-  const origin = String(req.headers.origin || '');
+  const origin = String(req?.headers?.origin || '');
   if (!origin) return '';
   if (origin === 'https://dream-unity.github.io') return origin;
   if (/^http:\/\/(?:localhost|127\.0\.0\.1)(?::\d{1,5})?$/.test(origin)) return origin;
 
-  const host = String(req.headers.host || '').toLowerCase();
+  const host = String(req?.headers?.host || '').toLowerCase();
   try {
     const parsed = new URL(origin);
     if ((parsed.protocol === 'https:' || parsed.protocol === 'http:') && parsed.host.toLowerCase() === host) {
@@ -91,8 +105,80 @@ function applyCors(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   res.setHeader('Access-Control-Max-Age', '600');
-  res.setHeader('Access-Control-Expose-Headers', 'Server-Timing, X-Unity-Path');
+  res.setHeader('Access-Control-Expose-Headers', 'Server-Timing, X-Unity-Path, Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset');
   return origin;
+}
+
+function requestIp(req) {
+  const headers = req?.headers || {};
+  const candidate = headers['x-vercel-forwarded-for']
+    || headers['x-forwarded-for']
+    || headers['x-real-ip']
+    || req?.socket?.remoteAddress
+    || 'unknown';
+  const value = Array.isArray(candidate) ? candidate[0] : candidate;
+  const first = String(value).split(',')[0].trim();
+  return first.replace(/[^a-zA-Z0-9:.%-]/g, '').slice(0, 120) || 'unknown';
+}
+
+export function createRateLimiter({
+  limit = RATE_LIMIT_MAX_REQUESTS,
+  windowMs = RATE_LIMIT_WINDOW_MS,
+  maxEntries = RATE_LIMIT_MAX_IPS,
+  now = () => Date.now(),
+  store = new Map()
+} = {}) {
+  if (!Number.isInteger(limit) || limit < 1) throw new TypeError('Rate limit must be a positive integer.');
+  if (!Number.isFinite(windowMs) || windowMs < 1) throw new TypeError('Rate-limit window must be positive.');
+  if (!Number.isInteger(maxEntries) || maxEntries < 1) throw new TypeError('Rate-limit capacity must be a positive integer.');
+  if (typeof now !== 'function' || !(store instanceof Map)) throw new TypeError('Rate limiter requires a clock and Map store.');
+
+  function pruneExpired(timestamp) {
+    for (const [key, value] of store) {
+      if (Number(value?.resetAt) <= timestamp) store.delete(key);
+    }
+  }
+
+  return Object.freeze({
+    check(identity) {
+      const timestamp = Number(now());
+      const checkedAt = Number.isFinite(timestamp) ? timestamp : Date.now();
+      const key = String(identity || 'unknown').slice(0, 120);
+      let entry = store.get(key);
+
+      if (!entry || entry.resetAt <= checkedAt) {
+        if (!entry && store.size >= maxEntries) {
+          pruneExpired(checkedAt);
+          if (store.size >= maxEntries) store.delete(store.keys().next().value);
+        }
+        entry = { count: 1, resetAt: checkedAt + windowMs };
+        store.set(key, entry);
+        return { allowed: true, limit, remaining: limit - 1, resetAt: entry.resetAt, retryAfterMs: 0 };
+      }
+
+      if (entry.count >= limit) {
+        return {
+          allowed: false,
+          limit,
+          remaining: 0,
+          resetAt: entry.resetAt,
+          retryAfterMs: Math.max(1, entry.resetAt - checkedAt)
+        };
+      }
+
+      entry.count += 1;
+      return {
+        allowed: true,
+        limit,
+        remaining: Math.max(0, limit - entry.count),
+        resetAt: entry.resetAt,
+        retryAfterMs: 0
+      };
+    },
+    clear() {
+      store.clear();
+    }
+  });
 }
 
 function extractBlockrunText(data) {
@@ -170,12 +256,62 @@ export function instantAnswer(value) {
   }
   if (/^(?:hi|hello|hey|good morning|good afternoon|good evening)(?:,? unity| there)?[?.!]*$/.test(normalized)) return 'Hello.';
   if (/^(?:are you there|can you hear me)[?.!]*$/.test(normalized)) return "Yes. I'm here.";
+  if (/^(?:can you|could you|will you) help(?: me)?[?.!]*$|^help me[?.!]*$/.test(normalized)) {
+    return 'Yes. Tell me the outcome you want, what is blocking it, and what you have already tried. I will help you choose the next move.';
+  }
   if (/^(?:who|what) are you[?.!]*$|^what(?:'s| is) your name[?.!]*$/.test(normalized)) {
     return "I'm Unity, Dream Unity's voice intelligence.";
   }
   if (/^(?:thanks|thank you|cheers)(?: very much| so much)?[?.!]*$/.test(normalized)) return "You're welcome.";
   if (/^(?:goodbye|bye|see you|see you later)[?.!]*$/.test(normalized)) return 'Until next time.';
   return calculateSimpleQuestion(normalized) || strategicInstantAnswer(normalized);
+}
+
+function resilientLocalAnswer(value) {
+  const message = clampText(value, 500);
+  const normalized = message.toLowerCase().replace(/\s+/g, ' ').trim();
+  const haiku = normalized.match(/^(?:please )?(?:write|create|make) (?:me )?(?:a )?haiku about (.+?)[?.!]*$/i);
+  if (haiku) {
+    const subject = clampText(haiku[1], 54).replace(/[<>]/g, '').trim();
+    return `For ${subject}: Still forms hold the light. Silent forces shape the dawn. New forms wake and rise.`;
+  }
+  const oneSentence = message.match(/^(?:please )?(?:write|create|make) (?:me )?(?:a |one )?(?:(warm|hopeful|calm|concise|strong|playful) )?sentence (?:about|on) (.+?)[?.!]*$/i);
+  if (oneSentence) {
+    const subject = clampText(oneSentence[2], 80).replace(/[<>]/g, '').trim();
+    const lead = `${subject[0]?.toUpperCase() || ''}${subject.slice(1)}`;
+    const tone = String(oneSentence[1] || '').toLowerCase();
+    if (tone === 'playful') return `${lead} has a habit of turning the ordinary sideways just long enough for a better idea to slip through.`;
+    if (tone === 'strong') return `${lead} becomes powerful when clear intent is matched by one deliberate action.`;
+    if (tone === 'concise') return `${lead} matters when it changes what you notice, choose, or build next.`;
+    return `${lead} can make an ordinary moment feel like an invitation to pause, notice, and begin again.`;
+  }
+  const welcome = normalized.match(/^(?:please )?(?:write|create|make) (?:me )?(?:a )?(?:one[- ]sentence )?welcome (?:for|to) (.+?)[?.!]*$/i);
+  if (welcome) {
+    const subject = clampText(welcome[1], 80).replace(/[<>]/g, '').trim();
+    return `Welcome to ${subject}, where clear thinking, brave experiments and deliberate action turn possibility into progress.`;
+  }
+  if (/\b(?:brainstorm|give me ideas?|suggest ideas?|creative ideas?)\b/i.test(message)) {
+    return 'Use three lenses: remove the obvious constraint, combine the idea with an unrelated field, then design the smallest version someone can experience today. Choose the version that teaches you the most.';
+  }
+  if (/^(?:how (?:do|can|should) i|what should i do|help me (?:with|to))\b/i.test(normalized)) {
+    return 'Define the result in one observable sentence, identify the single constraint that matters most, and run the smallest reversible action that tests it. Bring me the result and I will help refine the next move.';
+  }
+  if (/^(?:write|draft|rewrite|compose|create)\b/i.test(normalized)) {
+    return 'I can shape that precisely once the generative channel is connected. Give me the audience, desired outcome and tone; meanwhile, Enhanced Unity in the console provides the full drafting route through your authorized Puter account.';
+  }
+  if (/^(?:who|what|where|when|why|how|is|are|can|could|would|should|do|does|did)\b/i.test(normalized)) {
+    return 'I cannot verify that answer from the local channel alone. Enable Enhanced Unity for a full answer, or rephrase it as a concise factual question so I can use the grounded knowledge route.';
+  }
+  const subject = message.length > 120 ? `${message.slice(0, 117).trim()}…` : message;
+  return `I have your thought: “${subject}” Make it actionable by naming the result you want and the first constraint to resolve; I will help turn those into a concrete next step.`;
+}
+
+function structuredLocalRequest(value) {
+  const message = clampText(value, 500);
+  return /^(?:please )?(?:write|create|make) (?:me )?(?:a )?haiku about\b/i.test(message)
+    || /^(?:please )?(?:write|create|make) (?:me )?(?:a |one )?(?:(?:warm|hopeful|calm|concise|strong|playful) )?sentence (?:about|on)\b/i.test(message)
+    || /^(?:please )?(?:write|create|make) (?:me )?(?:a )?(?:one[- ]sentence )?welcome (?:for|to)\b/i.test(message)
+    || /\b(?:brainstorm|give me ideas?|suggest ideas?|creative ideas?)\b/i.test(message);
 }
 
 export function publicAnswer(value, nonce) {
@@ -253,7 +389,7 @@ async function boundedAttempt(timeoutMs, operation) {
   }
 }
 
-async function callGateway(system, messages, nonce, maxOutputTokens, timeoutMs) {
+async function callGateway(model, system, messages, nonce, maxOutputTokens, timeoutMs) {
   const startedAt = Date.now();
   const attempt = await boundedAttempt(timeoutMs, async (abortSignal) => {
     // A literal dynamic import lets Vercel trace and bundle the SDK while still
@@ -261,11 +397,13 @@ async function callGateway(system, messages, nonce, maxOutputTokens, timeoutMs) 
     const { generateText } = await import('ai');
     if (typeof generateText !== 'function') throw new Error('AI SDK generateText is unavailable.');
     return generateText({
-      model: GATEWAY_MODEL,
+      model,
       system,
       messages,
       temperature: 0.2,
-      maxOutputTokens,
+      // Free reasoning routes may spend part of the ceiling before producing
+      // their concise public envelope. Keep that internal room bounded.
+      maxOutputTokens: Math.min(800, maxOutputTokens + 420),
       abortSignal
     });
   });
@@ -275,7 +413,7 @@ async function callGateway(system, messages, nonce, maxOutputTokens, timeoutMs) 
     if (text) {
       return {
         text,
-        model: GATEWAY_MODEL,
+        model,
         provider: 'vercel-ai-gateway',
         status: 200,
         latencyMs: Date.now() - startedAt
@@ -342,32 +480,96 @@ async function callBlockrun(model, messages, nonce, maxTokens, timeoutMs) {
   };
 }
 
-function wikipediaQuery(message) {
+const KNOWLEDGE_STOP_WORDS = new Set([
+  'a', 'an', 'and', 'are', 'as', 'at', 'be', 'been', 'briefly', 'by', 'define',
+  'did', 'do', 'does', 'explain', 'for', 'from', 'in', 'is', 'it', 'of', 'on',
+  'or', 'the', 'to', 'was', 'were', 'what', 'when', 'where', 'which', 'who'
+]);
+
+function normalizeKnowledgeText(value) {
+  return String(value || '')
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9 ]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function knowledgeTerms(value) {
+  return normalizeKnowledgeText(value)
+    .split(' ')
+    .filter((term) => term.length >= 2 && !KNOWLEDGE_STOP_WORDS.has(term));
+}
+
+function wikipediaPageRelevant(page, query) {
+  const queryText = normalizeKnowledgeText(query);
+  const titleText = normalizeKnowledgeText(page?.title);
+  if (!queryText || !titleText) return false;
+  if (titleText === queryText || titleText.includes(queryText) || queryText.includes(titleText)) return true;
+
+  const querySet = new Set(knowledgeTerms(queryText));
+  if (!querySet.size) return false;
+  const titleSet = new Set(knowledgeTerms(titleText));
+  const introSet = new Set(knowledgeTerms(String(page?.extract || '').slice(0, 420)));
+  const titleHits = [...querySet].filter((term) => titleSet.has(term)).length;
+  const introHits = [...querySet].filter((term) => introSet.has(term)).length;
+  const requiredIntroHits = querySet.size === 1 ? 1 : 2;
+  return titleHits > 0 || introHits >= requiredIntroHits;
+}
+
+export function wikipediaQuery(message) {
   if (/\bdream unity\b|\bunity oracle\b|\bdream (?:machine|maker|world)\b/i.test(message)) return '';
   const normalized = clampText(message, 220).replace(/\s+/g, ' ').trim();
   const patterns = [
     /^(?:who|what)\s+(?:is|are|was|were)\s+(.+?)[?.!]*$/i,
     /^(?:where)\s+(?:is|are|was|were)\s+(.+?)[?.!]*$/i,
     /^(?:when)\s+(?:was|were|did)\s+(.+?)[?.!]*$/i,
-    /^(?:tell me about|briefly explain|explain|define)\s+(.+?)[?.!]*$/i
+    /^(?:what)\s+does\s+(.+?)\s+mean[?.!]*$/i,
+    /^(?:briefly explain|define)\s+(.+?)[?.!]*$/i
   ];
   for (const pattern of patterns) {
     const match = normalized.match(pattern);
-    if (match) return clampText(match[1], 120).replace(/[{}<>\[\]|]/g, ' ').replace(/\s+/g, ' ').trim();
+    if (match) {
+      const query = clampText(match[1], 120)
+        .replace(/\s+(?:in|using)\s+(?:(?:one|two|three|\d+)\s+)?(?:short\s+)?(?:sentences?|words?)$/i, '')
+        .replace(/[{}<>\[\]|]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      if (
+        query.length < 2
+        || query.split(/\s+/).length > 16
+        || !/[a-z0-9]/i.test(query)
+        || /\b(?:i|me|my|mine|myself|we|us|our|ours|ourselves|you|your|yours|yourself|yourselves)\b/i.test(query)
+        || /\b(?:advice|best way|current|feel|future|happening|help|latest|now|plan|prefer|recommend|should|today|weather|whether|why|how)\b/i.test(query)
+        || /^(?:anything|home|it|something|that|this|things?)$/i.test(query)
+      ) return '';
+      return query;
+    }
   }
   return '';
 }
 
-function wikipediaAnswer(data) {
-  const page = Array.isArray(data?.query?.pages) ? data.query.pages[0] : null;
-  if (!page || page.missing || page.pageprops?.disambiguation !== undefined) return '';
+function wikipediaAnswer(data, query) {
+  const pages = Array.isArray(data?.query?.pages) ? [...data.query.pages] : [];
+  pages.sort((left, right) => Number(left?.index ?? Number.MAX_SAFE_INTEGER) - Number(right?.index ?? Number.MAX_SAFE_INTEGER));
+  const page = pages.find((candidate) => (
+    candidate
+    && !candidate.missing
+    && candidate.pageprops?.disambiguation === undefined
+    && wikipediaPageRelevant(candidate, query)
+  )) || null;
+  if (!page) return '';
   const extract = clampText(page.extract, 2_000)
     .replace(/\[[^\]]{1,80}\]/g, '')
+    .replace(/\(\s*;\s*/g, '(')
     .replace(/\s+/g, ' ')
     .trim();
   if (!extract || META_PROCESS_PATTERN.test(extract)) return '';
 
-  const sentences = extract.match(/[^.!?]+[.!?]+(?:["'’”)]*)|[^.!?]+$/g) || [];
+  const decimalSafe = extract.replace(/(\d)\.(\d)/g, '$1__DECIMAL_POINT__$2');
+  const sentences = (decimalSafe.match(/[^.!?]+[.!?]+(?:["'’”)]*)|[^.!?]+$/g) || [])
+    .map((sentence) => sentence.replace(/__DECIMAL_POINT__/g, '.').trim());
   let answer = sentences.slice(0, 2).join(' ').trim();
   if (!answer) return '';
   const words = answer.split(/\s+/);
@@ -384,7 +586,7 @@ async function callWikipedia(query, timeoutMs) {
       generator: 'search',
       gsrsearch: query,
       gsrnamespace: '0',
-      gsrlimit: '1',
+      gsrlimit: '3',
       prop: 'extracts|pageprops',
       exintro: '1',
       explaintext: '1',
@@ -406,7 +608,7 @@ async function callWikipedia(query, timeoutMs) {
 
   if (attempt.value) {
     const { response, data } = attempt.value;
-    const text = response.ok ? wikipediaAnswer(data) : '';
+    const text = response.ok ? wikipediaAnswer(data, query) : '';
     if (text) {
       return {
         text,
@@ -436,26 +638,30 @@ async function firstCleanAnswer(system, history, message, nonce, maxTokens, dead
   const knowledgeQuery = wikipediaQuery(message);
   const attempts = [];
 
+  // Factual questions should never wait behind a denied model entitlement or
+  // congested free capacity. Use the ranked, source-grounded path first.
   let remaining = deadline - Date.now();
-  if (remaining >= MIN_ATTEMPT_BUDGET_MS) {
-    const gateway = await callGateway(
-      system,
-      userMessages,
-      nonce,
-      maxTokens,
-      Math.min(GATEWAY_ATTEMPT_LIMIT_MS, remaining)
-    );
-    attempts.push({ provider: 'vercel-ai-gateway', model: GATEWAY_MODEL, status: gateway.status, latencyMs: gateway.latencyMs, reason: gateway.reason || 'ok' });
-    if (gateway.text) return { ...gateway, attempts };
-  }
-
-  // Factual queries receive fast, source-grounded recovery before congested
-  // free generative capacity. Other questions continue to the model fallbacks.
-  remaining = deadline - Date.now();
   if (knowledgeQuery && remaining >= MIN_ATTEMPT_BUDGET_MS) {
     const knowledge = await callWikipedia(knowledgeQuery, Math.min(KNOWLEDGE_ATTEMPT_LIMIT_MS, remaining));
     attempts.push({ provider: 'wikipedia', model: 'intro-extract', status: knowledge.status, latencyMs: knowledge.latencyMs, reason: knowledge.reason || 'ok' });
     if (knowledge.text) return { ...knowledge, attempts };
+  }
+
+  if (gatewayCredentialsAvailable()) {
+    for (const model of GATEWAY_MODELS) {
+      remaining = deadline - Date.now();
+      if (remaining < MIN_ATTEMPT_BUDGET_MS) break;
+      const gateway = await callGateway(
+        model,
+        system,
+        userMessages,
+        nonce,
+        maxTokens,
+        Math.min(GATEWAY_ATTEMPT_LIMIT_MS, remaining)
+      );
+      attempts.push({ provider: 'vercel-ai-gateway', model, status: gateway.status, latencyMs: gateway.latencyMs, reason: gateway.reason || 'ok' });
+      if (gateway.text) return { ...gateway, attempts };
+    }
   }
 
   for (const model of BLOCKRUN_MODELS) {
@@ -478,12 +684,17 @@ async function firstCleanAnswer(system, history, message, nonce, maxTokens, dead
 async function answer(body) {
   const startedAt = Date.now();
   const deadline = startedAt + TOTAL_UPSTREAM_BUDGET_MS;
-  const message = clampText(body?.message, MAX_MESSAGE_CHARS);
-  if (!message) {
+  if (typeof body?.message !== 'string' || !body.message.trim()) {
     const error = new Error('A spoken or typed message is required.');
     error.status = 400;
     throw error;
   }
+  if (body.message.length > MAX_MESSAGE_CHARS) {
+    const error = new Error(`Keep the message under ${MAX_MESSAGE_CHARS} characters.`);
+    error.status = 400;
+    throw error;
+  }
+  const message = clampText(body?.message, MAX_MESSAGE_CHARS);
 
   const local = instantAnswer(message);
   if (local) {
@@ -493,6 +704,18 @@ async function answer(body) {
       provider: 'local',
       credentialMode: 'none',
       path: 'instant',
+      attemptCount: 0,
+      latencyMs: Date.now() - startedAt
+    };
+  }
+
+  if (structuredLocalRequest(message)) {
+    return {
+      text: resilientLocalAnswer(message),
+      model: 'deterministic-structured-recovery',
+      provider: 'local',
+      credentialMode: 'none',
+      path: 'resilient-local',
       attemptCount: 0,
       latencyMs: Date.now() - startedAt
     };
@@ -509,86 +732,175 @@ async function answer(body) {
       text: result.text,
       model: result.model,
       provider: result.provider,
-      credentialMode: result.provider === 'vercel-ai-gateway' ? 'vercel-oidc' : 'none',
+      credentialMode: result.provider === 'vercel-ai-gateway' ? 'vercel-authenticated' : 'none',
       path: result.provider === 'wikipedia' ? 'knowledge' : 'model',
       attemptCount: result.attempts.length,
       latencyMs: Date.now() - startedAt
     };
   }
 
-  const error = new Error('Every voice intelligence provider was unavailable within the latency budget.');
-  error.status = 503;
-  error.attempts = result.attempts;
-  error.latencyMs = Math.min(TOTAL_UPSTREAM_BUDGET_MS, Date.now() - startedAt);
-  throw error;
+  console.warn('Unity voice provider recovery', JSON.stringify({ attempts: result.attempts }));
+  return {
+    text: resilientLocalAnswer(message),
+    model: 'resilient-local-recovery',
+    provider: 'local',
+    credentialMode: 'none',
+    path: 'resilient-local',
+    attemptCount: result.attempts.length,
+    latencyMs: Math.min(TOTAL_UPSTREAM_BUDGET_MS, Date.now() - startedAt)
+  };
 }
 
-export default async function handler(req, res) {
-  res.setHeader('Cache-Control', 'no-store, max-age=0');
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('Referrer-Policy', 'no-referrer');
-  const cors = applyCors(req, res);
-
-  if (req.headers.origin && cors === null) return res.status(403).json({ code: 'ORIGIN_NOT_ALLOWED', error: 'Origin not allowed.' });
-  if (req.method === 'OPTIONS') return res.status(204).end();
-
-  if (req.method === 'GET') {
-    return res.status(200).json({
-      ok: true,
-      service: 'dream-unity-voice-chat',
-      providers: ['vercel-ai-gateway', 'blockrun', 'wikipedia'],
-      primaryModel: GATEWAY_MODEL,
-      fallbackModels: BLOCKRUN_MODELS,
-      credentialMode: 'vercel-oidc-or-none',
-      accountRequired: false,
-      speechMode: 'browser-native',
-      responseStrategy: 'instant-local-or-eight-second-bounded-provider-failover',
-      totalUpstreamBudgetMs: TOTAL_UPSTREAM_BUDGET_MS
-    });
+function parseRequestBody(value) {
+  if (value && typeof value === 'object' && !Buffer.isBuffer(value)) return value;
+  if (typeof value === 'string' || Buffer.isBuffer(value)) {
+    try {
+      const parsed = JSON.parse(String(value));
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return parsed;
+    } catch (_) {}
+    const error = new Error('The request body is not valid JSON.');
+    error.status = 400;
+    throw error;
   }
-
-  if (req.method !== 'POST') {
-    res.setHeader('Allow', 'GET, POST, OPTIONS');
-    return res.status(405).json({ code: 'METHOD_NOT_ALLOWED', error: 'Use POST to speak with Unity.' });
-  }
-
-  const contentType = String(req.headers['content-type'] || '').toLowerCase();
-  if (contentType && !contentType.startsWith('application/json')) {
-    return res.status(415).json({ code: 'JSON_REQUIRED', error: 'Send the request as JSON.' });
-  }
-
-  try {
-    const payload = await answer(req.body && typeof req.body === 'object' ? req.body : {});
-    res.setHeader('Server-Timing', `unity;dur=${payload.latencyMs}`);
-    res.setHeader('X-Unity-Path', payload.path);
-    console.log('Unity voice turn complete', JSON.stringify({
-      path: payload.path,
-      latencyMs: payload.latencyMs,
-      provider: payload.provider,
-      model: payload.model,
-      attemptCount: payload.attemptCount
-    }));
-    return res.status(200).json(payload);
-  } catch (error) {
-    const status = Number(error?.status) || 503;
-    const latencyMs = Number(error?.latencyMs) || 0;
-    if (latencyMs) res.setHeader('Server-Timing', `unity;dur=${latencyMs}`);
-
-    console.error('Unity voice turn failed', JSON.stringify({
-      status,
-      latencyMs,
-      attempts: Array.isArray(error?.attempts) ? error.attempts : []
-    }));
-
-    if (status === 400) return res.status(400).json({ code: 'BAD_INPUT', error: error.message });
-
-    res.setHeader('Retry-After', '3');
-    res.setHeader('X-Unity-Path', 'unavailable');
-    return res.status(503).json({
-      code: 'UNITY_TEMPORARILY_UNAVAILABLE',
-      error: 'Unity could not reach an answer service in time. Please try that thought again in a moment.',
-      retryable: true,
-      retryAfterMs: 3_000
-    });
-  }
+  return {};
 }
+
+export function createHandler({ rateLimiter = createRateLimiter() } = {}) {
+  if (!rateLimiter || typeof rateLimiter.check !== 'function') {
+    throw new TypeError('Unity handler requires a rate limiter.');
+  }
+
+  return async function handler(req, res) {
+    res.setHeader('Cache-Control', 'no-store, max-age=0');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Referrer-Policy', 'no-referrer');
+    const cors = applyCors(req, res);
+
+    if (req.method === 'OPTIONS') return res.status(204).end();
+
+    if (req.method === 'GET') {
+      return res.status(200).json({
+        ok: true,
+        release: API_RELEASE,
+        service: 'dream-unity-voice-chat',
+        providers: [
+          ...(gatewayCredentialsAvailable() ? ['vercel-ai-gateway'] : []),
+          'blockrun',
+          'wikipedia',
+          'resilient-local'
+        ],
+        configuredProviders: ['vercel-ai-gateway', 'blockrun', 'wikipedia', 'resilient-local'],
+        primaryModel: GATEWAY_MODEL,
+        gatewayModels: GATEWAY_MODELS,
+        fallbackModels: BLOCKRUN_MODELS,
+        credentialMode: gatewayCredentialsAvailable() ? 'vercel-authenticated' : 'none',
+        gatewayAuthentication: gatewayCredentialsAvailable() ? 'available' : 'unavailable',
+        accountRequired: false,
+        speechMode: 'browser-native-with-optional-user-authorized-puter',
+        responseStrategy: 'instant-local-or-four-and-a-half-second-bounded-provider-failover',
+        totalUpstreamBudgetMs: TOTAL_UPSTREAM_BUDGET_MS,
+        security: {
+          postOriginRequired: true,
+          rateLimit: {
+            limit: RATE_LIMIT_MAX_REQUESTS,
+            windowMs: RATE_LIMIT_WINDOW_MS,
+            scope: 'best-effort-instance-ip'
+          }
+        },
+        knowledge: {
+          provider: 'wikipedia',
+          routing: KNOWLEDGE_ROUTING,
+          rankedResults: true,
+          relevanceRequired: true
+        }
+      });
+    }
+
+    if (req.method !== 'POST') {
+      res.setHeader('Allow', 'GET, POST, OPTIONS');
+      return res.status(405).json({ code: 'METHOD_NOT_ALLOWED', error: 'Use POST to speak with Unity.' });
+    }
+
+    if (!cors) {
+      const missing = !req?.headers?.origin;
+      return res.status(403).json({
+        release: API_RELEASE,
+        code: missing ? 'ORIGIN_REQUIRED' : 'ORIGIN_NOT_ALLOWED',
+        error: missing ? 'POST requests require an allowed Origin.' : 'Origin not allowed.'
+      });
+    }
+
+    let rate = null;
+    try {
+      rate = rateLimiter.check(requestIp(req));
+    } catch (_) {
+      // Instance-local limiting is deliberately fail-open: an accounting fault
+      // must not break the voice path, and Vercel's network protections remain.
+      console.warn('Unity voice rate limiter unavailable');
+    }
+    if (rate) {
+      res.setHeader('X-RateLimit-Limit', String(rate.limit));
+      res.setHeader('X-RateLimit-Remaining', String(rate.remaining));
+      res.setHeader('X-RateLimit-Reset', String(Math.ceil(rate.resetAt / 1_000)));
+      if (!rate.allowed) {
+        const retryAfterSeconds = Math.max(1, Math.ceil(rate.retryAfterMs / 1_000));
+        res.setHeader('Retry-After', String(retryAfterSeconds));
+        res.setHeader('X-Unity-Path', 'rate-limited');
+        return res.status(429).json({
+          release: API_RELEASE,
+          code: 'RATE_LIMITED',
+          error: 'Unity is receiving too many requests from this connection. Please retry shortly.',
+          retryable: true,
+          retryAfterMs: retryAfterSeconds * 1_000
+        });
+      }
+    }
+
+    const contentType = String(req.headers['content-type'] || '').toLowerCase();
+    if (contentType && !contentType.startsWith('application/json')) {
+      return res.status(415).json({ release: API_RELEASE, code: 'JSON_REQUIRED', error: 'Send the request as JSON.' });
+    }
+
+    try {
+      const payload = await answer(parseRequestBody(req.body));
+      res.setHeader('Server-Timing', `unity;dur=${payload.latencyMs}`);
+      res.setHeader('X-Unity-Path', payload.path);
+      console.log('Unity voice turn complete', JSON.stringify({
+        path: payload.path,
+        latencyMs: payload.latencyMs,
+        provider: payload.provider,
+        model: payload.model,
+        attemptCount: payload.attemptCount
+      }));
+      return res.status(200).json({ release: API_RELEASE, ...payload });
+    } catch (error) {
+      const syntaxFailure = error instanceof SyntaxError
+        || /(?:invalid|malformed|unexpected).{0,30}json|json.{0,30}(?:invalid|malformed|unexpected)/i.test(String(error?.message || ''));
+      const status = Number(error?.status) || (syntaxFailure ? 400 : 503);
+      const latencyMs = Number(error?.latencyMs) || 0;
+      if (latencyMs) res.setHeader('Server-Timing', `unity;dur=${latencyMs}`);
+
+      console.error('Unity voice turn failed', JSON.stringify({
+        status,
+        latencyMs,
+        attempts: Array.isArray(error?.attempts) ? error.attempts : []
+      }));
+
+      if (status === 400) {
+        return res.status(400).json({ release: API_RELEASE, code: 'BAD_INPUT', error: error.message });
+      }
+
+      res.setHeader('Retry-After', '3');
+      res.setHeader('X-Unity-Path', 'unavailable');
+      return res.status(503).json({
+        release: API_RELEASE,
+        code: 'UNITY_TEMPORARILY_UNAVAILABLE',
+        error: 'Unity could not reach an answer service in time. Please try that thought again in a moment.',
+        retryable: true,
+        retryAfterMs: 3_000
+      });
+    }
+  };
+}
+
+export default createHandler();

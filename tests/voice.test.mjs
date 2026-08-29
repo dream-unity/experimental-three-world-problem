@@ -54,7 +54,7 @@ assert.match(
 assert.match(voice, /(?:window\.)?SpeechRecognition\s*\|\|\s*(?:window\.)?webkitSpeechRecognition/, 'Unity must support the standard and prefixed SpeechRecognition APIs');
 assert.match(voice, /speechSynthesis/, 'Unity must use browser-native speech synthesis');
 assert.match(voice, /SpeechSynthesisUtterance/, 'Unity must synthesize its replies');
-assert.match(voice, /speechSynthesis\.getVoices\(\)/, 'Unity must inspect installed voices instead of accepting an arbitrary default');
+assert.match(voice, /speechSynthesis[\s\S]{0,24}getVoices(?:\?\.)?\(\)/, 'Unity must inspect installed voices instead of accepting an arbitrary default');
 assert.match(voice, /en-GB/i, 'Unity must prefer British English speech');
 assertAny(
   voice,

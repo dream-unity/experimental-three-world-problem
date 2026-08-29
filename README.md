@@ -10,15 +10,17 @@ The overview can be orbited by mouse or touch. One continuous 3D knot moves thro
 
 Three temporal layers inhabit the same geometry. A colourless delayed path is the inherited ghost: reflection and history following after the living system. Several faint paths ahead are remembered tomorrows—possibilities rather than prophecy or fate. The vivid present responds first to the visitor's hand, and its lower passage becomes a crystalline body-anchor. At the centre, an amber three-dimensional aperture is the owned core where awareness becomes agency. Dream Machine is a polyhedral cognition field; Dream Maker is a converging braid; Dream World is a material lattice. Selecting a world exposes its internal triad; selecting an internal label opens the corresponding game.
 
-The homepage attempts to begin **I Remember Tomorrow** automatically and exposes a persistent score control. Browsers that defer audible autoplay start it on the visitor's first interaction. An explicit off choice is remembered locally. Unity temporarily ducks the score while speaking and restores the visitor's prior audio choice afterwards.
+The homepage attempts to begin **I Remember Tomorrow** automatically and exposes a persistent score control. Browsers that defer audible autoplay start it on the visitor's first non-voice interaction. Voice-console interactions do not start the score, preventing the site audio from contaminating microphone capture. An explicit off choice is remembered locally. Unity ducks the score while connecting, listening, thinking or speaking and restores the visitor's prior audio choice afterwards.
 
 ## Unity voice assistant
 
 The amber owned core is also an accessible voice and text launcher. Unity can listen, speak, retain a short bounded conversation, answer questions, explain the three-world system, open any world or game, return home, and control the score or active game. The canvas responds independently while Unity is listening, thinking and speaking.
 
-Speech recognition and synthesis remain in the browser. Unity ranks installed `en-GB` voices for a calm, precise, original British delivery; the exact timbre depends on the visitor's browser and operating system. Typing remains available when microphone access is unavailable, declined or simply unwanted.
+Native mode keeps microphone audio, speech recognition and speech synthesis in the browser. Unity waits for the asynchronous system-voice list, ranks installed `en-GB` natural voices, preserves the chosen voice, offers a preview, and uses voice-specific prosody for a calm, precise, original British delivery. The exact native timbre still depends on the browser and operating system; Unity does not impersonate an actor. Typing remains usable even if recognition or synthesis throws, stalls, is blocked, is declined or is unsupported. Non-local typed or recognised text, plus the short recent text conversation, may be sent to Unity's reply service; microphone audio is not.
 
-Conversational turns first use the browser's built-in language model when it is supported and already installed; Unity never silently initiates the large model download. Other turns use a layered, latency-bounded service: Vercel AI Gateway through deployment identity when available, fast public encyclopaedic grounding for suitable factual questions, then zero-key generative capacity. Local navigation, time, date, arithmetic and Dream Unity explanations do not depend on an upstream model. Browser assets contain no provider credentials, and only recognised text—not microphone audio—is sent to the reply service.
+**Enhanced Unity** is an explicit optional mode for visitors who want consistent neural speech, general conversation and a recorded-audio transcription fallback in browsers without native recognition. The first click loads Puter; a separate direct click authorizes the visitor's Puter account. Only after that authorization can prompts, final reply text or recorded audio be processed through Puter and its selected providers, using that visitor's allowance. Native mode is unaffected if loading, authorization, playback or a quota fails.
+
+Conversational turns use local commands first, then Enhanced Unity when authorized, or an already-installed browser language model where supported. Unity never silently starts a large local-model download. Remaining turns use a short, bounded service: ranked public encyclopaedic grounding for factual questions, explicitly free-tier Vercel AI Gateway models when deployment authentication is available, zero-key generative capacity when available, and an immediate deterministic recovery response instead of a dead `503`. Local navigation, time, date, arithmetic and Dream Unity explanations do not depend on an upstream model. Browser assets contain no provider credential.
 
 ## Nine-game cognitive division of labour
 
@@ -204,9 +206,9 @@ The governing distinction remains controlled as-if conviction, not literal confu
 - `visual-parts/remembered-tomorrow-10.txt` — procedural temporal knot, delayed ghost, plural future paths, compression braid, matter crystallisation, Unity aperture and three immersive world fields.
 - `unity-cycle.css` — pure-white, low-interface visual presentation with crisp cyan, emerald, ultraviolet and amber phase identities.
 - `unity-ui.js` — homepage score control, autoplay recovery and keyboard world navigation.
-- `voice.js` — browser voice lifecycle, short conversation memory, local commands, resilient knowledge fallback and score ducking.
+- `voice.js` — recoverable browser voice lifecycle, installed-voice selection, optional user-authorized Puter chat/STT/TTS, short conversation memory, local commands, resilient knowledge fallback and score ducking.
 - `voice.css` — responsive Unity console and listening/thinking/speaking states.
-- `api/realtime-session.js` — bounded Vercel reply service with Gateway, zero-key and public-knowledge fallback layers.
+- `api/realtime-session.js` — bounded Vercel reply service with ranked public knowledge, Gateway, zero-key and deterministic recovery layers.
 - `assets/i-remember-tomorrow.mp3` — homepage score.
 - `styles.css` — common Dream Unity and arcade styling.
 - `become.css` — responsive Become interface and training readouts.

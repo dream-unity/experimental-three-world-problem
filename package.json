@@ -1,11 +1,11 @@
 {
   "name": "dream-unity-experimental-three-world-problem",
-  "version": "1.21.0",
+  "version": "1.22.0",
   "private": true,
   "type": "module",
   "description": "Dream Unity returning-dream system with a voice-driven Unity assistant, temporal 3D world cycle and nine compatible games.",
   "scripts": {
-    "test": "node tests/remembered-tomorrow.test.mjs && node tests/role-drift.test.mjs && node tests/validate-imagine-17.mjs && node tests/voice.test.mjs",
+    "test": "node tests/remembered-tomorrow.test.mjs && node tests/role-drift.test.mjs && node tests/validate-imagine-17.mjs && node tests/voice.test.mjs && node tests/voice-runtime.test.mjs && node tests/backend-runtime.test.mjs",
     "test:browser": "node tests/browser-regression.mjs",
     "test:all": "npm test && npm run test:browser"
   },

@@ -385,6 +385,98 @@ body[data-voice-state="error"] .du-unity-oracle::before,
   cursor: pointer;
 }
 
+.du-voice-settings {
+  margin-top: 9px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(11, 16, 32, .09);
+}
+
+.du-voice-settings > label {
+  display: block;
+  margin-bottom: 5px;
+  color: #858b96;
+  font: 700 7px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .18em;
+}
+
+.du-voice-settings > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 62px;
+}
+
+.du-voice-settings select,
+.du-voice-settings button {
+  appearance: none;
+  height: 30px;
+  min-width: 0;
+  border: 1px solid rgba(11, 16, 32, .18);
+  border-radius: 0;
+  background: #fff;
+  color: var(--ink);
+  font: 750 7px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .08em;
+}
+
+.du-voice-settings select {
+  padding: 0 22px 0 8px;
+  border-right: 0;
+  background-image: linear-gradient(45deg, transparent 50%, #737985 50%), linear-gradient(135deg, #737985 50%, transparent 50%);
+  background-position: calc(100% - 10px) 12px, calc(100% - 7px) 12px;
+  background-size: 3px 3px, 3px 3px;
+  background-repeat: no-repeat;
+}
+
+.du-voice-settings button { cursor: pointer; padding: 0; }
+.du-voice-settings button:hover,
+.du-voice-settings button:focus-visible,
+.du-voice-settings select:focus-visible { outline: none; border-color: var(--ink); }
+.du-voice-settings button:disabled { cursor: wait; opacity: .55; }
+
+.du-voice-settings > small {
+  display: block;
+  margin-top: 5px;
+  color: #9298a2;
+  font: 500 7px/1.35 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .06em;
+}
+
+.du-enhanced-unity {
+  display: grid;
+  grid-template-columns: 124px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  margin-top: 7px;
+}
+
+.du-enhanced-unity button {
+  appearance: none;
+  min-height: 28px;
+  padding: 6px 7px;
+  border: 1px solid rgba(11, 16, 32, .2);
+  border-left: 2px solid var(--reality);
+  border-radius: 0;
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer;
+  font: 800 7px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .1em;
+}
+
+.du-enhanced-unity button[data-connected="true"] {
+  border-left-color: var(--machine);
+  background: #f4fcff;
+}
+
+.du-enhanced-unity button:hover,
+.du-enhanced-unity button:focus-visible { outline: none; border-color: var(--ink); }
+.du-enhanced-unity button:disabled { cursor: wait; opacity: .58; }
+
+.du-enhanced-unity small {
+  color: #9298a2;
+  font: 500 7px/1.35 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .045em;
+}
+
 .du-voice-privacy {
   display: block;
   margin-top: 8px;
@@ -455,7 +547,12 @@ body[data-voice-state="error"] .du-unity-oracle::before,
   .du-voice-panel { padding: 12px 12px 10px; }
   .du-voice-transcript { min-height: 31px; margin: 8px 0 9px; font-size: 10.5px; }
   .du-voice-action, .du-voice-composer input, .du-voice-composer button { height: 34px; min-height: 34px; }
-  .du-voice-privacy { display: none; }
+  .du-voice-settings > small { display: none; }
+
+  .du-enhanced-unity { grid-template-columns: 1fr; }
+  .du-enhanced-unity button { min-height: 30px; }
+  .du-enhanced-unity small,
+  .du-voice-privacy { font-size: 7px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

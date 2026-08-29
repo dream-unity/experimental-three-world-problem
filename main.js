@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const VERSION = '20260829-unity-voice-1';
+  const VERSION = '20260829-unity-voice-2';
   const baseParts = Array.from({ length: 6 }, (_, index) =>
     `./visual-parts/part-${String(index + 1).padStart(2, '0')}.txt?v=${VERSION}`
   );

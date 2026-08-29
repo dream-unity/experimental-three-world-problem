@@ -66,7 +66,10 @@
   });
 
   const unlock = (event) => {
-    if (event.target instanceof Element && event.target.closest('#scoreControl')) return;
+    if (
+      event.target instanceof Element
+      && event.target.closest('#scoreControl, [data-voice-launcher], #duVoicePanel')
+    ) return;
     if (!userMuted && audio?.paused) playScore(true);
   };
   document.addEventListener('pointerdown', unlock, { capture: true, passive: true });
