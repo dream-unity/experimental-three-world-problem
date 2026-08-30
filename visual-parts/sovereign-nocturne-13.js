@@ -108,10 +108,10 @@
   let holdStrength = 0;
   let holdTarget = 0;
 
-  let overviewYaw = 0.58;
-  let overviewPitch = -0.20;
-  let overviewRoll = -0.17;
-  let overviewZoom = 0.97;
+  let overviewYaw = 0.40;
+  let overviewPitch = -0.10;
+  let overviewRoll = -0.06;
+  let overviewZoom = 0.92;
   let overviewYawVelocity = 0;
   let overviewPitchVelocity = 0;
   let overviewRollVelocity = 0;
@@ -122,9 +122,9 @@
   let detailYawVelocity = 0;
   let detailPitchVelocity = 0;
   let detailRollVelocity = 0;
-  let ghostYaw = overviewYaw + 0.18;
-  let ghostPitch = overviewPitch + 0.05;
-  let ghostRoll = overviewRoll - 0.06;
+  let ghostYaw = 0.56;
+  let ghostPitch = -0.05;
+  let ghostRoll = -0.11;
 
   let gestureTravel = 0;
   let gestureHadPinch = false;
@@ -136,25 +136,25 @@
   const subScreen = [0, 1, 2].map((index) => ({ x: 0, y: 0, r: 25, z: 0, index }));
 
   const WORLD_PINS = {
-    machine: { x: -0.87, y: -0.05, z: 0.63 },
-    maker: { x: 1.90, y: 2.11, z: 0.51 },
-    reality: { x: -1.71, y: -1.02, z: 0.42 },
+    machine: { x: -0.50, y: -0.04, z: 0.35 },
+    maker: { x: 1.88, y: 2.30, z: 0.18 },
+    reality: { x: -1.46, y: -1.92, z: -0.20 },
   };
   const DETAIL_PINS = {
     machine: [
-      { x: -1.20, y: -1.10, z: 0.37 },
-      { x: -0.87, y: -0.05, z: 0.63 },
-      { x: -0.53, y: 1.05, z: 0.50 },
+      { x: -0.42, y: -0.54, z: 1.15 },
+      { x: -0.50, y: -0.04, z: 0.35 },
+      { x: -0.25, y: 0.42, z: 1.00 },
     ],
     maker: [
-      { x: 1.50, y: 2.38, z: 0.99 },
-      { x: 1.90, y: 2.11, z: 0.51 },
-      { x: 2.15, y: 1.66, z: -0.01 },
+      { x: 1.55, y: 2.43, z: 0.82 },
+      { x: 1.88, y: 2.30, z: 0.18 },
+      { x: 2.18, y: 2.12, z: -0.42 },
     ],
     reality: [
-      { x: -2.06, y: -0.57, z: 0.93 },
-      { x: -1.71, y: -1.02, z: 0.42 },
-      { x: -1.26, y: -1.41, z: -0.11 },
+      { x: -1.90, y: -1.70, z: 0.44 },
+      { x: -1.46, y: -1.92, z: -0.20 },
+      { x: -0.96, y: -2.18, z: 0.30 },
     ],
   };
 
@@ -212,7 +212,7 @@
       yaw: lerp(overview.yaw, detailYaw + worldOffsets.yaw, mix),
       pitch: lerp(overview.pitch, detailPitch + worldOffsets.pitch, mix),
       roll: lerp(overview.roll, detailRoll, mix),
-      zoom: lerp(overview.zoom, detailZoom * 1.04, mix),
+      zoom: lerp(overview.zoom, detailZoom * 0.94, mix),
     };
   }
 
@@ -262,77 +262,113 @@
     };
   }
 
-  // Three authored mineral folds: no shared root, crown, radius or envelope.
-  // Their different lengths and depth crossings keep the mantle open rather
-  // than resolving into a bilateral pod.
+  // Three cleaved mineral fields. Unequal left/right profiles and hard station
+  // breaks keep them geological: no symmetric leaf, glyph or tool.
   const LAMELLAE = [
     {
+      stations: [0, 0.25, 0.50, 0.75, 1],
       points: [
-        { x: -1.45, y: -2.05, z: -0.35 },
-        { x: -1.20, y: -0.88, z: 0.95 },
-        { x: -0.55, y: 0.70, z: 0.82 },
-        { x: -0.25, y: 2.15, z: 0.05 },
+        { x: -0.55, y: -1.05, z: 0.90 },
+        { x: -0.42, y: -0.54, z: 1.15 },
+        { x: -0.50, y: -0.04, z: 0.35 },
+        { x: -0.25, y: 0.42, z: 1.00 },
+        { x: -0.32, y: 0.95, z: 0.15 },
       ],
-      widths: [0.05, 0.68, 0.54, 0.045],
-      banks: [-0.92, -0.28, 0.54, 1.18],
-      camber: 0.15,
-      thickness: 0.18,
+      leftWidths: [0.36, 0.58, 0.68, 0.55, 0.40],
+      rightWidths: [0.28, 0.64, 0.50, 0.62, 0.31],
+      banks: [-0.38, -0.48, -0.44, -0.50, -0.62],
+      camber: 0.13,
+      thickness: 0.17,
     },
     {
+      stations: [0, 0.25, 0.50, 0.75, 1],
       points: [
-        { x: 1.05, y: 2.45, z: 1.45 },
-        { x: 1.65, y: 2.50, z: 0.85 },
-        { x: 2.35, y: 1.95, z: 0.20 },
-        { x: 2.15, y: 1.05, z: -0.55 },
+        { x: 1.20, y: 2.62, z: 1.30 },
+        { x: 1.55, y: 2.43, z: 0.82 },
+        { x: 1.88, y: 2.30, z: 0.18 },
+        { x: 2.18, y: 2.12, z: -0.42 },
+        { x: 2.42, y: 1.94, z: -0.80 },
       ],
-      widths: [0.04, 0.52, 0.42, 0.04],
-      banks: [0.74, 0.30, -0.38, -1.02],
-      camber: -0.16,
-      thickness: 0.15,
+      leftWidths: [0.34, 0.47, 0.53, 0.48, 0.36],
+      rightWidths: [0.31, 0.43, 0.59, 0.45, 0.32],
+      banks: [-1.05, -0.95, -0.84, -0.72, -0.62],
+      camber: -0.11,
+      thickness: 0.14,
     },
     {
+      stations: [0, 0.25, 0.50, 0.75, 1],
       points: [
-        { x: -2.30, y: -0.10, z: 1.35 },
-        { x: -2.05, y: -0.72, z: 0.85 },
-        { x: -1.52, y: -1.42, z: 0.05 },
-        { x: -0.70, y: -1.68, z: -0.65 },
+        { x: -2.30, y: -1.45, z: 1.05 },
+        { x: -1.90, y: -1.70, z: 0.44 },
+        { x: -1.46, y: -1.92, z: -0.20 },
+        { x: -0.96, y: -2.18, z: 0.30 },
+        { x: -0.40, y: -2.46, z: -0.60 },
       ],
-      widths: [0.04, 0.44, 0.34, 0.04],
-      banks: [1.16, 0.48, -0.42, -1.16],
-      camber: 0.19,
-      thickness: 0.13,
+      leftWidths: [0.34, 0.50, 0.62, 0.48, 0.34],
+      rightWidths: [0.30, 0.58, 0.47, 0.57, 0.38],
+      banks: [0.34, 0.18, 0.02, -0.15, -0.30],
+      camber: 0.16,
+      thickness: 0.19,
     },
   ];
 
-  function cubicValue(values, t) {
-    const q = 1 - t;
-    return q * q * q * values[0]
-      + 3 * q * q * t * values[1]
-      + 3 * q * t * t * values[2]
-      + t * t * t * values[3];
+  function stationSegment(config, t, preferred = null) {
+    if (Number.isInteger(preferred)) return clamp(preferred, 0, config.stations.length - 2);
+    for (let index = 0; index < config.stations.length - 1; index++) {
+      if (t < config.stations[index + 1] || index === config.stations.length - 2) return index;
+    }
+    return config.stations.length - 2;
   }
 
-  function cubicPoint(points, t) {
+  function stationValue(config, values, t, preferred = null) {
+    const segment = stationSegment(config, t, preferred);
+    const start = config.stations[segment];
+    const end = config.stations[segment + 1];
+    return lerp(values[segment], values[segment + 1], clamp((t - start) / Math.max(0.0001, end - start), 0, 1));
+  }
+
+  function stationPoint(config, t, preferred = null) {
     return {
-      x: cubicValue(points.map((point) => point.x), t),
-      y: cubicValue(points.map((point) => point.y), t),
-      z: cubicValue(points.map((point) => point.z), t),
+      x: stationValue(config, config.points.map((point) => point.x), t, preferred),
+      y: stationValue(config, config.points.map((point) => point.y), t, preferred),
+      z: stationValue(config, config.points.map((point) => point.z), t, preferred),
     };
+  }
+
+  function stationProfileTangent(config, station) {
+    const last = config.points.length - 1;
+    if (station <= 0) return normalize(subtract(config.points[1], config.points[0]));
+    if (station >= last) return normalize(subtract(config.points[last], config.points[last - 1]));
+    const incoming = normalize(subtract(config.points[station], config.points[station - 1]));
+    const outgoing = normalize(subtract(config.points[station + 1], config.points[station]));
+    return normalize({
+      x: incoming.x + outgoing.x,
+      y: incoming.y + outgoing.y,
+      z: incoming.z + outgoing.z,
+    });
   }
 
   function dot(a, b) {
     return a.x * b.x + a.y * b.y + a.z * b.z;
   }
 
-  function lamellaPoint(index, along, across) {
+  function lamellaPoint(index, along, across, preferredSegment = null) {
     const config = LAMELLAE[index];
     const t = clamp(along, 0, 1);
     const s = clamp(across, -1, 1);
-    const center = cubicPoint(config.points, t);
-    const before = cubicPoint(config.points, Math.max(0, t - 0.002));
-    const after = cubicPoint(config.points, Math.min(1, t + 0.002));
-    const tangent = normalize(subtract(after, before));
-    const bank = cubicValue(config.banks, t);
+    const segment = stationSegment(config, t, preferredSegment);
+    const center = stationPoint(config, t, segment);
+    const stationStart = config.stations[segment];
+    const stationEnd = config.stations[segment + 1];
+    const amount = clamp((t - stationStart) / Math.max(0.0001, stationEnd - stationStart), 0, 1);
+    const startTangent = stationProfileTangent(config, segment);
+    const endTangent = stationProfileTangent(config, segment + 1);
+    const tangent = normalize({
+      x: lerp(startTangent.x, endTangent.x, amount),
+      y: lerp(startTangent.y, endTangent.y, amount),
+      z: lerp(startTangent.z, endTangent.z, amount),
+    });
+    const bank = stationValue(config, config.banks, t, segment);
     const rawSide = { x: Math.cos(bank), y: 0.08 * Math.sin(t * Math.PI), z: Math.sin(bank) };
     const projection = dot(rawSide, tangent);
     const side = normalize({
@@ -341,13 +377,14 @@
       z: rawSide.z - tangent.z * projection,
     });
     const normal = normalize(cross(tangent, side));
-    const width = cubicValue(config.widths, t);
-    const asymmetry = s + (s * s - 1) * (index === 0 ? 0.10 : index === 1 ? -0.08 : 0.06);
-    const edgeCurl = config.camber * width * (s * s - 0.18);
+    const leftWidth = stationValue(config, config.leftWidths, t, segment);
+    const rightWidth = stationValue(config, config.rightWidths, t, segment);
+    const acrossOffset = s < 0 ? s * leftWidth : s * rightWidth;
+    const edgeCurl = config.camber * Math.max(leftWidth, rightWidth) * (s * s - 0.18);
     return {
-      x: center.x + side.x * asymmetry * width + normal.x * edgeCurl,
-      y: center.y + side.y * asymmetry * width + normal.y * edgeCurl,
-      z: center.z + side.z * asymmetry * width + normal.z * edgeCurl,
+      x: center.x + side.x * acrossOffset + normal.x * edgeCurl,
+      y: center.y + side.y * acrossOffset + normal.y * edgeCurl,
+      z: center.z + side.z * acrossOffset + normal.z * edgeCurl,
     };
   }
 
@@ -368,11 +405,16 @@
     };
   }
 
-  function lamellaNormal(index, t, s) {
-    const beforeT = lamellaPoint(index, Math.max(0, t - 0.002), s);
-    const afterT = lamellaPoint(index, Math.min(1, t + 0.002), s);
-    const beforeS = lamellaPoint(index, t, Math.max(-1, s - 0.003));
-    const afterS = lamellaPoint(index, t, Math.min(1, s + 0.003));
+  function lamellaNormal(index, t, s, preferredSegment = null) {
+    const config = LAMELLAE[index];
+    const segment = stationSegment(config, t, preferredSegment);
+    const stationStart = config.stations[segment];
+    const stationEnd = config.stations[segment + 1];
+    const epsilon = Math.min(0.002, (stationEnd - stationStart) * 0.08);
+    const beforeT = lamellaPoint(index, Math.max(stationStart, t - epsilon), s, segment);
+    const afterT = lamellaPoint(index, Math.min(stationEnd, t + epsilon), s, segment);
+    const beforeS = lamellaPoint(index, t, Math.max(-1, s - 0.003), segment);
+    const afterS = lamellaPoint(index, t, Math.min(1, s + 0.003), segment);
     const normal = normalize(cross(subtract(afterT, beforeT), subtract(afterS, beforeS)));
     // All authored centre-lines advance upward while their side basis advances
     // toward +x. A single deterministic sign keeps the nacre/specular planes
@@ -384,30 +426,50 @@
     const vertices = [];
     const indices = [];
     const stride = columns + 1;
-    const path = [
-      { x: -0.72, y: -0.62, z: 1.95 },
-      { x: -0.28, y: -0.32, z: 2.12 },
-      { x: 0.10, y: 0.18, z: 1.92 },
-      { x: 0.55, y: 0.52, z: 1.62 },
-    ];
+    const alongStations = [0.34, 0.41, 0.49, 0.57, 0.64];
+    const acrossStations = [0.20, -0.06, 0.13, -0.11, 0.02];
+    const halfWidths = [0.008, 0.014, 0.020, 0.013, 0.007];
+    const normalLifts = [0.165, 0.170, 0.180, 0.170, 0.160];
+    const sample = (values, t) => {
+      const scaled = clamp(t, 0, 1) * (values.length - 1);
+      const segment = Math.min(values.length - 2, Math.floor(scaled));
+      return lerp(values[segment], values[segment + 1], scaled - segment);
+    };
+    const pathSample = (t) => {
+      const along = sample(alongStations, t);
+      const across = sample(acrossStations, t);
+      const segment = stationSegment(LAMELLAE[0], along);
+      const normal = lamellaNormal(0, along, across, segment);
+      const base = lamellaPoint(0, along, across, segment);
+      const lift = sample(normalLifts, t);
+      return {
+        point: {
+          x: base.x + normal.x * lift,
+          y: base.y + normal.y * lift,
+          z: base.z + normal.z * lift,
+        },
+        normal,
+        along,
+        across,
+      };
+    };
     for (let row = 0; row <= rows; row++) {
       const t = row / rows;
-      const center = cubicPoint(path, t);
-      const before = cubicPoint(path, Math.max(0, t - 0.002));
-      const after = cubicPoint(path, Math.min(1, t + 0.002));
+      const current = pathSample(t);
+      const before = pathSample(Math.max(0, t - 0.002)).point;
+      const after = pathSample(Math.min(1, t + 0.002)).point;
       const tangent = normalize(subtract(after, before));
-      const guide = normalize({ x: 0.15, y: -0.25, z: 1 });
-      const side = normalize(cross(tangent, guide));
-      const normal = normalize(cross(side, tangent));
-      const halfWidth = 0.026 + Math.sin(Math.PI * t) * 0.036;
+      const side = normalize(cross(tangent, current.normal));
+      const halfWidth = sample(halfWidths, t);
       for (let column = 0; column <= columns; column++) {
         const s = column / columns * 2 - 1;
         vertices.push(
-          center.x + side.x * s * halfWidth,
-          center.y + side.y * s * halfWidth,
-          center.z + side.z * s * halfWidth,
-          normal.x, normal.y, normal.z,
-          t, s, 3, 0,
+          current.point.x + side.x * s * halfWidth,
+          current.point.y + side.y * s * halfWidth,
+          current.point.z + side.z * s * halfWidth,
+          current.normal.x, current.normal.y, current.normal.z,
+          current.along, current.across, 0, 0,
+          current.normal.x, current.normal.y, current.normal.z,
         );
       }
     }
@@ -434,51 +496,65 @@
     const rows = Math.max(48, latitudes);
     const columns = Math.max(18, Math.round(longitudes * 0.20));
     const stride = columns + 1;
-    const faceCount = (rows + 1) * stride;
     const vertices = [];
     const indices = [];
 
     LAMELLAE.forEach((config, lamellaIndex) => {
-      const baseVertex = vertices.length / 10;
+      const baseVertex = vertices.length / 13;
       const samples = [];
-      for (let row = 0; row <= rows; row++) {
-        const t = row / rows;
-        for (let column = 0; column <= columns; column++) {
-          const s = column / columns * 2 - 1;
-          const point = lamellaPoint(lamellaIndex, t, s);
-          const normal = lamellaNormal(lamellaIndex, t, s);
-          const thicknessTaper = 0.24 + Math.pow(Math.sin(Math.PI * t), 0.62) * 0.76;
-          const thickness = config.thickness * thicknessTaper;
-          samples.push({ point, normal, thickness, t, s });
+      const segmentRows = [];
+      for (let segment = 0; segment < config.stations.length - 1; segment++) {
+        const stationStart = config.stations[segment];
+        const stationEnd = config.stations[segment + 1];
+        const rowCount = Math.max(8, Math.round(rows * (stationEnd - stationStart)));
+        const startRow = samples.length / stride;
+        for (let row = 0; row <= rowCount; row++) {
+          const t = lerp(stationStart, stationEnd, row / rowCount);
+          for (let column = 0; column <= columns; column++) {
+            const s = column / columns * 2 - 1;
+            const point = lamellaPoint(lamellaIndex, t, s, segment);
+            const normal = lamellaNormal(lamellaIndex, t, s, segment);
+            const extrusionNormal = lamellaNormal(lamellaIndex, t, s);
+            const thicknessTaper = 0.24 + Math.pow(Math.sin(Math.PI * t), 0.62) * 0.76;
+            const thickness = config.thickness * thicknessTaper;
+            samples.push({ point, normal, extrusionNormal, thickness, t, s });
+          }
         }
+        segmentRows.push({ startRow, rowCount });
       }
+      const faceCount = samples.length;
       for (let back = 0; back <= 1; back++) {
         const direction = back ? -1 : 1;
-        samples.forEach(({ point, normal, thickness, t, s }) => {
+        samples.forEach(({ point, normal, extrusionNormal, thickness, t, s }) => {
           vertices.push(
-            point.x + normal.x * thickness * direction,
-            point.y + normal.y * thickness * direction,
-            point.z + normal.z * thickness * direction,
+            point.x + extrusionNormal.x * thickness * direction,
+            point.y + extrusionNormal.y * thickness * direction,
+            point.z + extrusionNormal.z * thickness * direction,
             normal.x * direction, normal.y * direction, normal.z * direction,
             t, s, lamellaIndex, back,
+            extrusionNormal.x * direction,
+            extrusionNormal.y * direction,
+            extrusionNormal.z * direction,
           );
         });
       }
 
-      for (let row = 0; row < rows; row++) {
-        for (let column = 0; column < columns; column++) {
-          const a = baseVertex + row * stride + column;
-          const b = a + 1;
-          const c = a + stride;
-          const d = c + 1;
-          const backA = a + faceCount;
-          const backB = b + faceCount;
-          const backC = c + faceCount;
-          const backD = d + faceCount;
-          indices.push(a, c, b, b, c, d);
-          indices.push(backA, backB, backC, backB, backD, backC);
+      segmentRows.forEach(({ startRow, rowCount }) => {
+        for (let row = 0; row < rowCount; row++) {
+          for (let column = 0; column < columns; column++) {
+            const a = baseVertex + (startRow + row) * stride + column;
+            const b = a + 1;
+            const c = a + stride;
+            const d = c + 1;
+            const backA = a + faceCount;
+            const backB = b + faceCount;
+            const backC = c + faceCount;
+            const backD = d + faceCount;
+            indices.push(a, c, b, b, c, d);
+            indices.push(backA, backB, backC, backB, backD, backC);
+          }
         }
-      }
+      });
 
       // The lamellae are cleaved sheets, not rubber extrusions. Their front and
       // back mineral planes remain deliberately open at the edge; interpolating
@@ -512,9 +588,12 @@
         across,
       );
       const endNormal = lamellaNormal(lamellaIndex, along, across);
-      end.x += endNormal.x * 0.11;
-      end.y += endNormal.y * 0.11;
-      end.z += endNormal.z * 0.11;
+      const surfaceLift = LAMELLAE[lamellaIndex].thickness
+        * (0.24 + Math.pow(Math.sin(Math.PI * along), 0.62) * 0.76)
+        + 0.006;
+      end.x += endNormal.x * surfaceLift;
+      end.y += endNormal.y * surfaceLift;
+      end.z += endNormal.z * surfaceLift;
       const start = {
         x: side * (3.15 + hash(index + 3) * 1.35),
         y: verticalDirection * (2.75 + hash(index + 17) * 1.45),
@@ -634,6 +713,7 @@
     layout(location=3) in float aAcross;
     layout(location=4) in float aLamella;
     layout(location=5) in float aBack;
+    layout(location=6) in vec3 aDeformNormal;
     uniform mat4 uProjection;
     uniform vec4 uOrientation;
     uniform vec2 uScreenShift;
@@ -679,11 +759,12 @@
     void main() {
       vec3 point = aPosition;
       vec3 normal = aNormal;
+      vec3 deformNormal = aDeformNormal;
       float movingTime = mix(uTime, 0.0, uReduced);
       float envelope = sin(clamp(aAlong, 0.0, 1.0) * 3.14159265);
       float lowAnchor = 1.0 - smoothstep(-2.72, -0.82, point.y);
       float breath = uGather * envelope * (0.018 + 0.012 * sin(aAlong * 8.0 + movingTime * 0.22));
-      point += normal * breath * (1.0 - lowAnchor * 0.78);
+      point += deformNormal * breath * (1.0 - lowAnchor * 0.78);
 
       float compression = clamp(uPressure + uInversion * 0.16, 0.0, 1.0);
       point.x *= 1.0 - compression * (0.060 + aLamella * 0.010);
@@ -696,8 +777,8 @@
         : (aLamella < 1.5 ? vec3(-0.58, -0.38, 0.24) : vec3(0.46, 0.34, -0.16));
       point += convergence * embodiedUnity;
       float resolvedWave = sin(aAlong * 12.0 + aAcross * 2.8 - movingTime * 0.30 + aLamella * 1.7);
-      point += normal * resolvedWave * envelope * uReconstitution * (0.040 + aLamella * 0.010);
-      point += normal * envelope * uCrown * (0.026 + aLamella * 0.008);
+      point += deformNormal * resolvedWave * envelope * uReconstitution * (0.040 + aLamella * 0.010);
+      point += deformNormal * envelope * uCrown * (0.026 + aLamella * 0.008);
 
       float machineMask = 1.0 - smoothstep(0.16, 0.42, abs(uActiveWorld - 1.0));
       float makerMask = 1.0 - smoothstep(0.16, 0.42, abs(uActiveWorld - 2.0));
@@ -707,15 +788,15 @@
       point.x += (aLamella - 1.0) * machineMask * worldChange * 0.055;
       point.x += (aLamella - 0.85) * makerMask * worldChange * envelope * 0.12;
       point.y *= 1.0 + makerMask * worldChange * 0.035;
-      point += normal * makerMask * worldChange * sin(aAlong * 6.283 + aLamella) * envelope * 0.040;
+      point += deformNormal * makerMask * worldChange * sin(aAlong * 6.283 + aLamella) * envelope * 0.040;
       float tectonicFacet = sign(sin(aAlong * 22.0 + aAcross * 4.4 + aLamella * 2.1));
       float edgeGuard = 1.0 - smoothstep(0.72, 0.94, abs(aAcross));
-      point += normal * worldMask * worldChange * tectonicFacet * envelope * edgeGuard * 0.055;
+      point += deformNormal * worldMask * worldChange * tectonicFacet * envelope * edgeGuard * 0.055;
       point.y -= worldMask * worldChange * smoothstep(0.0, 0.46, 1.0 - aAlong) * 0.10;
       float groundedSheet = step(1.5, aLamella);
       point.x *= 1.0 + groundedSheet * worldMask * worldChange * 0.10;
       point.y -= groundedSheet * worldMask * worldChange * 0.18;
-      point += normal * groundedSheet * worldMask * worldChange * envelope * 0.08;
+      point += deformNormal * groundedSheet * worldMask * worldChange * envelope * 0.08;
 
       if (uGhost > 0.5) {
         float mirrorPlane = -2.50;
@@ -1070,7 +1151,7 @@
     context.bindVertexArray(vao);
     context.bindBuffer(context.ARRAY_BUFFER, vertexBuffer);
     context.bufferData(context.ARRAY_BUFFER, mesh.vertices, context.STATIC_DRAW);
-    const stride = 10 * Float32Array.BYTES_PER_ELEMENT;
+    const stride = 13 * Float32Array.BYTES_PER_ELEMENT;
     context.enableVertexAttribArray(0);
     context.vertexAttribPointer(0, 3, context.FLOAT, false, stride, 0);
     context.enableVertexAttribArray(1);
@@ -1083,6 +1164,8 @@
     context.vertexAttribPointer(4, 1, context.FLOAT, false, stride, 8 * Float32Array.BYTES_PER_ELEMENT);
     context.enableVertexAttribArray(5);
     context.vertexAttribPointer(5, 1, context.FLOAT, false, stride, 9 * Float32Array.BYTES_PER_ELEMENT);
+    context.enableVertexAttribArray(6);
+    context.vertexAttribPointer(6, 3, context.FLOAT, false, stride, 10 * Float32Array.BYTES_PER_ELEMENT);
     context.bindBuffer(context.ELEMENT_ARRAY_BUFFER, indexBuffer);
     context.bufferData(context.ELEMENT_ARRAY_BUFFER, mesh.indices, context.STATIC_DRAW);
     context.bindVertexArray(null);
@@ -1338,30 +1421,45 @@
 
   function fallbackBodyPaths(scale) {
     const blade = new Path2D();
-    // Central pressure vane: open above and below, with no implied mast.
-    blade.moveTo(-1.48 * scale, -2.10 * scale);
-    blade.bezierCurveTo(-1.52 * scale, -1.22 * scale, -1.10 * scale, 0.62 * scale, -0.34 * scale, 2.18 * scale);
-    blade.bezierCurveTo(-0.24 * scale, 2.34 * scale, -0.10 * scale, 2.22 * scale, -0.18 * scale, 2.02 * scale);
-    blade.bezierCurveTo(-0.82 * scale, 0.70 * scale, -1.48 * scale, -0.86 * scale, -1.40 * scale, -2.06 * scale);
-    blade.bezierCurveTo(-1.40 * scale, -2.18 * scale, -1.46 * scale, -2.20 * scale, -1.48 * scale, -2.10 * scale);
+    // Central pressure field: a chipped sheet with unequal opposing faces.
+    blade.moveTo(-0.91 * scale, -1.05 * scale);
+    blade.lineTo(-1.00 * scale, -0.54 * scale);
+    blade.lineTo(-1.18 * scale, -0.04 * scale);
+    blade.lineTo(-0.80 * scale, 0.42 * scale);
+    blade.lineTo(-0.72 * scale, 0.95 * scale);
+    blade.lineTo(-0.01 * scale, 0.95 * scale);
+    blade.lineTo(0.37 * scale, 0.42 * scale);
+    blade.lineTo(0.00 * scale, -0.04 * scale);
+    blade.lineTo(0.22 * scale, -0.54 * scale);
+    blade.lineTo(-0.27 * scale, -1.05 * scale);
     blade.closePath();
 
-    // Detached upper-right sail: separated from the vane by open ether.
+    // Detached counterforce: alternating widths make a tectonic zigzag.
     const sail = new Path2D();
-    sail.moveTo(1.02 * scale, 2.44 * scale);
-    sail.bezierCurveTo(1.54 * scale, 2.62 * scale, 2.38 * scale, 2.02 * scale, 2.22 * scale, 1.00 * scale);
-    sail.bezierCurveTo(2.20 * scale, 0.84 * scale, 2.02 * scale, 0.86 * scale, 1.98 * scale, 1.06 * scale);
-    sail.bezierCurveTo(1.90 * scale, 1.72 * scale, 1.34 * scale, 2.10 * scale, 1.08 * scale, 2.52 * scale);
-    sail.bezierCurveTo(1.02 * scale, 2.60 * scale, 0.94 * scale, 2.50 * scale, 1.02 * scale, 2.44 * scale);
+    sail.moveTo(1.02 * scale, 2.62 * scale);
+    sail.lineTo(1.28 * scale, 2.43 * scale);
+    sail.lineTo(1.53 * scale, 2.30 * scale);
+    sail.lineTo(1.82 * scale, 2.12 * scale);
+    sail.lineTo(2.13 * scale, 1.94 * scale);
+    sail.lineTo(2.68 * scale, 1.94 * scale);
+    sail.lineTo(2.46 * scale, 2.12 * scale);
+    sail.lineTo(2.23 * scale, 2.30 * scale);
+    sail.lineTo(1.80 * scale, 2.43 * scale);
+    sail.lineTo(1.36 * scale, 2.62 * scale);
     sail.closePath();
 
-    // Detached lower-left keel: it never crosses the vane as a crossbar.
+    // Detached ground field: short, blunt and held below the open corridor.
     const keel = new Path2D();
-    keel.moveTo(-2.34 * scale, -0.04 * scale);
-    keel.bezierCurveTo(-2.16 * scale, -0.74 * scale, -1.62 * scale, -1.50 * scale, -0.68 * scale, -1.72 * scale);
-    keel.bezierCurveTo(-0.54 * scale, -1.76 * scale, -0.50 * scale, -1.58 * scale, -0.68 * scale, -1.48 * scale);
-    keel.bezierCurveTo(-1.38 * scale, -1.16 * scale, -1.94 * scale, -0.54 * scale, -2.20 * scale, 0.08 * scale);
-    keel.bezierCurveTo(-2.26 * scale, 0.18 * scale, -2.38 * scale, 0.10 * scale, -2.34 * scale, -0.04 * scale);
+    keel.moveTo(-2.62 * scale, -1.45 * scale);
+    keel.lineTo(-2.40 * scale, -1.70 * scale);
+    keel.lineTo(-2.08 * scale, -1.92 * scale);
+    keel.lineTo(-1.44 * scale, -2.18 * scale);
+    keel.lineTo(-0.74 * scale, -2.46 * scale);
+    keel.lineTo(-0.02 * scale, -2.46 * scale);
+    keel.lineTo(-0.39 * scale, -2.18 * scale);
+    keel.lineTo(-0.99 * scale, -1.92 * scale);
+    keel.lineTo(-1.32 * scale, -1.70 * scale);
+    keel.lineTo(-2.00 * scale, -1.45 * scale);
     keel.closePath();
 
     const compound = new Path2D();
@@ -1373,8 +1471,11 @@
 
   function fallbackWoundPath(scale) {
     const path = new Path2D();
-    path.moveTo(-0.72 * scale, -0.62 * scale);
-    path.bezierCurveTo(-0.28 * scale, -0.32 * scale, 0.10 * scale, 0.18 * scale, 0.55 * scale, 0.52 * scale);
+    path.moveTo(-0.55 * scale, -0.32 * scale);
+    path.lineTo(-0.38 * scale, -0.18 * scale);
+    path.lineTo(-0.58 * scale, -0.02 * scale);
+    path.lineTo(-0.25 * scale, 0.12 * scale);
+    path.lineTo(-0.34 * scale, 0.30 * scale);
     return path;
   }
 
@@ -1469,27 +1570,28 @@
     context.globalAlpha = 0.045 + state.crown * 0.020;
     context.fillStyle = '#e2d3bc';
     context.beginPath();
-    context.moveTo(-2.22 * scale, 1.72 * scale);
-    context.lineTo(-0.34 * scale, 2.56 * scale);
-    context.lineTo(-0.72 * scale, 0.28 * scale);
-    context.lineTo(-2.40 * scale, -0.38 * scale);
+    context.moveTo(-0.84 * scale, 0.84 * scale);
+    context.lineTo(0.10 * scale, 0.78 * scale);
+    context.lineTo(0.16 * scale, -0.48 * scale);
+    context.lineTo(-1.00 * scale, -0.12 * scale);
     context.closePath();
     context.fill();
     context.globalAlpha = 0.032 + state.reconstitution * 0.018;
     context.fillStyle = '#3a4c98';
     context.beginPath();
-    context.moveTo(0.52 * scale, 1.84 * scale);
-    context.lineTo(1.66 * scale, 0.96 * scale);
-    context.lineTo(1.18 * scale, -0.84 * scale);
-    context.lineTo(0.72 * scale, 0.12 * scale);
+    context.moveTo(1.04 * scale, 2.60 * scale);
+    context.lineTo(2.66 * scale, 1.96 * scale);
+    context.lineTo(2.18 * scale, 2.40 * scale);
+    context.lineTo(1.36 * scale, 2.58 * scale);
     context.closePath();
     context.fill();
     context.globalAlpha = 0.12 + state.crown * 0.045;
     context.lineWidth = Math.max(0.45, scale * 0.009);
     context.strokeStyle = '#cbbda8';
     context.beginPath();
-    context.moveTo(-1.82 * scale, 0.86 * scale);
-    context.bezierCurveTo(-1.12 * scale, 0.34 * scale, -1.34 * scale, -0.80 * scale, -0.74 * scale, -1.72 * scale);
+    context.moveTo(-0.78 * scale, 0.66 * scale);
+    context.lineTo(-0.30 * scale, 0.18 * scale);
+    context.lineTo(-0.62 * scale, -0.22 * scale);
     context.stroke();
     context.restore();
 
@@ -1501,36 +1603,34 @@
       if (activeWorld === 'machine') {
         context.strokeStyle = '#00c9e8';
         context.beginPath();
-        context.moveTo(-1.62 * scale, 1.58 * scale);
-        context.lineTo(-0.42 * scale, -1.92 * scale);
-        context.moveTo(0.64 * scale, 1.42 * scale);
-        context.lineTo(1.18 * scale, -1.30 * scale);
+        context.moveTo(-0.76 * scale, 0.72 * scale);
+        context.lineTo(-0.30 * scale, -0.70 * scale);
+        context.moveTo(-0.98 * scale, 0.06 * scale);
+        context.lineTo(0.16 * scale, -0.12 * scale);
         context.stroke();
       } else if (activeWorld === 'maker') {
         context.strokeStyle = '#14c98b';
         context.beginPath();
-        context.moveTo(0.48 * scale, 1.64 * scale);
-        context.bezierCurveTo(1.20 * scale, 0.88 * scale, 0.62 * scale, -0.08 * scale, 1.10 * scale, -1.46 * scale);
-        context.moveTo(-1.42 * scale, -0.26 * scale);
-        context.bezierCurveTo(-0.92 * scale, -0.82 * scale, -0.42 * scale, -1.62 * scale, 0.82 * scale, -1.72 * scale);
+        context.moveTo(1.22 * scale, 2.56 * scale);
+        context.lineTo(2.46 * scale, 2.02 * scale);
+        context.moveTo(1.54 * scale, 2.50 * scale);
+        context.lineTo(2.24 * scale, 2.12 * scale);
         context.stroke();
       } else {
         context.strokeStyle = '#6840ff';
         context.beginPath();
-        context.moveTo(-1.58 * scale, -2.30 * scale);
-        context.lineTo(-0.54 * scale, -2.52 * scale);
-        context.lineTo(0.40 * scale, -2.14 * scale);
-        context.lineTo(1.20 * scale, -1.52 * scale);
-        context.moveTo(-1.34 * scale, 0.92 * scale);
-        context.lineTo(-0.70 * scale, 0.50 * scale);
-        context.lineTo(-1.10 * scale, -0.04 * scale);
+        context.moveTo(-2.38 * scale, -1.58 * scale);
+        context.lineTo(-1.48 * scale, -1.94 * scale);
+        context.lineTo(-0.38 * scale, -2.38 * scale);
+        context.moveTo(-2.00 * scale, -1.52 * scale);
+        context.lineTo(-1.04 * scale, -2.22 * scale);
         context.stroke();
       }
       context.restore();
     }
 
-    // Reinstate negative-space channels after world accents so the three
-    // pressure folds keep crossing in depth rather than collapsing into a rune.
+    // Reinstate negative-space channels after world accents so the detached
+    // pressure fields do not collapse into a single emblem.
     context.save();
     context.globalAlpha = 0.82;
     context.lineJoin = 'round';
@@ -1566,9 +1666,13 @@
         const startX = side * scale * (3.02 + hash(index + 4) * 1.08);
         const startY = verticalDirection * scale * (2.68 + hash(index + 8) * 1.16);
         const lamella = index % 3;
-        const anchorX = scale * (lamella === 0 ? -1.30 : lamella === 1 ? 1.04 : -0.20)
+        const anchorX = scale * (lamella === 0 ? -0.45 : lamella === 1 ? 1.90 : -1.45)
           + side * scale * (hash(index + 12) - 0.5) * 0.22;
-        const anchorY = scale * (-1.98 + hash(index + 19) * 4.22);
+        const anchorY = scale * (lamella === 0
+          ? -0.92 + hash(index + 19) * 1.74
+          : lamella === 1
+            ? 2.00 + hash(index + 19) * 0.54
+            : -2.34 + hash(index + 19) * 0.76);
         const endX = lerp(startX, anchorX, reveal);
         const endY = lerp(startY, anchorY, reveal);
         context.strokeStyle = index % 11 === 0 ? '#6840ff' : index % 7 === 0 ? '#00c9e8' : index % 13 === 0 ? '#14c98b' : '#e9e3d6';
@@ -1991,10 +2095,10 @@
         detailYaw = detailPitch = detailRoll = 0;
         detailZoom = 1;
       } else {
-        overviewYaw = 0.58;
-        overviewPitch = -0.20;
-        overviewRoll = -0.17;
-        overviewZoom = 0.97;
+        overviewYaw = 0.40;
+        overviewPitch = -0.10;
+        overviewRoll = -0.06;
+        overviewZoom = 0.92;
       }
     }
     lastTapAt = now;
