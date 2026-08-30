@@ -27,7 +27,7 @@ for(const path of [fullPath,fileURLToPath(new URL('arcade.js',root)),fileURLToPa
 assert.match(loader,/BECOME_VERSION = '20260827-become-performance-18'/);
 for(const marker of ['become-diversity-09.txt','become-social-agency-10.txt','become-social-integration-11.txt','become-compressed-12.txt','become-rapid-entry-13.txt','become-activation-objectives-14.txt'])assert.match(loader,new RegExp(marker.replace('.','\\.')));
 assert.ok(loader.indexOf('become-rapid-entry-13.txt')<loader.indexOf('become-activation-objectives-14.txt'));
-assert.match(index,/arcade\.js\?v=20260830-sovereign-nocturne-18/);
+assert.match(index,/arcade\.js\?v=20260830-sovereign-nocturne-19/);
 assert.doesNotMatch(loader,/become-live-02\.txt|vercel|blockrun|groq|web-llm|transformers/i);
 for(const marker of ['S14_SCENE_OPENING','s14ImagineScene','s14ApplySceneOpening','__sceneOpening14','S14_WINS','S14_OBJECTIVES','SOLVED WHEN','SOCIAL WIN'])assert.ok(objective.includes(marker),`missing objective/opening marker ${marker}`);
 

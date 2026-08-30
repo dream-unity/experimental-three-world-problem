@@ -407,6 +407,30 @@ html,body{
   white-space:nowrap;
 }
 
+
+/* Overview labels behave as editorial coordinates, not diagram callouts. */
+#app:not(.detail) .world-label{
+  min-width:132px;
+  padding-inline:0;
+  grid-template-columns:minmax(0,1fr);
+}
+#app:not(.detail) .world-label>.world-index,
+#app:not(.detail) .world-label>i{
+  display:none;
+}
+#app:not(.detail) .world-label>.world-copy small{
+  max-height:0;
+  opacity:0;
+  transform:translateY(-2px);
+  transition:max-height .18s ease,opacity .18s ease,transform .18s ease;
+}
+#app:not(.detail) .world-label:hover>.world-copy small,
+#app:not(.detail) .world-label:focus-visible>.world-copy small{
+  max-height:12px;
+  opacity:.62;
+  transform:none;
+}
+
 .world-label>i{
   position:absolute;
   left:5px;
@@ -894,3 +918,6 @@ html,body{
   .score-control,.back,.world-label,.sub-label,.game-icon{border:1px solid ButtonText}
   .world-label>i,.sub-label::before,.brand i,.live i{background:Highlight}
 }
+
+#app:not(.detail) .cycle-index i{display:none}
+#app:not(.detail) .cycle-index{opacity:.54}

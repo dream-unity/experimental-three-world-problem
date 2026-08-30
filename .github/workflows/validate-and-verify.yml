@@ -66,11 +66,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          renderer=visual-parts/sovereign-nocturne-18.js
-          release=20260830-sovereign-nocturne-18
+          renderer=visual-parts/sovereign-nocturne-19.js
+          release=20260830-sovereign-nocturne-19
           test -s "$renderer"
           grep -Eq "VERSION[[:space:]]*=[[:space:]]*['\"]${release}['\"]" main.js
-          grep -q 'visual-parts/sovereign-nocturne-18.js' main.js
+          grep -q 'visual-parts/sovereign-nocturne-19.js' main.js
           ! grep -Eqi 'bearing-mirror|sovereign-resonator|visual-parts/part-0[1-6]\.txt' main.js
           grep -q 'webgl2' "$renderer"
           grep -q 'canvas2d-fallback' "$renderer"
@@ -136,7 +136,7 @@ jobs:
           PAGE_URL: https://dream-unity.github.io/experimental-three-world-problem
         run: |
           set -euo pipefail
-          files=(index.html styles.css become.css unity-cycle.css unity-ui.js main.js arcade.js assets/i-remember-tomorrow.mp3 visual-parts/sovereign-nocturne-18.js arcade-parts/part-01.txt arcade-parts/part-02.txt arcade-parts/part-03.txt arcade-parts/part-04.txt arcade-parts/part-05.txt arcade-parts/perceive-role-logic.txt arcade-parts/perceive-aerial-01.txt arcade-parts/perceive-aerial-02.txt arcade-parts/perceive-aerial-03.txt arcade-parts/perceive-aerial-04.txt arcade-parts/perceive-aerial-05.txt arcade-parts/perceive-aerial-06.txt arcade-parts/perceive-aerial-07.txt arcade-parts/perceive-aerial-08.txt arcade-parts/become-lab-01.txt arcade-parts/become-diversity-09.txt arcade-parts/become-social-agency-10.txt arcade-parts/become-social-integration-11.txt arcade-parts/become-compressed-12.txt arcade-parts/become-rapid-entry-13.txt arcade-parts/become-activation-objectives-14.txt)
+          files=(index.html styles.css become.css unity-cycle.css unity-ui.js main.js arcade.js assets/i-remember-tomorrow.mp3 visual-parts/sovereign-nocturne-19.js arcade-parts/part-01.txt arcade-parts/part-02.txt arcade-parts/part-03.txt arcade-parts/part-04.txt arcade-parts/part-05.txt arcade-parts/perceive-role-logic.txt arcade-parts/perceive-aerial-01.txt arcade-parts/perceive-aerial-02.txt arcade-parts/perceive-aerial-03.txt arcade-parts/perceive-aerial-04.txt arcade-parts/perceive-aerial-05.txt arcade-parts/perceive-aerial-06.txt arcade-parts/perceive-aerial-07.txt arcade-parts/perceive-aerial-08.txt arcade-parts/become-lab-01.txt arcade-parts/become-diversity-09.txt arcade-parts/become-social-agency-10.txt arcade-parts/become-social-integration-11.txt arcade-parts/become-compressed-12.txt arcade-parts/become-rapid-entry-13.txt arcade-parts/become-activation-objectives-14.txt)
           live_dir=$(mktemp -d)
           trap 'rm -rf "$live_dir"' EXIT
           mkdir -p "$live_dir/arcade-parts" "$live_dir/visual-parts" "$live_dir/assets"
@@ -153,8 +153,8 @@ jobs:
           done
           test "$matched" = true
 
-          release=20260830-sovereign-nocturne-18
-          renderer="$live_dir/visual-parts/sovereign-nocturne-18.js"
+          release=20260830-sovereign-nocturne-19
+          renderer="$live_dir/visual-parts/sovereign-nocturne-19.js"
           grep -q "main.js?v=${release}" "$live_dir/index.html"
           grep -q "unity-cycle.css?v=${release}" "$live_dir/index.html"
           grep -q "styles.css?v=${release}" "$live_dir/index.html"
@@ -163,7 +163,7 @@ jobs:
           grep -q "arcade.js?v=${release}" "$live_dir/index.html"
           grep -q '<div class="unity-label" id="unityLabel" aria-hidden="true">' "$live_dir/index.html"
           ! grep -Eqi 'data-voice|duVoice|du-voice|voice\.css|voice\.js|js\.puter\.com|dream-unity-voice-live\.vercel\.app' "$live_dir/index.html"
-          grep -q 'visual-parts/sovereign-nocturne-18.js' "$live_dir/main.js"
+          grep -q 'visual-parts/sovereign-nocturne-19.js' "$live_dir/main.js"
           ! grep -Eqi 'bearing-mirror|sovereign-resonator|visual-parts/part-0[1-6]\.txt' "$live_dir/main.js"
           grep -q 'webgl2' "$renderer"
           grep -q 'canvas2d-fallback' "$renderer"
@@ -283,7 +283,7 @@ jobs:
                 'reality':'#6840FF'
               },
               'renderer_id':'sovereign-nocturne',
-              'renderer_entrypoint':'visual-parts/sovereign-nocturne-18.js',
+              'renderer_entrypoint':'visual-parts/sovereign-nocturne-19.js',
               'renderer_api':'webgl2',
               'canvas2d_fallback':True,
               'renderer_ready_contract':True,
@@ -322,7 +322,7 @@ jobs:
                 'backend_status':'paused',
                 'backend_release':backend_release
               },
-              'main_cache_version':'20260830-sovereign-nocturne-18'
+              'main_cache_version':'20260830-sovereign-nocturne-19'
             },
             'become':{
               'scenario_source':'instant_objective_driven_social_agency_maximin_synthesis',

@@ -3,8 +3,8 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync, statSync } from 'node:fs';
 
 const root = new URL('../', import.meta.url);
-const RELEASE = '20260830-sovereign-nocturne-18';
-const RENDERER_PATH = 'visual-parts/sovereign-nocturne-18.js';
+const RELEASE = '20260830-sovereign-nocturne-19';
+const RENDERER_PATH = 'visual-parts/sovereign-nocturne-19.js';
 const read = (path) => readFileSync(new URL(path, root), 'utf8');
 const exists = (path) => statSync(new URL(path, root)).isFile();
 

@@ -2,7 +2,7 @@
   'use strict';
 
   const RENDERER_ID = 'sovereign-nocturne';
-  const RENDERER_VERSION = '20260830-sovereign-nocturne-18';
+  const RENDERER_VERSION = '20260830-sovereign-nocturne-19';
   const SILENT_CYCLE_SECONDS = 40;
   const TAU = Math.PI * 2;
   const $ = (selector) => document.querySelector(selector);
@@ -111,7 +111,7 @@
   let holdTarget = 0;
 
   let overviewYaw = 0.16;
-  let overviewPitch = -0.075;
+  let overviewPitch = -0.125;
   let overviewRoll = -0.012;
   let overviewZoom = 0.92;
   let overviewYawVelocity = 0;
@@ -580,37 +580,37 @@
     const terrainAt = (x, z, depthValue) => {
       const depth = clamp(depthValue, 0, 1);
       const horizonBreak = Math.pow(1 - depth, 2.4) * (
-        Math.sin(x * 0.47 + 0.4) * 0.12
-        + Math.sin(x * 1.23 - 1.1) * 0.052
-        + Math.sin(x * 2.71 + 0.8) * 0.022
+        Math.sin(x * 0.47 + 0.4) * 0.19
+        + Math.sin(x * 1.23 - 1.1) * 0.080
+        + Math.sin(x * 2.71 + 0.8) * 0.032
       );
       const directionalGrain = (
         Math.sin(x * 0.72 + z * 1.18)
         + Math.sin(x * 1.64 - z * 0.66 + 1.7) * 0.46
         + Math.sin(x * 3.20 + z * 1.82 - 0.6) * 0.16
-      ) * (0.032 + depth * 0.060);
+      ) * (0.046 + depth * 0.092);
       const heaveA = rotatedHeave(x, z, -4.80, -0.16,
-        17 * Math.PI / 180, 1.40, 0.46, 0.34, 0.4);
+        17 * Math.PI / 180, 1.48, 0.50, 0.58, 0.4);
       const heaveB = rotatedHeave(x, z, -0.40, 0.32,
-        -11 * Math.PI / 180, 0.85, 0.38, 0.58, 1.7);
+        -11 * Math.PI / 180, 0.94, 0.43, 0.88, 1.7);
       const heaveC = rotatedHeave(x, z, 4.00, -0.02,
-        23 * Math.PI / 180, 1.15, 0.44, 0.27, -0.8);
+        23 * Math.PI / 180, 1.28, 0.50, 0.48, -0.8);
       const deepShoulderA = rotatedHeave(x, z, -2.40, 2.55,
-        -18 * Math.PI / 180, 2.30, 1.20, 0.24, 2.1);
+        -18 * Math.PI / 180, 2.40, 1.22, 0.40, 2.1);
       const deepShoulderB = rotatedHeave(x, z, 3.10, 3.65,
-        14 * Math.PI / 180, 2.55, 1.35, 0.20, -1.2);
-      const ravineA = segmentRavine(x, z, -2.60, -0.34,
-        1.20, 0.82, 0.34, 0.26);
-      const ravineB = segmentRavine(x, z, 2.50, -0.25,
-        4.80, 0.40, 0.24, 0.18);
-      const deepRavine = segmentRavine(x, z, -0.20, 1.40,
-        1.10, 4.90, 0.58, 0.34);
-      const base = -1.98 - depth * 1.72;
+        14 * Math.PI / 180, 2.62, 1.38, 0.35, -1.2);
+      const weldRavine = segmentRavine(x, z, 1.72, -0.48,
+        0.72, 2.15, 0.30, 0.64);
+      const sovereignRavine = segmentRavine(x, z, 0.72, 2.15,
+        -1.25, 5.55, 0.48, 0.52);
+      const witnessRavine = segmentRavine(x, z, 4.25, 0.16,
+        2.30, 3.90, 0.34, 0.28);
+      const base = -1.90 - depth * 1.46;
       return {
         x,
         y: base + horizonBreak + directionalGrain
           + heaveA + heaveB + heaveC + deepShoulderA + deepShoulderB
-          - ravineA - ravineB - deepRavine,
+          - weldRavine - sovereignRavine - witnessRavine,
         z,
       };
     };
@@ -618,15 +618,15 @@
     for (let row = 0; row <= rows; row++) {
       const linearDepth = row / rows;
       const depth = Math.pow(linearDepth, 1.14);
-      const z = lerp(-0.48, 7.95, depth);
+      const z = lerp(-0.48, 5.60, depth);
       for (let column = 0; column <= columns; column++) {
         const along = column / columns;
         const x = lerp(-10.6, 10.6, along);
         const point = terrainAt(x, z, depth);
         const xBefore = terrainAt(x - 0.045, z, depth);
         const xAfter = terrainAt(x + 0.045, z, depth);
-        const zBefore = terrainAt(x, z - 0.045, clamp((z - 0.045 + 0.48) / 8.43, 0, 1));
-        const zAfter = terrainAt(x, z + 0.045, clamp((z + 0.045 + 0.48) / 8.43, 0, 1));
+        const zBefore = terrainAt(x, z - 0.045, clamp((z - 0.045 + 0.48) / 6.08, 0, 1));
+        const zAfter = terrainAt(x, z + 0.045, clamp((z + 0.045 + 0.48) / 6.08, 0, 1));
         const tangentX = subtract(xAfter, xBefore);
         const tangentZ = subtract(zAfter, zBefore);
         const normal = normalize(cross(tangentZ, tangentX));
@@ -754,7 +754,7 @@
     float fbm(vec2 point) {
       float value = 0.0;
       float amplitude = 0.58;
-      for (int octave = 0; octave < 3; octave++) {
+      for (int octave = 0; octave < 2; octave++) {
         value += noise(point) * amplitude;
         point = mat2(1.57, -1.14, 1.14, 1.57) * point + vec2(4.7, -2.9);
         amplitude *= 0.43;
@@ -763,8 +763,8 @@
     }
 
     float faultAt(float y, float portrait) {
-      vec2 cutStart = mix(vec2(0.330, -0.080), vec2(0.575, -0.055), portrait);
-      vec2 cutEnd = mix(vec2(0.650, 0.720), vec2(0.755, 0.748), portrait);
+      vec2 cutStart = mix(vec2(0.445, -0.080), vec2(0.575, -0.055), portrait);
+      vec2 cutEnd = mix(vec2(0.680, 0.720), vec2(0.755, 0.748), portrait);
       float p = clamp((y - cutStart.y) / max(0.001, cutEnd.y - cutStart.y), 0.0, 1.0);
       return mix(cutStart.x, cutEnd.x, p)
         - sin(3.14159265 * p) * mix(0.058, 0.102, portrait)
@@ -792,6 +792,30 @@
       return core * cap * (0.30 + 0.70 * dry);
     }
 
+    float vaporFold(vec2 point, vec2 center, vec2 axis, float lengthValue,
+      float bend, float width, float aspect) {
+      vec2 metricPoint = vec2((point.x - center.x) * aspect, point.y - center.y);
+      vec2 direction = normalize(vec2(axis.x * aspect, axis.y));
+      vec2 across = vec2(-direction.y, direction.x);
+      float along = dot(metricPoint, direction);
+      float phase = along / max(0.001, lengthValue) + 0.5;
+      float lateral = dot(metricPoint, across)
+        - bend * (phase - 0.5) * (phase - 0.5);
+      float envelope = pow(max(0.0, sin(3.14159265 * clamp(phase, 0.0, 1.0))), 0.72);
+      float core = exp(-pow(lateral / max(0.001, width * (0.42 + 0.58 * envelope)), 2.0));
+      float ends = smoothstep(0.0, 0.12, phase) * (1.0 - smoothstep(0.88, 1.0, phase));
+      return core * envelope * ends;
+    }
+
+    float etherGeology(float x) {
+      float broad = sin(x * 5.2 + 0.5) * 0.034
+        + sin(x * 10.7 - 1.2) * 0.015;
+      float crownA = exp(-pow((x + 0.26) / 0.22, 2.0)) * 0.078;
+      float crownB = exp(-pow((x - 0.18) / 0.13, 2.0)) * 0.106;
+      float cut = exp(-pow((x - 0.02) / 0.085, 2.0)) * 0.052;
+      return broad + crownA + crownB - cut;
+    }
+
     void main() {
       vec2 uv = gl_FragCoord.xy / max(uResolution, vec2(1.0));
       vec2 screen = vec2(uv.x, 1.0 - uv.y) + uParallax;
@@ -806,8 +830,8 @@
       float horizonY = mix(0.720, 0.748, portrait);
       float faultX = faultAt(screen.y, portrait);
       float sd = screen.x - faultX;
-      vec2 cutStart = mix(vec2(0.330, -0.080), vec2(0.575, -0.055), portrait);
-      vec2 cutEnd = mix(vec2(0.650, 0.720), vec2(0.755, 0.748), portrait);
+      vec2 cutStart = mix(vec2(0.445, -0.080), vec2(0.575, -0.055), portrait);
+      vec2 cutEnd = mix(vec2(0.680, 0.720), vec2(0.755, 0.748), portrait);
       float p = clamp((screen.y - cutStart.y) / max(0.001, cutEnd.y - cutStart.y), 0.0, 1.0);
       float chip = hash21(vec2(floor(p * 41.0), 7.0));
       float halfWidth = mix(0.0038, 0.0058, portrait)
@@ -850,101 +874,152 @@
       float scrape = smoothstep(0.56, 0.78,
         fbm(strained * vec2(10.8, 2.4) + vec2(17.0)));
 
-      float leftMatter = (1.0 - smoothstep(-halfWidth - 0.003,
-        -halfWidth + 0.001, sd)) * faultExtent;
-      float rightMatter = smoothstep(halfWidth - 0.001,
-        halfWidth + 0.003, sd) * faultExtent;
-      float cavity = (1.0 - smoothstep(halfWidth * 0.62,
-        halfWidth + 0.0012, abs(sd))) * faultExtent;
+      float edgeAA = max(fwidth(sd) * 1.45, 0.00075);
+      float leftMatter = (1.0 - smoothstep(-halfWidth - edgeAA,
+        -halfWidth + edgeAA, sd)) * faultExtent;
+      float rightMatter = smoothstep(halfWidth - edgeAA,
+        halfWidth + edgeAA, sd) * faultExtent;
+      float cavity = (1.0 - smoothstep(halfWidth * 0.58,
+        halfWidth + edgeAA * 0.72, abs(sd))) * faultExtent;
 
-      vec3 night = vec3(0.004, 0.006, 0.014);
-      vec3 left0 = vec3(0.030, 0.085, 0.112);
-      vec3 left1 = vec3(0.090, 0.190, 0.205);
-      vec3 right0 = vec3(0.120, 0.025, 0.059);
-      vec3 right1 = vec3(0.245, 0.057, 0.088);
+      vec3 night = vec3(0.0025, 0.0035, 0.0090);
+      vec3 left0 = vec3(0.010, 0.035, 0.048);
+      vec3 left1 = vec3(0.052, 0.118, 0.128);
+      vec3 right0 = vec3(0.030, 0.006, 0.017);
+      vec3 right1 = vec3(0.112, 0.020, 0.042);
       vec3 bone = vec3(0.920, 0.740, 0.480);
       vec3 coral = vec3(0.770, 0.180, 0.140);
       vec3 lilac = vec3(0.460, 0.270, 0.700);
       vec3 petrol = vec3(0.140, 0.430, 0.500);
 
-      vec3 leftColor = mix(night, left0, 0.80 + 0.16 * scumble) + left1 * scrape * 0.10;
-      vec3 rightColor = mix(night, right0, 0.84 + 0.18 * (1.0 - scumble)) + right1 * scrape * 0.085;
-      leftColor += right0 * 0.07 * smoothstep(0.67, 0.88, scumble);
-      rightColor += left0 * 0.06 * smoothstep(0.70, 0.90, 1.0 - scumble);
+      vec3 leftColor = mix(night, left0, 0.62 + 0.13 * scumble)
+        + left1 * scrape * 0.055;
+      vec3 rightColor = mix(night, right0, 0.58 + 0.16 * (1.0 - scumble))
+        + right1 * scrape * 0.050;
+      leftColor += right0 * 0.035 * smoothstep(0.69, 0.89, scumble);
+      rightColor += left0 * 0.032 * smoothstep(0.70, 0.90, 1.0 - scumble);
       vec3 color = night;
-      color += leftColor * leftMatter * (0.82 + 0.12 * uGather + 0.08 * uCrown);
-      color += rightColor * rightMatter * (0.86 + 0.10 * uPressure + 0.10 * uCrown);
-      color = mix(color, night * 0.18, cavity * 0.96);
+      color += leftColor * leftMatter * (0.82 + 0.10 * uGather + 0.07 * uCrown);
+      color += rightColor * rightMatter * (0.82 + 0.09 * uPressure + 0.08 * uCrown);
+      color = mix(color, night * 0.10, cavity * 0.985);
 
-      float lipWindowA = smoothstep(0.28, 0.32, p) * (1.0 - smoothstep(0.42, 0.46, p));
-      float lipWindowB = smoothstep(0.59, 0.63, p) * (1.0 - smoothstep(0.68, 0.72, p));
+      float echoX = (screen.x - mix(0.39, 0.44, portrait)) * mix(1.25, 1.62, portrait);
+      float echoProfile = horizonY - mix(0.205, 0.175, portrait) - etherGeology(echoX);
+      float echoRidge = exp(-abs(screen.y - echoProfile) * mix(34.0, 40.0, portrait));
+      float echoMass = exp(-abs(screen.y - echoProfile) * mix(12.0, 15.0, portrait));
+      float echoDomain = (1.0 - smoothstep(horizonY - 0.07, horizonY, screen.y))
+        * smoothstep(0.04, 0.20, p);
+      float echoDraw = smoothstep(0.10, 0.78, echoMass)
+        * (0.34 + 0.66 * echoRidge) * echoDomain;
+      float echoConvergence = exp(-abs(sd) * 6.8) * smoothstep(0.18, 0.72, p);
+      vec3 echoStone = mix(vec3(0.025, 0.075, 0.088),
+        vec3(0.170, 0.120, 0.182), smoothstep(0.18, 0.82, scumble));
+      color = mix(color, echoStone, echoDraw
+        * (0.045 + 0.040 * uGather + 0.030 * uCrown));
+      color += mix(petrol, coral, smoothstep(-0.04, 0.035, sd))
+        * echoConvergence * echoRidge * (0.012 + 0.035 * uPressure);
+
+      float pressureAura = exp(-abs(sd) * mix(5.2, 3.8, portrait))
+        * faultExtent * smoothstep(0.08, 0.64, p);
+      vec3 auraColor = mix(
+        mix(petrol, left1, 0.55),
+        mix(coral, right1, 0.62),
+        smoothstep(-0.025, 0.055, sd)
+      );
+      color += auraColor * pressureAura
+        * (0.020 + 0.032 * uPressure + 0.050 * uCrown);
+
+      float lipWindowA = smoothstep(0.27, 0.31, p) * (1.0 - smoothstep(0.41, 0.45, p));
+      float lipWindowB = smoothstep(0.58, 0.62, p) * (1.0 - smoothstep(0.69, 0.73, p));
       float lipWindows = max(lipWindowA, lipWindowB)
         * smoothstep(0.18, 0.58, hash21(vec2(floor(p * 29.0), 11.0)));
-      float rightLip = exp(-abs(sd - halfWidth) / mix(0.0022, 0.0048, portrait))
+      float rightLip = exp(-abs(sd - halfWidth) / mix(0.0020, 0.0040, portrait))
         * faultExtent * lipWindows;
-      float lipEnergy = 0.34 + 0.46 * (uReconstitution * 0.45 + uCrown * 0.85);
-      color += mix(coral, bone, 0.58) * rightLip * lipEnergy;
+      float lipEnergy = 0.32 + 0.52 * (uReconstitution * 0.46 + uCrown * 0.86);
+      color += mix(coral, bone, 0.56) * rightLip * lipEnergy;
 
       float side = max(0.0, sd - halfWidth);
-      float releaseFlow = fbm(vec2(p * 6.3 + side * 2.1,
-        side * 9.4 - p * 3.2 + 1.7));
-      float shearPhase = p + side * mix(0.72, 0.88, portrait)
-        + (releaseFlow - 0.5) * 0.055;
-      float eventWindow = smoothstep(0.25, 0.39, shearPhase)
-        * (1.0 - smoothstep(0.96, 1.14, shearPhase));
-      float releaseGap = mix(0.018, 0.026, portrait)
-        + 0.010 * smoothstep(0.42, 0.72, p);
-      float releaseWidth = mix(0.052, 0.086, portrait)
-        + mix(0.105, 0.090, portrait) * smoothstep(0.34, 0.78, shearPhase);
+      float releaseFlow = fbm(vec2(p * 5.4 + side * 2.7,
+        side * 7.6 - p * 3.0 + 1.7));
+      float shearPhase = p + side * mix(0.61, 0.74, portrait)
+        + (releaseFlow - 0.5) * 0.072;
+      float eventWindow = smoothstep(0.19, 0.33, shearPhase)
+        * (1.0 - smoothstep(0.98, 1.17, shearPhase));
+      float releaseGap = mix(0.014, 0.021, portrait)
+        + 0.008 * smoothstep(0.42, 0.72, p);
+      float releaseWidth = mix(0.082, 0.118, portrait)
+        + mix(0.145, 0.122, portrait) * smoothstep(0.31, 0.82, shearPhase);
       float tail = exp(-pow(max(0.0, side - releaseGap)
-        / max(0.001, releaseWidth), 1.55));
-      float lamina = 0.5 + 0.5 * sin(shearPhase * 18.7
-        + side * 48.0 + releaseFlow * 4.1);
-      float micro = noise(vec2(shearPhase * 9.2 + 3.1,
-        side * 71.0 - p * 8.4));
-      float material = clamp(0.54 + 0.18 * (releaseFlow - 0.5)
-        + 0.20 * (lamina - 0.5) + 0.08 * (micro - 0.5), 0.30, 0.82);
-      float openWash = smoothstep(releaseGap, releaseGap + 0.012, side)
-        * tail * eventWindow * material;
-      float pearlRidge = smoothstep(0.72, 0.94, lamina)
-        * smoothstep(0.50, 0.76, releaseFlow) * openWash;
-      vec3 smokedNacre = vec3(0.095, 0.045, 0.105);
-      vec3 boneGrey = vec3(0.720, 0.670, 0.620);
-      vec3 lilacGrey = vec3(0.320, 0.240, 0.400);
-      vec3 nacre = mix(smokedNacre, mix(boneGrey, lilacGrey, 0.32),
-        0.26 + 0.28 * releaseFlow);
-      float causticAxis = releaseGap + 0.025
-        + 0.084 * smoothstep(0.38, 0.78, shearPhase)
-        + 0.010 * sin(shearPhase * 13.1 + releaseFlow * 4.2)
-        + (lamina - 0.5) * 0.006;
-      float internalCaustic = exp(-pow((side - causticAxis)
-        / (0.006 + 0.011 * shearPhase), 2.0))
-        * eventWindow * smoothstep(0.44, 0.72, releaseFlow);
-      color = mix(color, nacre, openWash
-        * (0.10 + 0.14 * uReconstitution + 0.16 * uCrown));
-      color += mix(vec3(0.860, 0.770, 0.640), coral, 0.18)
-        * pearlRidge * (0.06 + 0.16 * uCrown);
-      color += mix(bone, coral, 0.18) * internalCaustic
-        * (0.07 + 0.18 * uCrown);
-      color += mix(petrol, vec3(0.060, 0.390, 0.285), 0.50)
-        * openWash * releaseFlow * 0.016;
+        / max(0.001, releaseWidth), 1.72));
+      float foldA = 0.5 + 0.5 * sin(shearPhase * 17.4
+        + side * 35.0 + releaseFlow * 3.7);
+      float foldB = 0.5 + 0.5 * sin(shearPhase * 8.2
+        - side * 19.0 + 1.4);
+      float micro = noise(vec2(shearPhase * 8.1 + 3.1,
+        side * 52.0 - p * 7.6));
+      float lamination = 0.44 + foldA * 0.34 + foldB * 0.14
+        + (micro - 0.5) * 0.10;
+      float openWash = smoothstep(releaseGap, releaseGap + 0.015, side)
+        * tail * eventWindow * clamp(lamination, 0.28, 0.91);
 
-      float phraseEnergy = 0.14 + 0.35 * uGather + 0.13 * uCrown;
-      vec3 phraseCyan = mix(left1, bone, 0.18);
-      vec3 phraseEmerald = mix(vec3(0.060, 0.390, 0.285), bone, 0.16);
-      vec3 phraseViolet = mix(lilac, bone, 0.14);
-      float m0 = gesture(screen, vec2(0.310, 0.245), vec2(0.93, 0.37), 0.125, -0.025, 0.0032, aspect, 0.13);
-      float m1 = gesture(screen, vec2(0.400, 0.310), vec2(0.76, 0.65), 0.065, 0.018, 0.0021, aspect, 0.31);
-      float m2 = gesture(screen, vec2(0.235, 0.370), vec2(0.99, -0.10), 0.048, -0.012, 0.0018, aspect, 0.57);
-      float a0 = gesture(screen, vec2(0.310, 0.490), vec2(0.97, -0.24), 0.135, 0.038, 0.0035, aspect, 0.19);
-      float a1 = gesture(screen, vec2(0.420, 0.430), vec2(0.84, -0.54), 0.060, -0.017, 0.0022, aspect, 0.46);
-      float a2 = gesture(screen, vec2(0.240, 0.570), vec2(0.91, 0.41), 0.050, 0.012, 0.0020, aspect, 0.82);
-      float w0 = gesture(screen, vec2(0.700, 0.650), vec2(-0.82, -0.57), 0.145, -0.045, 0.0042, aspect, 0.24);
-      float w1 = gesture(screen, vec2(0.640, 0.560), vec2(-0.56, -0.83), 0.062, 0.018, 0.0024, aspect, 0.63);
-      float w2 = gesture(screen, vec2(0.780, 0.720), vec2(-0.97, -0.22), 0.052, -0.014, 0.0020, aspect, 0.91);
-      color = mix(color, phraseCyan, clamp((m0 * 0.52 + m1 * 0.25 + m2 * 0.20) * phraseEnergy, 0.0, 0.34));
-      color = mix(color, phraseEmerald, clamp((a0 * 0.48 + a1 * 0.26 + a2 * 0.22) * phraseEnergy, 0.0, 0.32));
-      color = mix(color, phraseViolet, clamp((w0 * 0.52 + w1 * 0.30 + w2 * 0.24) * phraseEnergy, 0.0, 0.36));
+      vec3 smokedViolet = vec3(0.115, 0.050, 0.132);
+      vec3 coralPearl = vec3(0.620, 0.285, 0.255);
+      vec3 lunarBone = vec3(0.750, 0.660, 0.570);
+      vec3 oceanNacre = vec3(0.075, 0.225, 0.245);
+      vec3 nacre = mix(smokedViolet, coralPearl, 0.24 + 0.30 * releaseFlow);
+      nacre = mix(nacre, lunarBone, 0.13 + 0.24 * foldA * foldB);
+      nacre = mix(nacre, oceanNacre, (1.0 - releaseFlow) * 0.13);
+
+      float veilEnergy = 0.070 + 0.105 * uReconstitution + 0.105 * uCrown;
+      color = mix(color, nacre, clamp(openWash * veilEnergy, 0.0, 0.26));
+      float veinWave = 0.5 + 0.5 * cos(shearPhase * 34.0
+        + side * 66.0 + releaseFlow * 4.6);
+      float mineralVeins = pow(veinWave, 11.0) * openWash
+        * (0.36 + 0.64 * smoothstep(0.38, 0.76, micro));
+      vec3 veinColor = mix(coralPearl, lunarBone, 0.58 + 0.20 * foldB);
+      color += veinColor * mineralVeins
+        * (0.050 + 0.115 * uReconstitution + 0.150 * uCrown);
+
+      float pearlRidge = smoothstep(0.80, 0.975, foldA)
+        * smoothstep(0.56, 0.82, releaseFlow) * openWash;
+      float causticAxis = releaseGap + 0.028
+        + 0.112 * smoothstep(0.31, 0.82, shearPhase)
+        + 0.012 * sin(shearPhase * 11.8 + releaseFlow * 4.1);
+      float internalCaustic = exp(-pow((side - causticAxis)
+        / (0.007 + 0.013 * shearPhase), 2.0))
+        * eventWindow * smoothstep(0.43, 0.74, releaseFlow);
+      float incarnation = exp(-pow((side - (0.070 + p * 0.092))
+        / mix(0.040, 0.058, p), 2.0))
+        * smoothstep(0.46, 0.79, p) * eventWindow
+        * (0.55 + 0.45 * foldB);
+
+      color += mix(lunarBone, coral, 0.24) * pearlRidge
+        * (0.055 + 0.16 * uCrown);
+      color += mix(bone, coral, 0.22) * internalCaustic
+        * (0.060 + 0.19 * uCrown);
+      color += mix(coralPearl, lunarBone, 0.52) * incarnation
+        * (0.030 + 0.09 * uReconstitution + 0.11 * uCrown);
+      color += mix(oceanNacre, vec3(0.050, 0.310, 0.230), 0.45)
+        * openWash * releaseFlow * 0.022;
+
+      float breathEnergy = 0.045 + 0.075 * uGather + 0.060 * uCrown;
+      float dreamBreathA = vaporFold(screen, vec2(0.285, 0.270), vec2(0.90, 0.44),
+        0.190, -0.030, 0.013, aspect);
+      float dreamBreathB = vaporFold(screen, vec2(0.355, 0.445), vec2(0.72, 0.69),
+        0.150, 0.035, 0.016, aspect);
+      float makerBreath = vaporFold(screen, vec2(0.310, 0.555), vec2(0.95, -0.31),
+        0.205, 0.052, 0.018, aspect);
+      float returnBreathA = vaporFold(screen, vec2(0.705, 0.455), vec2(-0.48, 0.88),
+        0.175, -0.044, 0.018, aspect);
+      float returnBreathB = vaporFold(screen, vec2(0.735, 0.605), vec2(-0.83, -0.56),
+        0.170, 0.040, 0.015, aspect);
+      color = mix(color, mix(left1, bone, 0.15),
+        clamp(dreamBreathA * breathEnergy + dreamBreathB * breathEnergy * 0.72, 0.0, 0.13));
+      color = mix(color, mix(vec3(0.050, 0.290, 0.225), bone, 0.14),
+        clamp(makerBreath * breathEnergy * 0.82, 0.0, 0.11));
+      color = mix(color, mix(smokedViolet, lunarBone, 0.30),
+        clamp((returnBreathA + returnBreathB * 0.74)
+          * (breathEnergy + 0.045 * uReconstitution), 0.0, 0.15));
 
       float horizonNoise = fbm(vec2(screen.x * 6.8, movingTime * 0.004));
       float horizon = exp(-abs(screen.y - horizonY - (horizonNoise - 0.5) * 0.004) * 88.0);
@@ -992,6 +1067,7 @@
     out vec3 vWorld;
     out vec3 vLocal;
     out vec3 vNormal;
+    out vec3 vLocalNormal;
     out float vAlong;
     out float vAcross;
     out float vLamella;
@@ -1040,7 +1116,7 @@
           + sin(aAlong * 4.3 - aAcross * 5.9 + 1.7) * 0.031
           + sin(aAlong * 17.3 + aAcross * 8.1) * 0.012;
         float worldDetailScale = worldMask * worldChange;
-        point += deformNormal * detailRelief * worldDetailScale * 0.28;
+        point += deformNormal * detailRelief * worldDetailScale * 0.12;
         point.z += worldDetailScale * (0.045 + 0.055 * (aAcross + 1.0));
         point.y += worldDetailScale * (0.035 + 0.025 * sin(aAlong * 7.4 + aAcross * 2.1));
         point.z += machineMask * worldChange * horizonProximity * 0.018;
@@ -1079,6 +1155,7 @@
       vWorld = world;
       vLocal = aPosition;
       vNormal = worldNormal;
+      vLocalNormal = aNormal;
       vAlong = aAlong;
       vAcross = aAcross;
       vLamella = aLamella;
@@ -1092,6 +1169,7 @@
     in vec3 vWorld;
     in vec3 vLocal;
     in vec3 vNormal;
+    in vec3 vLocalNormal;
     in float vAlong;
     in float vAcross;
     in float vLamella;
@@ -1140,6 +1218,7 @@
 
     void main() {
       vec3 safeNormal = vNormal / max(length(vNormal), 0.0001);
+      vec3 localTerrainNormal = vLocalNormal / max(length(vLocalNormal), 0.0001);
       vec3 faceNormal = gl_FrontFacing ? safeNormal : -safeNormal;
       vec3 derivativeCross = cross(dFdx(vWorld), dFdy(vWorld));
       vec3 derivativeNormal = derivativeCross / max(length(derivativeCross), 0.0001);
@@ -1147,7 +1226,7 @@
       float worldRelief = (1.0 - step(0.5, uMaterial))
         * (1.0 - smoothstep(0.16, 0.42, abs(uActiveWorld - 3.0))) * uDetailMix;
       vec3 detailNormal = gl_FrontFacing ? derivativeNormal : -derivativeNormal;
-      vec3 normal = normalize(mix(faceNormal, detailNormal, worldRelief * 0.78));
+      vec3 normal = normalize(mix(faceNormal, detailNormal, worldRelief * 0.05));
       vec3 viewDirection = normalize(vec3(0.0, 0.0, 10.0) - vWorld);
       vec3 keyDirection = normalize(vec3(-0.62, 0.76, 0.20));
       vec3 fillDirection = normalize(vec3(0.74, -0.16, 0.52));
@@ -1195,22 +1274,25 @@
         float warpB = rockFbm(vec2(vAlong * 2.85 - 4.4, 7.2));
         float mineral = pow(1.0 - abs(2.0 * grit - 1.0), 5.0)
           * smoothstep(0.50, 0.82, macro);
-        float terrainSlope = 1.0 - clamp(normal.y, 0.0, 1.0);
+        float terrainSlope = 1.0 - clamp(localTerrainNormal.y, 0.0, 1.0);
         float heightTone = smoothstep(-3.72, -1.62, vLocal.y);
-        vec3 highShale = mix(vec3(0.090, 0.078, 0.112),
-          vec3(0.180, 0.142, 0.202), 0.24 + macro * 0.22);
-        vec3 middleStone = mix(vec3(0.052, 0.030, 0.070),
-          vec3(0.128, 0.070, 0.145), 0.20 + warpB * 0.22);
-        vec3 deepStone = mix(vec3(0.016, 0.013, 0.025),
-          vec3(0.082, 0.028, 0.048), 0.12 + warpA * 0.15);
+        vec3 highShale = mix(vec3(0.138, 0.108, 0.158),
+          vec3(0.292, 0.215, 0.282), 0.24 + macro * 0.22);
+        vec3 middleStone = mix(vec3(0.076, 0.043, 0.092),
+          vec3(0.186, 0.098, 0.186), 0.20 + warpB * 0.22);
+        vec3 deepStone = mix(vec3(0.020, 0.016, 0.030),
+          vec3(0.112, 0.040, 0.066), 0.12 + warpA * 0.15);
         vec3 rockColor = mix(deepStone, middleStone,
           smoothstep(-3.68, -2.58, vLocal.y));
         rockColor = mix(rockColor, highShale,
           smoothstep(-2.54, -1.70, vLocal.y));
-        rockColor = mix(rockColor, deepStone, terrainSlope * 0.34);
-        rockColor += mix(bone, ultramarine, 0.62) * mineral
-          * (0.018 + 0.030 * wrapDiffuse) * (0.42 + heightTone * 0.58);
-        color = rockColor * (0.90 + 0.22 * wrapDiffuse + 0.08 * skyFill);
+        rockColor = mix(rockColor, deepStone, terrainSlope * 0.22);
+        rockColor += mix(bone, ultramarine, 0.58) * mineral
+          * (0.030 + 0.052 * wrapDiffuse) * (0.38 + heightTone * 0.62);
+        color = rockColor * (1.00 + 0.38 * wrapDiffuse + 0.14 * skyFill + 0.07 * fill);
+        float horizonCatch = 1.0 - smoothstep(-0.96, -0.40, vAcross);
+        color += mix(coral, bone, 0.62) * horizonCatch
+          * (0.014 + 0.030 * climax) * (0.35 + 0.65 * wrapDiffuse);
 
         float faultSigned = vLocal.x - (-0.56 - vLocal.y * 0.38);
         float pressureZone = exp(-abs(faultSigned) * 1.55)
@@ -1226,9 +1308,9 @@
         color = mix(color, groundNacre, nacreMineral * (0.38 + 0.34 * uCrown));
         float groundBloom = pressureZone * climax
           * smoothstep(0.46, 0.74, rockFbm(vec2(vAlong * 1.45 + 6.8, vAcross * 0.58 + 2.9)));
-        color += mix(groundSpectral, bone, 0.22) * groundBloom * (0.050 + uCrown * 0.095);
+        color += mix(groundSpectral, bone, 0.22) * groundBloom * (0.082 + uCrown * 0.145);
         float mineralSpec = pow(max(0.0, dot(normal, halfDirection)), mix(14.0, 38.0, mineral));
-        color += bone * mineralSpec * (0.006 + 0.030 * mineral);
+        color += bone * mineralSpec * (0.012 + 0.052 * mineral);
 
         float machineMask = 1.0 - smoothstep(0.16, 0.42, abs(uActiveWorld - 1.0));
         float makerMask = 1.0 - smoothstep(0.16, 0.42, abs(uActiveWorld - 2.0));
@@ -1244,7 +1326,7 @@
         float capNoise = rockNoise(vec2(vWorld.x * 0.82 + vWorld.z * 0.36,
           vWorld.z * 1.12 - vWorld.x * 0.24));
         float capGate = smoothstep(0.88, 0.965, capNoise)
-          * smoothstep(0.62, 0.91, normal.y);
+          * smoothstep(0.62, 0.91, localTerrainNormal.y);
         float broadMineral = pow(max(0.0, dot(normal, halfDirection)), 18.0);
         float rareMineral = pow(max(0.0, dot(normal, halfDirection)), 48.0) * capGate;
         color += mix(violet, bone, 0.30) * worldCleave
@@ -1254,7 +1336,7 @@
         color *= 1.0 - worldCleave * ravineOcclusion * 0.10;
 
         color *= 1.0 - uSubtraction * (0.18 + macro * 0.12);
-        color *= mix(1.0, 1.10, worldCleave);
+        color *= mix(1.0, 1.16, worldCleave);
         color += mix(vec3(0.120, 0.050, 0.180), bone, 0.26)
           * worldCleave * pow(max(0.0, normal.y * 0.5 + 0.5), 2.0) * 0.035;
         float groundDepth = smoothstep(-0.86, 0.82, vAcross);
@@ -1263,8 +1345,8 @@
         float loadLamina = exp(-abs(faultSigned - 0.10) * 8.5) * pressureZone * loadWindow;
         loadLamina *= smoothstep(0.52, 0.78, rockFbm(vec2(vAlong * 2.2 + 4.5, 6.1)));
         color += mix(coral, bone, 0.38) * loadLamina
-          * (0.012 + 0.028 * climax + worldCleave * 0.060);
-        alpha = 0.995;
+          * (0.020 + 0.040 * climax + worldCleave * 0.086);
+        alpha = 1.0;
       } else if (uMaterial < 1.5) {
         if (uGhost > 0.5) discard;
         float extent = smoothstep(0.300, 0.355, vAlong)
@@ -1304,7 +1386,7 @@
       float selectedPulse = 0.5 + 0.5 * sin(movingTime * 1.12 + uActiveSub * 1.9);
       color += coral * uDetailMix * selectedPulse * 0.006;
       color += vec3(0.008, 0.007, 0.012) * uReturn;
-      float outputGamma = uMaterial < 0.5 ? mix(0.92, 0.80, worldRelief) : 0.84;
+      float outputGamma = uMaterial < 0.5 ? mix(0.86, 0.78, worldRelief) : 0.84;
       color = pow(max(color, vec3(0.0)), vec3(outputGamma));
       outColor = vec4(color, alpha);
     }
@@ -1629,7 +1711,7 @@
     const orientation = currentOrientation(Boolean(activeWorld), false);
     uniform2(program, 'uParallax',
       (orientation.yaw - 0.16) * 0.025,
-      (orientation.pitch + 0.075) * 0.035);
+      (orientation.pitch + 0.125) * 0.035);
     gl.bindVertexArray(resources.emptyVao);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
     gl.bindVertexArray(null);
@@ -1727,11 +1809,17 @@
     drawBackgroundGL(state);
 
     const orientation = currentOrientation(Boolean(activeWorld), false);
+    drawBackgroundGL(state, true);
+    const environmentOrientation = activeWorld ? {
+      yaw: orientation.yaw * 0.22,
+      pitch: -0.18 + orientation.pitch * 0.12,
+      roll: orientation.roll * 0.18,
+      zoom: Math.min(1.08, orientation.zoom),
+    } : orientation;
     gl.enable(gl.DEPTH_TEST);
     gl.depthMask(true);
-    drawSurfaceGL(resources.outer, 0, state, orientation, false);
-    drawBackgroundGL(state, true);
-    drawPointsGL();
+    drawSurfaceGL(resources.outer, 0, state, environmentOrientation, false);
+    if (activeWorld) drawPointsGL();
   }
 
   function fallbackBodyPaths(scale) {
@@ -2189,9 +2277,12 @@
       );
       const minLeft = safeGutter + layoutHalf;
       const maxLeft = width - safeGutter - layoutHalf;
-      const left = minLeft <= maxLeft
+      let left = minLeft <= maxLeft
         ? clamp(anchor.x + offsetX, minLeft, maxLeft)
         : width * 0.5;
+      if (phone && key === 'machine' && minLeft <= maxLeft) {
+        left = Math.max(left, maxLeft);
+      }
       const top = clamp(
         anchor.y + offsets[index].y,
         height * (mobile ? (phone ? 0.30 : 0.17) : 0.15),
