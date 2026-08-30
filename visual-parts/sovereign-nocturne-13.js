@@ -108,10 +108,10 @@
   let holdStrength = 0;
   let holdTarget = 0;
 
-  let overviewYaw = -0.18;
-  let overviewPitch = -0.055;
-  let overviewRoll = -0.018;
-  let overviewZoom = 0.91;
+  let overviewYaw = -0.34;
+  let overviewPitch = -0.08;
+  let overviewRoll = -0.035;
+  let overviewZoom = 0.84;
   let overviewYawVelocity = 0;
   let overviewPitchVelocity = 0;
   let overviewRollVelocity = 0;
@@ -136,9 +136,9 @@
   const subScreen = [0, 1, 2].map((index) => ({ x: 0, y: 0, r: 25, z: 0, index }));
 
   const WORLD_PINS = {
-    machine: { x: -2.34, y: 0.98, z: 1.40 },
-    maker: { x: 2.42, y: 0.28, z: 1.31 },
-    reality: { x: 0.34, y: -1.78, z: 1.34 },
+    machine: { x: -2.08, y: 0.94, z: 1.18 },
+    maker: { x: 1.70, y: 0.24, z: 1.28 },
+    reality: { x: 0.26, y: -2.18, z: 1.18 },
   };
   const DETAIL_PINS = {
     machine: [
@@ -212,14 +212,14 @@
       yaw: lerp(overview.yaw, detailYaw + worldOffsets.yaw, mix),
       pitch: lerp(overview.pitch, detailPitch + worldOffsets.pitch, mix),
       roll: lerp(overview.roll, detailRoll, mix),
-      zoom: lerp(overview.zoom, detailZoom * 1.13, mix),
+      zoom: lerp(overview.zoom, detailZoom * 1.04, mix),
     };
   }
 
   function screenShift(detail = false) {
     const mix = detail ? ease(viewMix) : 0;
     if (isCompactLayout()) return { x: 0, y: lerp(0.015, 0.035, mix) };
-    return { x: lerp(0.075, -0.018, mix), y: lerp(0, 0.015, mix) };
+    return { x: lerp(0.105, -0.010, mix), y: lerp(0, 0.015, mix) };
   }
 
   function isCompactLayout() {
@@ -262,48 +262,93 @@
     };
   }
 
+  // Three authored mineral folds: no shared root, crown, radius or envelope.
+  // Their different lengths and depth crossings keep the mantle open rather
+  // than resolving into a bilateral pod.
   const LAMELLAE = [
-    { base: 2.32, twist: -0.32, phase: 0.20, crown: 0.36, drift: -0.12 },
-    { base: 0.72, twist: 0.38, phase: 2.10, crown: 0.10, drift: 0.12 },
-    { base: 4.12, twist: 0.78, phase: 4.30, crown: 0.62, drift: -0.05 },
+    {
+      points: [
+        { x: -0.42, y: -2.74, z: 0.24 },
+        { x: -2.18, y: -1.88, z: 0.72 },
+        { x: -2.44, y: 0.92, z: 0.42 },
+        { x: -0.88, y: 3.18, z: 0.70 },
+      ],
+      widths: [0.20, 0.72, 0.58, 0.18],
+      banks: [0.12, -0.18, 0.22, -0.10],
+      camber: 0.19,
+      thickness: 0.15,
+    },
+    {
+      points: [
+        { x: 0.48, y: -2.42, z: 0.50 },
+        { x: 1.58, y: -1.46, z: 0.94 },
+        { x: 1.92, y: 0.52, z: 0.36 },
+        { x: 0.72, y: 2.30, z: 0.84 },
+      ],
+      widths: [0.14, 0.50, 0.43, 0.12],
+      banks: [-0.24, 0.18, -0.12, 0.24],
+      camber: -0.15,
+      thickness: 0.12,
+    },
+    {
+      points: [
+        { x: -1.48, y: -2.30, z: 0.02 },
+        { x: -0.88, y: -2.66, z: 0.68 },
+        { x: 0.22, y: -2.36, z: 0.90 },
+        { x: 1.18, y: -1.56, z: 0.28 },
+      ],
+      widths: [0.13, 0.34, 0.28, 0.10],
+      banks: [0.42, -0.16, 0.28, -0.30],
+      camber: 0.12,
+      thickness: 0.10,
+    },
   ];
 
-  function fractureCenter(y) {
-    return 1.26 + Math.sin(y * 1.12 - 0.15) * 0.27 + Math.sin(y * 3.5 + 0.7) * 0.035;
+  function cubicValue(values, t) {
+    const q = 1 - t;
+    return q * q * q * values[0]
+      + 3 * q * q * t * values[1]
+      + 3 * q * t * t * values[2]
+      + t * t * t * values[3];
   }
 
-  function woundAmount(point) {
-    const front = smoothstep(0.52, 1.34, point.z);
-    const vertical = Math.abs((point.y + 0.03) / 1.40);
-    const taper = Math.pow(clamp(1 - vertical, 0, 1), 0.62);
-    const halfWidth = 0.18 + taper * 0.18;
-    const lateral = Math.abs(point.x - fractureCenter(point.y)) / halfWidth;
-    const torn = Math.pow(lateral, 1.72) + Math.pow(vertical, 3.25)
-      + Math.sin(point.y * 5.1 - point.x * 1.8) * 0.018;
-    return (1 - smoothstep(0.76, 1.035, torn)) * front;
+  function cubicPoint(points, t) {
+    return {
+      x: cubicValue(points.map((point) => point.x), t),
+      y: cubicValue(points.map((point) => point.y), t),
+      z: cubicValue(points.map((point) => point.z), t),
+    };
+  }
+
+  function dot(a, b) {
+    return a.x * b.x + a.y * b.y + a.z * b.z;
   }
 
   function lamellaPoint(index, along, across) {
     const config = LAMELLAE[index];
     const t = clamp(along, 0, 1);
     const s = clamp(across, -1, 1);
-    const q = t * 2 - 1;
-    const arch = Math.pow(Math.max(0, Math.sin(Math.PI * t)), 0.58);
-    const envelope = 0.12 + arch * 0.88;
-    const keel = 1 - smoothstep(0.0, 0.24, t);
-    const crown = smoothstep(0.70, 1.0, t);
-    const span = (0.17 + envelope * 0.38) * (1 + 0.08 * Math.sin(config.phase + t * Math.PI));
-    const angle = config.base + config.twist * q
-      + Math.sin(t * TAU + config.phase) * 0.11 + s * span;
-    let radial = 0.46 + envelope * 1.78;
-    radial *= 1 - keel * 0.38;
-    radial += (s * s - 0.34) * envelope * 0.28
-      + Math.sin(s * Math.PI + config.phase) * envelope * 0.10;
-    const x = radial * Math.cos(angle) * 1.34 + config.drift * q;
-    const z = radial * Math.sin(angle) + Math.cos(s * Math.PI) * envelope * 0.12;
-    const y = q * 2.86 + crown * config.crown - keel * 0.12
-      + s * Math.sin(Math.PI * t + config.phase) * 0.18;
-    return { x, y, z };
+    const center = cubicPoint(config.points, t);
+    const before = cubicPoint(config.points, Math.max(0, t - 0.002));
+    const after = cubicPoint(config.points, Math.min(1, t + 0.002));
+    const tangent = normalize(subtract(after, before));
+    const bank = cubicValue(config.banks, t);
+    const rawSide = { x: Math.cos(bank), y: 0.08 * Math.sin(t * Math.PI), z: Math.sin(bank) };
+    const projection = dot(rawSide, tangent);
+    const side = normalize({
+      x: rawSide.x - tangent.x * projection,
+      y: rawSide.y - tangent.y * projection,
+      z: rawSide.z - tangent.z * projection,
+    });
+    const normal = normalize(cross(tangent, side));
+    const width = cubicValue(config.widths, t);
+    const asymmetry = s + (s * s - 1) * (index === 0 ? 0.10 : index === 1 ? -0.08 : 0.06);
+    const edgeCurl = config.camber * width * (s * s - 0.18);
+    return {
+      x: center.x + side.x * asymmetry * width + normal.x * edgeCurl,
+      y: center.y + side.y * asymmetry * width + normal.y * edgeCurl,
+      z: center.z + side.z * asymmetry * width + normal.z * edgeCurl,
+    };
   }
 
   function normalize(vector) {
@@ -323,22 +368,41 @@
     };
   }
 
-  function buildFracturePocket(rows, columns) {
+  function lamellaNormal(index, t, s) {
+    const beforeT = lamellaPoint(index, Math.max(0, t - 0.002), s);
+    const afterT = lamellaPoint(index, Math.min(1, t + 0.002), s);
+    const beforeS = lamellaPoint(index, t, Math.max(-1, s - 0.003));
+    const afterS = lamellaPoint(index, t, Math.min(1, s + 0.003));
+    const normal = normalize(cross(subtract(afterT, beforeT), subtract(afterS, beforeS)));
+    // All authored centre-lines advance upward while their side basis advances
+    // toward +x. A single deterministic sign keeps the nacre/specular planes
+    // continuous across every fold instead of conditionally flipping normals.
+    return { x: -normal.x, y: -normal.y, z: -normal.z };
+  }
+
+  function buildSovereignSeam(rows, columns) {
     const vertices = [];
     const indices = [];
     const stride = columns + 1;
     for (let row = 0; row <= rows; row++) {
       const t = row / rows;
-      const y = -1.40 + t * 2.80;
-      const vertical = Math.abs((y + 0.03) / 1.40);
-      const taper = Math.pow(clamp(1 - vertical, 0, 1), 0.62);
-      const halfWidth = 0.18 + taper * 0.18;
+      const foldT = 0.13 + t * 0.79;
+      const seamS = -0.34 + Math.sin(t * Math.PI * 2.15 - 0.55) * 0.14
+        + Math.sin(t * Math.PI * 5.2) * 0.025;
+      const halfParamWidth = 0.045 + Math.sin(Math.PI * t) * 0.040;
       for (let column = 0; column <= columns; column++) {
         const s = column / columns * 2 - 1;
-        const x = fractureCenter(y) + s * halfWidth * 0.96;
-        const z = 0.20 - (1 - s * s) * 0.22 - Math.sin(y * 2.1) * 0.025;
-        const wound = clamp((1 - Math.abs(s)) * (1 - vertical * vertical), 0, 1);
-        vertices.push(x, y, z, 0, 0, 1, wound);
+        const foldS = seamS + s * halfParamWidth;
+        const point = lamellaPoint(1, foldT, foldS);
+        const normal = lamellaNormal(1, foldT, foldS);
+        const lift = 0.145 + (1 - Math.abs(s)) * 0.008;
+        vertices.push(
+          point.x + normal.x * lift,
+          point.y + normal.y * lift,
+          point.z + normal.z * lift,
+          normal.x, normal.y, normal.z,
+          t, s, 1, 0,
+        );
       }
     }
     for (let row = 0; row < rows; row++) {
@@ -355,9 +419,9 @@
 
   function buildSurface(longitudes, latitudes, inner = false) {
     if (inner) {
-      return buildFracturePocket(
+      return buildSovereignSeam(
         Math.max(42, Math.round(latitudes * 0.82)),
-        Math.max(12, Math.round(longitudes * 0.12)),
+        Math.max(8, Math.round(longitudes * 0.075)),
       );
     }
 
@@ -369,26 +433,17 @@
     const indices = [];
 
     LAMELLAE.forEach((config, lamellaIndex) => {
-      const baseVertex = vertices.length / 7;
+      const baseVertex = vertices.length / 10;
       for (let row = 0; row <= rows; row++) {
         const t = row / rows;
         for (let column = 0; column <= columns; column++) {
           const s = column / columns * 2 - 1;
           const point = lamellaPoint(lamellaIndex, t, s);
-          const beforeT = lamellaPoint(lamellaIndex, Math.max(0, t - 0.002), s);
-          const afterT = lamellaPoint(lamellaIndex, Math.min(1, t + 0.002), s);
-          const beforeS = lamellaPoint(lamellaIndex, t, Math.max(-1, s - 0.003));
-          const afterS = lamellaPoint(lamellaIndex, t, Math.min(1, s + 0.003));
-          let normal = normalize(cross(subtract(afterT, beforeT), subtract(afterS, beforeS)));
-          if (normal.x * point.x + normal.z * point.z < 0) {
-            normal = { x: -normal.x, y: -normal.y, z: -normal.z };
-          }
-          const envelope = 0.12 + Math.pow(Math.max(0, Math.sin(Math.PI * t)), 0.58) * 0.88;
-          const thickness = 0.065 + envelope * 0.075 + lamellaIndex * 0.008;
-          const wound = woundAmount(point);
+          const normal = lamellaNormal(lamellaIndex, t, s);
+          const thickness = config.thickness * (0.72 + Math.sin(Math.PI * t) * 0.28);
           vertices.push(
             point.x + normal.x * thickness, point.y + normal.y * thickness, point.z + normal.z * thickness,
-            normal.x, normal.y, normal.z, wound,
+            normal.x, normal.y, normal.z, t, s, lamellaIndex, 0,
           );
         }
       }
@@ -397,20 +452,11 @@
         for (let column = 0; column <= columns; column++) {
           const s = column / columns * 2 - 1;
           const point = lamellaPoint(lamellaIndex, t, s);
-          const beforeT = lamellaPoint(lamellaIndex, Math.max(0, t - 0.002), s);
-          const afterT = lamellaPoint(lamellaIndex, Math.min(1, t + 0.002), s);
-          const beforeS = lamellaPoint(lamellaIndex, t, Math.max(-1, s - 0.003));
-          const afterS = lamellaPoint(lamellaIndex, t, Math.min(1, s + 0.003));
-          let normal = normalize(cross(subtract(afterT, beforeT), subtract(afterS, beforeS)));
-          if (normal.x * point.x + normal.z * point.z < 0) {
-            normal = { x: -normal.x, y: -normal.y, z: -normal.z };
-          }
-          const envelope = 0.12 + Math.pow(Math.max(0, Math.sin(Math.PI * t)), 0.58) * 0.88;
-          const thickness = 0.065 + envelope * 0.075 + lamellaIndex * 0.008;
-          const wound = woundAmount(point);
+          const normal = lamellaNormal(lamellaIndex, t, s);
+          const thickness = config.thickness * (0.72 + Math.sin(Math.PI * t) * 0.28);
           vertices.push(
             point.x - normal.x * thickness, point.y - normal.y * thickness, point.z - normal.z * thickness,
-            -normal.x, -normal.y, -normal.z, wound,
+            -normal.x, -normal.y, -normal.z, t, s, lamellaIndex, 1,
           );
         }
       }
@@ -450,22 +496,47 @@
 
   function buildFibres() {
     const vertices = [];
-    const count = coarse || lowCPU ? 20 : 32;
+    const count = coarse || lowCPU ? 26 : 44;
+    const segments = 6;
+    const quadraticPoint = (start, control, end, t) => {
+      const q = 1 - t;
+      return {
+        x: q * q * start.x + 2 * q * t * control.x + t * t * end.x,
+        y: q * q * start.y + 2 * q * t * control.y + t * t * end.y,
+        z: q * q * start.z + 2 * q * t * control.z + t * t * end.z,
+      };
+    };
     for (let index = 0; index < count; index++) {
       const side = index % 2 ? -1 : 1;
-      const start = {
-        x: side * (2.85 + hash(index + 3) * 1.10),
-        y: -2.30 + hash(index + 17) * 5.25,
-        z: -0.72 + hash(index + 29) * 1.15,
-      };
+      const verticalDirection = index % 4 < 2 ? 1 : -1;
+      const lamellaIndex = index % LAMELLAE.length;
       const end = lamellaPoint(
-        index % LAMELLAE.length,
+        lamellaIndex,
         0.16 + hash(index + 41) * 0.70,
         (hash(index + 53) - 0.5) * 1.30,
       );
+      const endNormal = lamellaNormal(lamellaIndex, 0.16 + hash(index + 41) * 0.70, 0);
+      end.x += endNormal.x * 0.11;
+      end.y += endNormal.y * 0.11;
+      end.z += endNormal.z * 0.11;
+      const start = {
+        x: side * (3.15 + hash(index + 3) * 1.35),
+        y: verticalDirection * (2.75 + hash(index + 17) * 1.45),
+        z: -0.82 + hash(index + 29) * 1.75,
+      };
+      const control = {
+        x: lerp(start.x, end.x, 0.48) - side * (0.28 + hash(index + 67) * 0.62),
+        y: lerp(start.y, end.y, 0.48) + verticalDirection * (0.12 + hash(index + 71) * 0.46),
+        z: lerp(start.z, end.z, 0.48) + (hash(index + 79) - 0.5) * 0.92,
+      };
       const color = index % 11 === 0 ? 2 : index % 7 === 0 ? 1 : index % 5 === 0 ? 0 : 3;
-      vertices.push(start.x, start.y, start.z, end.x, end.y, end.z, 0, color, index / count);
-      vertices.push(start.x, start.y, start.z, end.x, end.y, end.z, 1, color, index / count);
+      for (let segment = 0; segment < segments; segment++) {
+        const a = quadraticPoint(start, control, end, segment / segments);
+        const b = quadraticPoint(start, control, end, (segment + 1) / segments);
+        const seed = (index + segment / segments * 0.42) / count;
+        vertices.push(a.x, a.y, a.z, b.x, b.y, b.z, 0, color, seed);
+        vertices.push(a.x, a.y, a.z, b.x, b.y, b.z, 1, color, seed);
+      }
     }
     return new Float32Array(vertices);
   }
@@ -550,7 +621,10 @@
     precision highp float;
     layout(location=0) in vec3 aPosition;
     layout(location=1) in vec3 aNormal;
-    layout(location=2) in float aWound;
+    layout(location=2) in float aAlong;
+    layout(location=3) in float aAcross;
+    layout(location=4) in float aLamella;
+    layout(location=5) in float aBack;
     uniform mat4 uProjection;
     uniform vec4 uOrientation;
     uniform vec2 uScreenShift;
@@ -565,12 +639,16 @@
     uniform float uCrown;
     uniform float uDetailMix;
     uniform float uActiveWorld;
+    uniform float uMaterial;
     uniform float uGhost;
     uniform float uReduced;
     out vec3 vWorld;
     out vec3 vLocal;
     out vec3 vNormal;
-    out float vWound;
+    out float vAlong;
+    out float vAcross;
+    out float vLamella;
+    out float vBack;
     out float vDepth;
 
     vec3 rotateY(vec3 point, float angle) {
@@ -593,39 +671,40 @@
       vec3 point = aPosition;
       vec3 normal = aNormal;
       float movingTime = mix(uTime, 0.0, uReduced);
-      float lowAnchor = 1.0 - smoothstep(-2.70, -0.55, point.y);
-      float breath = uGather * (0.030 + 0.018 * sin(point.y * 2.1 + movingTime * 0.28));
-      point += normal * breath * (1.0 - lowAnchor * 0.72);
-      float compression = clamp(uPressure + uInversion * 0.18, 0.0, 1.0);
-      point.x *= 1.0 - compression * (0.105 + aWound * 0.075);
-      point.y -= compression * (0.055 + aWound * 0.065) * (1.0 - lowAnchor * 0.82);
-      point.z -= compression * aWound * 0.43;
-      point = mix(point, vec3(point.x * 0.79, point.y * 0.94, point.z * 0.70), uSubtraction * 0.48);
-      float resolvedWave = sin(point.y * 3.3 + point.x * 1.7 - movingTime * 0.34);
-      point += normal * resolvedWave * uReconstitution * (0.026 + aWound * 0.042);
-      point += normal * uCrown * aWound * 0.055;
+      float envelope = sin(clamp(aAlong, 0.0, 1.0) * 3.14159265);
+      float lowAnchor = 1.0 - smoothstep(-2.72, -0.82, point.y);
+      float breath = uGather * envelope * (0.018 + 0.012 * sin(aAlong * 8.0 + movingTime * 0.22));
+      point += normal * breath * (1.0 - lowAnchor * 0.78);
+
+      float compression = clamp(uPressure + uInversion * 0.16, 0.0, 1.0);
+      point.x *= 1.0 - compression * (0.060 + aLamella * 0.010);
+      point.y -= compression * 0.045 * (1.0 - lowAnchor * 0.86);
+      point.z -= compression * (0.025 + envelope * 0.035);
+      point = mix(point, vec3(point.x * 0.84, point.y * 0.955, point.z * 0.78), uSubtraction * 0.44);
+      float resolvedWave = sin(aAlong * 12.0 + aAcross * 2.8 - movingTime * 0.30 + aLamella * 1.7);
+      point += normal * resolvedWave * envelope * uReconstitution * 0.022;
+      point += normal * envelope * uCrown * 0.018;
 
       float machineMask = 1.0 - smoothstep(0.16, 0.42, abs(uActiveWorld - 1.0));
       float makerMask = 1.0 - smoothstep(0.16, 0.42, abs(uActiveWorld - 2.0));
       float worldMask = 1.0 - smoothstep(0.16, 0.42, abs(uActiveWorld - 3.0));
       float worldChange = uDetailMix;
-      point += normal * machineMask * worldChange
-        * (0.018 + sin(point.y * 8.0 - point.x * 3.4) * 0.024);
-      point.y *= 1.0 + makerMask * worldChange * 0.052;
-      point.x *= 1.0 - makerMask * worldChange * 0.026;
-      point += normal * makerMask * worldChange * sin(point.y * 2.4 + point.z) * 0.032;
-      float tectonicFacet = sign(sin(point.y * 4.2 + point.x * 3.1 - point.z * 2.0));
-      point += normal * worldMask * worldChange * tectonicFacet * 0.068;
+      point.z += (aLamella - 1.0) * machineMask * worldChange * 0.18;
+      point.x += (aLamella - 1.0) * machineMask * worldChange * 0.055;
+      point.x += (aLamella - 0.85) * makerMask * worldChange * envelope * 0.12;
+      point.y *= 1.0 + makerMask * worldChange * 0.035;
+      point += normal * makerMask * worldChange * sin(aAlong * 6.283 + aLamella) * envelope * 0.040;
+      float tectonicFacet = sign(sin(aAlong * 22.0 + aAcross * 4.4 + aLamella * 2.1));
+      point += normal * worldMask * worldChange * tectonicFacet * envelope * 0.055;
+      point.y -= worldMask * worldChange * smoothstep(0.0, 0.46, 1.0 - aAlong) * 0.10;
 
       if (uGhost > 0.5) {
-        float mirrorPlane = -2.45;
-        float sheetMisregister = sin(atan(point.z, point.x) * 3.0 + point.y * 0.18);
-        point.x = point.x * 0.97 - 0.12;
-        point.y = mirrorPlane - (point.y - mirrorPlane) * 0.48;
-        point.z -= 0.54;
-        point.x += sheetMisregister * 0.075;
-        point.y += sheetMisregister * 0.035;
-        normal = normalize(vec3(normal.x / 0.97, -normal.y / 0.48, normal.z));
+        float mirrorPlane = -2.50;
+        float sheetOffset = (aLamella - 1.0) * 0.13 + sin(aAlong * 7.0 + aLamella * 1.9) * 0.025;
+        point.x = point.x * 0.965 - 0.10 + sheetOffset;
+        point.y = mirrorPlane - (point.y - mirrorPlane) * 0.42 + (aLamella - 1.0) * 0.035;
+        point.z -= 0.48 + aLamella * 0.045;
+        normal = normalize(vec3(normal.x / 0.965, -normal.y / 0.42, normal.z));
       }
 
       point.xy *= uViewportScale;
@@ -643,7 +722,10 @@
       vWorld = world;
       vLocal = aPosition;
       vNormal = worldNormal;
-      vWound = aWound;
+      vAlong = aAlong;
+      vAcross = aAcross;
+      vLamella = aLamella;
+      vBack = aBack;
       vDepth = clip.w;
     }
   `;
@@ -653,7 +735,10 @@
     in vec3 vWorld;
     in vec3 vLocal;
     in vec3 vNormal;
-    in float vWound;
+    in float vAlong;
+    in float vAcross;
+    in float vLamella;
+    in float vBack;
     in float vDepth;
     out vec4 outColor;
     uniform float uTime;
@@ -666,6 +751,7 @@
     uniform float uDetailMix;
     uniform float uActiveWorld;
     uniform float uActiveSub;
+    uniform float uGhost;
     uniform float uReduced;
 
     float hash31(vec3 point) {
@@ -673,138 +759,97 @@
       point += dot(point, point.yzx + 33.33);
       return fract((point.x + point.y) * point.z);
     }
-    float valueNoise(vec3 point) {
-      vec3 cell = floor(point);
-      vec3 local = fract(point);
-      local = local * local * (3.0 - 2.0 * local);
-      float n000 = hash31(cell);
-      float n100 = hash31(cell + vec3(1.0,0.0,0.0));
-      float n010 = hash31(cell + vec3(0.0,1.0,0.0));
-      float n110 = hash31(cell + vec3(1.0,1.0,0.0));
-      float n001 = hash31(cell + vec3(0.0,0.0,1.0));
-      float n101 = hash31(cell + vec3(1.0,0.0,1.0));
-      float n011 = hash31(cell + vec3(0.0,1.0,1.0));
-      float n111 = hash31(cell + vec3(1.0,1.0,1.0));
-      return mix(
-        mix(mix(n000,n100,local.x),mix(n010,n110,local.x),local.y),
-        mix(mix(n001,n101,local.x),mix(n011,n111,local.x),local.y),
-        local.z
-      );
-    }
-
-    float analyticalWound(vec3 point) {
-      float front = smoothstep(0.42, 0.96, point.z);
-      float vertical = abs((point.y + 0.03) / 1.40);
-      float taper = pow(clamp(1.0 - vertical, 0.0, 1.0), 0.62);
-      float halfWidth = 0.18 + taper * 0.18;
-      float center = 1.26 + sin(point.y * 1.12 - 0.15) * 0.27
-        + sin(point.y * 3.5 + 0.7) * 0.035;
-      float lateral = abs(point.x - center) / halfWidth;
-      float torn = pow(lateral, 1.72) + pow(vertical, 3.25)
-        + sin(point.y * 5.1 - point.x * 1.8) * 0.018;
-      return (1.0 - smoothstep(0.76, 1.035, torn)) * front;
-    }
 
     void main() {
-      vec3 normal = normalize(vNormal);
+      vec3 normal = gl_FrontFacing ? normalize(vNormal) : -normalize(vNormal);
       vec3 viewDirection = normalize(vec3(0.0, 0.0, 10.0) - vWorld);
-      vec3 keyDirection = normalize(vec3(-0.42, 0.72, 0.52));
-      vec3 coralDirection = normalize(vec3(0.30, 0.08, 0.95));
+      vec3 keyDirection = normalize(vec3(-0.48, 0.76, 0.44));
+      vec3 rimDirection = normalize(vec3(0.34, -0.04, 0.94));
       float diffuse = max(0.0, dot(normal, keyDirection));
-      float innerLight = max(0.0, dot(normal, coralDirection));
-      float fresnel = pow(1.0 - max(0.0, dot(normal, viewDirection)), 3.2);
+      float underLight = max(0.0, dot(normal, rimDirection));
+      float fresnel = pow(1.0 - max(0.0, dot(normal, viewDirection)), 3.0);
       vec3 halfDirection = normalize(keyDirection + viewDirection);
-      float specular = pow(max(0.0, dot(normal, halfDirection)), 28.0);
-      float macroNoise = valueNoise(vLocal * 0.82 + vec3(1.7, 4.1, 0.6));
-      float mineralNoise = valueNoise(vLocal * 2.35 + macroNoise * 1.8);
-      float strataPhase = vLocal.y * 3.35 + vLocal.x * 0.72 - vLocal.z * 1.45 + macroNoise * 4.2;
-      float strata = pow(max(0.0, 1.0 - abs(sin(strataPhase))), 14.0);
-      float crossStrata = pow(max(0.0, 1.0 - abs(sin(vLocal.y * 1.2 - vLocal.x * 2.8 + macroNoise * 3.1))), 24.0);
-      float fragmentWound = uMaterial > 0.5 && uMaterial < 1.5 ? vWound : analyticalWound(vLocal);
-      float woundSoftness = max(fwidth(fragmentWound) * 1.25, 0.003);
-      float opening = smoothstep(0.595 - woundSoftness, 0.665 + woundSoftness, fragmentWound);
-      float woundRim = smoothstep(0.20, 0.50, fragmentWound) * (1.0 - smoothstep(0.54, 0.68, fragmentWound));
+      float specular = pow(max(0.0, dot(normal, halfDirection)), 46.0);
       float movingTime = mix(uTime, 0.0, uReduced);
-      vec3 abyss = vec3(0.018, 0.016, 0.021);
-      vec3 mineral = vec3(0.195, 0.182, 0.215);
-      vec3 bone = vec3(0.840, 0.790, 0.700);
-      vec3 coral = vec3(1.0, 0.305, 0.335);
-      vec3 furnace = vec3(1.0, 0.455, 0.37);
+
+      vec3 obsidian = vec3(0.010, 0.012, 0.019);
+      vec3 graphite = vec3(0.050, 0.052, 0.070);
+      vec3 ultramarine = vec3(0.030, 0.041, 0.118);
+      vec3 bone = vec3(0.875, 0.824, 0.735);
+      vec3 coral = vec3(0.910, 0.125, 0.135);
       vec3 cyan = vec3(0.0, 0.788, 0.910);
       vec3 emerald = vec3(0.078, 0.788, 0.545);
       vec3 violet = vec3(0.408, 0.251, 1.0);
       vec3 color;
       float alpha = 1.0;
 
+      vec3 facetCoord = vec3(
+        dot(vLocal, vec3(0.78, 0.18, -0.59)) * 1.12,
+        dot(vLocal, vec3(-0.22, 0.92, 0.31)) * 0.76,
+        dot(vLocal, vec3(0.42, 0.34, 0.84)) * 0.88
+      );
+      float facetTone = hash31(floor(facetCoord + vec3(vLamella * 1.73, vBack * 2.9, 0.0)));
+
       if (uMaterial < 0.5) {
-        alpha = 1.0 - opening;
-        if (alpha < 0.012) discard;
-        float boneDeposit = strata * (0.48 + mineralNoise * 0.34) + crossStrata * 0.16;
-        boneDeposit *= 0.46 + 0.54 * smoothstep(-3.05, 1.92, vLocal.y);
-        color = mix(abyss, mineral, 0.28 + diffuse * 0.32 + macroNoise * 0.060);
-        color += vec3(0.045, 0.055, 0.140) * (0.10 + fresnel * 0.20 + macroNoise * 0.035);
-        color += vec3(0.165, 0.145, 0.150) * specular * (0.26 + uReconstitution * 0.12);
-        color = mix(color, bone, boneDeposit * (0.095 + diffuse * 0.105 + uCrown * 0.030));
-        float suture = pow(max(0.0, 1.0 - abs(sin(vLocal.y * 10.8 - vLocal.x * 3.2 + macroNoise))), 22.0);
-        color += coral * woundRim * (0.185 + uPressure * 0.21 + uCrown * 0.28);
-        color += bone * woundRim * suture * (0.24 + uReconstitution * 0.14);
-        color += bone * fresnel * (0.052 + uReconstitution * 0.038);
+        color = mix(obsidian, graphite, 0.22 + facetTone * 0.34);
+        color *= 0.32 + diffuse * 0.76;
+        color += ultramarine * fresnel * (0.13 + vLamella * 0.018);
+        color += bone * specular * (0.23 + uReconstitution * 0.06);
+        color *= mix(1.0, 0.56, clamp(vBack, 0.0, 1.0));
+
+        float nacreA = smoothstep(0.15, 0.22, vAlong) * (1.0 - smoothstep(0.43, 0.52, vAlong));
+        nacreA *= smoothstep(-0.92, -0.46, vAcross) * (1.0 - smoothstep(0.18, 0.54, vAcross));
+        float nacreB = smoothstep(0.58, 0.66, vAlong) * (1.0 - smoothstep(0.82, 0.90, vAlong));
+        nacreB *= smoothstep(-0.40, -0.02, vAcross) * (1.0 - smoothstep(0.70, 0.92, vAcross));
+        float planeLight = max(nacreA * (0.30 + facetTone * 0.28), nacreB * (0.20 + (1.0 - facetTone) * 0.24));
+        color += bone * planeLight * (0.050 + diffuse * 0.040 + uCrown * 0.018);
+
+        float mineralSeam = pow(max(0.0, 1.0 - abs(sin(vAlong * 8.6 + vAcross * 1.8 + vLamella * 2.4))), 48.0);
+        mineralSeam *= smoothstep(0.08, 0.24, vAlong) * (1.0 - smoothstep(0.78, 0.94, vAlong));
+        color += bone * mineralSeam * (0.018 + fresnel * 0.035);
+        float edge = smoothstep(0.88, 0.985, abs(vAcross));
+        float serration = step(0.62, fract(vAlong * 19.0 + vLamella * 0.37));
+        color += bone * edge * serration * (0.030 + fresnel * 0.055);
 
         float machineMask = 1.0 - smoothstep(0.16, 0.42, abs(uActiveWorld - 1.0));
         float makerMask = 1.0 - smoothstep(0.16, 0.42, abs(uActiveWorld - 2.0));
         float worldMask = 1.0 - smoothstep(0.16, 0.42, abs(uActiveWorld - 3.0));
-        vec2 facetCell = fract(vec2(vLocal.x * 1.12 + vLocal.y * 0.31, vLocal.y * 1.18 - vLocal.z * 0.42));
-        float facetEdge = 1.0 - smoothstep(0.018, 0.075, min(abs(facetCell.x - facetCell.y), abs(facetCell.x + facetCell.y - 1.0)));
-        color += bone * facetEdge * (0.010 + uPressure * 0.050 + uReconstitution * 0.014);
-        float axialTrace = exp(-abs(vLocal.x + vLocal.y * 0.24 + 0.92) * 10.5)
-          * smoothstep(-1.8, 1.8, vLocal.y);
-        float tensileTrace = exp(-abs(vLocal.y + vLocal.x * 0.46 - 0.28) * 9.5)
-          * smoothstep(-2.5, 1.4, vLocal.x);
-        float tectonicTrace = exp(-abs(vLocal.y + 1.46 + sin(vLocal.x * 1.55) * 0.13) * 11.5);
-        float machineLattice = pow(max(0.0, 1.0 - abs(sin(vLocal.y * 6.4 + vLocal.z * 2.0))), 30.0)
-          + pow(max(0.0, 1.0 - abs(sin(vLocal.x * 6.0 - vLocal.z * 2.4))), 30.0);
-        float makerGrowth = pow(max(0.0, 1.0 - abs(sin(vLocal.y * 3.2 - vLocal.x * 1.25 + macroNoise))), 24.0);
-        float worldCrystal = max(facetEdge, pow(max(0.0, 1.0 - abs(sin(vLocal.y * 5.1 + vLocal.x * 3.3))), 30.0));
-        color += cyan * (axialTrace * 0.70 + machineLattice * 0.30) * machineMask * uDetailMix * 0.16;
-        color += emerald * (tensileTrace * 0.72 + makerGrowth * 0.28) * makerMask * uDetailMix * 0.145;
-        color += violet * (tectonicTrace * 0.62 + worldCrystal * 0.38) * worldMask * uDetailMix * 0.17;
-        float ambientInterference = pow(max(0.0, 1.0 - abs(sin(vLocal.y * 5.7 + vLocal.x * 1.8 - vLocal.z * 3.4))), 34.0);
-        color += mix(cyan, violet, smoothstep(-1.2, 1.2, vLocal.x)) * ambientInterference * fresnel * 0.018;
-        float dissolve = hash31(floor(vLocal * 17.0) + vec3(3.0, 11.0, 7.0));
-        float subtractField = uSubtraction * (0.26 + 0.40 * smoothstep(-1.65, 2.35, vLocal.y));
-        if (dissolve < subtractField) discard;
+        float machineTrace = exp(-abs(vAcross + sin(vAlong * 7.0 + vLamella) * 0.12) * 38.0);
+        machineTrace *= smoothstep(0.12, 0.24, vAlong) * (1.0 - smoothstep(0.70, 0.86, vAlong));
+        float makerTrace = exp(-abs(vAcross - 0.28 + sin(vAlong * 4.4) * 0.10) * 34.0);
+        makerTrace *= smoothstep(0.24, 0.36, vAlong) * (1.0 - smoothstep(0.82, 0.94, vAlong));
+        float worldTrace = exp(-abs(vAlong - 0.31 - sin(vAcross * 2.8) * 0.045) * 44.0);
+        worldTrace *= 1.0 - smoothstep(1.45, 2.15, vLamella);
+        color += cyan * machineTrace * machineMask * uDetailMix * 0.17;
+        color += emerald * makerTrace * makerMask * uDetailMix * 0.16;
+        color += violet * worldTrace * worldMask * uDetailMix * 0.18;
+
+        float rareInterference = pow(max(0.0, 1.0 - abs(sin(vAlong * 13.0 - vAcross * 2.3 + vLamella))), 72.0);
+        color += mix(cyan, violet, smoothstep(0.0, 2.0, vLamella)) * rareInterference * fresnel * 0.024;
+        color *= 1.0 - uSubtraction * (0.22 + facetTone * 0.10);
       } else if (uMaterial < 1.5) {
-        float throat = smoothstep(0.34, 0.88, fragmentWound);
-        float caustic = pow(max(0.0, 1.0 - abs(sin(vLocal.y * 5.2 - vLocal.x * 3.6 + macroNoise * 3.2 + movingTime * 0.12))), 20.0);
-        float fineCaustic = pow(max(0.0, 1.0 - abs(sin(vLocal.y * 9.4 + vLocal.x * 2.1 - macroNoise * 2.4))), 34.0);
-        vec3 oxblood = vec3(0.095, 0.014, 0.022);
-        vec3 throatBlack = vec3(0.010, 0.004, 0.008);
-        color = mix(oxblood, throatBlack, throat * 0.90);
-        color += coral * caustic * (1.0 - throat * 0.70) * (0.11 + uCrown * 0.10 + uPressure * 0.045);
-        color += bone * fineCaustic * (1.0 - throat * 0.82) * (0.055 + uReconstitution * 0.065);
-        color += furnace * innerLight * (0.028 + uReconstitution * 0.025);
-        float sovereignCurve = 1.26 + sin(vLocal.y * 1.12 - 0.15) * 0.27
-          + sin(vLocal.y * 3.5 + 0.7) * 0.035;
-        float sovereignRay = exp(-abs(vLocal.x - sovereignCurve) * 58.0)
-          * smoothstep(-1.24, -0.92, vLocal.y) * (1.0 - smoothstep(0.92, 1.24, vLocal.y));
-        color += mix(coral, bone, 0.72) * sovereignRay * (0.54 + uCrown * 0.20 + uReconstitution * 0.10);
-        color *= 0.78 + diffuse * 0.10 + fresnel * 0.09;
+        float core = pow(clamp(1.0 - abs(vAcross), 0.0, 1.0), 5.0);
+        float edgeGlow = smoothstep(0.18, 0.62, abs(vAcross)) * (1.0 - smoothstep(0.72, 0.98, abs(vAcross)));
+        float fade = smoothstep(0.0, 0.09, vAlong) * (1.0 - smoothstep(0.91, 1.0, vAlong));
+        color = mix(vec3(0.006, 0.005, 0.008), bone, core * 0.78);
+        color += coral * edgeGlow * (0.055 + uPressure * 0.030 + uCrown * 0.035);
+        color += bone * core * underLight * (0.08 + uReconstitution * 0.05);
+        alpha = (0.10 + core * (0.72 + uCrown * 0.12)) * fade;
+        alpha *= mix(1.0, 0.20, uGhost);
       } else {
-        if (vLocal.y < -2.54) discard;
-        float ghostGrain = valueNoise(vLocal * 4.2 + vec3(0.0, movingTime * 0.018, 0.0));
-        color = mix(vec3(0.040, 0.037, 0.045), vec3(0.25, 0.23, 0.24), fresnel * 0.34 + ghostGrain * 0.07);
-        color += coral * woundRim * (0.095 + uCrown * 0.095);
-        color += bone * woundRim * strata * 0.065;
-        float reflectionFade = smoothstep(-5.6, -2.42, vWorld.y);
-        alpha = (0.052 + fresnel * 0.110 + uSubtraction * 0.045)
-          * (0.84 + ghostGrain * 0.16) * reflectionFade * (1.0 - opening);
+        color = mix(obsidian, graphite, 0.18 + facetTone * 0.24);
+        color += ultramarine * fresnel * 0.11;
+        color += bone * specular * 0.08;
+        float reflectionFade = smoothstep(-5.45, -2.42, vWorld.y);
+        float ghostGrain = hash31(floor(facetCoord * 2.3 + vec3(floor(movingTime * 0.08))));
+        alpha = (0.058 + fresnel * 0.145 + uSubtraction * 0.038)
+          * (0.82 + ghostGrain * 0.18) * reflectionFade;
       }
 
-      float selectedPulse = 0.5 + 0.5 * sin(movingTime * 1.35 + uActiveSub * 1.9);
-      color += coral * uDetailMix * selectedPulse * 0.008;
-      color += vec3(0.010, 0.008, 0.012) * uReturn;
-      color = max(color, vec3(0.0));
-      color = pow(color, vec3(0.92));
+      float selectedPulse = 0.5 + 0.5 * sin(movingTime * 1.12 + uActiveSub * 1.9);
+      color += coral * uDetailMix * selectedPulse * 0.006;
+      color += vec3(0.008, 0.007, 0.012) * uReturn;
+      color = pow(max(color, vec3(0.0)), vec3(0.92));
       outColor = vec4(color, alpha);
     }
   `;
@@ -889,8 +934,8 @@
       gl_Position=clip;
       vec3 cyan=vec3(0.0,0.788,0.910),green=vec3(0.078,0.788,0.545),violet=vec3(0.408,0.251,1.0),bone=vec3(0.914,0.890,0.835);
       vColor=aColorIndex<0.5?cyan:(aColorIndex<1.5?green:(aColorIndex<2.5?violet:bone));
-      float returnAlpha=stagger*(aEndPoint>0.5?0.34:0.10)*(1.0-uReturn*0.28);
-      float memoryAlpha=crownMemory*(aEndPoint>0.5?0.110:0.028);
+      float returnAlpha=stagger*(aEndPoint>0.5?0.54:0.18)*(1.0-uReturn*0.22);
+      float memoryAlpha=crownMemory*(aEndPoint>0.5?0.26:0.08);
       vAlpha=max(returnAlpha,memoryAlpha);
     }
   `;
@@ -945,13 +990,19 @@
     context.bindVertexArray(vao);
     context.bindBuffer(context.ARRAY_BUFFER, vertexBuffer);
     context.bufferData(context.ARRAY_BUFFER, mesh.vertices, context.STATIC_DRAW);
-    const stride = 7 * Float32Array.BYTES_PER_ELEMENT;
+    const stride = 10 * Float32Array.BYTES_PER_ELEMENT;
     context.enableVertexAttribArray(0);
     context.vertexAttribPointer(0, 3, context.FLOAT, false, stride, 0);
     context.enableVertexAttribArray(1);
     context.vertexAttribPointer(1, 3, context.FLOAT, false, stride, 3 * Float32Array.BYTES_PER_ELEMENT);
     context.enableVertexAttribArray(2);
     context.vertexAttribPointer(2, 1, context.FLOAT, false, stride, 6 * Float32Array.BYTES_PER_ELEMENT);
+    context.enableVertexAttribArray(3);
+    context.vertexAttribPointer(3, 1, context.FLOAT, false, stride, 7 * Float32Array.BYTES_PER_ELEMENT);
+    context.enableVertexAttribArray(4);
+    context.vertexAttribPointer(4, 1, context.FLOAT, false, stride, 8 * Float32Array.BYTES_PER_ELEMENT);
+    context.enableVertexAttribArray(5);
+    context.vertexAttribPointer(5, 1, context.FLOAT, false, stride, 9 * Float32Array.BYTES_PER_ELEMENT);
     context.bindBuffer(context.ELEMENT_ARRAY_BUFFER, indexBuffer);
     context.bufferData(context.ELEMENT_ARRAY_BUFFER, mesh.indices, context.STATIC_DRAW);
     context.bindVertexArray(null);
@@ -1175,53 +1226,56 @@
       roll: ghostRoll,
       zoom: orientation.zoom * 0.995,
     };
-    gl.disable(gl.DEPTH_TEST);
-    gl.depthMask(false);
-    drawSurfaceGL(resources.outer, 2, state, ghostOrientation, true);
-    gl.depthMask(true);
     gl.enable(gl.DEPTH_TEST);
+    gl.depthMask(true);
+    drawSurfaceGL(resources.outer, 2, state, ghostOrientation, true);
+    gl.depthMask(false);
+    drawSurfaceGL(resources.inner, 1, state, ghostOrientation, true);
+    gl.depthMask(true);
     gl.clear(gl.DEPTH_BUFFER_BIT);
-    drawSurfaceGL(resources.inner, 1, state, orientation, false);
     drawSurfaceGL(resources.outer, 0, state, orientation, false);
+    gl.depthMask(false);
+    drawSurfaceGL(resources.inner, 1, state, orientation, false);
+    gl.depthMask(true);
     drawFibresGL(state);
     drawPointsGL();
   }
 
   function fallbackBodyPath(context, scale) {
     const path = new Path2D();
-    // Rear fold: crosses behind the left mantle but never closes the central rift.
-    path.moveTo(-0.34 * scale, 2.94 * scale);
-    path.bezierCurveTo(-1.42 * scale, 1.82 * scale, -2.18 * scale, 0.28 * scale, -1.66 * scale, -2.64 * scale);
-    path.bezierCurveTo(-1.36 * scale, -3.16 * scale, -0.57 * scale, -3.08 * scale, -0.34 * scale, -2.44 * scale);
-    path.bezierCurveTo(-0.74 * scale, -1.66 * scale, -1.24 * scale, -0.48 * scale, -0.76 * scale, 0.66 * scale);
-    path.bezierCurveTo(-0.46 * scale, 1.52 * scale, -0.33 * scale, 2.30 * scale, -0.34 * scale, 2.94 * scale);
+    // Long rising blade: load-bearing, open at both crown and keel.
+    path.moveTo(-0.86 * scale, 3.14 * scale);
+    path.bezierCurveTo(-2.18 * scale, 2.34 * scale, -2.54 * scale, -0.46 * scale, -1.10 * scale, -2.74 * scale);
+    path.bezierCurveTo(-0.91 * scale, -2.92 * scale, -0.62 * scale, -2.82 * scale, -0.49 * scale, -2.50 * scale);
+    path.bezierCurveTo(-1.18 * scale, -1.10 * scale, -1.06 * scale, 0.46 * scale, -0.20 * scale, 2.66 * scale);
+    path.bezierCurveTo(-0.30 * scale, 2.98 * scale, -0.58 * scale, 3.18 * scale, -0.86 * scale, 3.14 * scale);
     path.closePath();
-    // Left load-bearing fold.
-    path.moveTo(-0.18 * scale, 2.96 * scale);
-    path.bezierCurveTo(-2.18 * scale, 2.50 * scale, -3.06 * scale, 0.10 * scale, -2.26 * scale, -2.80 * scale);
-    path.bezierCurveTo(-1.78 * scale, -3.24 * scale, -0.92 * scale, -2.82 * scale, -0.75 * scale, -2.10 * scale);
-    path.bezierCurveTo(-1.26 * scale, -0.90 * scale, -1.18 * scale, 0.48 * scale, -0.56 * scale, 1.52 * scale);
-    path.bezierCurveTo(-0.35 * scale, 2.18 * scale, -0.21 * scale, 2.72 * scale, -0.18 * scale, 2.96 * scale);
+
+    // Counter-rotated sail: shorter, narrower and deliberately misregistered.
+    path.moveTo(0.76 * scale, 2.28 * scale);
+    path.bezierCurveTo(1.82 * scale, 1.48 * scale, 2.04 * scale, -0.34 * scale, 1.20 * scale, -1.92 * scale);
+    path.bezierCurveTo(1.00 * scale, -2.22 * scale, 0.68 * scale, -2.36 * scale, 0.48 * scale, -2.08 * scale);
+    path.bezierCurveTo(1.04 * scale, -0.88 * scale, 1.03 * scale, 0.48 * scale, 0.36 * scale, 1.88 * scale);
+    path.bezierCurveTo(0.44 * scale, 2.14 * scale, 0.61 * scale, 2.29 * scale, 0.76 * scale, 2.28 * scale);
     path.closePath();
-    // Right fold: fracture-bearing, tall and tensile.
-    path.moveTo(0.12 * scale, 2.96 * scale);
-    path.bezierCurveTo(1.62 * scale, 2.34 * scale, 2.82 * scale, 0.52 * scale, 2.36 * scale, -1.80 * scale);
-    path.bezierCurveTo(2.10 * scale, -2.80 * scale, 1.18 * scale, -3.06 * scale, 0.75 * scale, -2.45 * scale);
-    path.bezierCurveTo(0.55 * scale, -1.58 * scale, 1.04 * scale, -0.48 * scale, 0.72 * scale, 0.56 * scale);
-    path.bezierCurveTo(0.45 * scale, 1.46 * scale, 0.20 * scale, 2.48 * scale, 0.12 * scale, 2.96 * scale);
+
+    // Grounding keel: a third, low diagonal fold rather than a shared root.
+    path.moveTo(-1.62 * scale, -1.96 * scale);
+    path.bezierCurveTo(-0.72 * scale, -2.44 * scale, 0.34 * scale, -2.20 * scale, 1.30 * scale, -1.32 * scale);
+    path.bezierCurveTo(1.42 * scale, -1.16 * scale, 1.28 * scale, -0.98 * scale, 1.02 * scale, -1.00 * scale);
+    path.bezierCurveTo(0.18 * scale, -1.60 * scale, -0.72 * scale, -1.78 * scale, -1.74 * scale, -1.66 * scale);
+    path.bezierCurveTo(-1.88 * scale, -1.72 * scale, -1.82 * scale, -1.90 * scale, -1.62 * scale, -1.96 * scale);
     path.closePath();
     return path;
   }
 
   function fallbackWoundPath(scale) {
     const path = new Path2D();
-    path.moveTo(1.49 * scale, -1.35 * scale);
-    path.bezierCurveTo(1.17 * scale, -1.02 * scale, 1.11 * scale, -0.56 * scale, 1.27 * scale, -0.14 * scale);
-    path.bezierCurveTo(1.42 * scale, 0.25 * scale, 1.08 * scale, 0.76 * scale, 1.03 * scale, 1.34 * scale);
-    path.bezierCurveTo(1.31 * scale, 1.22 * scale, 1.43 * scale, 0.76 * scale, 1.34 * scale, 0.30 * scale);
-    path.bezierCurveTo(1.25 * scale, -0.15 * scale, 1.56 * scale, -0.65 * scale, 1.55 * scale, -1.01 * scale);
-    path.bezierCurveTo(1.56 * scale, -1.20 * scale, 1.53 * scale, -1.31 * scale, 1.49 * scale, -1.35 * scale);
-    path.closePath();
+    path.moveTo(-0.20 * scale, 2.58 * scale);
+    path.bezierCurveTo(0.10 * scale, 2.24 * scale, 0.42 * scale, 2.06 * scale, 0.70 * scale, 1.74 * scale);
+    path.bezierCurveTo(0.49 * scale, 1.18 * scale, 0.92 * scale, 0.62 * scale, 0.66 * scale, 0.06 * scale);
+    path.bezierCurveTo(0.48 * scale, -0.36 * scale, 0.86 * scale, -0.92 * scale, 0.70 * scale, -1.54 * scale);
+    path.bezierCurveTo(0.62 * scale, -1.74 * scale, 0.38 * scale, -1.92 * scale, 0.10 * scale, -2.08 * scale);
     return path;
   }
 
@@ -1286,145 +1340,124 @@
     ghostGradient.addColorStop(1, '#08070a');
     context.fillStyle = ghostGradient;
     context.fill(body);
-    context.globalAlpha = 0.075 + state.crown * 0.035;
-    context.fillStyle = '#4a151b';
-    context.fill(wound);
-    context.globalAlpha = 0.12 + state.crown * 0.04;
-    context.lineWidth = Math.max(0.45, scale * 0.012);
-    context.strokeStyle = '#c95b5c';
+    context.globalAlpha = 0.10 + state.crown * 0.045;
+    context.lineWidth = Math.max(0.45, scale * 0.010);
+    context.strokeStyle = '#d9c9ad';
     context.stroke(wound);
     context.restore();
 
     const mineralGradient = context.createLinearGradient(-scale * 2.8, -scale * 3.1, scale * 2.5, scale * 2.8);
-    mineralGradient.addColorStop(0, '#08070a');
-    mineralGradient.addColorStop(0.36, '#201e27');
-    mineralGradient.addColorStop(0.58, '#403a45');
-    mineralGradient.addColorStop(0.66, '#70665d');
-    mineralGradient.addColorStop(0.74, '#2d2935');
-    mineralGradient.addColorStop(1, '#070609');
+    mineralGradient.addColorStop(0, '#03050a');
+    mineralGradient.addColorStop(0.30, '#10131f');
+    mineralGradient.addColorStop(0.56, '#262736');
+    mineralGradient.addColorStop(0.68, '#111421');
+    mineralGradient.addColorStop(1, '#020307');
     context.globalAlpha = 1 - state.subtraction * 0.28;
     context.fillStyle = mineralGradient;
     context.fill(body);
 
     context.save();
     context.clip(body);
-    context.globalAlpha = 0.055 + state.crown * 0.025;
-    context.lineWidth = Math.max(0.45, scale * 0.012);
-    context.strokeStyle = '#d7c9b3';
-    for (let index = 0; index < 11; index++) {
-      const y = (-2.62 + index * 0.53) * scale;
-      context.beginPath();
-      context.moveTo(-3.55 * scale, y);
-      context.bezierCurveTo(
-        -1.72 * scale, y - (0.22 + (index % 3) * 0.08) * scale,
-        0.35 * scale, y + (0.26 - (index % 2) * 0.10) * scale,
-        3.05 * scale, y - 0.13 * scale,
-      );
-      context.stroke();
-    }
+    context.globalAlpha = 0.045 + state.crown * 0.020;
+    context.fillStyle = '#e2d3bc';
+    context.beginPath();
+    context.moveTo(-2.22 * scale, 1.72 * scale);
+    context.lineTo(-0.34 * scale, 2.56 * scale);
+    context.lineTo(-0.72 * scale, 0.28 * scale);
+    context.lineTo(-2.40 * scale, -0.38 * scale);
+    context.closePath();
+    context.fill();
+    context.globalAlpha = 0.032 + state.reconstitution * 0.018;
+    context.fillStyle = '#3a4c98';
+    context.beginPath();
+    context.moveTo(0.52 * scale, 1.84 * scale);
+    context.lineTo(1.66 * scale, 0.96 * scale);
+    context.lineTo(1.18 * scale, -0.84 * scale);
+    context.lineTo(0.72 * scale, 0.12 * scale);
+    context.closePath();
+    context.fill();
+    context.globalAlpha = 0.12 + state.crown * 0.045;
+    context.lineWidth = Math.max(0.45, scale * 0.009);
+    context.strokeStyle = '#cbbda8';
+    context.beginPath();
+    context.moveTo(-1.82 * scale, 0.86 * scale);
+    context.bezierCurveTo(-1.12 * scale, 0.34 * scale, -1.34 * scale, -0.80 * scale, -0.74 * scale, -1.72 * scale);
+    context.stroke();
     context.restore();
 
     if (activeWorld && viewMix > 0.24) {
       context.save();
       context.clip(body);
       context.globalAlpha = ease(viewMix) * 0.20;
-      context.lineWidth = Math.max(0.55, scale * 0.010);
+      context.lineWidth = Math.max(0.55, scale * 0.012);
       if (activeWorld === 'machine') {
         context.strokeStyle = '#00c9e8';
-        for (let index = -3; index <= 3; index++) {
-          context.beginPath();
-          context.moveTo(index * scale * 0.72, -3.15 * scale);
-          context.lineTo((index * 0.72 + 0.56) * scale, 3.20 * scale);
-          context.stroke();
-        }
-        for (let index = -2; index <= 2; index++) {
-          context.beginPath();
-          context.moveTo(-3.10 * scale, index * scale * 0.88);
-          context.lineTo(2.90 * scale, (index * 0.88 - 0.30) * scale);
-          context.stroke();
-        }
+        context.beginPath();
+        context.moveTo(-1.62 * scale, 1.58 * scale);
+        context.lineTo(-0.42 * scale, -1.92 * scale);
+        context.moveTo(0.64 * scale, 1.42 * scale);
+        context.lineTo(1.18 * scale, -1.30 * scale);
+        context.stroke();
       } else if (activeWorld === 'maker') {
         context.strokeStyle = '#14c98b';
-        for (let index = 0; index < 7; index++) {
-          const x = (-2.5 + index * 0.78) * scale;
-          context.beginPath();
-          context.moveTo(x, 2.95 * scale);
-          context.bezierCurveTo(x - 0.44 * scale, 1.10 * scale, x + 0.62 * scale, -1.30 * scale, x + 0.24 * scale, -3.0 * scale);
-          context.stroke();
-        }
+        context.beginPath();
+        context.moveTo(0.48 * scale, 1.64 * scale);
+        context.bezierCurveTo(1.20 * scale, 0.88 * scale, 0.62 * scale, -0.08 * scale, 1.10 * scale, -1.46 * scale);
+        context.moveTo(-1.42 * scale, -0.26 * scale);
+        context.bezierCurveTo(-0.92 * scale, -0.82 * scale, -0.42 * scale, -1.62 * scale, 0.82 * scale, -1.72 * scale);
+        context.stroke();
       } else {
         context.strokeStyle = '#6840ff';
-        for (let index = -2; index <= 2; index++) {
-          const y = index * scale * 0.92;
-          context.beginPath();
-          context.moveTo(-3.0 * scale, y + 0.32 * scale);
-          context.lineTo(-1.4 * scale, y - 0.28 * scale);
-          context.lineTo(0.15 * scale, y + 0.24 * scale);
-          context.lineTo(2.75 * scale, y - 0.38 * scale);
-          context.stroke();
-        }
+        context.beginPath();
+        context.moveTo(-1.58 * scale, -2.30 * scale);
+        context.lineTo(-0.54 * scale, -2.52 * scale);
+        context.lineTo(0.40 * scale, -2.14 * scale);
+        context.lineTo(1.20 * scale, -1.52 * scale);
+        context.moveTo(-1.34 * scale, 0.92 * scale);
+        context.lineTo(-0.70 * scale, 0.50 * scale);
+        context.lineTo(-1.10 * scale, -0.04 * scale);
+        context.stroke();
       }
       context.restore();
     }
 
     context.save();
-    context.shadowColor = 'rgba(255,68,79,.42)';
-    context.shadowBlur = scale * (0.10 + state.crown * 0.045);
-    const innerGradient = context.createRadialGradient(1.29 * scale, 0.10 * scale, scale * 0.03, 1.29 * scale, 0.10 * scale, scale * 1.10);
-    innerGradient.addColorStop(0, '#050205');
-    innerGradient.addColorStop(0.46, '#0b0307');
-    innerGradient.addColorStop(0.78, '#27080e');
-    innerGradient.addColorStop(1, '#741f25');
-    context.globalAlpha = 0.98;
-    context.fillStyle = innerGradient;
-    context.fill(wound);
+    context.shadowColor = 'rgba(219,164,114,.22)';
+    context.shadowBlur = scale * (0.055 + state.crown * 0.025);
+    context.globalAlpha = 0.075 + state.crown * 0.035 + state.pressure * 0.025;
+    context.lineWidth = Math.max(0.8, scale * 0.022);
+    context.strokeStyle = '#9f2528';
+    context.stroke(wound);
     context.shadowBlur = 0;
-    context.globalAlpha = 0.26 + state.crown * 0.10 + state.pressure * 0.08;
-    context.lineWidth = Math.max(1, scale * 0.050);
-    context.strokeStyle = '#ff4e57';
+    context.globalAlpha = 0.68 + state.reconstitution * 0.14;
+    context.lineWidth = Math.max(0.65, scale * 0.011);
+    context.strokeStyle = '#eadcc3';
     context.stroke(wound);
-    context.globalAlpha = 0.42 + state.reconstitution * 0.12;
-    context.lineWidth = Math.max(0.55, scale * 0.010);
-    context.strokeStyle = '#e6d8c2';
-    context.stroke(wound);
-    context.clip(wound);
-    context.globalAlpha = 0.28 + state.crown * 0.10;
-    context.lineWidth = Math.max(0.55, scale * 0.009);
-    context.strokeStyle = '#ff7669';
-    context.beginPath();
-    context.moveTo(1.47 * scale, -1.22 * scale);
-    context.bezierCurveTo(1.16 * scale, -0.56 * scale, 1.46 * scale, 0.18 * scale, 1.08 * scale, 1.20 * scale);
-    context.stroke();
-    context.globalAlpha = 0.20 + state.reconstitution * 0.08;
-    context.strokeStyle = '#e9dcc8';
-    context.beginPath();
-    context.moveTo(1.50 * scale, -0.84 * scale);
-    context.bezierCurveTo(1.20 * scale, -0.26 * scale, 1.49 * scale, 0.40 * scale, 1.14 * scale, 0.90 * scale);
-    context.stroke();
     context.restore();
 
     if (state.return > 0.01 || state.crown > 0.025) {
-      context.lineWidth = 0.75;
-      for (let index = 0; index < 18; index++) {
-        const crownMemory = index < 7 ? state.crown * 0.28 : 0;
+      context.lineWidth = Math.max(0.65, scale * 0.0065);
+      for (let index = 0; index < 28; index++) {
+        const crownMemory = index < 11 ? state.crown * 0.36 : 0;
         const reveal = Math.max(state.return, crownMemory);
         if (reveal <= 0.006) continue;
-        context.globalAlpha = state.return > crownMemory ? state.return * 0.34 : crownMemory * 0.45;
+        context.globalAlpha = state.return > crownMemory ? state.return * 0.46 : crownMemory * 0.62;
         const side = index % 2 ? -1 : 1;
-        const startX = side * scale * (2.85 + hash(index + 4) * 0.85);
-        const startY = scale * (-2.20 + hash(index + 8) * 4.65);
+        const verticalDirection = index % 4 < 2 ? 1 : -1;
+        const startX = side * scale * (3.02 + hash(index + 4) * 1.08);
+        const startY = verticalDirection * scale * (2.68 + hash(index + 8) * 1.16);
         const lamella = index % 3;
-        const anchorX = scale * (lamella === 0 ? -1.34 : lamella === 1 ? 1.38 : -0.92)
+        const anchorX = scale * (lamella === 0 ? -1.30 : lamella === 1 ? 1.04 : -0.20)
           + side * scale * (hash(index + 12) - 0.5) * 0.22;
-        const anchorY = scale * (-1.82 + hash(index + 19) * 3.72);
+        const anchorY = scale * (-1.98 + hash(index + 19) * 4.22);
         const endX = lerp(startX, anchorX, reveal);
         const endY = lerp(startY, anchorY, reveal);
-        context.strokeStyle = index % 9 === 0 ? '#6840ff' : index % 6 === 0 ? '#00c9e8' : '#e9e3d6';
+        context.strokeStyle = index % 11 === 0 ? '#6840ff' : index % 7 === 0 ? '#00c9e8' : index % 13 === 0 ? '#14c98b' : '#e9e3d6';
         context.beginPath();
         context.moveTo(startX, startY);
         context.quadraticCurveTo(
-          lerp(startX, endX, 0.46) - side * scale * 0.24 * reveal,
-          lerp(startY, endY, 0.46) - scale * 0.16 * reveal,
+          lerp(startX, endX, 0.46) - side * scale * 0.38 * reveal,
+          lerp(startY, endY, 0.46) - verticalDirection * scale * 0.22 * reveal,
           endX,
           endY,
         );
@@ -1764,12 +1797,12 @@
       const midDx = midpoint.x - pinchState.midpoint.x;
       const midDy = midpoint.y - pinchState.midpoint.y;
       if (activeWorld && viewMix > 0.55) {
-        detailZoom = clamp(pinchState.detailZoom * ratio, 0.90, 1.13);
+        detailZoom = clamp(pinchState.detailZoom * ratio, 0.90, 1.12);
         detailRoll = clamp(pinchState.detailRoll + rotation, -0.10, 0.10);
         detailYaw = clamp(pinchState.detailYaw - midDx * 0.0024, -0.46, 0.46);
         detailPitch = clamp(pinchState.detailPitch - midDy * 0.0022, -0.24, 0.24);
       } else {
-        overviewZoom = clamp(pinchState.overviewZoom * ratio, 0.90, 1.13);
+        overviewZoom = clamp(pinchState.overviewZoom * ratio, 0.80, 1.10);
         overviewRoll = clamp(pinchState.overviewRoll + rotation, -0.10, 0.10);
         overviewYaw = clamp(pinchState.overviewYaw - midDx * 0.0024, -0.68, 0.52);
         overviewPitch = clamp(pinchState.overviewPitch - midDy * 0.0022, -0.26, 0.24);
@@ -1836,10 +1869,10 @@
         detailYaw = detailPitch = detailRoll = 0;
         detailZoom = 1;
       } else {
-        overviewYaw = -0.18;
-        overviewPitch = -0.055;
-        overviewRoll = -0.018;
-        overviewZoom = 0.91;
+        overviewYaw = -0.34;
+        overviewPitch = -0.08;
+        overviewRoll = -0.035;
+        overviewZoom = 0.84;
       }
     }
     lastTapAt = now;
@@ -1858,8 +1891,8 @@
     if (window.__dreamUnityGameActive) return;
     event.preventDefault();
     const factor = Math.exp(-event.deltaY * 0.00085);
-    if (activeWorld && viewMix > 0.55) detailZoom = clamp(detailZoom * factor, 0.90, 1.13);
-    else if (viewMix < 0.45) overviewZoom = clamp(overviewZoom * factor, 0.90, 1.13);
+    if (activeWorld && viewMix > 0.55) detailZoom = clamp(detailZoom * factor, 0.90, 1.12);
+    else if (viewMix < 0.45) overviewZoom = clamp(overviewZoom * factor, 0.80, 1.10);
     needsRender = true;
   }, { passive: false });
   }

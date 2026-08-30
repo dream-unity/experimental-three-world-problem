@@ -445,7 +445,15 @@ await run('all nine games keep responsive frame scheduling without long tasks', 
         requestAnimationFrame(tick);
       });
     });
-    await page.waitForTimeout(350);
+    // Wait for the browser to prove that animation is scheduling instead of
+    // sampling an arbitrary fixed window. SwiftShader occasionally defers the
+    // first rAF while a newly opened game uploads its canvas state; two frames
+    // inside one second still catches a real stall without manufacturing one.
+    await page.waitForFunction(
+      () => window.__dreamUnityPerformanceProbe?.frames >= 2,
+      null,
+      { timeout: 1000, polling: 40 },
+    );
     const probe = await page.evaluate(() => {
       const value = window.__dreamUnityPerformanceProbe;
       value.running = false;
