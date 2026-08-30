@@ -1,11 +1,11 @@
 {
   "project": "Dream Unity \u2014 Experimental Three-World Problem",
   "deployment": "verified-live",
-  "source_sha": "5a5666fd0f4f14109e9faf0a3aaa7574d95e40fb",
+  "source_sha": "ed988f7127f5580388534c0460f7014db3e5c74b",
   "page_url": "https://dream-unity.github.io/experimental-three-world-problem/",
   "nine_portal_compatibility": "validated",
   "overview": {
-    "theme": "stage_coral_sovereign_resonator",
+    "theme": "stage_coral_bearing_mirror",
     "canvas_background": "#FFFFFF",
     "legacy_render_vignette_active": false,
     "nebula_fog_active": false,
@@ -19,12 +19,13 @@
     "distinct_world_geometries": true,
     "temporal_ghost_field": true,
     "dimensionless_score_choreography": true,
-    "resonator_sheath_count": 3,
+    "bearing_force_count": 3,
     "structural_tension_count": 9,
-    "compression_throat": true,
-    "gravity_seed_subtraction": true,
-    "prismatic_reconstitution": true,
-    "load_bearing_ribs": true,
+    "pressure_tooth_count": 9,
+    "central_membrane_cut_count": 9,
+    "full_scale_ghost_during_subtraction": true,
+    "faceted_snap_reconstitution": true,
+    "load_bearing_billet": true,
     "ether_compression_matter_return_cycle": true,
     "generated_core_asset": null,
     "homepage_score": "assets/i-remember-tomorrow.mp3",
@@ -37,8 +38,9 @@
       "backend_status": "paused",
       "backend_release": "20260829-unity-backend-paused-1"
     },
-    "renderer_override": "visual-parts/sovereign-resonator-11.txt",
-    "main_cache_version": "20260830-sovereign-resonator-2"
+    "renderer_bridge": "visual-parts/sovereign-resonator-11.txt",
+    "renderer_override": "visual-parts/bearing-mirror-12.txt",
+    "main_cache_version": "20260830-bearing-mirror-1"
   },
   "become": {
     "scenario_source": "instant_objective_driven_social_agency_maximin_synthesis",
@@ -58,12 +60,12 @@
     "original_scenario_bank_used_as_fallback": false
   },
   "source_sha256": [
-    "2706543204ad7c82354f157d06a900079557ac229fc7246e1ac44cd63a0f5bcd  index.html",
+    "9a9082882a0a8fdb42b1ef9e26a4c005a66474b5031a82dfab30c3e442b5dd7b  index.html",
     "6850f499f7f393c52d1f2b50b8fe862c30172ca93b37c1bed6ce689acd76ab37  styles.css",
     "ad8dc6788a87c34201b132b88d8e5eb3ed439a0644f54a9610d2398d1b877536  become.css",
-    "e896a549664234b11951ebf848d759fb5a76ab3134d82ed309e5bcb4c2251d24  unity-cycle.css",
+    "72e0f399a82d45850439f8860c961819ee797530d4e88f326d91f481d01a8522  unity-cycle.css",
     "68b4429c362a7b246ccab75d841db0dc760594a45f34522e21005f515c08c841  unity-ui.js",
-    "3869d79c5ccb4be95b4f2440955e26b2f3d55978d3d68c4219410bd0a6750350  main.js",
+    "9bf2e8c112f79c03ccc259f3b83c04256463adc48d894d573f88354f403405e9  main.js",
     "4e4dbd47aa1483e6c302ef83fd4f79107d3a31f55548672cb2547a4f7dbadb41  arcade.js",
     "4c65c2590ea3840da26767b561b5f49b698e0a63c6f28419a8854c3122a7e610  voice.css",
     "8b2b8864217845789a3ca094622bebd94a6e156ec020ae58a968c7c578b5cfc2  voice.js",
@@ -71,14 +73,15 @@
     "a9a4dfa850e8dd8f4081759d49412cbdd2190f22fb094c5a73e428a68104a42e  assets/coral-sovereign-engine.webp",
     "621ea2851f570523470594ae6f1e3dcd7e9e325c134fa6fea794c2fbdbbfdc32  assets/i-remember-tomorrow.mp3",
     "a323bead6049a23cf4683f341ef2ae9244e257781812981b92aec87bc36481f8  assets/mirror-forge-core.png",
+    "57d8e4137ee7c59464b1fd5c4d289f0c36a2cdef997dcefc73ff633b8bf07869  visual-parts/bearing-mirror-12.txt",
     "a65931a912def7af8e6d79dd1d642f871e5727b7623dee19d7f725bb69c2d433  visual-parts/light-overview-07.txt",
     "8ca363f1b9c5cf33946aa01b9273b7cfd724795757dcaad7af9d0dec21f66162  visual-parts/mirror-forge-08.txt",
     "56721366312283387c98c07da9086f9a7b4b68e6d349ede5080d53159673236b  visual-parts/part-01.txt",
     "cf1092cd154f27e634fed6eaee0a59b49a6784a6e0dcbc07e503a652be964f65  visual-parts/part-02.txt",
     "96e934b79b31db20b58453e4246101b98246c981c86032259d390df51c9bfb50  visual-parts/part-03.txt",
     "f91050909c1d1273adb79287ab72a97c3edb7be7aba8cfb5f32fedbfd57ec48b  visual-parts/part-04.txt",
-    "f09ad31f7b6ef4782e46a447f517b4e415b349452af32e489563fb1bc84826d8  visual-parts/part-05.txt",
-    "9fa2a010c863c7c2db2176884a05033491d37dd3782a533095a96a84a866f28c  visual-parts/part-06.txt",
+    "9832d518fefe2731c4aa22c9e8d0bafc46128afc28e9225d3f4cd187c420d342  visual-parts/part-05.txt",
+    "c436aec9acb62da413e3f69d251258f923ecdbd40881ce939c87080f9e03db29  visual-parts/part-06.txt",
     "08d9506349225c613a11fc53bd3e3c3b37a250f7cdefd09dbdc07664bf11ee8c  visual-parts/remembered-tomorrow-10.txt",
     "3f36cd3a11671bdc77a770405f8bcf4623c1f6766219d4483fbddfbc4a72ccc9  visual-parts/sovereign-coral-09.txt",
     "c5435d29e826c3bc7799ab41abc17829674e5c53716a32437922b0da6a1f1271  visual-parts/sovereign-resonator-11.txt",
@@ -92,7 +95,7 @@
     "dc8200150c5bd1adfe1c07655c0b1316d26cce2539d9684c53b88d5b8bd88c2e  arcade-parts/become-social-agency-10.txt",
     "36e5c6f56601c1a60f43f84dfd0ab951a764f1b32bd06cba4807c2d7895ddb14  arcade-parts/become-social-integration-11.txt",
     "5202e175b457626337912ff32ac9b2c945db466ab5323c1eae7256e36cca200b  arcade-parts/part-01.txt",
-    "4c3e713c7cc2a77474816c590442ab36f764fe475d30cbb9c87ddb0731a67dcc  arcade-parts/part-02.txt",
+    "8cf6c846271b2505df77433f449c6e6b13fb66220108752a4ab6f06a7dbc8746  arcade-parts/part-02.txt",
     "183630ab3997f38ab5e2f2faf54505e9c4683c5885b3354fbb49e5508347b48c  arcade-parts/part-03.txt",
     "d0f4ae1a65b4edad671f9a761bd5ac1658e55e0b610a174cfaaef5a5d68c23be  arcade-parts/part-04.txt",
     "f4851d57f4742a3cd8df8c86b26660b1174fe6afc21119b9f2dba7877be6d04d  arcade-parts/part-05.txt",
@@ -106,5 +109,5 @@
     "c5a8ea262274f0a64821aae3c304e7410293b66ac1c1665c38ca44eae0ed7488  arcade-parts/perceive-aerial-08.txt",
     "6545873de0d833976a46ffa52666c6629e94e6fdda4f30c3a1720f738cb3b892  arcade-parts/perceive-role-logic.txt"
   ],
-  "verified_at": "2026-08-30T04:05:36.509780+00:00"
+  "verified_at": "2026-08-30T07:17:22.718170+00:00"
 }
