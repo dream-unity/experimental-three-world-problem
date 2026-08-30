@@ -41,6 +41,9 @@
     activeSubUntil = time + 4.5;
     impulse = 1;
     subLabels.forEach((element, i) => element?.classList.toggle('active', index === i));
+    window.dispatchEvent(new CustomEvent('dreamunity:launch-game', {
+      detail: { world: activeWorld, index }
+    }));
   }
 
   back?.addEventListener('click', exitWorld);
