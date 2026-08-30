@@ -39,7 +39,7 @@ assert.match(index, /id="scoreControl"/);
 assert.doesNotMatch(index, /MAKE THE<br \/>MIRROR|coralTexture|coral-sovereign-engine|phase-rail/);
 assert.match(index, /styles\.css\?v=20260830-awaken-true-war-2/);
 assert.match(index, /unity-cycle\.css\?v=20260830-awaken-true-war-2/);
-assert.match(index, /light-theme\.js\?v=20260830-awaken-true-war-2/);
+assert.match(index, /light-theme\.js\?v=20260830-awaken-true-war-3/);
 assert.match(index, /unity-ui\.js\?v=20260830-awaken-true-war-2/);
 assert.match(index, /main\.js\?v=20260830-awaken-true-war-2/);
 assert.match(index, /<div\b(?=[^>]*\bid=["']unityLabel["'])(?=[^>]*\baria-hidden=["']true["'])[^>]*>/i, 'the owned Unity core must remain a passive visual label');
@@ -58,6 +58,7 @@ assert.match(theme, /no neon bunker/);
 assert.doesNotMatch(theme, /radial-gradient\(circle at 50% 46%/i);
 assert.match(lightSurface, /this\.id === 'gameCanvas'/);
 assert.match(lightSurface, /__dreamUnityLightSurface/);
+assert.match(lightSurface, /!isGame/);
 
 for (const marker of [
   'rememberedTomorrowOverview',

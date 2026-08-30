@@ -67,7 +67,9 @@
   HTMLCanvasElement.prototype.getContext = function(type, options) {
     const context = nativeGetContext.call(this, type, options);
     const isGame = this.id === 'gameCanvas';
-    if (!context || type !== '2d' || (this.id !== 'world' && !isGame) || context.__dreamUnityLightSurface) return context;
+    // The Sovereign Fold owns its white-world palette natively. Only the
+    // inherited dark game renderer needs translation at the canvas boundary.
+    if (!context || type !== '2d' || !isGame || context.__dreamUnityLightSurface) return context;
 
     Object.defineProperty(context, '__dreamUnityLightSurface', { value: true });
 
