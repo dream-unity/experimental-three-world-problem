@@ -28,13 +28,13 @@ html,body{
 #app{
   min-height:0;
   background:
-    radial-gradient(ellipse at 50% 47%,#171019 0%,#0c090e 48%,#050505 84%),
+    radial-gradient(ellipse at 53% 45%,#100d13 0%,#09080c 49%,#050505 86%),
     var(--void);
 }
 
 #world{
   background:
-    radial-gradient(circle at 50% 47%,rgba(31,27,26,.72),rgba(9,9,9,.94) 49%,var(--void) 82%),
+    radial-gradient(circle at 53% 45%,rgba(20,17,22,.74),rgba(8,8,10,.96) 52%,var(--void) 84%),
     var(--void);
 }
 
@@ -45,8 +45,8 @@ html,body{
   z-index:2;
   overflow:hidden;
   background:
-    radial-gradient(ellipse at 50% 47%,transparent 22%,rgba(0,0,0,.08) 52%,rgba(0,0,0,.62) 116%),
-    linear-gradient(115deg,rgba(105,186,203,.018),transparent 28%,transparent 72%,rgba(128,112,186,.018));
+    radial-gradient(ellipse at 50% 47%,transparent 24%,rgba(0,0,0,.06) 54%,rgba(0,0,0,.66) 118%),
+    linear-gradient(115deg,rgba(105,186,203,.012),transparent 30%,transparent 74%,rgba(128,112,186,.012));
 }
 
 #app>.vignette::before,
@@ -58,22 +58,22 @@ html,body{
 }
 
 #app>.vignette::before{
-  opacity:.44;
+  opacity:.24;
   background:
-    radial-gradient(ellipse at 44% 34%,rgba(216,205,189,.052),transparent 37%),
-    radial-gradient(ellipse at 68% 72%,rgba(81,65,95,.060),transparent 34%),
-    radial-gradient(ellipse at 28% 82%,rgba(141,48,51,.032),transparent 31%);
+    radial-gradient(ellipse at 44% 34%,rgba(216,205,189,.032),transparent 37%),
+    radial-gradient(ellipse at 68% 72%,rgba(81,65,95,.036),transparent 34%),
+    radial-gradient(ellipse at 28% 82%,rgba(141,48,51,.022),transparent 31%);
   mix-blend-mode:soft-light;
   -webkit-mask-image:radial-gradient(ellipse at center,#000 18%,rgba(0,0,0,.6) 72%,transparent 108%);
   mask-image:radial-gradient(ellipse at center,#000 18%,rgba(0,0,0,.6) 72%,transparent 108%);
 }
 
 #app>.vignette::after{
-  opacity:.78;
+  opacity:.38;
   background:
-    radial-gradient(ellipse at 57% 108%,rgba(141,48,51,.095),transparent 34%),
-    radial-gradient(ellipse at 6% 42%,rgba(52,109,98,.045),transparent 27%),
-    radial-gradient(ellipse at 96% 55%,rgba(81,65,95,.060),transparent 28%);
+    radial-gradient(ellipse at 57% 108%,rgba(141,48,51,.050),transparent 34%),
+    radial-gradient(ellipse at 6% 42%,rgba(52,109,98,.028),transparent 27%),
+    radial-gradient(ellipse at 96% 55%,rgba(81,65,95,.034),transparent 28%);
 }
 
 .brand,.live{
