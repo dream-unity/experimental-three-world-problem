@@ -377,7 +377,7 @@ html,body{
 }
 
 .world-label>.world-copy strong{
-  color:rgba(233,227,214,.84)!important;
+  color:rgba(233,227,214,.88)!important;
   font-size:12px;
   font-weight:660;
   line-height:1;
@@ -388,7 +388,7 @@ html,body{
 
 .world-label>.world-copy small{
   overflow:hidden;
-  color:rgba(233,227,214,.46);
+  color:rgba(233,227,214,.50);
   font:520 8px/1 Inter,"Helvetica Neue",Arial,sans-serif;
   letter-spacing:.07em;
   text-overflow:ellipsis;
