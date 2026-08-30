@@ -2,7 +2,7 @@
   'use strict';
 
   const RENDERER_ID = 'sovereign-nocturne';
-  const RENDERER_VERSION = '20260830-sovereign-nocturne-5';
+  const RENDERER_VERSION = '20260830-sovereign-nocturne-6';
   const SILENT_CYCLE_SECONDS = 40;
   const TAU = Math.PI * 2;
   const $ = (selector) => document.querySelector(selector);
@@ -301,7 +301,7 @@
       { x: 0.04, y: -1.16, z: 0.02 },
       { x: 0.62, y: -2.80, z: -0.22 },
     ],
-    halfWidths: [0.010, 0.014, 0.022, 0.036, 0.058, 0.086, 0.046, 0.012],
+    halfWidths: [0.008, 0.012, 0.018, 0.028, 0.045, 0.064, 0.035, 0.010],
     heat: [0.04, 0.10, 0.22, 0.46, 0.78, 1.00, 0.58, 0.08],
   };
 
@@ -882,12 +882,20 @@
       color += mix(bone, cyan, 0.42) * coldShoulder * (0.032 + uGather * 0.030);
       color += mix(tarnishedGold, bone, 0.24) * warmShoulder * (0.040 + uPressure * 0.040 + climax * 0.034);
       color += bone * innerShoulder * (0.015 + uReconstitution * 0.035 + uCrown * 0.042);
+      float spectralWave = 0.32 + 0.68 * smoothstep(0.20, 0.82,
+        sin(faultProgress * 13.7 + signedFault * 31.0 - movingTime * 0.012) * 0.5 + 0.5);
+      vec3 spectralColor = faultProgress < 0.50
+        ? mix(cyan, emerald, faultProgress * 2.0)
+        : mix(emerald, violet, (faultProgress - 0.50) * 2.0);
+      float spectralShoulder = membrane * (1.0 - smoothstep(0.18, 0.78, innerShoulder));
+      color += mix(spectralColor, bone, 0.18) * spectralShoulder * spectralWave
+        * (0.040 + uGather * 0.016 + uReconstitution * 0.022);
       color += mix(bone, cyan, 0.34) * machineVeil * 0.165 * radiance;
       color += mix(bone, emerald, 0.33) * makerVeil * 0.152 * radiance;
       color += mix(bone, violet, 0.40) * worldVeil * 0.178 * radiance;
-      color += mix(bone, cyan, 0.42) * machine * 0.205 * radiance;
-      color += mix(bone, emerald, 0.40) * maker * 0.188 * radiance;
-      color += mix(bone, violet, 0.45) * world * 0.214 * radiance;
+      color += mix(bone, cyan, 0.42) * machine * 0.075 * radiance;
+      color += mix(bone, emerald, 0.40) * maker * 0.070 * radiance;
+      color += mix(bone, violet, 0.45) * world * 0.080 * radiance;
       color = mix(color, color * 0.64, faultBand * 0.18 * (1.0 - rupture * 0.20));
       color += mix(ghostViolet, bone, 0.26) * ghostVeil * belowHorizon * (0.046 + uReturn * 0.044);
       color += mix(ghostViolet, bone, 0.22) * ghost * (0.090 + uReturn * 0.052);
@@ -895,9 +903,14 @@
       color += bone * horizon * (0.034 + uReturn * 0.044 + uCrown * 0.020);
       color += mix(smokedPlum, vec3(0.204, 0.427, 0.384), 0.38) * sedimentBody
         * (0.085 + uPressure * 0.026 + worldMaterialization * 0.080);
+      color += ghostViolet * sedimentBody * worldMaterialization * 0.120;
       color += mix(tarnishedGold, bone, 0.18) * sedimentVein
         * (0.038 + uReconstitution * 0.042 + worldMaterialization * 0.052);
-      vec3 depositColor = depositHue < 0.08 ? coral : (depositHue < 0.20 ? mix(cyan, violet, depositHue * 4.0) : bone);
+      vec3 depositColor = depositHue < 0.08
+        ? coral
+        : (depositHue < 0.46
+          ? mix(cyan, violet, smoothstep(0.08, 0.46, depositHue))
+          : mix(bone, violet, 0.10 + worldMaterialization * 0.28));
       color += depositColor * deposit * (0.115 + ruptureWindow * 0.135 + worldMaterialization * 0.235);
       color += (granular - 0.5) * 0.0034;
 
@@ -999,7 +1012,7 @@
       if (uGhost > 0.5) {
         float mirrorPlane = -1.18;
         float sheetOffset = sin(aAlong * 7.0 + 1.9) * 0.020;
-        point.x = point.x * 0.980 + 0.22 + sheetOffset;
+        point.x = point.x * 0.980 + 0.38 + sheetOffset;
         point.y = mirrorPlane - (point.y - mirrorPlane) * 0.32;
         point.z -= 0.24;
         normal = -normalize(vec3(normal.x / 0.980, -normal.y / 0.32, normal.z));
@@ -1100,12 +1113,13 @@
       float groundTone = clamp(0.38 + broadPlaneA * 0.14 + broadPlaneB * 0.08, 0.0, 1.0);
 
       if (uMaterial < 0.5) {
+        if (vBack > 0.5) discard;
         color = mix(obsidian, graphite, 0.38 + groundTone * 0.09);
-        color *= mix(0.98, 1.11, groundTone) * (0.86 + wrapDiffuse * 0.17 + skyFill * 0.04);
-        color += graphite * fill * 0.052;
+        color *= mix(0.99, 1.10, groundTone) * (0.94 + wrapDiffuse * 0.07 + skyFill * 0.02);
+        color += graphite * fill * 0.030;
         color += bone * warmBounce * (0.020 + groundTone * 0.008);
         color = mix(color, ultramarine, (0.055 + fresnel * 0.10) * (0.58 + groundTone * 0.32));
-        color += bone * specular * (0.034 + uReconstitution * 0.018 + uCrown * 0.010);
+        color += bone * specular * (0.016 + uReconstitution * 0.010 + uCrown * 0.006);
         color *= mix(1.0, 0.84, clamp(vBack, 0.0, 1.0));
         vec3 foldUndertone = vLamella < 0.5 ? cyan : (vLamella < 1.5 ? emerald : violet);
         color = mix(color, foldUndertone, 0.020 + groundTone * 0.010);
@@ -1131,7 +1145,8 @@
         worldTrace *= 1.0 - smoothstep(1.45, 2.15, vLamella);
         color += cyan * machineTrace * machineMask * uDetailMix * 0.09;
         color += emerald * makerTrace * makerMask * uDetailMix * 0.09;
-        color += mix(violet, bone, 0.28) * worldTrace * worldMask * uDetailMix * 0.14;
+        color += mix(violet, bone, 0.22) * worldTrace * worldMask * uDetailMix * 0.24;
+        color = mix(color, mix(violet, bone, 0.10), worldMask * uDetailMix * (0.085 + groundTone * 0.035));
 
         color *= 1.0 - uSubtraction * (0.22 + groundTone * 0.10);
         float groundDepth = smoothstep(-0.86, 0.82, vAcross);
@@ -1140,12 +1155,14 @@
         mirrorCaustic *= smoothstep(-0.75, -0.54, vAcross) * (1.0 - smoothstep(0.48, 0.62, vAcross));
         mirrorCaustic *= 0.52 + 0.48 * hash31(floor(facetCoord * 3.1 + vec3(4.2, 1.7, 9.4)));
         color += mix(violet, bone, 0.72) * mirrorCaustic * (0.024 + 0.040 * climax);
-        alpha = mix(0.53, 0.79, groundDepth);
+        alpha = mix(0.88, 0.97, groundDepth);
         alpha *= 1.0 - uReturn * (1.0 - groundDepth) * 0.24;
-        alpha *= mix(1.0, 0.76, clamp(vBack, 0.0, 1.0));
       } else if (uMaterial < 1.5) {
-        float core = pow(clamp(1.0 - abs(vAcross), 0.0, 1.0), 3.2);
-        float edgeGlow = smoothstep(0.18, 0.62, abs(vAcross)) * (1.0 - smoothstep(0.72, 0.98, abs(vAcross)));
+        float core = pow(clamp(1.0 - abs(vAcross + 0.18), 0.0, 1.0), 5.2);
+        float incisionEdge = exp(-abs(vAcross + 0.58) * 8.5);
+        float darkLip = smoothstep(-0.04, 0.34, vAcross) * (1.0 - smoothstep(0.72, 0.98, vAcross));
+        float edgeGlow = smoothstep(0.16, 0.48, abs(vAcross + 0.16))
+          * (1.0 - smoothstep(0.62, 0.92, abs(vAcross + 0.16)));
         float fade = smoothstep(0.22, 0.34, vAlong) * (1.0 - smoothstep(0.91, 1.0, vAlong));
         float heat = clamp(vBack, 0.0, 1.0);
         float phrasing = 0.90 + 0.10 * pow(max(0.0, sin(vAlong * 16.9646 + movingTime * 0.030)), 4.0);
@@ -1156,9 +1173,15 @@
         color = mix(color, mix(coral, sovereignGold, 0.24), pow(core, 3.0) * (0.16 + heat * 0.20));
         color = mix(color, mix(coral, sovereignGold, 0.28), pressureHeat * core * (0.26 + uCrown * 0.30));
         color += coral * edgeGlow * (0.060 + heat * 0.090 + uPressure * 0.035 + uCrown * 0.068);
+        color *= 1.0 - darkLip * (0.34 + uPressure * 0.08);
+        color += mix(coral, bone, 0.72) * incisionEdge * (0.075 + uReconstitution * 0.055 + uCrown * 0.045);
         color += bone * core * (underLight * (0.18 + uReconstitution * 0.085) + phrasing * (0.16 + climax * 0.20));
         alpha = (0.27 + heat * 0.24 + core * (0.74 + heat * 0.18 + uCrown * 0.12) * (0.94 + phrasing * 0.06)) * fade * discontinuity;
-        alpha *= mix(1.0, 0.42, uGhost);
+        float ghostPhase = fract(vAlong * 5.3 + 0.17);
+        float ghostCadence = 0.28 + 0.72 * smoothstep(0.08, 0.22, ghostPhase)
+          * (1.0 - smoothstep(0.62, 0.88, ghostPhase));
+        color = mix(color, mix(violet, bone, 0.16), uGhost * 0.34);
+        alpha *= mix(1.0, 0.32 * ghostCadence, uGhost);
       } else {
         color = mix(obsidian, graphite, 0.34 + facetTone * 0.30);
         color += ultramarine * fresnel * 0.11;
@@ -2055,13 +2078,14 @@
       } else if (key === 'maker' && anchor.x < width * 0.24) {
         offsetX = width * (mobile ? 0.17 : 0.10);
       }
-      const left = clamp(anchor.x + offsetX, labelHalf, width - labelHalf);
+      const measuredHalf = Math.max(labelHalf, element.getBoundingClientRect().width * 0.5 + 8);
+      const left = clamp(anchor.x + offsetX, measuredHalf, width - measuredHalf);
       const top = clamp(
         anchor.y + offsets[index].y,
         height * (mobile ? (phone ? 0.30 : 0.17) : 0.15),
         height * (mobile ? 0.73 : 0.72),
       );
-      placedLabels.push({ x: left, y: top });
+      placedLabels.push({ x: left, y: top, half: measuredHalf });
       element.style.left = `${left}px`;
       element.style.top = `${top}px`;
       element.style.opacity = String(clamp(1 - mix * 2.1, 0, 1));
@@ -2075,8 +2099,10 @@
       const unityY = height * (mobile ? 0.58 : 0.59);
       const collisionX = mobile ? (phone ? 92 : 150) : 132;
       const collisionY = mobile ? (phone ? 38 : 44) : 44;
+      const unityHalf = Math.max(24, unityLabel.getBoundingClientRect().width * 0.5);
       const unityOccluded = placedLabels.some(point =>
-        Math.abs(point.x - unityX) < collisionX && Math.abs(point.y - unityY) < collisionY
+        Math.abs(point.x - unityX) < Math.max(collisionX, point.half + unityHalf + 8)
+        && Math.abs(point.y - unityY) < collisionY
       );
       unityLabel.style.left = `${unityX}px`;
       unityLabel.style.top = `${unityY}px`;
