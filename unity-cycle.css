@@ -1018,3 +1018,8 @@ html,body{
     top:55.5%!important;
   }
 }
+
+
+/* Remove duplicate status language from the authored composition. */
+.live{display:none}
+#app:not(.detail) .unity-label small{display:none}
