@@ -21,9 +21,13 @@
     reality: $('#label-reality'),
   };
   const subLabels = [$('#sub-0'), $('#sub-1'), $('#sub-2')];
+  const signalRendererSettled = () => {
+    if (typeof window.__dreamUnityRelease === 'function') window.__dreamUnityRelease();
+    else loading?.classList.add('hide');
+  };
 
   if (!canvas || !app) {
-    loading?.classList.add('hide');
+    signalRendererSettled();
     return;
   }
 
@@ -2641,36 +2645,6 @@
     }
   }
 
-  function revealFieldWhenPlateIsReady() {
-    const plate = $('#materialPlate img');
-    if (!plate) {
-      app.classList.add('plate-error');
-      loading?.classList.add('hide');
-      return;
-    }
-
-    let settled = false;
-    const finish = (status) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timer);
-      plate.removeEventListener('load', onLoad);
-      plate.removeEventListener('error', onError);
-      if (status === true) app.dataset.plateReady = 'true';
-      if (status === false) app.classList.add('plate-error');
-      loading?.classList.add('hide');
-    };
-    const onLoad = () => finish(plate.naturalWidth > 0);
-    const onError = () => finish(false);
-    const timer = window.setTimeout(() => finish(null), 1750);
-
-    if (plate.complete) queueMicrotask(() => finish(plate.naturalWidth > 0));
-    else {
-      plate.addEventListener('load', onLoad, { once: true });
-      plate.addEventListener('error', onError, { once: true });
-    }
-  }
-
   function setReady(mode, api, restored = false) {
     rendererStatus.mode = mode;
     rendererStatus.api = api;
@@ -2863,13 +2837,13 @@
     const initialState = cycleState(elapsed);
     if (gl) renderGL(initialState);
     else renderFallback(initialState);
-    revealFieldWhenPlateIsReady();
+    signalRendererSettled();
   } catch (error) {
     rendererStatus.ready = false;
     rendererStatus.state = 'error';
     app.dataset.rendererReady = 'false';
     app.dataset.rendererState = 'error';
-    loading?.classList.add('hide');
+    signalRendererSettled();
     if (hint) hint.textContent = 'VISUAL FIELD COULD NOT INITIALISE';
     console.error(error);
   }

@@ -120,6 +120,9 @@ assert.doesNotMatch(trackedMp3.join('\n'), /awaken[ _-]*the[ _-]*true[ _-]*war|\
 assert.doesNotMatch(renderer, /\.mp3\b|scoreAudio|AudioContext|webkitAudioContext|createMediaElementSource|decodeAudioData/i, 'the visual renderer must be non-auditory');
 assert.match(index, /id="scoreControl"/);
 assert.match(index, /<picture class="material-plate" id="materialPlate"/);
+assert.match(loader, /__dreamUnityRelease/, 'the opening curtain must wait for renderer settlement');
+assert.match(loader, /plate\.decode/, 'the opening curtain must wait for the selected material plate');
+assert.match(theme, /#app\.plate-error \.material-plate\{display:none\}/, 'a failed plate must fall back cleanly to the live field');
 assert.match(index, /pressure-becomes-weather-landscape-v20\.png/);
 assert.match(index, /pressure-becomes-weather-portrait-v20\.png/);
 assert.match(index, /assets\/i-remember-tomorrow\.mp3/);

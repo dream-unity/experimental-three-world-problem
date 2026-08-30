@@ -62,6 +62,7 @@ html,body{
   filter:saturate(.72) contrast(1.08);
 }
 
+#app.plate-error .material-plate{display:none}
 #app.plate-error #world{
   opacity:1;
   mix-blend-mode:normal;
