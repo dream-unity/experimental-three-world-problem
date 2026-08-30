@@ -546,7 +546,7 @@
 
     // A single continuous x/z heightfield makes Dream World physical. Its
     // ridges, escarpments and ravines share topology, so nothing can float like
-    // a decorative ledge and no viewport-parallel ribbon can survive.
+    // a decorative ledge and no viewport-parallel band can survive.
     const columns = Math.max(52, Math.round(longitudes * 0.62));
     const rows = Math.max(34, Math.round(latitudes * 0.60));
     const stride = columns + 1;
