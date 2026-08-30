@@ -59,7 +59,7 @@ for (const asset of ['styles.css', 'become.css', 'unity-cycle.css', 'unity-ui.js
   assert.match(index, new RegExp(`${asset.replace('.', '\\.')}\\?v=${RELEASE}`), `${asset} does not use the Nocturne release`);
 }
 assert.match(loader, new RegExp(`VERSION\\s*=\\s*['"]${RELEASE}['"]`));
-assert.match(loader, /visual-parts\/sovereign-nocturne-18\.js/);
+assert.match(loader, /visual-parts\/sovereign-nocturne-19\.js/);
 assert.doesNotMatch(loader, /bearing-mirror|sovereign-resonator|visual-parts\/part-0[1-6]\.txt|\bFunction\s*\(|fetchParts/i, 'the loader must not concatenate a retired Canvas2D renderer');
 
 // Near-black material field with bone and concentrated Coral accents.
