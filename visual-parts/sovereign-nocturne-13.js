@@ -2,7 +2,7 @@
   'use strict';
 
   const RENDERER_ID = 'sovereign-nocturne';
-  const RENDERER_VERSION = '20260830-sovereign-nocturne-4';
+  const RENDERER_VERSION = '20260830-sovereign-nocturne-5';
   const SILENT_CYCLE_SECONDS = 40;
   const TAU = Math.PI * 2;
   const $ = (selector) => document.querySelector(selector);
@@ -118,7 +118,7 @@
   let detailYaw = 0;
   let detailPitch = 0;
   let detailRoll = 0;
-  let detailZoom = 1;
+  let detailZoom = 1.45;
   let detailYawVelocity = 0;
   let detailPitchVelocity = 0;
   let detailRollVelocity = 0;
@@ -142,19 +142,19 @@
   };
   const DETAIL_PINS = {
     machine: [
-      { x: -0.25, y: 3.20, z: 0.05 },
-      { x: 0.34, y: 2.55, z: 0.30 },
-      { x: 0.62, y: 1.75, z: 0.50 },
+      { x: -0.22, y: 2.12, z: 0.05 },
+      { x: 0.28, y: 1.62, z: 0.30 },
+      { x: 0.54, y: 1.08, z: 0.50 },
     ],
     maker: [
-      { x: 0.30, y: 0.95, z: 0.55 },
-      { x: 0.58, y: 0.24, z: 0.72 },
-      { x: 0.94, y: -0.52, z: 0.35 },
+      { x: 0.22, y: 0.72, z: 0.55 },
+      { x: 0.46, y: 0.14, z: 0.72 },
+      { x: 0.72, y: -0.36, z: 0.35 },
     ],
     reality: [
-      { x: -2.40, y: -1.12, z: -0.15 },
-      { x: 1.12, y: -1.10, z: 0.10 },
-      { x: 3.70, y: -1.05, z: 0.45 },
+      { x: -1.55, y: -0.92, z: -0.15 },
+      { x: 0.42, y: -0.92, z: 0.10 },
+      { x: 1.82, y: -0.88, z: 0.45 },
     ],
   };
 
@@ -229,7 +229,7 @@
     const aspect = Math.max(0.25, width / Math.max(1, height));
     return {
       x: aspect < 0.95
-        ? lerp(0.30, 0.50, smoothstep(0.46, 0.75, aspect))
+        ? lerp(0.56, 0.70, smoothstep(0.46, 0.75, aspect))
         : clamp(aspect * 0.68, 0.78, 1.34),
       y: aspect < 0.95
         ? lerp(0.96, 1.05, smoothstep(0.46, 0.75, aspect))
@@ -301,7 +301,7 @@
       { x: 0.04, y: -1.16, z: 0.02 },
       { x: 0.62, y: -2.80, z: -0.22 },
     ],
-    halfWidths: [0.004, 0.006, 0.010, 0.018, 0.035, 0.052, 0.028, 0.006],
+    halfWidths: [0.010, 0.014, 0.022, 0.036, 0.058, 0.086, 0.046, 0.012],
     heat: [0.04, 0.10, 0.22, 0.46, 0.78, 1.00, 0.58, 0.08],
   };
 
@@ -660,6 +660,7 @@
     out vec4 outColor;
     uniform vec2 uResolution;
     uniform float uTime;
+    uniform float uGather;
     uniform float uPressure;
     uniform float uCrown;
     uniform float uReturn;
@@ -733,11 +734,14 @@
       float extent = smoothstep(-0.055, 0.035, along) * (1.0 - smoothstep(0.70, 1.02, along));
       float axis = sin(along * 4.7 + seed + movingTime * 0.018) * (0.004 + fan * spread * 0.18);
       axis += sin(along * 10.9 - seed * 1.7) * fan * spread * 0.07;
+      axis += (noise(vec2(along * 3.25 + seed, seed * 0.71 + movingTime * 0.003)) - 0.5) * spread * 0.82;
       axis += bend * along * along;
-      float width = mix(0.012, spread * 2.35, fan);
-      float body = exp(-pow(abs(lateral - axis) / max(0.001, width), 1.72));
-      float breath = 0.42 + 0.58 * noise(vec2(along * 5.6 + seed, lateral * 19.0 - movingTime * 0.006));
-      return body * extent * breath;
+      float widthBreath = 0.76 + 0.28 * sin(along * 5.2 + seed * 1.6 - movingTime * 0.012);
+      float width = mix(0.018, spread * 3.45, fan) * widthBreath;
+      float body = exp(-pow(abs(lateral - axis) / max(0.001, width), 1.26));
+      float breath = 0.34 + 0.66 * noise(vec2(along * 4.1 + seed, lateral * 12.0 - movingTime * 0.005));
+      float phrasing = 0.58 + 0.42 * smoothstep(0.18, 0.84, sin(along * 6.4 + seed - movingTime * 0.014) * 0.5 + 0.5);
+      return body * extent * breath * phrasing;
     }
 
     void main() {
@@ -787,14 +791,26 @@
       float belowHorizon = smoothstep(horizonY - 0.008, horizonY + 0.035, screen.y);
       float ghost = ghostVeil * belowHorizon;
 
-      vec2 cutStart = mix(vec2(0.360, 0.030), vec2(0.340, 0.060), portrait);
-      vec2 cutEnd = mix(vec2(0.560, 0.830), vec2(0.550, 0.800), portrait);
+      vec2 cutStart = mix(vec2(0.355, -0.060), vec2(0.290, -0.040), portrait);
+      vec2 cutEnd = mix(vec2(0.650, 1.060), vec2(0.700, 1.040), portrait);
       float faultProgress = clamp((screen.y - cutStart.y) / max(0.001, cutEnd.y - cutStart.y), 0.0, 1.0);
-      float faultX = mix(cutStart.x, cutEnd.x, faultProgress);
+      float faultX = mix(cutStart.x, cutEnd.x, faultProgress)
+        - sin(faultProgress * 3.14159265) * mix(0.035, 0.052, portrait);
       float signedFault = screen.x - faultX;
-      float faultExtent = smoothstep(mix(0.14, 0.28, portrait), mix(0.19, 0.33, portrait), screen.y)
-        * (1.0 - smoothstep(mix(0.72, 0.62, portrait), mix(0.79, 0.68, portrait), screen.y));
+      float faultExtent = smoothstep(0.005, 0.055, screen.y)
+        * (1.0 - smoothstep(0.945, 0.995, screen.y));
       float faultBand = exp(-abs(signedFault) * mix(42.0, 36.0, portrait)) * faultExtent;
+      float membraneWidth = mix(0.165, 0.235, portrait)
+        * (0.88 + 0.12 * sin(faultProgress * 7.3 - movingTime * 0.010));
+      float membrane = exp(-pow(abs(signedFault) / membraneWidth, 1.34)) * faultExtent;
+      float membraneGrain = fbm(vec2(faultProgress * 4.8 - movingTime * 0.003, signedFault * 8.4 + 3.7));
+      float innerShoulder = exp(-abs(signedFault) * mix(18.0, 14.0, portrait)) * faultExtent;
+      float coldShoulder = exp(-abs(signedFault + mix(0.030, 0.045, portrait)) * mix(27.0, 21.0, portrait)) * faultExtent;
+      float warmShoulder = exp(-abs(signedFault - mix(0.022, 0.034, portrait)) * mix(34.0, 25.0, portrait)) * faultExtent;
+      float ghostFaultX = faultX + mix(0.030, 0.046, portrait)
+        + sin(faultProgress * 8.0 + movingTime * 0.013) * 0.008;
+      float ghostMembrane = exp(-abs(screen.x - ghostFaultX) * mix(13.0, 10.0, portrait))
+        * belowHorizon * faultExtent;
 
       float rupture = clamp(uCrown * 0.92 + uReconstitution * 0.32 + uPressure * 0.08, 0.0, 1.0);
       float ruptureWindow = smoothstep(0.24, 0.34, screen.y) * (1.0 - smoothstep(0.73, 0.84, screen.y));
@@ -815,11 +831,20 @@
         * (0.34 + 0.66 * fbm(bloomPoint * vec2(3.8, 4.6) + vec2(2.1, -1.7)));
       float climax = smoothstep(0.32, 0.94, uReconstitution * 0.70 + uCrown * 0.82 + uReturn * 0.10);
       float granular = hash21(floor(gl_FragCoord.xy * 0.56) + floor(movingTime * 0.27));
-
       float worldMaterialization = uDetailMix * worldFocus;
+      vec2 sedimentPoint = screen - mix(vec2(0.745, 0.785), vec2(0.630, 0.815), portrait);
+      sedimentPoint.x -= sedimentPoint.y * mix(0.42, 0.18, portrait);
+      float sedimentShape = exp(-dot(sedimentPoint * mix(vec2(2.2, 3.7), vec2(2.7, 3.2), portrait),
+        sedimentPoint * mix(vec2(2.2, 3.7), vec2(2.7, 3.2), portrait)));
+      sedimentShape *= smoothstep(horizonY - 0.045, horizonY + 0.085, screen.y);
+      float sedimentNoise = fbm(sedimentPoint * vec2(5.2, 8.7) + vec2(8.1, -3.4));
+      float sedimentBody = sedimentShape * smoothstep(0.31, 0.72, sedimentNoise + sedimentShape * 0.22);
+      float sedimentVein = sedimentShape * (1.0 - smoothstep(0.012, 0.044,
+        abs(fract(sedimentNoise * 2.3 + screen.y * 3.1) - 0.5)));
+
       vec2 depositCenter = mix(vec2(0.740, 0.655), vec2(0.700, 0.665), portrait);
-      vec2 depositScale = mix(vec2(0.135, 0.125), vec2(0.205, 0.120), portrait)
-        * (1.0 + worldMaterialization * 0.55);
+      vec2 depositScale = mix(vec2(0.185, 0.165), vec2(0.255, 0.170), portrait)
+        * (1.0 + worldMaterialization * 0.72);
       vec2 depositOffset = screen - depositCenter;
       depositOffset.x -= depositOffset.y * 0.32;
       vec2 depositUv = depositOffset / depositScale + 0.5;
@@ -835,36 +860,50 @@
       float deposit = 1.0 - smoothstep(depositRadius, depositRadius * 1.9, depositDistance);
       float depositBounds = step(0.0, depositUv.x) * step(depositUv.x, 1.0)
         * step(0.0, depositUv.y) * step(depositUv.y, 1.0)
-        * step(mix(0.67, 0.52, worldMaterialization), depositSeed);
-      deposit *= depositBounds * (0.20 + uPressure * 0.30 + uReconstitution * 0.50 + worldMaterialization * 0.55);
+        * step(mix(0.58, 0.40, worldMaterialization), depositSeed);
+      deposit *= depositBounds * (0.38 + uPressure * 0.34 + uReconstitution * 0.56 + worldMaterialization * 0.72);
 
-      vec3 bone = vec3(0.900, 0.850, 0.755);
-      vec3 coral = vec3(0.980, 0.235, 0.245);
-      vec3 cyan = vec3(0.160, 0.535, 0.590);
-      vec3 emerald = vec3(0.160, 0.465, 0.340);
-      vec3 violet = vec3(0.345, 0.265, 0.550);
-      vec3 color = vec3(0.0090, 0.0080, 0.0125);
-      float radiance = 0.72 + uPressure * 0.18 + uReconstitution * 0.42 + uCrown * 0.58;
-      color += vec3(0.045, 0.027, 0.043) * atmospheric * fieldMask * 0.48;
+      vec3 bone = vec3(0.847, 0.804, 0.741);
+      vec3 coral = vec3(0.929, 0.376, 0.306);
+      vec3 cyan = vec3(0.205, 0.430, 0.455);
+      vec3 emerald = vec3(0.204, 0.427, 0.384);
+      vec3 violet = vec3(0.318, 0.255, 0.373);
+      vec3 smokedPlum = vec3(0.071, 0.047, 0.075);
+      vec3 tarnishedGold = vec3(0.612, 0.455, 0.271);
+      vec3 ghostViolet = vec3(0.318, 0.255, 0.373);
+      vec3 color = vec3(0.0135, 0.0105, 0.0175);
+      float radiance = 0.96 + uPressure * 0.24 + uReconstitution * 0.48 + uCrown * 0.68;
+      color += smokedPlum * atmospheric * fieldMask * 0.82;
       color += mix(vec3(0.105, 0.115, 0.185), vec3(0.235, 0.095, 0.085), smoothstep(-0.22, 0.30, bloomPoint.y))
-        * counterBloom * (0.030 + 0.068 * climax);
-      color += mix(bone, cyan, 0.27) * machineVeil * 0.085 * radiance;
-      color += mix(bone, emerald, 0.25) * makerVeil * 0.080 * radiance;
-      color += mix(bone, violet, 0.30) * worldVeil * 0.092 * radiance;
-      color += mix(bone, cyan, 0.32) * machine * 0.110 * radiance;
-      color += mix(bone, emerald, 0.30) * maker * 0.100 * radiance;
-      color += mix(bone, violet, 0.34) * world * 0.115 * radiance;
-      color = mix(color, color * 0.72, faultBand * 0.16 * (1.0 - rupture * 0.20));
-      color += mix(violet, bone, 0.34) * ghostVeil * belowHorizon * (0.020 + uReturn * 0.030);
-      color += mix(violet, bone, 0.30) * ghost * (0.062 + uReturn * 0.040);
-      color += bone * horizon * (0.024 + uReturn * 0.040 + uCrown * 0.015);
+        * counterBloom * (0.064 + 0.098 * climax);
+      vec3 membranePearl = mix(smokedPlum, bone, 0.24 + membraneGrain * 0.22);
+      membranePearl = mix(membranePearl, signedFault < 0.0 ? ghostViolet : tarnishedGold, 0.10 + climax * 0.08);
+      color += membranePearl * membrane * (0.082 + uPressure * 0.030 + uReconstitution * 0.050);
+      color += mix(bone, cyan, 0.42) * coldShoulder * (0.032 + uGather * 0.030);
+      color += mix(tarnishedGold, bone, 0.24) * warmShoulder * (0.040 + uPressure * 0.040 + climax * 0.034);
+      color += bone * innerShoulder * (0.015 + uReconstitution * 0.035 + uCrown * 0.042);
+      color += mix(bone, cyan, 0.34) * machineVeil * 0.165 * radiance;
+      color += mix(bone, emerald, 0.33) * makerVeil * 0.152 * radiance;
+      color += mix(bone, violet, 0.40) * worldVeil * 0.178 * radiance;
+      color += mix(bone, cyan, 0.42) * machine * 0.205 * radiance;
+      color += mix(bone, emerald, 0.40) * maker * 0.188 * radiance;
+      color += mix(bone, violet, 0.45) * world * 0.214 * radiance;
+      color = mix(color, color * 0.64, faultBand * 0.18 * (1.0 - rupture * 0.20));
+      color += mix(ghostViolet, bone, 0.26) * ghostVeil * belowHorizon * (0.046 + uReturn * 0.044);
+      color += mix(ghostViolet, bone, 0.22) * ghost * (0.090 + uReturn * 0.052);
+      color += mix(ghostViolet, bone, 0.18) * ghostMembrane * (0.054 + uReturn * 0.060);
+      color += bone * horizon * (0.034 + uReturn * 0.044 + uCrown * 0.020);
+      color += mix(smokedPlum, vec3(0.204, 0.427, 0.384), 0.38) * sedimentBody
+        * (0.085 + uPressure * 0.026 + worldMaterialization * 0.080);
+      color += mix(tarnishedGold, bone, 0.18) * sedimentVein
+        * (0.038 + uReconstitution * 0.042 + worldMaterialization * 0.052);
       vec3 depositColor = depositHue < 0.08 ? coral : (depositHue < 0.20 ? mix(cyan, violet, depositHue * 4.0) : bone);
-      color += depositColor * deposit * (0.070 + ruptureWindow * 0.110 + worldMaterialization * 0.180);
-      color += (granular - 0.5) * 0.0042;
+      color += depositColor * deposit * (0.115 + ruptureWindow * 0.135 + worldMaterialization * 0.235);
+      color += (granular - 0.5) * 0.0034;
 
       float edge = length((screen - vec2(0.52, 0.49)) * vec2(0.78, 1.0));
-      color *= 1.0 - smoothstep(0.38, 0.91, edge) * 0.46;
-      outColor = vec4(pow(max(color, vec3(0.0)), vec3(0.88)), 1.0);
+      color *= 1.0 - smoothstep(0.42, 0.98, edge) * 0.30;
+      outColor = vec4(pow(max(color, vec3(0.0)), vec3(0.84)), 1.0);
     }
   `;
 
@@ -959,11 +998,11 @@
 
       if (uGhost > 0.5) {
         float mirrorPlane = -1.18;
-        float sheetOffset = sin(aAlong * 7.0 + 1.9) * 0.012;
-        point.x = point.x * 0.985 + 0.10 + sheetOffset;
-        point.y = mirrorPlane - (point.y - mirrorPlane) * 0.22;
-        point.z -= 0.35;
-        normal = -normalize(vec3(normal.x / 0.985, -normal.y / 0.22, normal.z));
+        float sheetOffset = sin(aAlong * 7.0 + 1.9) * 0.020;
+        point.x = point.x * 0.980 + 0.22 + sheetOffset;
+        point.y = mirrorPlane - (point.y - mirrorPlane) * 0.32;
+        point.z -= 0.24;
+        normal = -normalize(vec3(normal.x / 0.980, -normal.y / 0.32, normal.z));
       }
 
       point.xy *= uViewportScale;
@@ -1032,21 +1071,21 @@
       float fill = max(0.0, dot(normal, fillDirection));
       float underLight = max(0.0, dot(normal, rimDirection));
       float warmBounce = max(0.0, dot(normal, normalize(vec3(0.38, -0.78, 0.50))));
-      float facing = max(0.0, dot(normal, viewDirection));
+      float facing = clamp(dot(normal, viewDirection), 0.0, 1.0);
       float fresnel = pow(1.0 - facing, 4.6);
       vec3 halfDirection = normalize(keyDirection + viewDirection);
       float specular = pow(max(0.0, dot(normal, halfDirection)), 112.0);
       float movingTime = mix(uTime, 0.0, uReduced);
       float climax = smoothstep(0.32, 0.94, uReconstitution * 0.70 + uCrown * 0.82 + uReturn * 0.10);
 
-      vec3 obsidian = vec3(0.018, 0.021, 0.032);
-      vec3 graphite = vec3(0.125, 0.122, 0.150);
-      vec3 ultramarine = vec3(0.046, 0.055, 0.150);
-      vec3 bone = vec3(0.920, 0.860, 0.765);
-      vec3 coral = vec3(0.910, 0.125, 0.135);
-      vec3 cyan = vec3(0.0, 0.788, 0.910);
-      vec3 emerald = vec3(0.078, 0.788, 0.545);
-      vec3 violet = vec3(0.408, 0.251, 1.0);
+      vec3 obsidian = vec3(0.026, 0.023, 0.034);
+      vec3 graphite = vec3(0.176, 0.151, 0.194);
+      vec3 ultramarine = vec3(0.071, 0.078, 0.176);
+      vec3 bone = vec3(0.885, 0.828, 0.742);
+      vec3 coral = vec3(0.929, 0.376, 0.306);
+      vec3 cyan = vec3(0.205, 0.430, 0.455);
+      vec3 emerald = vec3(0.204, 0.427, 0.384);
+      vec3 violet = vec3(0.318, 0.255, 0.373);
       vec3 color;
       float alpha = 1.0;
 
@@ -1061,15 +1100,15 @@
       float groundTone = clamp(0.38 + broadPlaneA * 0.14 + broadPlaneB * 0.08, 0.0, 1.0);
 
       if (uMaterial < 0.5) {
-        color = mix(obsidian, graphite, 0.30 + groundTone * 0.07);
-        color *= mix(0.96, 1.03, groundTone) * (0.68 + wrapDiffuse * 0.38 + skyFill * 0.05);
-        color += graphite * fill * 0.07;
-        color += bone * warmBounce * (0.012 + groundTone * 0.004);
-        color = mix(color, ultramarine, (0.045 + fresnel * 0.13) * (0.55 + groundTone * 0.35));
-        color += bone * specular * (0.065 + uReconstitution * 0.025 + uCrown * 0.012);
+        color = mix(obsidian, graphite, 0.38 + groundTone * 0.09);
+        color *= mix(0.98, 1.11, groundTone) * (0.86 + wrapDiffuse * 0.17 + skyFill * 0.04);
+        color += graphite * fill * 0.052;
+        color += bone * warmBounce * (0.020 + groundTone * 0.008);
+        color = mix(color, ultramarine, (0.055 + fresnel * 0.10) * (0.58 + groundTone * 0.32));
+        color += bone * specular * (0.034 + uReconstitution * 0.018 + uCrown * 0.010);
         color *= mix(1.0, 0.84, clamp(vBack, 0.0, 1.0));
         vec3 foldUndertone = vLamella < 0.5 ? cyan : (vLamella < 1.5 ? emerald : violet);
-        color = mix(color, foldUndertone, 0.006 + groundTone * 0.003);
+        color = mix(color, foldUndertone, 0.020 + groundTone * 0.010);
 
         float nacreA = smoothstep(0.15, 0.22, vAlong) * (1.0 - smoothstep(0.43, 0.52, vAlong));
         nacreA *= smoothstep(-0.92, -0.46, vAcross) * (1.0 - smoothstep(0.18, 0.54, vAcross));
@@ -1078,8 +1117,8 @@
         float nacreMask = vLamella < 0.5
           ? nacreA * (0.38 + groundTone * 0.16)
           : (vLamella < 1.5 ? nacreB * 0.20 : 0.0);
-        vec3 nacreMat = mix(bone, vec3(0.56, 0.63, 0.76), 0.16) * (0.28 + wrapDiffuse * 0.20);
-        color = mix(color, nacreMat, nacreMask * (0.11 + uCrown * 0.02));
+        vec3 nacreMat = mix(bone, vec3(0.51, 0.55, 0.65), 0.18) * (0.34 + wrapDiffuse * 0.17);
+        color = mix(color, nacreMat, nacreMask * (0.20 + uCrown * 0.04));
 
         float machineMask = 1.0 - smoothstep(0.16, 0.42, abs(uActiveWorld - 1.0));
         float makerMask = 1.0 - smoothstep(0.16, 0.42, abs(uActiveWorld - 2.0));
@@ -1100,8 +1139,8 @@
         float mirrorCaustic = exp(-abs(vLocal.x - mirrorFaultX) * 3.0);
         mirrorCaustic *= smoothstep(-0.75, -0.54, vAcross) * (1.0 - smoothstep(0.48, 0.62, vAcross));
         mirrorCaustic *= 0.52 + 0.48 * hash31(floor(facetCoord * 3.1 + vec3(4.2, 1.7, 9.4)));
-        color += mix(violet, bone, 0.74) * mirrorCaustic * (0.010 + 0.024 * climax);
-        alpha = mix(0.34, 0.57, groundDepth);
+        color += mix(violet, bone, 0.72) * mirrorCaustic * (0.024 + 0.040 * climax);
+        alpha = mix(0.53, 0.79, groundDepth);
         alpha *= 1.0 - uReturn * (1.0 - groundDepth) * 0.24;
         alpha *= mix(1.0, 0.76, clamp(vBack, 0.0, 1.0));
       } else if (uMaterial < 1.5) {
@@ -1113,20 +1152,20 @@
         float discontinuity = 1.0 - 0.84 * smoothstep(0.48, 0.51, vAlong) * (1.0 - smoothstep(0.60, 0.63, vAlong));
         float pressureHeat = smoothstep(0.54, 0.64, vAlong) * (1.0 - smoothstep(0.80, 0.90, vAlong));
         vec3 sovereignGold = vec3(0.960, 0.875, 0.720);
-        color = mix(vec3(0.006, 0.005, 0.008), sovereignGold, core * 0.90);
-        color = mix(color, mix(coral, sovereignGold, 0.24), pow(core, 3.0) * (0.10 + heat * 0.16));
-        color = mix(color, mix(coral, sovereignGold, 0.28), pressureHeat * core * (0.18 + uCrown * 0.24));
-        color += coral * edgeGlow * (0.045 + heat * 0.075 + uPressure * 0.025 + uCrown * 0.055);
-        color += bone * core * (underLight * (0.14 + uReconstitution * 0.070) + phrasing * (0.12 + climax * 0.16));
-        alpha = (0.19 + heat * 0.20 + core * (0.69 + heat * 0.16 + uCrown * 0.10) * (0.94 + phrasing * 0.06)) * fade * discontinuity;
-        alpha *= mix(1.0, 0.30, uGhost);
+        color = mix(vec3(0.008, 0.006, 0.010), sovereignGold, core * 0.92);
+        color = mix(color, mix(coral, sovereignGold, 0.24), pow(core, 3.0) * (0.16 + heat * 0.20));
+        color = mix(color, mix(coral, sovereignGold, 0.28), pressureHeat * core * (0.26 + uCrown * 0.30));
+        color += coral * edgeGlow * (0.060 + heat * 0.090 + uPressure * 0.035 + uCrown * 0.068);
+        color += bone * core * (underLight * (0.18 + uReconstitution * 0.085) + phrasing * (0.16 + climax * 0.20));
+        alpha = (0.27 + heat * 0.24 + core * (0.74 + heat * 0.18 + uCrown * 0.12) * (0.94 + phrasing * 0.06)) * fade * discontinuity;
+        alpha *= mix(1.0, 0.42, uGhost);
       } else {
         color = mix(obsidian, graphite, 0.34 + facetTone * 0.30);
         color += ultramarine * fresnel * 0.11;
         color += bone * specular * 0.08;
         float reflectionFade = smoothstep(-5.45, -2.42, vWorld.y);
         float ghostGrain = hash31(floor(facetCoord * 2.3 + vec3(floor(movingTime * 0.08))));
-        alpha = (0.125 + fresnel * 0.24 + uSubtraction * 0.046)
+        alpha = (0.190 + fresnel * 0.27 + uSubtraction * 0.058)
           * (0.82 + ghostGrain * 0.18) * reflectionFade;
         alpha *= vLamella < 0.5 ? 1.0 : 0.38;
       }
@@ -1243,10 +1282,10 @@
       float phrasePhase=fract(aPathWeight*3.15+aSeed*5.7);
       float phraseMask=smoothstep(0.055,0.16,phrasePhase)*(1.0-smoothstep(0.64,0.84,phrasePhase));
       float endpointFade=smoothstep(0.018,0.075,aPathWeight)*(1.0-smoothstep(0.88,0.975,aPathWeight));
-      float baseAlpha=mix(0.190,0.072,aPathWeight)*phrasing;
+      float baseAlpha=mix(0.240,0.090,aPathWeight)*phrasing;
       float stateAlpha=uGather*0.050+uPressure*anchorInfluence*0.060+uCrown*(0.050+anchorInfluence*0.055)+uReturn*aPathWeight*0.12;
       float detailAlpha=mix(0.72,1.18,selected*uDetailMix);
-      float overviewSuppression=mix(0.14,1.0,uDetailMix);
+      float overviewSuppression=mix(0.26,1.0,uDetailMix);
       float overviewPathGate=mix(1.0-step(0.49,aAcross),1.0,uDetailMix);
       vAlpha=(baseAlpha+stateAlpha)*detailAlpha*overviewSuppression*overviewPathGate*(1.0-uSubtraction*0.38)*phraseMask*endpointFade;
     }
@@ -1447,6 +1486,7 @@
     gl.useProgram(program);
     uniform2(program, 'uResolution', canvas.width, canvas.height);
     uniform1(program, 'uTime', elapsed);
+    uniform1(program, 'uGather', state.gather);
     uniform1(program, 'uPressure', state.pressure);
     uniform1(program, 'uCrown', state.crown);
     uniform1(program, 'uReturn', state.return);
@@ -1991,8 +2031,8 @@
     const mobile = isCompactLayout();
     const phone = width <= 520;
     const subY = height * (mobile ? 0.775 : 0.875);
-    const overviewInteractive = !activeWorld || mix <= 0.05;
-    const labelHalf = mobile ? (phone ? 78 : 82) : 112;
+    const overviewInteractive = !activeWorld;
+    const labelHalf = mobile ? (phone ? 78 : 96) : 112;
     const placedLabels = [];
     const offsets = mobile
       ? [
@@ -2033,8 +2073,8 @@
     if (unityLabel) {
       const unityX = width * (mobile ? 0.42 : 0.52);
       const unityY = height * (mobile ? 0.58 : 0.59);
-      const collisionX = mobile ? (phone ? 72 : 128) : 118;
-      const collisionY = mobile ? 36 : 42;
+      const collisionX = mobile ? (phone ? 92 : 150) : 132;
+      const collisionY = mobile ? (phone ? 38 : 44) : 44;
       const unityOccluded = placedLabels.some(point =>
         Math.abs(point.x - unityX) < collisionX && Math.abs(point.y - unityY) < collisionY
       );
@@ -2057,7 +2097,7 @@
       element.classList.toggle('active', visible && index === activeSub);
     });
 
-    const detailVisible = Boolean(activeWorld && mix > 0.05);
+    const detailVisible = Boolean(activeWorld && (targetMix > 0 || mix > 0.05));
     if (back) {
       back.tabIndex = detailVisible ? 0 : -1;
       back.setAttribute('aria-hidden', String(!detailVisible));
@@ -2081,9 +2121,10 @@
     detailYaw = 0;
     detailPitch = 0;
     detailRoll = 0;
-    detailZoom = 1;
+    detailZoom = 1.45;
     detailYawVelocity = detailPitchVelocity = detailRollVelocity = 0;
     impulse = 1;
+    updateLabels(true);
     const config = WORLD[key];
     if (detailNumber) detailNumber.textContent = config.index;
     if (detailName) {
@@ -2178,12 +2219,20 @@
     if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return;
     event.stopImmediatePropagation();
     const direction = event.key === 'ArrowLeft' || event.key === 'ArrowUp' ? -1 : 1;
-    if (activeWorld && viewMix > 0.55) {
-      const next = (activeSub + direction + subLabels.length) % subLabels.length;
-      selectSub(next);
-      subLabels[next]?.focus?.({ preventScroll: true });
+    if (activeWorld) {
+      if (targetMix > 0 && viewMix > 0.22) {
+        const next = (activeSub + direction + subLabels.length) % subLabels.length;
+        selectSub(next);
+        subLabels[next]?.focus?.({ preventScroll: true });
+      } else {
+        back?.focus?.({ preventScroll: true });
+      }
     } else if (!event.defaultPrevented) {
-      const visible = worldKeys.map((key) => labels[key]).filter((element) => element?.offsetParent !== null);
+      const visible = worldKeys.map((key) => labels[key]).filter((element) =>
+        element?.offsetParent !== null
+        && element.getAttribute('aria-hidden') !== 'true'
+        && getComputedStyle(element).visibility !== 'hidden'
+      );
       if (visible.length) {
         const current = visible.indexOf(document.activeElement);
         visible[current < 0 ? 0 : (current + direction + visible.length) % visible.length]?.focus?.({ preventScroll: true });
@@ -2319,7 +2368,7 @@
       const midDx = midpoint.x - pinchState.midpoint.x;
       const midDy = midpoint.y - pinchState.midpoint.y;
       if (activeWorld && viewMix > 0.55) {
-        detailZoom = clamp(pinchState.detailZoom * ratio, 0.90, 1.12);
+        detailZoom = clamp(pinchState.detailZoom * ratio, 1.22, 1.72);
         detailRoll = clamp(pinchState.detailRoll + rotation, -0.10, 0.10);
         detailYaw = clamp(pinchState.detailYaw - midDx * 0.0024, -0.46, 0.46);
         detailPitch = clamp(pinchState.detailPitch - midDy * 0.0022, -0.24, 0.24);
@@ -2389,7 +2438,7 @@
     if (now - lastTapAt < 330) {
       if (activeWorld && viewMix > 0.55) {
         detailYaw = detailPitch = detailRoll = 0;
-        detailZoom = 1;
+        detailZoom = 1.45;
       } else {
         overviewYaw = 0.16;
         overviewPitch = -0.075;
@@ -2413,7 +2462,7 @@
     if (window.__dreamUnityGameActive) return;
     event.preventDefault();
     const factor = Math.exp(-event.deltaY * 0.00085);
-    if (activeWorld && viewMix > 0.55) detailZoom = clamp(detailZoom * factor, 0.90, 1.12);
+    if (activeWorld && viewMix > 0.55) detailZoom = clamp(detailZoom * factor, 1.22, 1.72);
     else if (viewMix < 0.45) overviewZoom = clamp(overviewZoom * factor, 0.80, 1.10);
     needsRender = true;
   }, { passive: false });

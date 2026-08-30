@@ -138,6 +138,10 @@ if (screenshotDir) {
       document.querySelector('#detailName')?.textContent === 'DREAM WORLD' &&
       [...document.querySelectorAll('.sub-label')].every(node => node.getAttribute('aria-hidden') === 'false')
     );
+    await page.waitForFunction(() =>
+      Number.parseFloat(document.querySelector('#app')?.style.getPropertyValue('--du-view-mix') || '0') >= 0.995
+    );
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
     await page.screenshot({
       path: join(screenshotDir, 'detail-dream-world-1363x936.png'),
       fullPage: true,
@@ -161,7 +165,7 @@ await run('Sovereign Nocturne becomes ready through WebGL without runtime errors
   assert.equal(state.app.rendererState, 'ready');
   assert.equal(state.renderer.mode, 'webgl');
   assert.equal(state.renderer.api, 'webgl2');
-  assert.equal(state.renderer.version, '20260830-sovereign-nocturne-4');
+  assert.equal(state.renderer.version, '20260830-sovereign-nocturne-5');
   assert.ok(state.events.some(event => event.name === 'dreamunity:renderer-ready' && event.detail?.mode === 'webgl'));
   assert.match(state.context, /WebGL2/i);
   assert.deepEqual(errors, []);
@@ -527,6 +531,9 @@ for (const viewport of [
     );
     await page.waitForFunction(() =>
       [...document.querySelectorAll('.sub-label')].every(node => node.getAttribute('aria-hidden') === 'false')
+    );
+    await page.waitForFunction(() =>
+      Number.parseFloat(document.querySelector('#app')?.style.getPropertyValue('--du-view-mix') || '0') >= 0.995
     );
     const detail = await page.evaluate(() => ({
       scrollWidth: document.documentElement.scrollWidth,
