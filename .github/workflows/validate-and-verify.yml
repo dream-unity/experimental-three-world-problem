@@ -53,7 +53,7 @@ jobs:
         run: |
           set -euo pipefail
           renderer=visual-parts/sovereign-nocturne-13.js
-          release=20260830-sovereign-nocturne-9
+          release=20260830-sovereign-nocturne-10
           test -s "$renderer"
           grep -Eq "VERSION[[:space:]]*=[[:space:]]*['\"]${release}['\"]" main.js
           grep -q 'visual-parts/sovereign-nocturne-13.js' main.js
@@ -139,7 +139,7 @@ jobs:
           done
           test "$matched" = true
 
-          release=20260830-sovereign-nocturne-9
+          release=20260830-sovereign-nocturne-10
           renderer="$live_dir/visual-parts/sovereign-nocturne-13.js"
           grep -q "main.js?v=${release}" "$live_dir/index.html"
           grep -q "unity-cycle.css?v=${release}" "$live_dir/index.html"
@@ -308,7 +308,7 @@ jobs:
                 'backend_status':'paused',
                 'backend_release':backend_release
               },
-              'main_cache_version':'20260830-sovereign-nocturne-9'
+              'main_cache_version':'20260830-sovereign-nocturne-10'
             },
             'become':{
               'scenario_source':'instant_objective_driven_social_agency_maximin_synthesis',

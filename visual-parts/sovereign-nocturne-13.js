@@ -2,7 +2,7 @@
   'use strict';
 
   const RENDERER_ID = 'sovereign-nocturne';
-  const RENDERER_VERSION = '20260830-sovereign-nocturne-9';
+  const RENDERER_VERSION = '20260830-sovereign-nocturne-10';
   const SILENT_CYCLE_SECONDS = 40;
   const TAU = Math.PI * 2;
   const $ = (selector) => document.querySelector(selector);
@@ -725,7 +725,10 @@
         float phraseWave = 0.5 + 0.5 * sin(along * 11.7 + seed * 2.1 + strand * 1.83 - movingTime * 0.026);
         float phraseGate = smoothstep(0.34, 0.64, phraseWave)
           * (1.0 - smoothstep(0.88, 0.98, phraseWave));
-        float phrasing = 0.04 + 0.96 * phraseGate;
+        float cadence = fract(along * 3.8 + seed * 0.13 + strand * 0.21);
+        float brokenPhrase = smoothstep(0.06, 0.16, cadence)
+          * (1.0 - smoothstep(0.54, 0.72, cadence));
+        float phrasing = 0.015 + 0.985 * phraseGate * brokenPhrase;
         family += filament * extent * phrasing;
       }
       return min(family, 1.35);
@@ -800,7 +803,7 @@
       float signedFault = screen.x - faultX;
       float faultExtent = smoothstep(cutStart.y, cutStart.y + 0.055, screen.y)
         * (1.0 - smoothstep(horizonY - 0.055, horizonY + 0.004, screen.y));
-      float recessWidth = mix(0.017, 0.024, portrait)
+      float recessWidth = mix(0.0105, 0.0160, portrait)
         * (0.78 + 0.30 * noise(vec2(faultProgress * 8.6, 6.2)));
       float faultBand = (1.0 - smoothstep(recessWidth * 0.60, recessWidth * 1.16, abs(signedFault))) * faultExtent;
       float faultCore = (1.0 - smoothstep(recessWidth * 0.10, recessWidth * 0.48, abs(signedFault))) * faultExtent;
@@ -904,20 +907,20 @@
       float focusSum = machineFocus + makerFocus + worldFocus;
       vec3 focusTint = (cyan * machineFocus + emerald * makerFocus + violet * worldFocus)
         / max(0.001, focusSum);
-      vec3 pressureMaterial = mix(bone, spectralSheet, 0.44);
+      vec3 pressureMaterial = mix(bone, spectralSheet, 0.62);
       pressureMaterial = mix(pressureMaterial, focusTint, uDetailMix * step(0.10, focusSum) * 0.14);
       color += pressureMaterial * pressureMembrane
-        * (0.095 + uGather * 0.085 + lock * 0.205) * (0.72 + pressureFold * 0.28) * mix(1.0, 0.56, uReturn);
-      color += mix(pressureMaterial, bone, 0.62) * sheetFront
-        * (0.105 + uPressure * 0.185 + uCrown * 0.215) * mix(1.0, 0.56, uReturn);
+        * (0.075 + uGather * 0.065 + lock * 0.160) * (0.72 + pressureFold * 0.28) * mix(1.0, 0.56, uReturn);
+      color += mix(pressureMaterial, bone, 0.38) * sheetFront
+        * (0.085 + uPressure * 0.150 + uCrown * 0.170) * mix(1.0, 0.56, uReturn);
       color *= 1.0 - pressureMembrane * (1.0 - sheetFront) * (0.018 + uPressure * 0.032);
       vec3 membranePearl = mix(graphiteViolet, bone, 0.16 + membraneGrain * 0.16);
       membranePearl = mix(membranePearl, signedFault < 0.0 ? ghostViolet : tarnishedGold, 0.08 + climax * 0.08);
       color += membranePearl * membrane * (0.034 + uPressure * 0.020 + uReconstitution * 0.032);
       color += mix(bone, cyan, 0.36) * coldShoulder * (0.18 + uGather * 0.06 + climax * 0.07);
-      color += mix(tarnishedGold, bone, 0.31) * warmShoulder * (0.16 + uPressure * 0.08 + climax * 0.11);
-      color += mix(bone, tarnishedGold, 0.18) * edgeCaustic * (0.42 + uReconstitution * 0.18 + uCrown * 0.22);
-      color += coral * warmShoulder * pressureBend * (0.24 + uPressure * 0.12 + climax * 0.22);
+      color += mix(tarnishedGold, bone, 0.31) * warmShoulder * (0.14 + uPressure * 0.07 + climax * 0.10);
+      color += mix(bone, tarnishedGold, 0.18) * edgeCaustic * (0.30 + uReconstitution * 0.14 + uCrown * 0.17);
+      color += coral * warmShoulder * pressureBend * (0.34 + uPressure * 0.14 + climax * 0.26);
       color += bone * innerShoulder * (0.010 + uReconstitution * 0.018 + uCrown * 0.022);
       float spectralWave = 0.32 + 0.68 * smoothstep(0.20, 0.82,
         sin(faultProgress * 13.7 + signedFault * 31.0 - movingTime * 0.012) * 0.5 + 0.5);
@@ -927,11 +930,11 @@
       float spectralShoulder = membrane * (1.0 - smoothstep(0.18, 0.78, innerShoulder));
       color += mix(spectralColor, bone, 0.10) * spectralShoulder * spectralWave
         * (0.027 + uGather * 0.016 + uReconstitution * 0.022);
-      color += mix(coral, bone, 0.62) * chordLock * (0.105 + uCrown * 0.125);
-      color += mix(coral, bone, 0.54) * coherentWave * (0.070 + uCrown * 0.110);
-      color += mix(bone, cyan, 0.28) * machine * 0.120 * radiance;
-      color += mix(bone, emerald, 0.25) * maker * 0.112 * radiance;
-      color += mix(bone, violet, 0.29) * world * 0.126 * radiance;
+      color += mix(coral, bone, 0.48) * chordLock * (0.082 + uCrown * 0.105);
+      color += mix(coral, bone, 0.42) * coherentWave * (0.052 + uCrown * 0.080);
+      color += mix(cyan, bone, 0.16) * machine * 0.086 * radiance;
+      color += mix(emerald, bone, 0.14) * maker * 0.080 * radiance;
+      color += mix(violet, bone, 0.17) * world * 0.092 * radiance;
       color = mix(color, oxblood * 0.20, faultBand * (0.78 - rupture * 0.10));
       color = mix(color, vec3(0.0015, 0.0010, 0.0020), faultCore * 0.96);
       color += mix(ghostViolet, bone, 0.14) * ghostMembrane * (0.044 + uReturn * 0.050);
@@ -939,8 +942,6 @@
       color += mix(smokedPlum, vec3(0.145, 0.330, 0.285), 0.34) * sedimentBody
         * (0.040 + uPressure * 0.020 + worldMaterialization * 0.055);
       color += ghostViolet * sedimentBody * worldMaterialization * 0.072;
-      color += mix(tarnishedGold, bone, 0.18) * sedimentVein
-        * (0.025 + uReconstitution * 0.032 + worldMaterialization * 0.040);
       color += mix(coral, tarnishedGold, 0.52) * lamina
         * (0.22 + ruptureWindow * 0.18 + worldMaterialization * 0.22);
       color += (granular - 0.5) * 0.0034;
