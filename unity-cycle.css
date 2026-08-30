@@ -850,7 +850,8 @@ html,body{
   .cycle-index i{display:none}
   .cycle-index b{color:rgba(233,227,214,.70);font-size:9.5px;letter-spacing:.025em}
   .cycle-index li:last-child b{color:rgba(255,118,95,.72)}
-  .world-label{min-width:94px;grid-template-columns:12px minmax(0,1fr)}
+  .world-label{min-width:116px;grid-template-columns:12px minmax(0,1fr)}
+  .world-label[data-world="reality"]{min-width:142px}
   .world-label>.world-copy small{display:none}
   .world-label>.world-copy strong{font-size:12.5px;letter-spacing:.03em}
   .unity-label small{display:none}

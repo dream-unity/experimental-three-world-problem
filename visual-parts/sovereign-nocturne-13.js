@@ -2,7 +2,7 @@
   'use strict';
 
   const RENDERER_ID = 'sovereign-nocturne';
-  const RENDERER_VERSION = '20260830-sovereign-nocturne-7';
+  const RENDERER_VERSION = '20260830-sovereign-nocturne-8';
   const SILENT_CYCLE_SECONDS = 40;
   const TAU = Math.PI * 2;
   const $ = (selector) => document.querySelector(selector);
@@ -294,16 +294,16 @@
   const SOVEREIGN_WOUND = {
     stations: [0, 0.14, 0.29, 0.45, 0.61, 0.76, 0.84, 1],
     points: [
-      { x: -2.30, y: 5.00, z: -0.35 },
-      { x: -1.96, y: 3.75, z: 0.15 },
-      { x: -1.58, y: 2.55, z: -0.18 },
-      { x: -1.18, y: 1.35, z: 0.48 },
-      { x: -0.82, y: 0.18, z: 0.72 },
-      { x: -0.38, y: -0.74, z: 0.28 },
-      { x: 0.04, y: -1.16, z: 0.02 },
-      { x: 0.62, y: -2.80, z: -0.22 },
+      { x: -2.05, y: 4.80, z: -0.35 },
+      { x: -1.66, y: 3.58, z: 0.15 },
+      { x: -1.86, y: 2.42, z: -0.18 },
+      { x: -1.16, y: 1.30, z: 0.48 },
+      { x: -1.02, y: 0.18, z: 0.72 },
+      { x: -0.18, y: -0.72, z: 0.28 },
+      { x: 0.02, y: -1.18, z: 0.02 },
+      { x: 0.86, y: -2.62, z: -0.22 },
     ],
-    halfWidths: [0.018, 0.026, 0.042, 0.072, 0.118, 0.178, 0.106, 0.022],
+    halfWidths: [0.012, 0.018, 0.028, 0.042, 0.066, 0.092, 0.052, 0.012],
     heat: [0.04, 0.10, 0.22, 0.46, 0.78, 1.00, 0.58, 0.08],
   };
 
@@ -853,9 +853,9 @@
       float sedimentVein = sedimentShape * (1.0 - smoothstep(0.012, 0.044,
         abs(fract(sedimentNoise * 2.3 + screen.y * 3.1) - 0.5)));
 
-      vec2 depositCenter = mix(vec2(0.755, 0.680), vec2(0.690, 0.690), portrait);
-      vec2 depositScale = mix(vec2(0.255, 0.205), vec2(0.310, 0.215), portrait)
-        * (1.0 + worldMaterialization * 0.72);
+      vec2 depositCenter = mix(vec2(0.700, 0.690), vec2(0.650, 0.700), portrait);
+      vec2 depositScale = mix(vec2(0.245, 0.205), vec2(0.285, 0.215), portrait)
+        * (1.0 + worldMaterialization * 0.36);
       vec2 depositOffset = screen - depositCenter;
       depositOffset.x -= depositOffset.y * 0.32;
       vec2 depositUv = depositOffset / depositScale + 0.5;
@@ -863,9 +863,8 @@
         * step(0.0, depositUv.y) * step(depositUv.y, 1.0);
       float bandA = exp(-abs(depositUv.y - (0.28 + 0.10 * sin(depositUv.x * 5.1 + 0.4))) * 20.0);
       float bandB = exp(-abs(depositUv.y - (0.54 - 0.08 * sin(depositUv.x * 4.2 + 1.6))) * 16.0);
-      float bandC = exp(-abs(depositUv.y - (0.78 + 0.06 * sin(depositUv.x * 6.3 + 3.0))) * 24.0);
-      float cleavedBands = min(1.0, bandA + bandB * 0.86 + bandC * 0.62);
-      float depositBreak = smoothstep(0.34, 0.72,
+      float cleavedBands = min(1.0, bandA + bandB * 0.86);
+      float depositBreak = smoothstep(0.24, 0.62,
         sedimentNoise + 0.18 * sin(depositUv.x * 17.0 + depositUv.y * 9.0));
       float deposit = cleavedBands * depositBreak * depositBounds
         * (0.26 + uPressure * 0.24 + uReconstitution * 0.44 + worldMaterialization * 0.58);
@@ -873,20 +872,20 @@
 
       vec3 bone = vec3(0.847, 0.804, 0.741);
       vec3 coral = vec3(0.929, 0.376, 0.306);
-      vec3 cyan = vec3(0.205, 0.430, 0.455);
-      vec3 emerald = vec3(0.204, 0.427, 0.384);
-      vec3 violet = vec3(0.318, 0.255, 0.373);
+      vec3 cyan = vec3(0.055, 0.390, 0.510);
+      vec3 emerald = vec3(0.060, 0.390, 0.285);
+      vec3 violet = vec3(0.335, 0.185, 0.545);
       vec3 smokedPlum = vec3(0.071, 0.047, 0.075);
       vec3 tarnishedGold = vec3(0.612, 0.455, 0.271);
-      vec3 ghostViolet = vec3(0.318, 0.255, 0.373);
-      vec3 color = vec3(0.0175, 0.0135, 0.0225);
+      vec3 ghostViolet = vec3(0.350, 0.205, 0.505);
+      vec3 color = vec3(0.0150, 0.0115, 0.0195);
       float radiance = 0.96 + uPressure * 0.24 + uReconstitution * 0.48 + uCrown * 0.68;
-      color += smokedPlum * atmospheric * fieldMask * 0.94;
+      color += smokedPlum * atmospheric * fieldMask * 0.76;
       color += mix(vec3(0.105, 0.115, 0.185), vec3(0.235, 0.095, 0.085), smoothstep(-0.22, 0.30, bloomPoint.y))
-        * counterBloom * (0.064 + 0.098 * climax);
+        * counterBloom * (0.045 + 0.070 * climax);
       vec3 membranePearl = mix(smokedPlum, bone, 0.24 + membraneGrain * 0.22);
       membranePearl = mix(membranePearl, signedFault < 0.0 ? ghostViolet : tarnishedGold, 0.10 + climax * 0.08);
-      color += membranePearl * membrane * (0.105 + uPressure * 0.038 + uReconstitution * 0.068);
+      color += membranePearl * membrane * (0.078 + uPressure * 0.028 + uReconstitution * 0.050);
       color += mix(bone, cyan, 0.42) * coldShoulder * (0.032 + uGather * 0.030);
       color += mix(tarnishedGold, bone, 0.24) * warmShoulder * (0.040 + uPressure * 0.040 + climax * 0.034);
       color += bone * innerShoulder * (0.015 + uReconstitution * 0.035 + uCrown * 0.042);
@@ -898,9 +897,9 @@
       float spectralShoulder = membrane * (1.0 - smoothstep(0.18, 0.78, innerShoulder));
       color += mix(spectralColor, bone, 0.12) * spectralShoulder * spectralWave
         * (0.064 + uGather * 0.022 + uReconstitution * 0.038);
-      color += mix(bone, cyan, 0.58) * machineVeil * 0.205 * radiance;
-      color += mix(bone, emerald, 0.56) * makerVeil * 0.192 * radiance;
-      color += mix(bone, violet, 0.62) * worldVeil * 0.220 * radiance;
+      color += mix(bone, cyan, 0.82) * machineVeil * 0.235 * radiance;
+      color += mix(bone, emerald, 0.80) * makerVeil * 0.220 * radiance;
+      color += mix(bone, violet, 0.84) * worldVeil * 0.252 * radiance;
       color += mix(coral, bone, 0.52) * chordLock * (0.105 + uCrown * 0.085);
       color += mix(coral, bone, 0.30) * coherentWave * (0.085 + uCrown * 0.105);
       color += mix(bone, cyan, 0.42) * machine * 0.075 * radiance;
@@ -916,12 +915,12 @@
       color += ghostViolet * sedimentBody * worldMaterialization * 0.120;
       color += mix(tarnishedGold, bone, 0.18) * sedimentVein
         * (0.038 + uReconstitution * 0.042 + worldMaterialization * 0.052);
-      vec3 depositColor = depositHue < 0.08
-        ? coral
-        : (depositHue < 0.46
-          ? mix(cyan, violet, smoothstep(0.08, 0.46, depositHue))
-          : mix(bone, violet, 0.10 + worldMaterialization * 0.28));
-      color += depositColor * deposit * (0.105 + ruptureWindow * 0.115 + worldMaterialization * 0.205);
+      vec3 depositColor = depositHue < 0.12
+        ? mix(coral, bone, 0.20)
+        : (depositHue < 0.56
+          ? mix(violet, cyan, smoothstep(0.12, 0.56, depositHue) * 0.46)
+          : mix(violet, tarnishedGold, smoothstep(0.56, 1.0, depositHue) * 0.70));
+      color += depositColor * deposit * (0.135 + ruptureWindow * 0.145 + worldMaterialization * 0.265);
       color += (granular - 0.5) * 0.0034;
 
       float edge = length((screen - vec2(0.52, 0.49)) * vec2(0.78, 1.0));
@@ -1022,7 +1021,7 @@
       if (uGhost > 0.5) {
         float mirrorPlane = -1.18;
         float sheetOffset = sin(aAlong * 7.0 + 1.9) * 0.020;
-        point.x = point.x * 0.980 + 0.38 + sheetOffset;
+        point.x = point.x * 0.980 + 0.58 + sheetOffset;
         point.y = mirrorPlane - (point.y - mirrorPlane) * 0.32;
         point.z -= 0.24;
         normal = -normalize(vec3(normal.x / 0.980, -normal.y / 0.32, normal.z));
@@ -1106,9 +1105,9 @@
       vec3 ultramarine = vec3(0.071, 0.078, 0.176);
       vec3 bone = vec3(0.885, 0.828, 0.742);
       vec3 coral = vec3(0.929, 0.376, 0.306);
-      vec3 cyan = vec3(0.205, 0.430, 0.455);
-      vec3 emerald = vec3(0.204, 0.427, 0.384);
-      vec3 violet = vec3(0.318, 0.255, 0.373);
+      vec3 cyan = vec3(0.055, 0.390, 0.510);
+      vec3 emerald = vec3(0.060, 0.390, 0.285);
+      vec3 violet = vec3(0.335, 0.185, 0.545);
       vec3 color;
       float alpha = 1.0;
 
@@ -1141,8 +1140,8 @@
           sin(vAcross * 3.7 + vAlong * 1.8 + strataWarp * 0.32) * 0.5 + 0.5);
         float stratumB = smoothstep(0.56, 0.78,
           sin(vAcross * 6.1 - vAlong * 2.3 + 1.7) * 0.5 + 0.5);
-        color = mix(color, mix(graphite, violet, 0.28), stratumA * 0.16);
-        color += mix(bone, ultramarine, 0.48) * stratumB * (0.016 + uCrown * 0.012);
+        color = mix(color, mix(graphite, violet, 0.42), stratumA * 0.34);
+        color += mix(bone, ultramarine, 0.56) * stratumB * (0.034 + uCrown * 0.022);
 
         float nacreA = smoothstep(0.15, 0.22, vAlong) * (1.0 - smoothstep(0.43, 0.52, vAlong));
         nacreA *= smoothstep(-0.92, -0.46, vAcross) * (1.0 - smoothstep(0.18, 0.54, vAcross));
@@ -1180,25 +1179,27 @@
       } else if (uMaterial < 1.5) {
         float core = exp(-abs(vAcross + 0.50) * 16.0);
         float incisionEdge = exp(-abs(vAcross + 0.66) * 31.0);
-        float mineralLip = smoothstep(-0.16, 0.10, vAcross)
-          * (1.0 - smoothstep(0.70, 0.96, vAcross));
-        float recessedVoid = smoothstep(-0.42, -0.02, vAcross)
-          * (1.0 - smoothstep(0.24, 0.62, vAcross));
+        float mineralLip = smoothstep(-0.12, 0.18, vAcross)
+          * (1.0 - smoothstep(0.42, 0.72, vAcross));
+        float recessedVoid = smoothstep(-0.34, -0.04, vAcross)
+          * (1.0 - smoothstep(0.12, 0.40, vAcross));
         float edgeHeat = exp(-abs(vAcross + 0.60) * 9.5);
-        float fade = smoothstep(0.22, 0.34, vAlong) * (1.0 - smoothstep(0.91, 1.0, vAlong));
+        float realFade = smoothstep(0.30, 0.42, vAlong) * (1.0 - smoothstep(0.60, 0.69, vAlong));
+        float ghostFade = smoothstep(0.26, 0.39, vAlong) * (1.0 - smoothstep(0.82, 0.94, vAlong));
+        float fade = mix(realFade, ghostFade, uGhost);
         float heat = clamp(vBack, 0.0, 1.0);
         float phrasing = 0.90 + 0.10 * pow(max(0.0, sin(vAlong * 16.9646 + movingTime * 0.030)), 4.0);
         float discontinuity = 1.0 - 0.84 * smoothstep(0.48, 0.51, vAlong) * (1.0 - smoothstep(0.60, 0.63, vAlong));
-        float pressureHeat = smoothstep(0.54, 0.64, vAlong) * (1.0 - smoothstep(0.80, 0.90, vAlong));
+        float pressureHeat = smoothstep(0.50, 0.59, vAlong) * (1.0 - smoothstep(0.72, 0.81, vAlong));
         vec3 sovereignGold = vec3(0.960, 0.875, 0.720);
         vec3 mineralDark = mix(vec3(0.012, 0.006, 0.014), violet, 0.16);
-        color = mix(mineralDark, mix(graphite, violet, 0.20), mineralLip * 0.62);
-        color *= 1.0 - recessedVoid * (0.54 + uPressure * 0.14);
+        color = mix(mineralDark, mix(graphite, violet, 0.20), mineralLip * 0.26);
+        color *= 1.0 - recessedVoid * (0.30 + uPressure * 0.08);
         color = mix(color, mix(coral, sovereignGold, 0.28), pressureHeat * edgeHeat * (0.34 + uCrown * 0.32));
         color += coral * edgeHeat * pressureHeat * (0.16 + heat * 0.08 + uCrown * 0.12);
         color += mix(coral, bone, 0.82) * incisionEdge * (0.34 + uReconstitution * 0.18 + uCrown * 0.16);
         color += bone * core * (underLight * (0.20 + uReconstitution * 0.09) + phrasing * (0.18 + climax * 0.22));
-        alpha = (0.42 + heat * 0.18 + mineralLip * 0.28 + incisionEdge * 0.76)
+        alpha = (0.15 + heat * 0.08 + mineralLip * 0.12 + incisionEdge * 0.80)
           * fade * discontinuity;
         float ghostPhase = fract(vAlong * 5.3 + 0.17);
         float ghostCadence = 0.28 + 0.72 * smoothstep(0.08, 0.22, ghostPhase)
