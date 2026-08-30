@@ -180,15 +180,15 @@
       const midDy = midpoint.y - pinchState.midpoint.y;
 
       if (activeWorld && viewMix > 0.55) {
-        detailZoom = clamp(pinchState.detailZoom * ratio, 0.72, 1.55);
-        detailRoll = pinchState.detailRoll + rotationDelta;
+        detailZoom = clamp(pinchState.detailZoom * ratio, 0.88, 1.12);
+        detailRoll = clamp(pinchState.detailRoll + rotationDelta, -0.122, 0.122);
         detailYaw = pinchState.detailYaw - midDx * 0.0032;
-        detailPitch = clamp(pinchState.detailPitch - midDy * 0.0032, -1.16, 1.16);
+        detailPitch = clamp(pinchState.detailPitch - midDy * 0.0032, -0.314, 0.314);
       } else {
-        overviewZoom = clamp(pinchState.overviewZoom * ratio, 0.66, 1.62);
-        overviewRoll = pinchState.overviewRoll + rotationDelta;
+        overviewZoom = clamp(pinchState.overviewZoom * ratio, 0.88, 1.12);
+        overviewRoll = clamp(pinchState.overviewRoll + rotationDelta, -0.122, 0.122);
         overviewYaw = pinchState.overviewYaw - midDx * 0.0035;
-        overviewPitch = clamp(pinchState.overviewPitch - midDy * 0.0035, -1.18, 1.18);
+        overviewPitch = clamp(pinchState.overviewPitch - midDy * 0.0035, -0.314, 0.314);
       }
       gestureHadPinch = true;
       canvas.style.cursor = 'grabbing';

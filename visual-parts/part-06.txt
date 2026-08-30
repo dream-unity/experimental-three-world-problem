@@ -4,13 +4,13 @@
     if (gestureTravel > 4) {
       if (activeWorld && viewMix > 0.62) {
         detailYaw -= dx * 0.0065;
-        detailPitch = clamp(detailPitch - dy * 0.0055, -1.16, 1.16);
+        detailPitch = clamp(detailPitch - dy * 0.0055, -0.314, 0.314);
         detailYawVelocity = -dx * 0.0065 / dt;
         detailPitchVelocity = -dy * 0.0055 / dt;
         hoverSub = -1;
       } else if (viewMix < 0.38) {
         overviewYaw -= dx * 0.0065;
-        overviewPitch = clamp(overviewPitch - dy * 0.0055, -1.18, 1.18);
+        overviewPitch = clamp(overviewPitch - dy * 0.0055, -0.314, 0.314);
         overviewYawVelocity = -dx * 0.0065 / dt;
         overviewPitchVelocity = -dy * 0.0055 / dt;
         hoverWorld = null;
@@ -72,8 +72,8 @@
     if (window.__dreamUnityGameActive) return;
     event.preventDefault();
     const factor = Math.exp(-event.deltaY * 0.0011);
-    if (activeWorld && viewMix > 0.55) detailZoom = clamp(detailZoom * factor, 0.72, 1.55);
-    else if (viewMix < 0.45) overviewZoom = clamp(overviewZoom * factor, 0.66, 1.62);
+    if (activeWorld && viewMix > 0.55) detailZoom = clamp(detailZoom * factor, 0.88, 1.12);
+    else if (viewMix < 0.45) overviewZoom = clamp(overviewZoom * factor, 0.88, 1.12);
     overviewLastInput = time;
   }, { passive: false });
 
@@ -93,16 +93,16 @@
     if (pointers.size === 0) {
       if (activeWorld && viewMix > 0.55) {
         detailYaw += detailYawVelocity * dt;
-        detailPitch = clamp(detailPitch + detailPitchVelocity * dt, -1.16, 1.16);
-        detailRoll += detailRollVelocity * dt;
+        detailPitch = clamp(detailPitch + detailPitchVelocity * dt, -0.314, 0.314);
+        detailRoll = clamp(detailRoll + detailRollVelocity * dt, -0.122, 0.122);
         const decay = Math.exp(-dt * 5.4);
         detailYawVelocity *= decay;
         detailPitchVelocity *= decay;
         detailRollVelocity *= decay;
       } else if (viewMix < 0.45) {
         overviewYaw += overviewYawVelocity * dt;
-        overviewPitch = clamp(overviewPitch + overviewPitchVelocity * dt, -1.18, 1.18);
-        overviewRoll += overviewRollVelocity * dt;
+        overviewPitch = clamp(overviewPitch + overviewPitchVelocity * dt, -0.314, 0.314);
+        overviewRoll = clamp(overviewRoll + overviewRollVelocity * dt, -0.122, 0.122);
         const decay = Math.exp(-dt * 5.1);
         overviewYawVelocity *= decay;
         overviewPitchVelocity *= decay;

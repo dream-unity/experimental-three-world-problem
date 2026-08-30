@@ -1,11 +1,14 @@
 (() => {
   'use strict';
-  const VERSION = '20260830-sovereign-resonator-2';
+  const VERSION = '20260830-bearing-mirror-1';
   const baseParts = Array.from({ length: 6 }, (_, index) =>
     `./visual-parts/part-${String(index + 1).padStart(2, '0')}.txt?v=${VERSION}`
   );
-  const overridePath = `./visual-parts/sovereign-resonator-11.txt?v=${VERSION}`;
-  const parts = [...baseParts, overridePath];
+  const overridePaths = [
+    `./visual-parts/sovereign-resonator-11.txt?v=${VERSION}`,
+    `./visual-parts/bearing-mirror-12.txt?v=${VERSION}`,
+  ];
+  const parts = [...baseParts, ...overridePaths];
   const loader = document.getElementById('loading');
   const hint = document.getElementById('hint');
   const release = () => loader?.classList.add('hide');
@@ -22,7 +25,7 @@
     .catch(() => new Promise((resolve) => setTimeout(resolve, 180)).then(() => fetchParts('no-store')))
     .then((source) => {
       const baseSource = source.slice(0, baseParts.length).join('');
-      const overrideSource = source[baseParts.length];
+      const overrideSource = source.slice(baseParts.length).join('\n');
       const closeIndex = baseSource.lastIndexOf('})();');
       if (closeIndex < 0) throw new Error('Visual engine terminator was not found.');
       Function(`${baseSource.slice(0, closeIndex)}\n${overrideSource}\n${baseSource.slice(closeIndex)}`)();

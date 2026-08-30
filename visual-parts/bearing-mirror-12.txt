@@ -1,0 +1,825 @@
+  // Dream Unity — THE BEARING MIRROR.
+  // A reflection becomes real when it can bear weight. Ether, agency and
+  // matter remain distinct while submitting to one sovereign act. The result
+  // is a compact pressure instrument, never a decorative knot.
+
+  const BM_INK = [10, 14, 27];
+  const BM_GRAPHITE = [94, 103, 119];
+  const BM_SILVER = [203, 209, 219];
+  const BM_CYAN = [0, 207, 255];
+  const BM_GREEN = [0, 216, 138];
+  const BM_VIOLET = [102, 51, 245];
+  const BM_GOLD = [236, 167, 31];
+  const BM_WHITE = [255, 255, 255];
+  const BM_MEMBRANE = [
+    [-0.96, 1.18], [-0.18, 1.42], [0.76, 1.08],
+    [1.16, 0.34], [0.88, -0.58], [0.22, -1.26],
+    [-0.68, -1.12], [-1.22, -0.42], [-1.18, 0.52]
+  ];
+  const BM_WORLD_PINS = {
+    machine: { x: -0.42, y: 2.46, z: 0.74 },
+    maker: { x: 3.02, y: 0.12, z: 0.72 },
+    reality: { x: 1.42, y: -2.54, z: 0.76 }
+  };
+
+  let bmAuthority = 0.24;
+  let bmLastFrame = 0;
+  let bmGhostYaw = overviewYaw - 0.16;
+  let bmGhostPitch = overviewPitch + 0.08;
+  let bmGhostRoll = overviewRoll - 0.04;
+  let bmDetailGhostYaw = detailYaw - 0.12;
+  let bmDetailGhostPitch = detailPitch + 0.06;
+
+  function bmWindow(value, start, peak, end) {
+    if (value <= start || value >= end) return 0;
+    if (value < peak) return ease((value - start) / Math.max(0.0001, peak - start));
+    return 1 - ease((value - peak) / Math.max(0.0001, end - peak));
+  }
+
+  // The private reference is translated into a silent, dimensionless motion
+  // anatomy: gather, subtract, pulse, rebuild, crown, return. No media from the
+  // reference is required by, named in, or delivered to the browser.
+  function bmMotionScore(t) {
+    const phase = reduced ? 0.24 : ((t / 44) % 1 + 1) % 1;
+    return {
+      phase,
+      inhale: bmWindow(phase, 0.00, 0.12, 0.28),
+      pressure: bmWindow(phase, 0.10, 0.43, 0.535),
+      subtraction: bmWindow(phase, 0.47, 0.515, 0.575),
+      pulse: Math.max(
+        bmWindow(phase, 0.545, 0.558, 0.575),
+        bmWindow(phase, 0.575, 0.589, 0.607),
+        bmWindow(phase, 0.607, 0.620, 0.64)
+      ),
+      rebuild: bmWindow(phase, 0.57, 0.69, 0.82),
+      crown: bmWindow(phase, 0.68, 0.765, 0.855),
+      release: ease(clamp((phase - 0.82) / 0.18, 0, 1))
+    };
+  }
+
+  function bmCenter(detail = false) {
+    if (width <= 900) return { x: width * 0.5, y: height * (detail ? 0.46 : 0.535) };
+    return detail
+      ? { x: width * 0.49, y: height * 0.51 }
+      : { x: width * 0.56, y: height * 0.48 };
+  }
+
+  function bmScale(detail = false) {
+    if (width <= 900) {
+      return detail
+        ? Math.min(width * 0.82 / 5.10, height * 0.64 / 5.25)
+        : Math.min(width * 0.68 / 6.9, height * 0.47 / 6.7);
+    }
+    return detail
+      ? Math.min(width * 0.44 / 6.7, height * 0.74 / 6.5)
+      : Math.min(width * 0.32 / 6.9, height * 0.60 / 6.6);
+  }
+
+  function bmOrientation(detail = false, ghost = false) {
+    if (detail) {
+      return {
+        yaw: ghost ? bmDetailGhostYaw : detailYaw,
+        pitch: clamp(ghost ? bmDetailGhostPitch : detailPitch, -0.314, 0.314),
+        roll: clamp(detailRoll, -0.122, 0.122),
+        zoom: clamp(detailZoom, 0.88, 1.12)
+      };
+    }
+    return {
+      yaw: ghost ? bmGhostYaw : overviewYaw,
+      pitch: clamp(ghost ? bmGhostPitch : overviewPitch, -0.314, 0.314),
+      roll: clamp(ghost ? bmGhostRoll : overviewRoll, -0.122, 0.122),
+      zoom: clamp(overviewZoom, 0.88, 1.12)
+    };
+  }
+
+  function bmProject(point, detail = false, ghost = false, offset = null) {
+    const orientation = bmOrientation(detail, ghost);
+    const rotated = rotate3(point, orientation.yaw, orientation.pitch, orientation.roll);
+    const camera = 13.8;
+    const perspective = orientation.zoom * camera / Math.max(5, camera - rotated.z);
+    const center = bmCenter(detail);
+    return {
+      x: center.x + rotated.x * bmScale(detail) * perspective + (offset?.x || 0),
+      y: center.y - rotated.y * bmScale(detail) * perspective + (offset?.y || 0),
+      z: rotated.z,
+      f: perspective
+    };
+  }
+
+  function bmLocal(center, local, rotation = {}) {
+    const rx = rotation.x || 0;
+    const ry = rotation.y || 0;
+    const rz = rotation.z || 0;
+    let x = local.x;
+    let y = local.y;
+    let z = local.z;
+    const cx = Math.cos(rx);
+    const sx = Math.sin(rx);
+    const cy = Math.cos(ry);
+    const sy = Math.sin(ry);
+    const cz = Math.cos(rz);
+    const sz = Math.sin(rz);
+    const y1 = y * cx - z * sx;
+    const z1 = y * sx + z * cx;
+    const x2 = x * cy + z1 * sy;
+    const z2 = -x * sy + z1 * cy;
+    const x3 = x2 * cz - y1 * sz;
+    const y3 = x2 * sz + y1 * cz;
+    return { x: center.x + x3, y: center.y + y3, z: center.z + z2 };
+  }
+
+  function bmFace(faces, points, color, alpha, options = {}) {
+    faces.push({
+      points,
+      color,
+      alpha,
+      stroke: options.stroke || BM_INK,
+      strokeAlpha: options.strokeAlpha ?? 0.56,
+      lineWidth: options.lineWidth ?? 1.15,
+      fill: options.fill !== false
+    });
+  }
+
+  function bmPrism(faces, polygon, center, depth, color, alpha, rotation = {}, options = {}) {
+    const front = polygon.map(([x, y]) => bmLocal(center, { x, y, z: depth * 0.5 }, rotation));
+    const back = polygon.map(([x, y]) => bmLocal(center, { x, y, z: -depth * 0.5 }, rotation));
+    bmFace(faces, back, srMixColor(color, BM_INK, 0.32), alpha * 0.72, options);
+    for (let index = 0; index < polygon.length; index++) {
+      const next = (index + 1) % polygon.length;
+      const sideColor = index % 2
+        ? srMixColor(color, BM_INK, 0.22)
+        : srMixColor(color, BM_WHITE, 0.08);
+      bmFace(faces, [back[index], back[next], front[next], front[index]], sideColor, alpha * 0.88, options);
+    }
+    bmFace(faces, front, color, alpha, options);
+  }
+
+  function bmBox(faces, center, size, color, alpha, rotation = {}, options = {}) {
+    bmPrism(faces, [
+      [-size.x * 0.5, -size.y * 0.5],
+      [size.x * 0.5, -size.y * 0.5],
+      [size.x * 0.5, size.y * 0.5],
+      [-size.x * 0.5, size.y * 0.5]
+    ], center, size.z, color, alpha, rotation, options);
+  }
+
+  function bmRenderFaces(faces, alpha = 1, detail = false) {
+    const projected = faces.map((face) => {
+      const points = face.points.map((point) => bmProject(point, detail));
+      return {
+        ...face,
+        points,
+        depth: points.reduce((sum, point) => sum + point.z, 0) / points.length
+      };
+    }).sort((a, b) => a.depth - b.depth);
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.lineJoin = 'miter';
+    ctx.lineCap = 'square';
+    projected.forEach((face) => {
+      if (!face.points.length) return;
+      ctx.beginPath();
+      face.points.forEach((point, index) => index
+        ? ctx.lineTo(point.x, point.y)
+        : ctx.moveTo(point.x, point.y));
+      ctx.closePath();
+      if (face.fill) {
+        ctx.fillStyle = rgba(face.color, alpha * face.alpha);
+        ctx.fill();
+      }
+      ctx.strokeStyle = rgba(face.stroke, alpha * face.strokeAlpha);
+      ctx.lineWidth = face.lineWidth;
+      ctx.stroke();
+    });
+    ctx.restore();
+  }
+
+  function bmLine3(a, b, color, alpha, lineWidth = 1, detail = false, dash = null, ghost = false, offset = null) {
+    if (alpha <= 0.002) return;
+    const pa = bmProject(a, detail, ghost, offset);
+    const pb = bmProject(b, detail, ghost, offset);
+    ctx.save();
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.strokeStyle = rgba(color, alpha);
+    ctx.lineWidth = lineWidth;
+    ctx.lineCap = 'square';
+    if (dash) ctx.setLineDash(dash);
+    ctx.beginPath();
+    ctx.moveTo(pa.x, pa.y);
+    ctx.lineTo(pb.x, pb.y);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function bmLoop3(points, color, alpha, lineWidth = 1, detail = false, ghost = false, offset = null, dash = null) {
+    if (!points.length || alpha <= 0.002) return;
+    const projected = points.map((point) => bmProject(point, detail, ghost, offset));
+    ctx.save();
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.strokeStyle = rgba(color, alpha);
+    ctx.lineWidth = lineWidth;
+    ctx.lineJoin = 'miter';
+    if (dash) ctx.setLineDash(dash);
+    ctx.beginPath();
+    projected.forEach((point, index) => index
+      ? ctx.lineTo(point.x, point.y)
+      : ctx.moveTo(point.x, point.y));
+    ctx.closePath();
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function bmAddMembrane(faces, materialAlpha, crown = 0, detail = false) {
+    const depth = detail ? 0.62 : 0.54;
+    const frontZ = depth * 0.5;
+    const back = BM_MEMBRANE.map(([x, y]) => ({ x, y, z: -depth * 0.5 }));
+    bmFace(faces, back, srMixColor(BM_VIOLET, BM_INK, 0.46), materialAlpha * 0.70, {
+      strokeAlpha: 0.72,
+      lineWidth: 1.35
+    });
+    for (let index = 0; index < BM_MEMBRANE.length; index++) {
+      const next = (index + 1) % BM_MEMBRANE.length;
+      const a = BM_MEMBRANE[index];
+      const b = BM_MEMBRANE[next];
+      const color = index < 3
+        ? srMixColor(BM_CYAN, BM_INK, 0.20)
+        : index < 6
+          ? srMixColor(BM_GREEN, BM_INK, 0.26)
+          : srMixColor(BM_VIOLET, BM_INK, 0.12);
+      bmFace(faces, [
+        { x: 0, y: 0, z: frontZ + index * 0.003 },
+        { x: a[0], y: a[1], z: frontZ },
+        { x: b[0], y: b[1], z: frontZ }
+      ], srMixColor(color, BM_WHITE, index % 2 ? 0.04 : 0.14), materialAlpha * (0.76 + crown * 0.16), {
+        strokeAlpha: 0.74,
+        lineWidth: 1.20
+      });
+      bmFace(faces, [
+        { x: a[0], y: a[1], z: -depth * 0.5 },
+        { x: b[0], y: b[1], z: -depth * 0.5 },
+        { x: b[0], y: b[1], z: frontZ },
+        { x: a[0], y: a[1], z: frontZ }
+      ], srMixColor(color, BM_INK, 0.38), materialAlpha * 0.82, {
+        strokeAlpha: 0.78,
+        lineWidth: 1.32
+      });
+    }
+  }
+
+  function bmAddSeed(faces, materialAlpha, crown = 0, pulse = 0) {
+    const radius = 0.34 + pulse * 0.045;
+    const front = { x: 0, y: 0, z: 0.92 };
+    const back = { x: 0, y: 0, z: 0.17 };
+    const belt = [
+      { x: 0, y: radius, z: 0.54 },
+      { x: radius, y: 0, z: 0.54 },
+      { x: 0, y: -radius, z: 0.54 },
+      { x: -radius, y: 0, z: 0.54 }
+    ];
+    for (let index = 0; index < 4; index++) {
+      const next = (index + 1) % 4;
+      const color = index === 1 && crown > 0.25 ? BM_GOLD : index % 2 ? BM_INK : BM_VIOLET;
+      bmFace(faces, [front, belt[index], belt[next]], color, Math.max(0.80, materialAlpha), {
+        strokeAlpha: 0.92,
+        lineWidth: 1.28
+      });
+      bmFace(faces, [back, belt[next], belt[index]], srMixColor(color, BM_INK, 0.45), Math.max(0.72, materialAlpha * 0.9), {
+        strokeAlpha: 0.88,
+        lineWidth: 1.18
+      });
+    }
+  }
+
+  function bmAddOverviewMachine(faces, gap, alpha) {
+    for (let index = 0; index < 5; index++) {
+      bmBox(
+        faces,
+        { x: -1.68 - gap - index * 0.12, y: 1.18 + index * 0.27, z: -0.24 + index * 0.18 },
+        { x: 2.22 - index * 0.10, y: 0.13, z: 1.18 },
+        index === 4 ? srMixColor(BM_CYAN, BM_INK, 0.16) : BM_CYAN,
+        alpha * (0.38 + index * 0.075),
+        { z: -0.34 + index * 0.017, y: 0.06 * (index - 2) },
+        { stroke: index === 4 ? BM_INK : BM_CYAN, strokeAlpha: 0.72, lineWidth: index === 4 ? 1.65 : 1.12 }
+      );
+    }
+    bmBox(faces, { x: -2.70 - gap, y: 0.75, z: -0.08 }, { x: 0.26, y: 2.45, z: 1.28 },
+      srMixColor(BM_CYAN, BM_INK, 0.12), alpha * 0.72, { z: 0.12 }, { strokeAlpha: 0.80, lineWidth: 1.6 });
+  }
+
+  function bmAddOverviewMaker(faces, gap, alpha) {
+    const shift = gap * 0.86;
+    bmPrism(faces, [[-1.02, 0.50], [1.02, 0.73], [1.18, 0.18], [-0.90, -0.22]],
+      { x: 1.90 + shift, y: 0.70, z: 0.02 }, 1.28, BM_GREEN, alpha * 0.76,
+      { z: -0.08, y: -0.10 }, { strokeAlpha: 0.82, lineWidth: 1.65 });
+    bmPrism(faces, [[-0.96, 0.22], [1.14, 0.58], [1.02, 0.02], [-1.08, -0.48]],
+      { x: 1.92 + shift, y: -0.72, z: -0.04 }, 1.28, srMixColor(BM_GREEN, BM_INK, 0.08), alpha * 0.82,
+      { z: 0.08, y: 0.08 }, { strokeAlpha: 0.84, lineWidth: 1.72 });
+    bmBox(faces, { x: 2.96 + shift, y: 0, z: -0.10 }, { x: 0.38, y: 2.54, z: 1.34 },
+      srMixColor(BM_GREEN, BM_INK, 0.22), alpha * 0.88, {}, { strokeAlpha: 0.86, lineWidth: 1.8 });
+  }
+
+  function bmAddOverviewWorld(faces, gap, alpha) {
+    const drop = gap * 0.58;
+    bmPrism(faces, [[-0.94, -0.18], [-0.30, 1.20], [0.26, 1.02], [-0.18, -0.40]],
+      { x: -0.76, y: -1.58 - drop, z: -0.02 }, 1.52, BM_VIOLET, alpha * 0.88,
+      { z: -0.06, y: 0.08 }, { strokeAlpha: 0.88, lineWidth: 1.88 });
+    bmPrism(faces, [[-0.26, 1.00], [0.34, 1.18], [0.98, -0.20], [0.18, -0.42]],
+      { x: 0.72, y: -1.58 - drop, z: 0.02 }, 1.52, srMixColor(BM_VIOLET, BM_INK, 0.08), alpha * 0.92,
+      { z: 0.06, y: -0.08 }, { strokeAlpha: 0.90, lineWidth: 1.92 });
+    bmBox(faces, { x: 0, y: -2.66 - drop, z: -0.10 }, { x: 3.72, y: 0.46, z: 1.76 },
+      srMixColor(BM_VIOLET, BM_INK, 0.20), alpha * 0.95, {}, { strokeAlpha: 0.92, lineWidth: 2.0 });
+  }
+
+  function bmAddTeeth(faces, gap, alpha) {
+    const placements = [
+      [-1.04 - gap * 0.20, 0.78, -0.42], [-1.14 - gap * 0.20, 0.18, -0.18], [-0.98 - gap * 0.20, -0.44, 0.04],
+      [1.10 + gap * 0.22, 0.62, 0.18], [1.16 + gap * 0.22, 0.02, 0.34], [1.04 + gap * 0.22, -0.62, 0.14],
+      [-0.62, -1.14 - gap * 0.20, -0.18], [0, -1.30 - gap * 0.20, 0.02], [0.62, -1.12 - gap * 0.20, 0.24]
+    ];
+    placements.forEach((placement, index) => {
+      const rotation = index < 3 ? { z: -0.14 } : index < 6 ? { z: 0.14 } : {};
+      bmPrism(faces, [[-0.11, -0.10], [0.16, 0], [-0.11, 0.10]],
+        { x: placement[0], y: placement[1], z: 0.66 + placement[2] * 0.18 }, 0.24,
+        BM_GOLD, alpha * 0.94, rotation, { stroke: BM_INK, strokeAlpha: 0.82, lineWidth: 1.02 });
+    });
+  }
+
+  function bmOverviewGhost(gap, alpha) {
+    const offset = width > 900 ? { x: -unit * 0.014, y: unit * 0.009 } : { x: -7, y: 5 };
+    const ghostAlpha = alpha * (0.16 + bmMotionScore(time).subtraction * 0.18);
+    const membrane = BM_MEMBRANE.map(([x, y]) => ({ x, y, z: -0.72 }));
+    bmLoop3(membrane, BM_GRAPHITE, ghostAlpha, 1.20, false, true, offset, [3, 6]);
+    bmLoop3([
+      { x: -3.08 - gap, y: -0.48, z: -0.72 }, { x: -3.08 - gap, y: 2.42, z: -0.72 },
+      { x: -0.42 - gap, y: 2.56, z: -0.72 }, { x: -0.58, y: 0.72, z: -0.72 }
+    ], BM_GRAPHITE, ghostAlpha * 0.86, 1.0, false, true, offset, [2, 7]);
+    bmLoop3([
+      { x: 0.72, y: 1.34, z: -0.72 }, { x: 3.30 + gap, y: 1.30, z: -0.72 },
+      { x: 3.30 + gap, y: -1.34, z: -0.72 }, { x: 0.72, y: -1.24, z: -0.72 }
+    ], BM_GRAPHITE, ghostAlpha * 0.86, 1.0, false, true, offset, [2, 7]);
+    bmLoop3([
+      { x: -1.96, y: -2.98 - gap, z: -0.72 }, { x: -0.88, y: -0.72, z: -0.72 },
+      { x: 0.88, y: -0.72, z: -0.72 }, { x: 1.96, y: -2.98 - gap, z: -0.72 }
+    ], BM_GRAPHITE, ghostAlpha * 0.90, 1.1, false, true, offset, [2, 7]);
+  }
+
+  function bmReturnFibres(release, alpha, detail = false) {
+    if (release <= 0.01) return;
+    for (let index = 0; index < 13; index++) {
+      const side = index % 2 ? -1 : 1;
+      const start = {
+        x: -0.45 + side * (0.08 + (index % 5) * 0.16),
+        y: 1.08 + (index % 3) * 0.12,
+        z: -0.15 + (index % 4) * 0.16
+      };
+      const end = {
+        x: start.x + side * (0.42 + index * 0.055) * release,
+        y: start.y + (0.88 + index * 0.105) * release,
+        z: start.z - 0.42 - index * 0.035
+      };
+      const color = index % 4 === 0 ? BM_GOLD : index % 3 === 0 ? BM_VIOLET : BM_CYAN;
+      bmLine3(start, end, color, alpha * release * (0.30 + (index % 5) * 0.07), index % 4 === 0 ? 1.1 : 0.72, detail);
+    }
+  }
+
+  function bmBearing(point, kind, t, alpha = 1, selected = false, detail = false) {
+    const projected = bmProject(point, detail);
+    const color = WORLD[kind]?.rgb || BM_GOLD;
+    const radius = (selected ? 9.5 : 7.5) + (reduced ? 0 : Math.sin(t * 1.4 + point.x) * 0.55);
+    ctx.save();
+    ctx.translate(projected.x, projected.y);
+    ctx.rotate((kind === 'machine' ? -0.24 : kind === 'maker' ? 0.18 : 0) + (detail ? detailRoll : overviewRoll) * 0.22);
+    ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = rgba(BM_INK, alpha * 0.86);
+    ctx.lineWidth = selected ? 2 : 1.25;
+    ctx.fillRect(-radius, -radius, radius * 2, radius * 2);
+    ctx.strokeRect(-radius, -radius, radius * 2, radius * 2);
+    ctx.fillStyle = rgba(color, alpha * 0.90);
+    ctx.fillRect(-radius * 0.56, -radius * 0.56, radius * 1.12, radius * 1.12);
+    ctx.fillStyle = rgba(kind === 'reality' ? BM_INK : BM_WHITE, alpha * 0.94);
+    ctx.fillRect(-1.7, -1.7, 3.4, 3.4);
+    ctx.restore();
+    return projected;
+  }
+
+  function bmWorldRail(key) {
+    const index = worldKeys.indexOf(key);
+    if (width <= 900) {
+      return { x: width * ((index + 0.5) / 3), y: height * 0.80 };
+    }
+    return { x: width * 0.84, y: height * (0.32 + index * 0.18) };
+  }
+
+  function bmDetailRail(index) {
+    if (width <= 900) return { x: width * ((index + 0.5) / 3), y: height * 0.76 };
+    return { x: width * 0.815, y: height * (0.34 + index * 0.17) };
+  }
+
+  function bmLeader(from, to, color, alpha) {
+    if (width <= 900) return;
+    const elbow = { x: Math.min(to.x - 92, Math.max(from.x + 24, width * 0.70)), y: from.y };
+    ctx.save();
+    ctx.strokeStyle = rgba(BM_GRAPHITE, alpha * 0.42);
+    ctx.lineWidth = 0.78;
+    ctx.beginPath();
+    ctx.moveTo(from.x, from.y);
+    ctx.lineTo(elbow.x, elbow.y);
+    ctx.lineTo(elbow.x, to.y);
+    ctx.lineTo(to.x - 92, to.y);
+    ctx.stroke();
+    ctx.fillStyle = rgba(color, alpha * 0.92);
+    ctx.fillRect(elbow.x - 2, from.y - 2, 4, 4);
+    ctx.restore();
+  }
+
+  overviewBasePositions = function bmBasePositions() {
+    return BM_WORLD_PINS;
+  };
+
+  overviewPositions = function bmOverviewPositions() {
+    const positions = {};
+    worldKeys.forEach((key) => {
+      const projected = bmProject(BM_WORLD_PINS[key]);
+      positions[key] = {
+        x: projected.x,
+        y: projected.y,
+        r: width <= 900 ? 19 : 24,
+        z: projected.z,
+        f: projected.f,
+        world: BM_WORLD_PINS[key]
+      };
+    });
+    return positions;
+  };
+
+  drawBackground = function bmBackground() {
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, width, height);
+    if (width <= 900) return;
+    const center = bmCenter(false);
+    const halfW = width * 0.168;
+    const halfH = height * 0.315;
+    ctx.strokeStyle = rgba(BM_SILVER, 0.38);
+    ctx.lineWidth = 0.7;
+    const marks = [
+      [center.x - halfW, center.y - halfH, 1, 1],
+      [center.x + halfW, center.y - halfH, -1, 1],
+      [center.x - halfW, center.y + halfH, 1, -1],
+      [center.x + halfW, center.y + halfH, -1, -1]
+    ];
+    marks.forEach(([x, y, sx, sy]) => {
+      ctx.beginPath();
+      ctx.moveTo(x, y + sy * 14);
+      ctx.lineTo(x, y);
+      ctx.lineTo(x + sx * 14, y);
+      ctx.stroke();
+    });
+  };
+
+  drawOverview = function bmOverview(t, alpha) {
+    if (alpha <= 0.002) return;
+    const dt = Math.min(0.05, Math.max(0.003, t - bmLastFrame));
+    bmLastFrame = t;
+    const moving = pointers.size > 0
+      || Math.abs(overviewYawVelocity) + Math.abs(overviewPitchVelocity) + Math.abs(overviewRollVelocity) > 0.055;
+    bmAuthority = damp(bmAuthority, moving ? 1 : 0.24, moving ? 8.5 : 0.22, dt);
+    bmGhostYaw = damp(bmGhostYaw, overviewYaw, 1.15 + bmAuthority * 1.2, dt);
+    bmGhostPitch = damp(bmGhostPitch, overviewPitch, 1.08 + bmAuthority, dt);
+    bmGhostRoll = damp(bmGhostRoll, overviewRoll, 0.96 + bmAuthority, dt);
+
+    const score = bmMotionScore(t);
+    // One motion clock governs the material state. The public score bridge is
+    // still sampled for continuity, but never max-mixed into a contradictory
+    // crown, abyss or return. Completion belongs to interaction.
+    const subtraction = score.subtraction;
+    const pressure = clamp(0.18 + score.pressure * 0.30 + bmAuthority * 0.52, 0, 1);
+    const rebuild = score.rebuild * (1 - subtraction) * (0.58 + bmAuthority * 0.42);
+    const crown = score.crown * (1 - subtraction) * ease(clamp((bmAuthority - 0.18) / 0.82, 0, 1));
+    const release = score.release * (1 - subtraction);
+    const gap = 0.52 * (1 - pressure) + release * 0.18;
+    const materialAlpha = clamp((0.82 + rebuild * 0.12) * (1 - subtraction * 0.88), 0.06, 0.94);
+    const faces = [];
+
+    bmOverviewGhost(gap, alpha);
+    bmAddOverviewMachine(faces, gap, materialAlpha);
+    bmAddOverviewMaker(faces, gap, materialAlpha);
+    bmAddOverviewWorld(faces, gap, materialAlpha);
+    bmAddMembrane(faces, materialAlpha, crown);
+    bmAddTeeth(faces, gap, Math.max(materialAlpha, subtraction * 0.82));
+    bmAddSeed(faces, materialAlpha, crown, score.pulse);
+    bmRenderFaces(faces, alpha, false);
+
+    // One exact axis survives subtraction. At the crown it becomes the lyric's
+    // piercing light: three material planes in registration, never a glow.
+    bmLine3({ x: 0, y: -3.02, z: 0.72 }, { x: 0, y: 3.02, z: 0.72 },
+      subtraction > 0.30 ? BM_GOLD : BM_INK, alpha * (0.28 + subtraction * 0.64), 1.15, false);
+    if (crown > 0.04) {
+      bmLine3({ x: -2.42, y: 0.06, z: 0.96 }, { x: 2.42, y: 0.06, z: 0.96 }, BM_CYAN, alpha * crown * 0.88, 1.55);
+      bmLine3({ x: -2.12, y: -0.02, z: 1.02 }, { x: 2.12, y: -0.02, z: 1.02 }, BM_GREEN, alpha * crown * 0.78, 1.25);
+      bmLine3({ x: -1.82, y: -0.10, z: 1.08 }, { x: 1.82, y: -0.10, z: 1.08 }, BM_VIOLET, alpha * crown * 0.76, 1.15);
+    }
+    bmReturnFibres(release, alpha);
+
+    const positions = overviewPositions(t);
+    worldKeys.forEach((key) => Object.assign(worldScreen[key], positions[key]));
+    worldKeys.forEach((key) => {
+      const pin = bmBearing(BM_WORLD_PINS[key], key, t, alpha, hoverWorld === key);
+      bmLeader(pin, bmWorldRail(key), WORLD[key].rgb, alpha);
+    });
+    ctx.globalAlpha = 1;
+  };
+
+  function bmDetailPins() {
+    return [
+      { x: 2.74, y: 1.34, z: 0.78 },
+      { x: 3.00, y: 0, z: 0.82 },
+      { x: 2.72, y: -1.34, z: 0.76 }
+    ];
+  }
+
+  detailPoints = function bmDetailPoints() {
+    return bmDetailPins().map((point, index) => {
+      const projected = bmProject(point, true);
+      return { x: projected.x, y: projected.y, r: width <= 900 ? 18 : 22, index, z: projected.z, f: projected.f };
+    });
+  };
+
+  function bmDetailGhost(outline, alpha) {
+    const offset = width > 900 ? { x: -unit * 0.012, y: unit * 0.008 } : { x: -6, y: 4 };
+    bmLoop3(outline.map((point) => ({ ...point, z: (point.z || 0) - 0.72 })),
+      BM_GRAPHITE, alpha * 0.20, 1.15, true, true, offset, [3, 6]);
+  }
+
+  function bmMachineGeometry(t, alpha) {
+    const faces = [];
+    const selectedForce = activeSub === 0 ? 0.18 : activeSub === 1 ? 0.34 : 0.48;
+    const aperture = 0.54 - selectedForce * 0.36 - impulse * 0.06;
+    const outline = [
+      { x: -2.46, y: 2.48, z: 0 }, { x: 2.46, y: 2.18, z: 0 },
+      { x: 2.38, y: -2.32, z: 0 }, { x: -2.52, y: -2.12, z: 0 }
+    ];
+    bmDetailGhost(outline, alpha);
+    bmBox(faces, { x: -2.12, y: 0.08, z: -0.10 }, { x: 0.34, y: 4.58, z: 1.68 },
+      srMixColor(BM_CYAN, BM_INK, 0.16), 0.78, { z: -0.10, y: 0.07 }, { strokeAlpha: 0.88, lineWidth: 1.8 });
+    bmBox(faces, { x: 2.08, y: -0.04, z: 0.02 }, { x: 0.34, y: 4.38, z: 1.58 },
+      srMixColor(BM_CYAN, BM_WHITE, 0.04), 0.62, { z: 0.11, y: -0.07 }, { strokeAlpha: 0.84, lineWidth: 1.7 });
+    bmBox(faces, { x: 0, y: 2.22, z: -0.20 }, { x: 4.16, y: 0.26, z: 1.44 },
+      srMixColor(BM_CYAN, BM_INK, 0.08), 0.54, {}, { strokeAlpha: 0.80, lineWidth: 1.55 });
+    bmBox(faces, { x: 0, y: -2.12, z: -0.16 }, { x: 4.12, y: 0.30, z: 1.44 },
+      srMixColor(BM_CYAN, BM_INK, 0.18), 0.68, {}, { strokeAlpha: 0.84, lineWidth: 1.65 });
+
+    const shutters = [
+      { side: -1, x: -1.14, y: 1.30, z: 0.22, r: -0.16 },
+      { side: -1, x: -1.20, y: 0.48, z: 0.42, r: 0.06 },
+      { side: -1, x: -1.08, y: -0.52, z: 0.30, r: 0.19 },
+      { side: 1, x: 1.12, y: 0.92, z: 0.48, r: -0.10 },
+      { side: 1, x: 1.18, y: 0.04, z: 0.24, r: 0.12 },
+      { side: 1, x: 1.04, y: -1.10, z: 0.44, r: -0.20 },
+      { side: 0, x: -0.72, y: 1.70, z: 0.18, r: -0.92 },
+      { side: 0, x: 0.14, y: -1.62, z: 0.40, r: 0.78 },
+      { side: 0, x: 0.78, y: 1.48, z: 0.58, r: -0.66 }
+    ];
+    shutters.forEach((shutter, index) => {
+      const outward = aperture * (shutter.side || (index === 7 ? -0.44 : 0.36));
+      const color = index === activeSub * 3 + 1 ? BM_GOLD : index % 4 === 0 ? BM_INK : BM_CYAN;
+      const polygon = shutter.side < 0
+        ? [[-0.78, -0.12], [0.72, -0.18], [0.52, 0.18], [-0.74, 0.11]]
+        : shutter.side > 0
+          ? [[-0.72, -0.18], [0.78, -0.10], [0.74, 0.12], [-0.54, 0.18]]
+          : [[-0.62, -0.11], [0.68, -0.15], [0.52, 0.17], [-0.58, 0.12]];
+      bmPrism(faces, polygon,
+        { x: shutter.x + (shutter.side ? outward : 0), y: shutter.y + (shutter.side ? 0 : outward), z: shutter.z },
+        0.68, color, color === BM_GOLD ? 0.94 : 0.62, { z: shutter.r, y: (index - 4) * 0.018 },
+        { strokeAlpha: 0.82, lineWidth: color === BM_GOLD ? 1.58 : 1.12 });
+    });
+    bmPrism(faces, [[0, 0.62], [0.48, 0.18], [0.34, -0.52], [-0.36, -0.52], [-0.52, 0.16]],
+      { x: 0, y: 0, z: 0.42 }, 0.92, srMixColor(BM_VIOLET, BM_INK, 0.34), 0.92,
+      { z: -0.05 }, { strokeAlpha: 0.94, lineWidth: 1.9 });
+    bmRenderFaces(faces, alpha, true);
+
+    const rayAlpha = 0.48 + activeSub * 0.10;
+    const rays = [
+      [{ x: -1.92, y: 1.04, z: 0.88 }, { x: -0.38, y: 0.22, z: 0.98 }, { x: 0.30, y: 0.04, z: 1.02 }, { x: 1.92, y: -0.68, z: 0.86 }],
+      [{ x: -1.92, y: -0.82, z: 0.82 }, { x: -0.42, y: -0.18, z: 1.02 }, { x: 0.32, y: 0.08, z: 1.04 }, { x: 1.92, y: 0.86, z: 0.90 }],
+      [{ x: -1.94, y: 0.08, z: 0.94 }, { x: -0.36, y: 0.02, z: 1.06 }, { x: 0.36, y: 0.02, z: 1.06 }, { x: 1.94, y: 0.02, z: 0.94 }]
+    ];
+    rays.forEach((ray, rayIndex) => {
+      for (let segment = 0; segment < ray.length - 1; segment++) {
+        bmLine3(ray[segment], ray[segment + 1], rayIndex === 2 && segment > 1 ? BM_GOLD : BM_CYAN,
+          alpha * rayAlpha, rayIndex === 2 ? 1.35 : 0.92, true);
+      }
+    });
+  }
+
+  function bmMakerGeometry(t, alpha) {
+    const faces = [];
+    const compression = 0.18 + (activeSub === 1 ? 0.34 : activeSub === 2 ? 0.24 : 0.08) + impulse * 0.08;
+    const gap = 0.46 - compression;
+    const outline = [
+      { x: -2.40, y: 2.48, z: 0 }, { x: 2.40, y: 2.48, z: 0 },
+      { x: 2.42, y: -2.46, z: 0 }, { x: -2.42, y: -2.46, z: 0 }
+    ];
+    bmDetailGhost(outline, alpha);
+    bmPrism(faces, [[-1.04, 0.78], [0.92, 0.64], [1.08, 0.08], [-0.94, -0.14]],
+      { x: -1.32 - gap * 0.72, y: 0, z: 0.04 }, 1.64, BM_GREEN, 0.88,
+      {}, { strokeAlpha: 0.92, lineWidth: 2.05 });
+    bmPrism(faces, [[-0.92, 0.62], [1.04, 0.76], [0.94, -0.14], [-1.08, 0.08]],
+      { x: 1.32 + gap * 0.72, y: 0, z: 0.02 }, 1.64, srMixColor(BM_GREEN, BM_INK, 0.08), 0.90,
+      {}, { strokeAlpha: 0.94, lineWidth: 2.1 });
+    bmPrism(faces, [[-1.12, 0.58], [1.12, 0.58], [0.84, -0.30], [-0.84, -0.30]],
+      { x: 0, y: 1.94 + gap * 0.62, z: -0.06 }, 1.58, srMixColor(BM_GREEN, BM_INK, 0.16), 0.86,
+      {}, { strokeAlpha: 0.92, lineWidth: 2.0 });
+    bmBox(faces, { x: 0, y: -2.24, z: -0.12 }, { x: 4.42, y: 0.48, z: 1.84 },
+      srMixColor(BM_INK, BM_VIOLET, 0.30), 0.90, {}, { strokeAlpha: 0.96, lineWidth: 2.15 });
+
+    bmPrism(faces, [[-0.72, 1.08], [0.46, 1.22], [0.82, 0.38], [0.58, -1.08], [-0.54, -1.18], [-0.82, -0.18]],
+      { x: 0, y: -0.16, z: 0.38 }, 1.08,
+      activeSub === 2 ? srMixColor(BM_VIOLET, BM_INK, 0.02) : srMixColor(BM_VIOLET, BM_INK, 0.20),
+      activeSub === 2 ? 0.96 : 0.82, { z: activeSub === 0 ? -0.08 : 0.03 }, { strokeAlpha: 0.96, lineWidth: 2.1 });
+
+    for (let index = 0; index < 9; index++) {
+      const side = index < 3 ? -1 : index < 6 ? 1 : 0;
+      const local = index % 3;
+      const center = side < 0
+        ? { x: -0.64 - gap * 0.26, y: 0.62 - local * 0.60, z: 1.08 }
+        : side > 0
+          ? { x: 0.64 + gap * 0.26, y: 0.62 - local * 0.60, z: 1.08 }
+          : { x: -0.44 + local * 0.44, y: 1.02 + gap * 0.34, z: 1.05 };
+      const rotation = side < 0 ? {} : side > 0 ? { z: Math.PI } : { z: -Math.PI * 0.5 };
+      bmPrism(faces, [[-0.10, -0.11], [0.19, 0], [-0.10, 0.11]], center, 0.24,
+        BM_GOLD, 0.94, rotation, { strokeAlpha: 0.88, lineWidth: 1.02 });
+    }
+    bmRenderFaces(faces, alpha, true);
+    bmLine3({ x: 0, y: 2.64, z: 1.12 }, { x: 0, y: -2.44, z: 1.12 },
+      activeSub === 1 ? BM_GOLD : BM_INK, alpha * (activeSub === 1 ? 0.88 : 0.30), activeSub === 1 ? 1.55 : 0.9, true);
+    if (activeSub === 2) {
+      bmLine3({ x: -1.96, y: -1.82, z: 0.92 }, { x: 1.96, y: -1.82, z: 0.92 }, BM_GOLD, alpha * 0.74, 1.25, true);
+    }
+  }
+
+  function bmWorldGeometry(t, alpha) {
+    const faces = [];
+    const join = activeSub === 1 ? 0.12 + impulse * 0.06 : activeSub === 2 ? 0.08 : 0;
+    const outline = [
+      { x: -2.62, y: 2.32, z: 0 }, { x: 2.62, y: 2.32, z: 0 },
+      { x: 2.70, y: -2.36, z: 0 }, { x: -2.70, y: -2.36, z: 0 }
+    ];
+    bmDetailGhost(outline, alpha);
+    bmBox(faces, { x: 0, y: -2.18, z: -0.18 }, { x: 5.02, y: 0.48, z: 1.90 },
+      srMixColor(BM_VIOLET, BM_INK, 0.30), 0.96, {}, { strokeAlpha: 0.96, lineWidth: 2.2 });
+    const blocks = [
+      { x: -1.56, y: -1.40, z: -0.10, r: -0.08, w: 1.42, h: 1.02 },
+      { x: -0.04, y: -1.54, z: 0.16, r: 0.05, w: 1.54, h: 1.05 },
+      { x: 1.52, y: -1.38, z: -0.02, r: 0.07, w: 1.38, h: 1.00 },
+      { x: -1.24, y: -0.24, z: 0.20, r: 0.07, w: 1.58, h: 1.08 },
+      { x: 0.10, y: -0.04, z: -0.12, r: -0.04, w: 1.30, h: 1.24 },
+      { x: 1.34, y: -0.30, z: 0.12, r: -0.08, w: 1.46, h: 1.08 },
+      { x: -0.92, y: 0.92, z: -0.04, r: -0.07, w: 1.62, h: 1.12 },
+      { x: 0.16, y: 1.34, z: 0.22, r: 0.04, w: 1.22, h: 1.28 },
+      { x: 1.12, y: 0.88, z: -0.10, r: 0.08, w: 1.56, h: 1.10 }
+    ];
+    blocks.forEach((block, index) => {
+      const column = index % 3;
+      const row = Math.floor(index / 3);
+      const settle = join * (column - 1);
+      const color = index === 4
+        ? srMixColor(BM_VIOLET, BM_INK, 0.10)
+        : index % 3 === 0
+          ? srMixColor(BM_VIOLET, BM_CYAN, 0.10)
+          : index % 3 === 1
+            ? srMixColor(BM_VIOLET, BM_GREEN, 0.09)
+            : BM_VIOLET;
+      const halfW = block.w * 0.5;
+      const halfH = block.h * 0.5;
+      const polygon = index % 3 === 0
+        ? [[-halfW, -halfH], [halfW * 0.82, -halfH], [halfW, halfH * 0.70], [-halfW * 0.76, halfH]]
+        : index % 3 === 1
+          ? [[-halfW * 0.90, -halfH], [halfW, -halfH * 0.78], [halfW * 0.76, halfH], [-halfW, halfH * 0.72]]
+          : [[-halfW, -halfH * 0.72], [halfW * 0.86, -halfH], [halfW, halfH], [-halfW * 0.72, halfH * 0.82]];
+      bmPrism(faces, polygon,
+        { x: block.x - settle, y: block.y - join * (row - 1) * 0.34, z: block.z },
+        1.54, color, 0.72 + row * 0.08,
+        { z: block.r + (activeSub === 0 ? (index - 4) * 0.008 : 0), y: (index % 2 ? 0.035 : -0.025) },
+        { strokeAlpha: 0.92, lineWidth: 1.82 });
+    });
+    bmBox(faces, { x: 0, y: 2.18 + (activeSub === 2 ? -0.18 : 0.08), z: -0.10 }, { x: 4.72, y: 0.44, z: 1.82 },
+      srMixColor(BM_INK, BM_VIOLET, 0.34), 0.92, {}, { strokeAlpha: 0.98, lineWidth: 2.2 });
+    bmRenderFaces(faces, alpha, true);
+
+    if (activeSub >= 1) {
+      for (let column = -1; column <= 1; column++) {
+        bmLine3({ x: column * 1.18, y: 2.02, z: 1.02 }, { x: column * 1.50, y: -1.94, z: 1.02 },
+          column === 0 ? BM_GOLD : column < 0 ? BM_CYAN : BM_GREEN,
+          alpha * (activeSub === 2 ? 0.72 : 0.48), column === 0 ? 1.35 : 0.95, true);
+      }
+    }
+    if (activeSub === 2) bmReturnFibres(0.74, alpha, true);
+  }
+
+  drawMachineField = function bmMachineField(t, alpha) { bmMachineGeometry(t, alpha); };
+  drawMakerField = function bmMakerField(t, alpha) { bmMakerGeometry(t, alpha); };
+  drawRealityField = function bmRealityField(t, alpha) { bmWorldGeometry(t, alpha); };
+
+  drawDetail = function bmDetail(t, alpha) {
+    if (!activeWorld || alpha <= 0.002) return;
+    const dt = Math.min(0.05, Math.max(0.003, t - bmLastFrame));
+    bmDetailGhostYaw = damp(bmDetailGhostYaw, detailYaw, 1.18, dt);
+    bmDetailGhostPitch = damp(bmDetailGhostPitch, detailPitch, 1.08, dt);
+    if (activeWorld === 'machine') drawMachineField(t, alpha);
+    else if (activeWorld === 'maker') drawMakerField(t, alpha);
+    else drawRealityField(t, alpha);
+
+    const pins = bmDetailPins();
+    const points = detailPoints();
+    points.forEach((point, index) => Object.assign(subScreen[index], point));
+    pins.forEach((pin, index) => {
+      const projected = bmBearing(pin, activeWorld, t + index * 0.7, alpha, index === activeSub || index === hoverSub, true);
+      bmLeader(projected, bmDetailRail(index), WORLD[activeWorld].rgb, alpha);
+    });
+    ctx.globalAlpha = 1;
+  };
+
+  updateLabels = function bmLabels() {
+    if (++labelTick % 2) return;
+    const mix = ease(viewMix);
+    worldKeys.forEach((key) => {
+      const element = labels[key];
+      if (!element) return;
+      const rail = bmWorldRail(key);
+      element.style.left = `${rail.x}px`;
+      element.style.top = `${rail.y}px`;
+      element.style.opacity = String(clamp(1 - mix * 2.1, 0, 1));
+      element.style.pointerEvents = mix < 0.25 ? 'auto' : 'none';
+      element.tabIndex = mix < 0.25 ? 0 : -1;
+      element.setAttribute('aria-hidden', String(mix >= 0.25));
+    });
+    if (unityLabel) {
+      const center = bmCenter(false);
+      unityLabel.style.left = `${center.x}px`;
+      unityLabel.style.top = `${center.y + bmScale(false) * 3.38}px`;
+      unityLabel.style.opacity = String(clamp(1 - mix * 2.2, 0, 1));
+    }
+
+    if (activeWorld && mix > 0.22) {
+      subLabels.forEach((element, index) => {
+        if (!element) return;
+        const rail = bmDetailRail(index);
+        element.style.left = `${rail.x}px`;
+        element.style.top = `${rail.y}px`;
+        const visible = ease((mix - 0.22) / 0.5);
+        element.style.opacity = String(visible);
+        element.style.pointerEvents = mix > 0.65 ? 'auto' : 'none';
+        element.tabIndex = mix > 0.65 ? 0 : -1;
+        element.setAttribute('aria-hidden', String(mix <= 0.65));
+        element.setAttribute('aria-pressed', String(index === activeSub));
+        element.style.setProperty('--sub-accent', WORLD[activeWorld].css);
+        element.classList.toggle('active', index === activeSub);
+      });
+    } else {
+      subLabels.forEach((element) => {
+        if (!element) return;
+        element.style.opacity = '0';
+        element.style.pointerEvents = 'none';
+        element.tabIndex = -1;
+        element.setAttribute('aria-hidden', 'true');
+      });
+    }
+    if (back) {
+      const visible = Boolean(activeWorld && mix > 0.05);
+      back.tabIndex = visible ? 0 : -1;
+      back.setAttribute('aria-hidden', String(!visible));
+    }
+    app?.classList.toggle('detail', Boolean(activeWorld && mix > 0.05));
+  };
+
+  const bmEnterWorldBase = enterWorld;
+  enterWorld = function bmEnterWorld(key) {
+    bmEnterWorldBase(key);
+    window.setTimeout(() => back?.focus?.({ preventScroll: true }), reduced ? 0 : 180);
+  };
+
+  back?.addEventListener('click', () => {
+    const returnKey = activeWorld;
+    window.setTimeout(() => labels[returnKey]?.focus?.({ preventScroll: true }), reduced ? 0 : 260);
+  });
+
+  setHint = function bmHint() {
+    if (!hint || window.__dreamUnityGameActive) return;
+    hint.textContent = activeWorld
+      ? 'TURN THE INSTRUMENT · CHOOSE A FORCE'
+      : 'TURN THE INSTRUMENT · MAKE THE GHOST BEAR WEIGHT';
+  };
+
+  render = function bmRender(t) {
+    srReadForm(t);
+    drawBackground(t);
+    const mix = ease(viewMix);
+    drawOverview(t, Math.pow(1 - mix, 2.05));
+    drawDetail(t, ease(mix));
+    updateLabels();
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = 1;
+  };
