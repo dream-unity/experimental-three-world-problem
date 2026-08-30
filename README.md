@@ -1,16 +1,18 @@
 # Dream Unity — Experimental Three-World Problem
 
-A visual-first, mobile-compatible 3D portal containing nine distinct arcade experiences across three coupled worlds. The homepage is **The Returning Dream**: a Stage Coral world-instrument in which awareness, agency, imagination and matter operate as one user-directed temporal body rather than disconnected planets, a decorative emblem or a literal illustration of the essay.
+A visual-first, mobile-compatible 3D portal containing nine distinct arcade experiences across three coupled worlds. The homepage is **Awaken the True War**: a Stage Coral world-instrument in which systemic integration is retained but placed under singular, embodied authorship. Awareness, agency, imagination and matter operate as one commanded body rather than disconnected planets, a decorative emblem or a literal illustration of the essay.
 
 1. **Dream Machine** — Perceive, Model, Predict.
 2. **Dream Maker** — Intend, Act, Become.
 3. **Dream World** — Matter, Structure, Emerge.
 
-The overview can be orbited by mouse or touch. One continuous 3D knot moves through **Dream → Compress → Realise → Return**. Diffuse cyan possibility becomes an emerald braid of agency, crystallises as violet matter, and dissolves into a renewed field of possibility. The process makes Dream Unity's central movement visible: dream worlds are compressed, synthesised and realised in the physical before returning to the ether that can dream again.
+The overview can be orbited by mouse or touch. One continuous 3D topology—the **Sovereign Fold**—moves through **Dream → Compress → Realise → Return**. Diffuse cyan possibility becomes an emerald tension membrane, crystallises as ultraviolet load-bearing matter, conducts through a single amber axis, and dissolves upstream into a renewed field of possibility. The process makes Dream Unity's central movement visible: dream worlds are compressed, synthesised and realised in the physical before returning changed to the ether that can dream again.
 
-Three temporal layers inhabit the same geometry. A colourless delayed path is the inherited ghost: reflection and history following after the living system. Several faint paths ahead are remembered tomorrows—possibilities rather than prophecy or fate. The vivid present responds first to the visitor's hand, and its lower passage becomes a crystalline body-anchor. At the centre, an amber three-dimensional aperture is the owned core where awareness becomes agency. Dream Machine is a polyhedral cognition field; Dream Maker is a converging braid; Dream World is a material lattice. Selecting a world exposes its internal triad; selecting an internal label opens the corresponding game.
+The colourless shell is the inherited predictive ghost. Before the published score's decisive late re-entry at 4:36.8 it receives the visitor's gesture first and the living topology follows. At re-entry causality reverses: the vivid body becomes direct while the ghost can only lag. Its facets do not explode as spectacle; they reorganise into useful structure around Dream World. The score's first near-void strips the work to one load-bearing chord and contact shadow; a second held breath at 5:17.6 interrupts even the liberated form before the final crown. Cyan ether, emerald agency and ultraviolet matter then conduct through one sovereign axis; the ending sheds solids into lines and lines into returning particles. Dream Machine is a polyhedral cognition field; Dream Maker is a converging braid; Dream World is a material lattice. Selecting a world exposes its internal triad; selecting an internal label opens the corresponding game.
 
-The homepage attempts to begin **I Remember Tomorrow** automatically and exposes a persistent score control. Browsers that defer audible autoplay start it on the visitor's first interaction. An explicit off choice is remembered locally.
+The homepage retains **I Remember Tomorrow** as its published score and exposes a persistent score control. Its measured low, mid and high energy, spectral change and attacks affect gravity, membrane shear, refraction, facet birth and tension. A deterministic full-song anatomy preserves the material narrative before browser audio policy allows live analysis. Browsers that defer audible autoplay start it on the visitor's first interaction. An explicit off choice is remembered locally.
+
+The visual language continues into all nine games and the Social Agency Lab: the former neon bunker is translated onto the same white ground, hard-edged panels and cyan–emerald–ultraviolet material spectrum. The interaction system remains intact, but it now reads as another state of the Sovereign Fold rather than a separate product skin.
 
 The experimental Unity voice and text console is intentionally paused. It is not mounted on the homepage, no microphone, speech, Puter or assistant runtime is loaded by visitors, and its former public reply endpoint returns a disabled response. The dormant frontend source remains in the repository for later work.
 
@@ -170,7 +172,7 @@ The governing distinction remains controlled as-if conviction, not literal confu
 
 ### Dream Unity overview
 
-- **Mouse or touch drag:** orbit the complete temporal dream body; the living structure moves before its delayed ghost.
+- **Mouse or touch drag:** orbit the complete temporal dream body; the predictive ghost leads before the musical awakening, then the living structure takes command and the ghost lags.
 - **Pinch or wheel:** zoom.
 - **Two-finger twist:** roll.
 - **Tap a world, then an internal title:** open its game.
@@ -193,9 +195,9 @@ The governing distinction remains controlled as-if conviction, not literal confu
 ## Key files
 
 - `main.js` — versioned three-world visual loader.
-- `visual-parts/remembered-tomorrow-10.txt` — procedural temporal knot, delayed ghost, plural future paths, compression braid, matter crystallisation, Unity aperture and three immersive world fields.
+- `visual-parts/remembered-tomorrow-10.txt` — procedural Sovereign Fold, reorganising ghost shell, causal reversal, light-axis incision, compression braid, matter crystallisation and three immersive world fields.
 - `unity-cycle.css` — pure-white, low-interface visual presentation with crisp cyan, emerald, ultraviolet and amber phase identities.
-- `unity-ui.js` — homepage score control, autoplay recovery and keyboard world navigation.
+- `unity-ui.js` — homepage score control, guarded audio analyser, deterministic song anatomy, autoplay recovery and keyboard world navigation.
 - `voice.js` and `voice.css` — paused, unmounted experimental voice-console source retained for future work.
 - `api/realtime-session.js` — lightweight `410 VOICE_DISABLED` tombstone for the paused public reply endpoint.
 - `assets/i-remember-tomorrow.mp3` — homepage score.
