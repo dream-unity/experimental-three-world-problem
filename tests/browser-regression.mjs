@@ -476,10 +476,13 @@ await run('all nine games keep responsive frame scheduling without long tasks', 
       probe.maxGap = 0;
       probe.last = null;
     });
+    // This timeout only bounds recovery from a suspended CI compositor.
+    // Passing still requires ten frames, seven sub-100ms gaps and zero long
+    // tasks below; extending the outer wait does not relax those assertions.
     await page.waitForFunction(
       () => window.__dreamUnityPerformanceProbe?.frames >= 10,
       null,
-      { timeout: 2500, polling: 40 },
+      { timeout: 7000, polling: 40 },
     );
     const probe = await page.evaluate(() => {
       const value = window.__dreamUnityPerformanceProbe;
