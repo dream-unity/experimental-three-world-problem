@@ -1,8 +1,8 @@
 (() => {
   'use strict';
 
-  const VERSION = '20260830-sovereign-nocturne-16';
-  const source = `./visual-parts/sovereign-nocturne-16.js?v=${VERSION}`;
+  const VERSION = '20260830-sovereign-nocturne-17';
+  const source = `./visual-parts/sovereign-nocturne-17.js?v=${VERSION}`;
   const loader = document.getElementById('loading');
   const hint = document.getElementById('hint');
   const release = () => loader?.classList.add('hide');

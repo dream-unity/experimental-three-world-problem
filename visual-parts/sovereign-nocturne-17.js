@@ -2,7 +2,7 @@
   'use strict';
 
   const RENDERER_ID = 'sovereign-nocturne';
-  const RENDERER_VERSION = '20260830-sovereign-nocturne-16';
+  const RENDERER_VERSION = '20260830-sovereign-nocturne-17';
   const SILENT_CYCLE_SECONDS = 40;
   const TAU = Math.PI * 2;
   const $ = (selector) => document.querySelector(selector);
@@ -275,6 +275,7 @@
   const LAMELLAE = [
     {
       world: 3,
+      layer: 0,
       stations: [0, 0.15, 0.31, 0.49, 0.66, 0.83, 1],
       points: [
         { x: -9.50, y: -2.27, z: 0.05 },
@@ -291,6 +292,26 @@
       sideAxis: { x: 0, y: -0.42, z: 1 },
       camber: 0.025,
       thickness: 0.045,
+    },
+    {
+      world: 3,
+      layer: 1,
+      stations: [0, 0.14, 0.31, 0.49, 0.68, 0.84, 1],
+      points: [
+        { x: -10.20, y: -1.62, z: 0.28 },
+        { x: -6.60, y: -1.30, z: 0.74 },
+        { x: -3.30, y: -1.77, z: 0.14 },
+        { x: -0.30, y: -1.18, z: 0.88 },
+        { x: 3.00, y: -1.72, z: -0.08 },
+        { x: 6.50, y: -1.26, z: 0.69 },
+        { x: 10.20, y: -1.55, z: 0.20 },
+      ],
+      leftWidths: [0.05, 0.12, 0.07, 0.16, 0.06, 0.12, 0.08],
+      rightWidths: [1.05, 1.42, 0.84, 1.28, 0.76, 1.36, 0.92],
+      banks: [-0.24, 0.18, -0.20, 0.29, -0.26, 0.17, -0.13],
+      sideAxis: { x: 0, y: -0.36, z: 1 },
+      camber: 0.07,
+      thickness: 0.06,
     },
   ];
 
@@ -561,7 +582,7 @@
             point.y + extrusionNormal.y * thickness * direction,
             point.z + extrusionNormal.z * thickness * direction,
             normal.x * direction, normal.y * direction, normal.z * direction,
-            t, s, config.world, back,
+            t, s, config.layer || 0, back,
             extrusionNormal.x * direction,
             extrusionNormal.y * direction,
             extrusionNormal.z * direction,
@@ -830,32 +851,43 @@
       color += mix(coral, bone, 0.58) * rightLip * lipEnergy;
 
       float side = max(0.0, sd - halfWidth);
-      float eventWindow = smoothstep(0.30, 0.42, p)
-        * (1.0 - smoothstep(0.82, 0.94, p));
+      float releaseFlow = fbm(vec2(p * 6.3 + side * 2.1,
+        side * 9.4 - p * 3.2 + 1.7));
+      float shearPhase = p + side * mix(0.72, 0.88, portrait)
+        + (releaseFlow - 0.5) * 0.10;
+      float eventWindow = smoothstep(0.25, 0.39, shearPhase)
+        * (1.0 - smoothstep(0.96, 1.14, shearPhase));
       float releaseGap = mix(0.018, 0.026, portrait)
-        + 0.012 * smoothstep(0.46, 0.70, p);
-      float releaseWidth = mix(0.055, 0.115, portrait)
-        + mix(0.180, 0.150, portrait) * smoothstep(0.36, 0.72, p);
-      float releaseFlow = fbm(vec2(p * 5.1 + 1.8, side * 7.2 - 3.1));
-      float openWash = smoothstep(releaseGap, releaseGap + 0.010, side)
-        * exp(-pow(max(0.0, side - releaseGap) / releaseWidth, 1.28))
-        * eventWindow
-        * (0.42 + 0.58 * smoothstep(0.25, 0.67, releaseFlow));
-      float tornRest = smoothstep(0.035, 0.080, abs(p - 0.515))
-        * smoothstep(0.025, 0.065, abs(p - 0.685));
-      openWash *= tornRest;
-      float internalCaustic = exp(-pow((side - (releaseGap + 0.030
-        + 0.115 * smoothstep(0.40, 0.72, p)))
-        / (0.018 + 0.032 * p), 2.0))
-        * eventWindow * smoothstep(0.42, 0.72, releaseFlow) * tornRest;
-      vec3 nacre = mix(mix(coral, bone, 0.52), mix(bone, lilac, 0.46),
-        smoothstep(0.38, 0.78, p));
-      color = mix(color, nacre, openWash
-        * (0.18 + 0.32 * uReconstitution + 0.38 * uCrown));
-      color += mix(bone, coral, 0.20) * internalCaustic
-        * (0.12 + 0.28 * uCrown);
+        + 0.010 * smoothstep(0.42, 0.74, p)
+        + 0.006 * sin(p * 9.7 + side * 13.0 + releaseFlow * 2.4);
+      float releaseWidth = mix(0.060, 0.110, portrait)
+        + mix(0.155, 0.130, portrait) * smoothstep(0.34, 0.76, shearPhase);
+      float tail = exp(-pow(max(0.0, side - releaseGap)
+        / max(0.001, releaseWidth), 1.22));
+      float releaseGrain = smoothstep(0.22, 0.74,
+        noise(vec2(shearPhase * 17.0 + 2.8, side * 23.0 - p * 5.0)));
+      float openWash = smoothstep(releaseGap, releaseGap + 0.012, side)
+        * tail * eventWindow * (0.38 + 0.62 * releaseGrain);
+      float restA = exp(-pow((shearPhase - 0.54) / 0.060, 2.0)
+        - pow((side - releaseGap - 0.075) / 0.042, 2.0));
+      float restB = exp(-pow((shearPhase - 0.76) / 0.075, 2.0)
+        - pow((side - releaseGap - 0.125) / 0.052, 2.0));
+      openWash *= 1.0 - clamp(restA * 0.78 + restB * 0.68, 0.0, 0.84);
+      float veinAxis = releaseGap + 0.032
+        + 0.086 * smoothstep(0.34, 0.82, shearPhase)
+        + 0.016 * sin(shearPhase * 12.7 + releaseFlow * 3.1);
+      float internalCaustic = exp(-pow((side - veinAxis)
+        / (0.010 + 0.014 * smoothstep(0.36, 0.86, shearPhase)), 2.0))
+        * eventWindow * openWash;
+      float nacrePhase = smoothstep(0.30, 1.02, shearPhase);
+      vec3 nacre = mix(mix(coral, bone, 0.56), mix(bone, lilac, 0.40), nacrePhase);
+      nacre = mix(nacre, petrol, 0.065 * releaseFlow);
+      float washEnergy = 0.16 + 0.22 * uReconstitution + 0.30 * uCrown;
+      color = mix(color, nacre, openWash * washEnergy);
+      color += mix(bone, coral, 0.18) * internalCaustic
+        * (0.08 + 0.20 * uCrown);
       color += mix(petrol, vec3(0.060, 0.390, 0.285), 0.50)
-        * openWash * releaseFlow * 0.035;
+        * openWash * releaseFlow * 0.020;
 
       float phraseEnergy = 0.14 + 0.35 * uGather + 0.13 * uCrown;
       vec3 phraseCyan = mix(left1, bone, 0.18);
@@ -967,36 +999,29 @@
         float detailRelief = sin(aAlong * 9.1 + aAcross * 3.7 - movingTime * 0.022) * 0.085
           + sin(aAlong * 4.3 - aAcross * 5.9 + 1.7) * 0.055
           + sin(aAlong * 17.3 + aAcross * 8.1) * 0.024;
-        float ledgeA = -0.43 + 0.10 * sin(aAlong * 8.3 + 1.1)
-          + 0.035 * sin(aAlong * 19.7);
-        float ledgeB = 0.18 + 0.075 * sin(aAlong * 5.9 - 0.8)
-          + 0.045 * sin(aAlong * 15.1);
-        float terraces = smoothstep(ledgeA - 0.045, ledgeA + 0.045, aAcross) * 0.190
-          - smoothstep(ledgeB - 0.055, ledgeB + 0.055, aAcross) * 0.125;
-        float crownRidge = exp(-pow((aAcross + 0.12
-          - 0.11 * sin(aAlong * 7.6 + 0.9)) / 0.17, 2.0))
-          * (0.62 + 0.38 * sin(aAlong * 13.1 + 2.4));
-        float heaveA = exp(-pow((aAlong - 0.34) / 0.13, 2.0)
-          - pow((aAcross + 0.32) / 0.34, 2.0)) * 0.28;
-        float heaveB = exp(-pow((aAlong - 0.51) / 0.10, 2.0)
-          - pow((aAcross - 0.04) / 0.26, 2.0)) * 0.19;
-        float heaveC = exp(-pow((aAlong - 0.67) / 0.17, 2.0)
-          - pow((aAcross - 0.28) / 0.38, 2.0)) * 0.24;
-        float negativeCleft = exp(-pow((aAlong - 0.57) / 0.075, 2.0)
-          - pow((aAcross + 0.02) / 0.22, 2.0)) * 0.22;
-        float heave = heaveA + heaveB + heaveC - negativeCleft;
-        float terraceHeave = floor(max(0.0, heave) * 16.0) / 16.0;
-        heave = mix(heave, terraceHeave, 0.35);
-        float brokenTerrace = 0.62 + 0.38 * sin(aAlong * 12.7 + aAcross * 4.1);
-        point += deformNormal * (detailRelief + terraces * brokenTerrace
-          + crownRidge * 0.14 + heave)
-          * worldMask * worldChange;
+        float lineA = -0.57 + 0.095 * sin(aAlong * 7.3 + 0.6)
+          + 0.035 * sin(aAlong * 21.1 - 1.4);
+        float lineB = -0.08 + 0.120 * sin(aAlong * 5.1 - 1.2)
+          + 0.040 * sin(aAlong * 16.7 + 0.9);
+        float gateA = max(
+          smoothstep(0.04, 0.11, aAlong) * (1.0 - smoothstep(0.40, 0.49, aAlong)),
+          smoothstep(0.55, 0.63, aAlong) * (1.0 - smoothstep(0.92, 0.985, aAlong)));
+        float gateB = smoothstep(0.15, 0.23, aAlong)
+          * (1.0 - smoothstep(0.72, 0.80, aAlong));
+        float levelA = smoothstep(lineA - 0.040, lineA + 0.040, aAcross) * gateA;
+        float levelB = smoothstep(lineB - 0.052, lineB + 0.052, aAcross) * gateB;
+        float ravine = exp(-pow((aAlong - 0.585) / 0.082, 2.0)
+          - pow((aAcross - (lineB - 0.07)) / 0.18, 2.0));
+        float relief = 0.24 * levelA + 0.17 * levelB - 0.23 * ravine;
+        float surfaceScale = mix(1.0, 0.42, step(0.5, aLamella));
+        point += deformNormal * (detailRelief * 0.42 + relief)
+          * worldMask * worldChange * surfaceScale;
         point.z += worldMask * worldChange
-          * (0.24 * (aAcross + 1.0) * 0.5 + terraces * 0.92
-            + crownRidge * 0.30 + heave * 0.46);
+          * (0.13 * (aAcross + 1.0) + 0.42 * levelA
+            + 0.29 * levelB - 0.18 * ravine) * surfaceScale;
         point.y += worldMask * worldChange
-          * (0.16 + smoothstep(-0.20, 0.92, aAcross) * 0.22
-            + terraces * 0.18 + crownRidge * 0.08 + heave * 0.32);
+          * (0.10 + 0.15 * levelA + 0.11 * levelB - 0.08 * ravine)
+          * surfaceScale;
         point.z += machineMask * worldChange * horizonProximity * 0.018;
         point.x += makerMask * worldChange * cleave * sin(aAlong * 5.4) * 0.024;
         point.y += uReturn * horizonProximity * (0.025 + cleave * 0.040);
@@ -1142,6 +1167,18 @@
 
       if (uMaterial < 0.5) {
         if (vBack > 0.5) discard;
+        float ridgeTag = step(0.5, vLamella);
+        float ridgeReachA = smoothstep(0.03, 0.08, vAlong)
+          * (1.0 - smoothstep(0.34, 0.39, vAlong));
+        float ridgeReachB = smoothstep(0.47, 0.52, vAlong)
+          * (1.0 - smoothstep(0.70, 0.75, vAlong));
+        float ridgeReachC = smoothstep(0.82, 0.86, vAlong)
+          * (1.0 - smoothstep(0.95, 0.98, vAlong));
+        float ridgeReach = max(ridgeReachA, max(ridgeReachB, ridgeReachC));
+        float ridgeErosion = smoothstep(0.30, 0.62,
+          rockNoise(vec2(vAlong * 8.7 + 4.1, vAcross * 4.3 - 2.8)));
+        if (ridgeTag > 0.5
+          && (worldRelief < 0.04 || ridgeReach * ridgeErosion < 0.18)) discard;
         vec2 geologyPoint = vec2(vAlong * 3.10 + vLamella * 5.70, vAcross * 1.55);
         float macro = rockFbm(geologyPoint);
         float grit = rockNoise(geologyPoint * 6.30 + vec2(4.8, -3.2));
@@ -1163,8 +1200,8 @@
         vec3 deepRock = mix(vec3(0.018, 0.016, 0.027), vec3(0.140, 0.050, 0.062), 0.13 + warpA * 0.19);
         vec3 rockColor = mix(upperRock, middleRock, middleStratum);
         rockColor = mix(rockColor, deepRock, deepStratum);
-        rockColor += mix(ultramarine, bone, 0.24) * upperSeam * 0.014;
-        rockColor += mix(vec3(0.108, 0.038, 0.050), violet, 0.22) * lowerSeam * 0.012;
+        rockColor += mix(ultramarine, bone, 0.24) * upperSeam * 0.0;
+        rockColor += mix(vec3(0.108, 0.038, 0.050), violet, 0.22) * lowerSeam * 0.0;
         rockColor += mix(bone, ultramarine, 0.58) * mineral * (0.028 + 0.050 * wrapDiffuse);
         color = rockColor * (0.86 + 0.28 * wrapDiffuse + 0.10 * skyFill);
 
@@ -1206,18 +1243,40 @@
         color += mix(violet, bone, 0.24) * worldCleave
           * (cleaveEdge * (0.210 + 0.290 * climax)
             + worldDensity * groundBloom * 0.260);
-        float ravineA = exp(-pow((vAlong - 0.51) / 0.070, 2.0)
-          - pow((vAcross - 0.02) / 0.235, 2.0));
-        float ravineB = exp(-pow((vAlong - 0.66) / 0.085, 2.0)
-          - pow((vAcross - 0.25) / 0.270, 2.0));
-        float cleftOcclusion = clamp(ravineA * 0.24 + ravineB * 0.19, 0.0, 0.36);
-        color *= 1.0 - worldCleave * cleftOcclusion;
-        float terraceBreak = smoothstep(0.76, 0.91,
-          rockFbm(vec2(vAlong * 7.4 + 3.1, vAcross * 3.2 - 5.7)));
-        float broadSpec = pow(max(0.0, dot(normal, halfDirection)), 22.0);
-        float rareSpec = pow(max(0.0, dot(normal, halfDirection)), 90.0) * terraceBreak;
-        color += mix(violet, bone, 0.36) * worldCleave
-          * (broadSpec * 0.080 + rareSpec * 0.160);
+        float lineAFragment = -0.57 + 0.095 * sin(vAlong * 7.3 + 0.6)
+          + 0.035 * sin(vAlong * 21.1 - 1.4);
+        float lineBFragment = -0.08 + 0.120 * sin(vAlong * 5.1 - 1.2)
+          + 0.040 * sin(vAlong * 16.7 + 0.9);
+        float gateAFragment = max(
+          smoothstep(0.04, 0.11, vAlong) * (1.0 - smoothstep(0.40, 0.49, vAlong)),
+          smoothstep(0.55, 0.63, vAlong) * (1.0 - smoothstep(0.92, 0.985, vAlong)));
+        float gateBFragment = smoothstep(0.15, 0.23, vAlong)
+          * (1.0 - smoothstep(0.72, 0.80, vAlong));
+        float edgeA = exp(-abs(vAcross - lineAFragment) * 24.0) * gateAFragment;
+        float edgeB = exp(-abs(vAcross - lineBFragment) * 20.0) * gateBFragment;
+        float ravineShadow = exp(-pow((vAlong - 0.585) / 0.082, 2.0)
+          - pow((vAcross - (lineBFragment - 0.07)) / 0.18, 2.0));
+        color *= 1.0 - (1.0 - ridgeTag) * worldCleave
+          * clamp(edgeA * 0.27 + edgeB * 0.22 + ravineShadow * 0.30, 0.0, 0.42);
+        float capNoise = rockNoise(vec2(vAlong * 11.2 + 3.7, vAcross * 6.1 - 4.8));
+        float capA = smoothstep(0.82, 0.94, capNoise)
+          * smoothstep(lineAFragment, lineAFragment + 0.08, vAcross) * gateAFragment;
+        float capB = smoothstep(0.85, 0.96, capNoise)
+          * smoothstep(lineBFragment, lineBFragment + 0.09, vAcross) * gateBFragment;
+        color += mix(violet, bone, 0.34) * (1.0 - ridgeTag) * worldCleave
+          * (capA * 0.090 + capB * 0.070);
+        if (ridgeTag > 0.5) {
+          float ridgeFacing = clamp(normal.y * 0.5 + 0.5, 0.0, 1.0);
+          float ridgePatch = smoothstep(0.82, 0.95,
+            rockNoise(vec2(vAlong * 13.7 - 2.4, vAcross * 7.6 + 5.1)));
+          vec3 ridgeStone = mix(vec3(0.018, 0.012, 0.028),
+            vec3(0.150, 0.090, 0.190), 0.24 + macro * 0.34);
+          color = ridgeStone * (0.68 + 0.28 * wrapDiffuse + 0.10 * ridgeFacing);
+          color *= 1.0 - (1.0 - ridgeFacing) * 0.24;
+          color += mix(violet, bone, 0.38) * ridgePatch
+            * pow(max(0.0, dot(normal, halfDirection)), 24.0)
+            * (0.10 + 0.15 * climax);
+        }
 
         color *= 1.0 - uSubtraction * (0.18 + macro * 0.12);
         color *= mix(1.0, 1.22, worldCleave);
