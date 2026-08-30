@@ -210,3 +210,126 @@ html,body{font-family:Inter,"Helvetica Neue",Arial,ui-sans-serif,system-ui,sans-
 }
 
 @media(prefers-reduced-motion:reduce){.score-mark i{animation:none}.manifesto,.cycle-index,.score-control,.world-label,.sub-label{transition:none}}
+
+/* The Bearing Mirror: a fixed architectural composition around one compact,
+   load-bearing body. Labels live on rails; they never ride the sculpture. */
+.brand{top:clamp(20px,3.4vh,34px)}
+.brand small{color:#4f5766;letter-spacing:.27em}
+.live{right:clamp(101px,8vw,132px)}
+.score-control{
+  top:clamp(17px,2.9vh,29px);
+  right:clamp(18px,3vw,46px);
+  width:68px;
+  height:44px;
+  padding:0 2px;
+  display:grid;
+  grid-template-columns:1fr;
+  grid-template-rows:1fr 1fr;
+  border:0;
+  border-bottom:1px solid rgba(11,16,32,.34);
+  background:transparent;
+}
+.score-control:hover,.score-control:focus-visible{border-color:var(--ink);transform:none}
+.score-mark{display:none}
+.score-control small,.score-control b{grid-column:1;text-align:right}
+.score-control small{font-size:5px}.score-control b{font-size:6.5px;margin-top:2px}
+
+.manifesto{
+  left:3.25vw;
+  top:30vh;
+  bottom:auto;
+  width:min(420px,24vw);
+}
+.manifesto>p{max-width:none;margin:0 0 24px;color:#454d5d;font-size:6.5px;letter-spacing:.25em}
+.manifesto h1{
+  margin:0 0 25px;
+  color:var(--ink);
+  font-family:"Arial Narrow","Helvetica Neue",Arial,sans-serif;
+  font-size:clamp(38px,4.25vw,76px);
+  font-stretch:condensed;
+  font-weight:950;
+  line-height:.78;
+  letter-spacing:-.075em;
+}
+.manifesto h1 span{color:var(--ink)}
+.manifesto h1 em{color:var(--reality);font-style:normal}
+.manifesto-copy{
+  gap:2px;
+  color:#454d5d;
+  font-family:"Helvetica Neue",Arial,sans-serif;
+  letter-spacing:.01em;
+}
+.manifesto-copy span{font-size:clamp(9px,.68vw,11px);line-height:1.32}
+.manifesto-copy em{
+  margin-top:7px;
+  color:var(--ink);
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:clamp(8px,.72vw,11px);
+  font-style:normal;
+  font-weight:850;
+  line-height:1;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+}
+.manifesto-rule{margin-top:18px}
+
+.world-label{
+  width:190px;
+  min-width:190px;
+  min-height:52px;
+  padding:9px 12px 9px 0;
+  grid-template-columns:32px 1fr;
+  border-left-width:4px;
+  border-bottom-color:rgba(11,16,32,.24);
+  background:rgba(255,255,255,.97);
+}
+.world-label>.world-copy strong{font-size:10px;letter-spacing:.19em}
+.world-label>.world-copy small{font-size:6.5px;letter-spacing:.13em}
+.world-label:hover,.world-label:focus-visible{background:#fff;transform:translate(-50%,-50%)}
+.world-label:hover::after,.world-label:focus-visible::after{border-color:rgba(11,16,32,.22)}
+
+.unity-label{gap:4px;white-space:nowrap}
+.unity-label span{width:54px;height:1px;background:var(--unity)}
+.unity-label b{font-size:6.5px;letter-spacing:.25em}
+.unity-label small{font-size:5px;letter-spacing:.16em}
+
+.detail-title{top:clamp(22px,3.6vh,36px)}
+.sub-label{
+  width:144px;
+  min-width:144px;
+  min-height:44px;
+  padding:10px 12px;
+  border:0;
+  border-left:3px solid var(--sub-accent,var(--machine));
+  border-bottom:1px solid rgba(11,16,32,.25);
+  background:rgba(255,255,255,.97);
+  box-shadow:none;
+  text-align:left;
+}
+.sub-label strong{font-size:8px;letter-spacing:.20em}
+.sub-label:hover,.sub-label:focus-visible{border-bottom-color:var(--ink);transform:translate(-50%,-50%)}
+.sub-label.active{border:0;border-left:7px solid var(--sub-accent,var(--machine));border-bottom:2px solid var(--ink);background:#fff}
+.hint{border:0;border-top:1px solid rgba(11,16,32,.17);background:rgba(255,255,255,.97);padding:8px 12px}
+
+@media(max-width:900px){
+  .manifesto{left:18px;top:max(72px,calc(env(safe-area-inset-top) + 62px));width:min(300px,72vw)}
+  .manifesto>p{margin-bottom:13px;font-size:5px}
+  .manifesto h1{margin-bottom:12px;font-size:clamp(29px,7.6vw,46px);line-height:.80}
+  .manifesto-copy span{font-size:8px}.manifesto-copy em{font-size:7px}.manifesto-rule{display:none}
+  .world-label{width:min(29vw,150px);min-width:0;min-height:39px;padding:6px 5px 6px 0;grid-template-columns:20px 1fr;gap:4px;border-left-width:3px}
+  .world-label>.world-copy{gap:3px}.world-label>.world-copy strong{font-size:6.5px;letter-spacing:.10em}.world-label>.world-copy small{font-size:4px;letter-spacing:.04em}.world-label>.world-index{font-size:5px}
+  .unity-label b{font-size:5.5px}.unity-label small{font-size:4.5px}
+  .sub-label{width:min(29vw,132px);min-width:0;min-height:38px;padding:8px 7px;text-align:center}
+  .sub-label strong{font-size:6px;letter-spacing:.11em}
+}
+
+@media(max-width:520px){
+  .brand{left:13px}.brand i{width:34px}.brand span{font-size:7.5px}
+  .score-control{right:11px;width:56px;height:44px}
+  .manifesto{top:max(62px,calc(env(safe-area-inset-top) + 54px));width:76vw}
+  .manifesto>p{margin-bottom:10px;font-size:4.3px;letter-spacing:.18em}
+  .manifesto h1{font-size:clamp(25px,8.2vw,36px)}
+  .manifesto-copy{display:none}
+  .world-label>.world-copy small{display:none}
+  .unity-label small{display:none}
+}
