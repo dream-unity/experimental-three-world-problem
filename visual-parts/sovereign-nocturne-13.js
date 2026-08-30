@@ -108,10 +108,10 @@
   let holdStrength = 0;
   let holdTarget = 0;
 
-  let overviewYaw = 0.48;
-  let overviewPitch = -0.11;
-  let overviewRoll = 0.035;
-  let overviewZoom = 0.94;
+  let overviewYaw = 0.30;
+  let overviewPitch = -0.20;
+  let overviewRoll = -0.035;
+  let overviewZoom = 1.00;
   let overviewYawVelocity = 0;
   let overviewPitchVelocity = 0;
   let overviewRollVelocity = 0;
@@ -122,9 +122,9 @@
   let detailYawVelocity = 0;
   let detailPitchVelocity = 0;
   let detailRollVelocity = 0;
-  let ghostYaw = 0.56;
-  let ghostPitch = -0.06;
-  let ghostRoll = -0.02;
+  let ghostYaw = 0.38;
+  let ghostPitch = -0.12;
+  let ghostRoll = -0.055;
 
   let gestureTravel = 0;
   let gestureHadPinch = false;
@@ -136,25 +136,25 @@
   const subScreen = [0, 1, 2].map((index) => ({ x: 0, y: 0, r: 25, z: 0, index }));
 
   const WORLD_PINS = {
-    machine: { x: -0.44, y: -0.08, z: 0.15 },
-    maker: { x: 1.25, y: 1.15, z: 1.25 },
-    reality: { x: -0.90, y: -1.48, z: 1.10 },
+    machine: { x: -1.85, y: 0.18, z: 1.05 },
+    maker: { x: 0.00, y: 0.64, z: 1.15 },
+    reality: { x: 1.50, y: -0.94, z: 0.25 },
   };
   const DETAIL_PINS = {
     machine: [
-      { x: -1.02, y: -1.05, z: 1.10 },
-      { x: -0.44, y: -0.08, z: 0.15 },
-      { x: 0.18, y: 1.05, z: 1.00 },
+      { x: -1.85, y: 0.18, z: 1.05 },
+      { x: -0.25, y: -0.12, z: -0.55 },
+      { x: 1.65, y: 0.14, z: 0.85 },
     ],
     maker: [
-      { x: 0.55, y: 0.95, z: 0.95 },
-      { x: 1.25, y: 1.15, z: 1.25 },
-      { x: 1.88, y: 1.52, z: -0.20 },
+      { x: -1.45, y: 0.88, z: 0.55 },
+      { x: 0.00, y: 0.64, z: 1.15 },
+      { x: 1.35, y: 0.90, z: -0.35 },
     ],
     reality: [
-      { x: -1.48, y: -0.90, z: 0.35 },
-      { x: -0.90, y: -1.48, z: 1.10 },
-      { x: -0.35, y: -1.85, z: 0.65 },
+      { x: -1.55, y: -0.92, z: -0.30 },
+      { x: 0.05, y: -0.68, z: 1.00 },
+      { x: 1.50, y: -0.94, z: 0.25 },
     ],
   };
 
@@ -218,7 +218,7 @@
 
   function screenShift(detail = false) {
     const mix = detail ? ease(viewMix) : 0;
-    if (isCompactLayout()) return { x: 0.06, y: lerp(-0.065, 0.015, mix) };
+    if (isCompactLayout()) return { x: 0.04, y: lerp(-0.025, 0.015, mix) };
     return { x: lerp(0.115, -0.015, mix), y: lerp(0, 0.015, mix) };
   }
 
@@ -230,7 +230,7 @@
     const aspect = Math.max(0.25, width / Math.max(1, height));
     return {
       x: aspect < 0.95
-        ? lerp(0.55, 0.88, smoothstep(0.46, 0.75, aspect))
+        ? lerp(0.255, 0.58, smoothstep(0.46, 0.75, aspect))
         : clamp(aspect * 0.77, 0.88, 1.55),
       y: clamp(0.58 + aspect * 0.26, 0.70, 1),
     };
@@ -262,55 +262,76 @@
     };
   }
 
-  // Three topologically independent weather-fronts, interwoven in projection.
-  // The largest is the sovereign body; the other two are unequal incidents
-  // passing through its crown and grounded edge. None shares a root or hub.
+  // Three topologically independent tectonic strata occupy one horizon.
+  // They overlap in depth as a single pressure-field rather than forming a
+  // mascot, glyph, portal, or three diagrammatic objects.
   const LAMELLAE = [
     {
-      stations: [0, 0.22, 0.48, 0.74, 1],
+      stations: [0, 0.21, 0.48, 0.76, 1],
       points: [
-        { x: -0.62, y: -1.95, z: 0.20 },
-        { x: -1.02, y: -1.05, z: 1.00 },
-        { x: -0.44, y: -0.08, z: -0.15 },
-        { x: 0.18, y: 1.05, z: 0.90 },
-        { x: -0.12, y: 2.10, z: 0.10 },
+        { x: -3.35, y: -0.10, z: 0.30 },
+        { x: -1.85, y: 0.18, z: 1.05 },
+        { x: -0.25, y: -0.12, z: -0.55 },
+        { x: 1.65, y: 0.14, z: 0.85 },
+        { x: 3.35, y: -0.08, z: -0.25 },
       ],
-      leftWidths: [0.10, 0.66, 0.16, 0.44, 0.08],
-      rightWidths: [0.30, 0.72, 0.48, 0.22, 0.14],
-      banks: [-0.52, -0.08, 0.58, -0.36, 0.70],
-      camber: 0.13,
+      leftWidths: [0.42, 0.72, 0.90, 0.62, 0.38],
+      rightWidths: [0.34, 0.86, 0.66, 0.82, 0.44],
+      banks: [-0.22, 0.18, -0.15, 0.24, -0.18],
+      sideAxis: { x: 0, y: 1, z: 0 },
+      camber: 0.10,
       thickness: 0.16,
     },
     {
-      stations: [0, 0.24, 0.49, 0.73, 1],
+      stations: [0, 0.24, 0.50, 0.75, 1],
       points: [
-        { x: 0.20, y: 0.55, z: -0.35 },
-        { x: 0.55, y: 0.95, z: 0.85 },
-        { x: 1.25, y: 1.15, z: 1.15 },
-        { x: 1.88, y: 1.52, z: -0.40 },
-        { x: 1.08, y: 2.05, z: 0.65 },
+        { x: -2.90, y: 0.72, z: -0.55 },
+        { x: -1.45, y: 0.88, z: 0.55 },
+        { x: 0.00, y: 0.64, z: 1.15 },
+        { x: 1.35, y: 0.90, z: -0.35 },
+        { x: 2.85, y: 0.68, z: 0.45 },
       ],
-      leftWidths: [0.08, 0.26, 0.20, 0.38, 0.08],
-      rightWidths: [0.12, 0.18, 0.44, 0.16, 0.10],
-      banks: [-0.22, 0.54, -0.66, 0.18, 0.78],
-      camber: -0.11,
+      leftWidths: [0.22, 0.38, 0.46, 0.34, 0.24],
+      rightWidths: [0.34, 0.44, 0.32, 0.50, 0.28],
+      banks: [0.28, -0.18, 0.22, -0.24, 0.16],
+      sideAxis: { x: 0, y: 1, z: 0 },
+      camber: -0.08,
       thickness: 0.13,
     },
     {
-      stations: [0, 0.21, 0.50, 0.77, 1],
+      stations: [0, 0.24, 0.51, 0.76, 1],
       points: [
-        { x: -2.00, y: -0.45, z: 1.05 },
-        { x: -1.48, y: -0.90, z: 0.25 },
-        { x: -0.90, y: -1.48, z: 1.00 },
-        { x: -0.35, y: -1.85, z: 0.55 },
-        { x: 0.28, y: -1.05, z: -0.55 },
+        { x: -3.00, y: -0.72, z: 0.55 },
+        { x: -1.55, y: -0.92, z: -0.30 },
+        { x: 0.05, y: -0.68, z: 1.00 },
+        { x: 1.50, y: -0.94, z: 0.25 },
+        { x: 2.90, y: -0.70, z: -0.60 },
       ],
-      leftWidths: [0.07, 0.32, 0.15, 0.28, 0.06],
-      rightWidths: [0.14, 0.20, 0.42, 0.14, 0.09],
-      banks: [0.88, 0.16, -0.60, 0.34, -0.86],
-      camber: 0.15,
+      leftWidths: [0.28, 0.50, 0.34, 0.46, 0.24],
+      rightWidths: [0.22, 0.36, 0.48, 0.32, 0.28],
+      banks: [-0.24, 0.20, -0.18, 0.26, -0.20],
+      sideAxis: { x: 0, y: 1, z: 0 },
+      camber: 0.09,
       thickness: 0.12,
     },
+  ];
+
+  const SOVEREIGN_SEAM = {
+    along: [0.18, 0.32, 0.48, 0.65, 0.82],
+    across: [0.72, 0.38, 0.12, -0.24, -0.48],
+    halfWidths: [0.010, 0.018, 0.026, 0.018, 0.009],
+    normalLifts: [0.14, 0.17, 0.19, 0.17, 0.14],
+  };
+
+  const MEMORY_FIBRES = [
+    { lamella: 0, along: 0.22, across: 0.74, extension: [-0.12, 0.78, 0.20], curl: [-0.16, 0.02, 0.16], color: 3 },
+    { lamella: 1, along: 0.46, across: 0.70, extension: [0.10, 0.82, -0.16], curl: [0.18, 0.04, -0.12], color: 3 },
+    { lamella: 2, along: 0.38, across: -0.72, extension: [-0.10, -0.78, 0.18], curl: [-0.14, -0.02, 0.14], color: 3 },
+    { lamella: 0, along: 0.62, across: -0.74, extension: [0.18, -0.76, -0.18], curl: [0.16, -0.04, -0.14], color: 1 },
+    { lamella: 1, along: 0.72, across: 0.72, extension: [0.16, 0.70, 0.22], curl: [-0.10, 0.08, 0.12], color: 3 },
+    { lamella: 2, along: 0.68, across: -0.70, extension: [0.14, -0.74, -0.22], curl: [0.12, -0.06, -0.10], color: 2 },
+    { lamella: 0, along: 0.40, across: -0.76, extension: [-0.16, -0.68, 0.24], curl: [0.14, -0.06, 0.12], color: 3 },
+    { lamella: 0, along: 0.78, across: 0.70, extension: [0.12, 0.72, -0.20], curl: [-0.12, 0.06, -0.10], color: 0 },
   ];
 
   function stationSegment(config, t, preferred = null) {
@@ -353,12 +374,10 @@
     return a.x * b.x + a.y * b.y + a.z * b.z;
   }
 
-  function lamellaPoint(index, along, across, preferredSegment = null) {
+  function lamellaFrame(index, along, preferredSegment = null) {
     const config = LAMELLAE[index];
     const t = clamp(along, 0, 1);
-    const s = clamp(across, -1, 1);
     const segment = stationSegment(config, t, preferredSegment);
-    const center = stationPoint(config, t, segment);
     const stationStart = config.stations[segment];
     const stationEnd = config.stations[segment + 1];
     const amount = clamp((t - stationStart) / Math.max(0.0001, stationEnd - stationStart), 0, 1);
@@ -369,15 +388,35 @@
       y: lerp(startTangent.y, endTangent.y, amount),
       z: lerp(startTangent.z, endTangent.z, amount),
     });
-    const bank = stationValue(config, config.banks, t, segment);
-    const rawSide = { x: Math.cos(bank), y: 0.08 * Math.sin(t * Math.PI), z: Math.sin(bank) };
-    const projection = dot(rawSide, tangent);
-    const side = normalize({
-      x: rawSide.x - tangent.x * projection,
-      y: rawSide.y - tangent.y * projection,
-      z: rawSide.z - tangent.z * projection,
+    const authoredAxis = config.sideAxis || { x: 1, y: 0, z: 0 };
+    const projection = dot(authoredAxis, tangent);
+    const flatSide = normalize({
+      x: authoredAxis.x - tangent.x * projection,
+      y: authoredAxis.y - tangent.y * projection,
+      z: authoredAxis.z - tangent.z * projection,
     });
-    const normal = normalize(cross(tangent, side));
+    const quarterTurn = normalize(cross(tangent, flatSide));
+    const bank = stationValue(config, config.banks, t, segment);
+    const side = normalize({
+      x: flatSide.x * Math.cos(bank) + quarterTurn.x * Math.sin(bank),
+      y: flatSide.y * Math.cos(bank) + quarterTurn.y * Math.sin(bank),
+      z: flatSide.z * Math.cos(bank) + quarterTurn.z * Math.sin(bank),
+    });
+    const frameNormal = normalize(cross(tangent, side));
+    return {
+      tangent,
+      side,
+      normal: { x: -frameNormal.x, y: -frameNormal.y, z: -frameNormal.z },
+    };
+  }
+
+  function lamellaPoint(index, along, across, preferredSegment = null) {
+    const config = LAMELLAE[index];
+    const t = clamp(along, 0, 1);
+    const s = clamp(across, -1, 1);
+    const segment = stationSegment(config, t, preferredSegment);
+    const center = stationPoint(config, t, segment);
+    const { side, normal } = lamellaFrame(index, t, segment);
     const leftWidth = stationValue(config, config.leftWidths, t, segment);
     const rightWidth = stationValue(config, config.rightWidths, t, segment);
     const acrossOffset = s < 0 ? s * leftWidth : s * rightWidth;
@@ -423,14 +462,20 @@
     return { x: -normal.x, y: -normal.y, z: -normal.z };
   }
 
+  function lamellaFrameNormal(index, t) {
+    return lamellaFrame(index, t).normal;
+  }
+
   function buildSovereignSeam(rows, columns) {
     const vertices = [];
     const indices = [];
     const stride = columns + 1;
-    const alongStations = [0.18, 0.32, 0.48, 0.65, 0.82];
-    const acrossStations = [0.30, 0.04, 0.20, -0.10, 0.08];
-    const halfWidths = [0.010, 0.018, 0.026, 0.018, 0.009];
-    const normalLifts = [0.14, 0.17, 0.19, 0.17, 0.14];
+    const {
+      along: alongStations,
+      across: acrossStations,
+      halfWidths,
+      normalLifts,
+    } = SOVEREIGN_SEAM;
     const sample = (values, t) => {
       const scaled = clamp(t, 0, 1) * (values.length - 1);
       const segment = Math.min(values.length - 2, Math.floor(scaled));
@@ -440,7 +485,7 @@
       const along = sample(alongStations, t);
       const across = sample(acrossStations, t);
       const segment = stationSegment(LAMELLAE[0], along);
-      const normal = lamellaNormal(0, along, across, segment);
+      const normal = lamellaFrameNormal(0, along);
       const base = lamellaPoint(0, along, across, segment);
       const lift = sample(normalLifts, t);
       return {
@@ -515,7 +560,7 @@
             const s = column / columns * 2 - 1;
             const point = lamellaPoint(lamellaIndex, t, s, segment);
             const normal = lamellaNormal(lamellaIndex, t, s, segment);
-            const extrusionNormal = lamellaNormal(lamellaIndex, t, s);
+            const extrusionNormal = lamellaFrameNormal(lamellaIndex, t);
             const thicknessTaper = 0.24 + Math.pow(Math.sin(Math.PI * t), 0.62) * 0.76;
             const thickness = config.thickness * thicknessTaper;
             samples.push({ point, normal, extrusionNormal, thickness, t, s });
@@ -570,16 +615,6 @@
     const segments = coarse || lowCPU ? 12 : 18;
     // Eight short memories: local pressure-curves rather than diagrammatic rays.
     // Their palette is primarily bone; colour is a rare interference event.
-    const specs = [
-      { lamella: 0, along: 0.30, across: -0.74, extension: [-1.00, 0.45, 0.25], curl: [-0.04, 0.16, 0.18], color: 3 },
-      { lamella: 0, along: 0.42, across: 0.76, extension: [0.95, 0.25, -0.18], curl: [0.02, 0.18, -0.16], color: 3 },
-      { lamella: 0, along: 0.58, across: -0.66, extension: [-0.80, -0.55, 0.15], curl: [-0.08, -0.14, 0.20], color: 1 },
-      { lamella: 0, along: 0.70, across: 0.72, extension: [0.85, -0.50, 0.28], curl: [0.06, -0.18, 0.14], color: 3 },
-      { lamella: 1, along: 0.32, across: -0.78, extension: [-0.35, 1.15, 0.35], curl: [-0.18, 0.04, 0.12], color: 3 },
-      { lamella: 1, along: 0.68, across: 0.75, extension: [0.45, 1.00, -0.25], curl: [0.18, 0.06, -0.12], color: 2 },
-      { lamella: 2, along: 0.35, across: -0.72, extension: [-0.35, -1.10, 0.30], curl: [-0.16, -0.04, 0.16], color: 3 },
-      { lamella: 2, along: 0.68, across: 0.74, extension: [0.40, -0.95, -0.20], curl: [0.16, -0.08, -0.12], color: 0 },
-    ];
     const quadraticPoint = (start, control, end, t) => {
       const q = 1 - t;
       return {
@@ -588,7 +623,7 @@
         z: q * q * start.z + 2 * q * t * control.z + t * t * end.z,
       };
     };
-    specs.forEach((spec, index) => {
+    MEMORY_FIBRES.forEach((spec, index) => {
       const lamellaIndex = spec.lamella;
       const { along, across } = spec;
       const end = lamellaPoint(
@@ -596,7 +631,7 @@
         along,
         across,
       );
-      const endNormal = lamellaNormal(lamellaIndex, along, across);
+      const endNormal = lamellaFrameNormal(lamellaIndex, along);
       const surfaceLift = LAMELLAE[lamellaIndex].thickness
         * (0.24 + Math.pow(Math.sin(Math.PI * along), 0.62) * 0.76)
         + 0.006;
@@ -615,7 +650,7 @@
         z: lerp(end.z, start.z, 0.52) + spec.curl[2],
       };
       const color = spec.color;
-      const seed = (index + 0.5) / specs.length;
+      const seed = (index + 0.5) / MEMORY_FIBRES.length;
       for (let segment = 0; segment < segments; segment++) {
         // Grow memory continuously from its physical anchor back into ether.
         const aWeight = segment / segments;
@@ -783,8 +818,8 @@
       point = mix(point, vec3(point.x * 0.84, point.y * 0.955, point.z * 0.78), uSubtraction * 0.44);
       float embodiedUnity = max(compression, max(uInversion * 0.88, uReconstitution * 0.62 + uCrown * 0.16));
       vec3 convergence = aLamella < 0.5
-        ? vec3(0.18, 0.04, 0.12)
-        : (aLamella < 1.5 ? vec3(-0.58, -0.38, 0.24) : vec3(0.46, 0.34, -0.16));
+        ? vec3(0.0, 0.0, 0.10)
+        : (aLamella < 1.5 ? vec3(0.0, -0.34, 0.16) : vec3(0.0, 0.34, -0.14));
       point += convergence * embodiedUnity;
       float resolvedWave = sin(aAlong * 12.0 + aAcross * 2.8 - movingTime * 0.30 + aLamella * 1.7);
       point += deformNormal * resolvedWave * envelope * uReconstitution * (0.040 + aLamella * 0.010);
@@ -965,6 +1000,7 @@
         float ghostGrain = hash31(floor(facetCoord * 2.3 + vec3(floor(movingTime * 0.08))));
         alpha = (0.125 + fresnel * 0.24 + uSubtraction * 0.046)
           * (0.82 + ghostGrain * 0.18) * reflectionFade;
+        alpha *= vLamella < 0.5 ? 1.0 : 0.38;
       }
 
       float selectedPulse = 0.5 + 0.5 * sin(movingTime * 1.12 + uActiveSub * 1.9);
@@ -1061,7 +1097,7 @@
       point.z-=compression*(0.025+envelope*0.035);
       point=mix(point,vec3(point.x*0.84,point.y*0.955,point.z*0.78),uSubtraction*0.44);
       float embodiedUnity=max(compression,max(uInversion*0.88,uReconstitution*0.62+uCrown*0.16));
-      vec3 convergence=aLamella<0.5?vec3(0.18,0.04,0.12):(aLamella<1.5?vec3(-0.58,-0.38,0.24):vec3(0.46,0.34,-0.16));
+      vec3 convergence=aLamella<0.5?vec3(0.0,0.0,0.10):(aLamella<1.5?vec3(0.0,-0.34,0.16):vec3(0.0,0.34,-0.14));
       point+=convergence*embodiedUnity;
       float resolvedWave=sin(aAlong*12.0+aAcross*2.8-movingTime*0.30+aLamella*1.7);
       point+=normal*resolvedWave*envelope*uReconstitution*(0.040+aLamella*0.010);
@@ -1430,47 +1466,25 @@
   }
 
   function fallbackBodyPaths(scale) {
-    const blade = new Path2D();
-    // Central pressure field: a chipped sheet with unequal opposing faces.
-    blade.moveTo(-0.91 * scale, -1.05 * scale);
-    blade.lineTo(-1.00 * scale, -0.54 * scale);
-    blade.lineTo(-1.18 * scale, -0.04 * scale);
-    blade.lineTo(-0.80 * scale, 0.42 * scale);
-    blade.lineTo(-0.72 * scale, 0.95 * scale);
-    blade.lineTo(-0.01 * scale, 0.95 * scale);
-    blade.lineTo(0.37 * scale, 0.42 * scale);
-    blade.lineTo(0.00 * scale, -0.04 * scale);
-    blade.lineTo(0.22 * scale, -0.54 * scale);
-    blade.lineTo(-0.27 * scale, -1.05 * scale);
-    blade.closePath();
+    const field = (lamellaIndex) => {
+      const path = new Path2D();
+      const steps = coarse || lowCPU ? 24 : 44;
+      for (let index = 0; index <= steps; index++) {
+        const point = lamellaPoint(lamellaIndex, index / steps, -1);
+        if (index === 0) path.moveTo(point.x * scale, point.y * scale);
+        else path.lineTo(point.x * scale, point.y * scale);
+      }
+      for (let index = steps; index >= 0; index--) {
+        const point = lamellaPoint(lamellaIndex, index / steps, 1);
+        path.lineTo(point.x * scale, point.y * scale);
+      }
+      path.closePath();
+      return path;
+    };
 
-    // Detached counterforce: alternating widths make a tectonic zigzag.
-    const sail = new Path2D();
-    sail.moveTo(1.02 * scale, 2.62 * scale);
-    sail.lineTo(1.28 * scale, 2.43 * scale);
-    sail.lineTo(1.53 * scale, 2.30 * scale);
-    sail.lineTo(1.82 * scale, 2.12 * scale);
-    sail.lineTo(2.13 * scale, 1.94 * scale);
-    sail.lineTo(2.68 * scale, 1.94 * scale);
-    sail.lineTo(2.46 * scale, 2.12 * scale);
-    sail.lineTo(2.23 * scale, 2.30 * scale);
-    sail.lineTo(1.80 * scale, 2.43 * scale);
-    sail.lineTo(1.36 * scale, 2.62 * scale);
-    sail.closePath();
-
-    // Detached ground field: short, blunt and held below the open corridor.
-    const keel = new Path2D();
-    keel.moveTo(-2.62 * scale, -1.45 * scale);
-    keel.lineTo(-2.40 * scale, -1.70 * scale);
-    keel.lineTo(-2.08 * scale, -1.92 * scale);
-    keel.lineTo(-1.44 * scale, -2.18 * scale);
-    keel.lineTo(-0.74 * scale, -2.46 * scale);
-    keel.lineTo(-0.02 * scale, -2.46 * scale);
-    keel.lineTo(-0.39 * scale, -2.18 * scale);
-    keel.lineTo(-0.99 * scale, -1.92 * scale);
-    keel.lineTo(-1.32 * scale, -1.70 * scale);
-    keel.lineTo(-2.00 * scale, -1.45 * scale);
-    keel.closePath();
+    const blade = field(0);
+    const sail = field(1);
+    const keel = field(2);
 
     const compound = new Path2D();
     compound.addPath(blade);
@@ -1481,11 +1495,22 @@
 
   function fallbackWoundPath(scale) {
     const path = new Path2D();
-    path.moveTo(-0.55 * scale, -0.32 * scale);
-    path.lineTo(-0.38 * scale, -0.18 * scale);
-    path.lineTo(-0.58 * scale, -0.02 * scale);
-    path.lineTo(-0.25 * scale, 0.12 * scale);
-    path.lineTo(-0.34 * scale, 0.30 * scale);
+    const sample = (values, t) => {
+      const scaled = clamp(t, 0, 1) * (values.length - 1);
+      const segment = Math.min(values.length - 2, Math.floor(scaled));
+      return lerp(values[segment], values[segment + 1], scaled - segment);
+    };
+    const steps = 42;
+    for (let index = 0; index <= steps; index++) {
+      const t = index / steps;
+      const point = lamellaPoint(
+        0,
+        sample(SOVEREIGN_SEAM.along, t),
+        sample(SOVEREIGN_SEAM.across, t),
+      );
+      if (index === 0) path.moveTo(point.x * scale, point.y * scale);
+      else path.lineTo(point.x * scale, point.y * scale);
+    }
     return path;
   }
 
@@ -1580,29 +1605,26 @@
     context.globalAlpha = 0.045 + state.crown * 0.020;
     context.fillStyle = '#e2d3bc';
     context.beginPath();
-    context.moveTo(-0.84 * scale, 0.84 * scale);
-    context.lineTo(0.10 * scale, 0.78 * scale);
-    context.lineTo(0.16 * scale, -0.48 * scale);
-    context.lineTo(-1.00 * scale, -0.12 * scale);
+    context.moveTo(-0.94 * scale, -1.02 * scale);
+    context.lineTo(-0.38 * scale, -0.16 * scale);
+    context.lineTo(0.12 * scale, 0.98 * scale);
+    context.lineTo(-0.30 * scale, 1.76 * scale);
+    context.lineTo(-0.62 * scale, 0.34 * scale);
     context.closePath();
     context.fill();
     context.globalAlpha = 0.032 + state.reconstitution * 0.018;
     context.fillStyle = '#3a4c98';
     context.beginPath();
-    context.moveTo(1.04 * scale, 2.60 * scale);
-    context.lineTo(2.66 * scale, 1.96 * scale);
-    context.lineTo(2.18 * scale, 2.40 * scale);
-    context.lineTo(1.36 * scale, 2.58 * scale);
+    context.moveTo(0.28 * scale, 0.62 * scale);
+    context.lineTo(1.90 * scale, 1.42 * scale);
+    context.lineTo(1.12 * scale, 1.94 * scale);
+    context.lineTo(0.58 * scale, 0.96 * scale);
     context.closePath();
     context.fill();
     context.globalAlpha = 0.12 + state.crown * 0.045;
     context.lineWidth = Math.max(0.45, scale * 0.009);
     context.strokeStyle = '#cbbda8';
-    context.beginPath();
-    context.moveTo(-0.78 * scale, 0.66 * scale);
-    context.lineTo(-0.30 * scale, 0.18 * scale);
-    context.lineTo(-0.62 * scale, -0.22 * scale);
-    context.stroke();
+    context.stroke(wound);
     context.restore();
 
     if (activeWorld && viewMix > 0.24) {
@@ -1613,34 +1635,33 @@
       if (activeWorld === 'machine') {
         context.strokeStyle = '#00c9e8';
         context.beginPath();
-        context.moveTo(-0.76 * scale, 0.72 * scale);
-        context.lineTo(-0.30 * scale, -0.70 * scale);
-        context.moveTo(-0.98 * scale, 0.06 * scale);
-        context.lineTo(0.16 * scale, -0.12 * scale);
+        context.moveTo(-0.98 * scale, -1.04 * scale);
+        context.lineTo(0.12 * scale, 1.04 * scale);
+        context.moveTo(-0.70 * scale, -0.10 * scale);
+        context.lineTo(0.02 * scale, 0.58 * scale);
         context.stroke();
       } else if (activeWorld === 'maker') {
         context.strokeStyle = '#14c98b';
         context.beginPath();
-        context.moveTo(1.22 * scale, 2.56 * scale);
-        context.lineTo(2.46 * scale, 2.02 * scale);
-        context.moveTo(1.54 * scale, 2.50 * scale);
-        context.lineTo(2.24 * scale, 2.12 * scale);
+        context.moveTo(0.52 * scale, 0.92 * scale);
+        context.lineTo(1.84 * scale, 1.50 * scale);
+        context.moveTo(0.78 * scale, 1.00 * scale);
+        context.lineTo(1.30 * scale, 1.22 * scale);
         context.stroke();
       } else {
         context.strokeStyle = '#6840ff';
         context.beginPath();
-        context.moveTo(-2.38 * scale, -1.58 * scale);
-        context.lineTo(-1.48 * scale, -1.94 * scale);
-        context.lineTo(-0.38 * scale, -2.38 * scale);
-        context.moveTo(-2.00 * scale, -1.52 * scale);
-        context.lineTo(-1.04 * scale, -2.22 * scale);
+        context.moveTo(-1.84 * scale, -0.54 * scale);
+        context.lineTo(-0.88 * scale, -1.48 * scale);
+        context.lineTo(0.18 * scale, -1.10 * scale);
+        context.moveTo(-1.44 * scale, -0.88 * scale);
+        context.lineTo(-0.38 * scale, -1.76 * scale);
         context.stroke();
       }
       context.restore();
     }
 
-    // Reinstate negative-space channels after world accents so the detached
-    // pressure fields do not collapse into a single emblem.
+    // Reinstate the black pressure-corridors after world accents.
     context.save();
     context.globalAlpha = 0.82;
     context.lineJoin = 'round';
@@ -1666,36 +1687,45 @@
 
     if (state.return > 0.01 || state.crown > 0.025) {
       context.lineWidth = Math.max(0.65, scale * 0.0065);
-      for (let index = 0; index < 28; index++) {
-        const crownMemory = index < 11 ? state.crown * 0.36 : 0;
+      MEMORY_FIBRES.forEach((spec, index) => {
+        const seed = (index + 0.5) / MEMORY_FIBRES.length;
+        const crownMemory = (1 - smoothstep(0.34, 0.46, seed)) * state.crown * 0.42;
         const reveal = Math.max(state.return, crownMemory);
-        if (reveal <= 0.006) continue;
-        context.globalAlpha = state.return > crownMemory ? state.return * 0.46 : crownMemory * 0.62;
-        const side = index % 2 ? -1 : 1;
-        const verticalDirection = index % 4 < 2 ? 1 : -1;
-        const startX = side * scale * (3.02 + hash(index + 4) * 1.08);
-        const startY = verticalDirection * scale * (2.68 + hash(index + 8) * 1.16);
-        const lamella = index % 3;
-        const anchorX = scale * (lamella === 0 ? -0.45 : lamella === 1 ? 1.90 : -1.45)
-          + side * scale * (hash(index + 12) - 0.5) * 0.22;
-        const anchorY = scale * (lamella === 0
-          ? -0.92 + hash(index + 19) * 1.74
-          : lamella === 1
-            ? 2.00 + hash(index + 19) * 0.54
-            : -2.34 + hash(index + 19) * 0.76);
-        const endX = lerp(startX, anchorX, reveal);
-        const endY = lerp(startY, anchorY, reveal);
-        context.strokeStyle = index % 11 === 0 ? '#6840ff' : index % 7 === 0 ? '#00c9e8' : index % 13 === 0 ? '#14c98b' : '#e9e3d6';
+        if (reveal <= 0.006) return;
+        context.globalAlpha = state.return > crownMemory ? state.return * 0.28 : crownMemory * 0.36;
+        const anchor = lamellaPoint(spec.lamella, spec.along, spec.across);
+        const reach = 0.82 + index % 3 * 0.11;
+        const outer = {
+          x: anchor.x + spec.extension[0] * reach,
+          y: anchor.y + spec.extension[1] * reach,
+        };
+        const control = {
+          x: lerp(anchor.x, outer.x, 0.52) + spec.curl[0],
+          y: lerp(anchor.y, outer.y, 0.52) + spec.curl[1],
+        };
+        const q0 = {
+          x: lerp(anchor.x, control.x, reveal),
+          y: lerp(anchor.y, control.y, reveal),
+        };
+        const q1 = {
+          x: lerp(control.x, outer.x, reveal),
+          y: lerp(control.y, outer.y, reveal),
+        };
+        const visibleEnd = {
+          x: lerp(q0.x, q1.x, reveal),
+          y: lerp(q0.y, q1.y, reveal),
+        };
+        context.strokeStyle = spec.color === 2 ? '#6840ff' : spec.color === 1 ? '#14c98b' : spec.color === 0 ? '#00c9e8' : '#e9e3d6';
         context.beginPath();
-        context.moveTo(startX, startY);
+        context.moveTo(anchor.x * scale, anchor.y * scale);
         context.quadraticCurveTo(
-          lerp(startX, endX, 0.46) - side * scale * 0.38 * reveal,
-          lerp(startY, endY, 0.46) - verticalDirection * scale * 0.22 * reveal,
-          endX,
-          endY,
+          q0.x * scale,
+          q0.y * scale,
+          visibleEnd.x * scale,
+          visibleEnd.y * scale,
         );
         context.stroke();
-      }
+      });
     }
     context.restore();
 
@@ -1753,7 +1783,7 @@
 
     if (unityLabel) {
       unityLabel.style.left = `${width * (mobile ? 0.5 : 0.5375)}px`;
-      unityLabel.style.top = `${height * (mobile ? 0.718 : 0.815)}px`;
+      unityLabel.style.top = `${height * (mobile ? 0.742 : 0.815)}px`;
       unityLabel.style.opacity = String(clamp(1 - mix * 2.2, 0, 1));
     }
 
@@ -2105,10 +2135,10 @@
         detailYaw = detailPitch = detailRoll = 0;
         detailZoom = 1;
       } else {
-        overviewYaw = 0.48;
-        overviewPitch = -0.11;
-        overviewRoll = 0.035;
-        overviewZoom = 0.94;
+        overviewYaw = 0.30;
+        overviewPitch = -0.20;
+        overviewRoll = -0.035;
+        overviewZoom = 1.00;
       }
     }
     lastTapAt = now;
