@@ -1,8 +1,10 @@
 
-  // Dream Unity — The Returning Dream / Stage Coral (I—V).
-  // A single temporal body carries three worlds through four conditions:
-  // possibility, compression, matter, and return. The pale delayed geometry is
-  // inherited reflection; direct manipulation moves the living structure first.
+  // Dream Unity — Awaken The True War / Stage Coral (I—V).
+  // The Sovereign Fold is one body in three ontological states. The score does
+  // not decorate it: music changes what it is allowed to be. Ether is gathered,
+  // agency compresses it, matter bears weight, the body is stripped to one
+  // load-bearing chord, then the living form reverses causality and commands its
+  // own colourless time-double. The fracture is never debris; it becomes structure.
 
   WORLD.machine.css = '#00BDE8';
   WORLD.machine.rgb = [0, 189, 232];
@@ -34,16 +36,118 @@
   let rtGhostYaw = overviewYaw - 0.31;
   let rtGhostPitch = overviewPitch + 0.13;
   let rtGhostRoll = overviewRoll - 0.08;
+  let rtLivingYaw = overviewYaw;
+  let rtLivingPitch = overviewPitch;
+  let rtLivingRoll = overviewRoll;
   let rtLastTime = 0;
-  let rtVoiceLastTime = 0;
-  const rtVoiceMix = { listening: 0, thinking: 0, speaking: 0 };
-  const RT_VOICE_ALIASES = {
-    listening: ['listening', 'hearing', 'recording'],
-    thinking: ['thinking', 'processing', 'connecting', 'awakening'],
-    speaking: ['speaking', 'responding']
+  const RT_DURATION = 346.512;
+  let rtScoreState = {
+    currentTime: 0,
+    phase: 'summon',
+    progress: 0,
+    low: 0.24,
+    mid: 0.20,
+    high: 0.16,
+    energy: 0.22,
+    flux: 0,
+    beat: 0,
+    presence: 0.36,
+    pressure: 0.08,
+    bone: 0,
+    rupture: 0,
+    bloom: 0,
+    release: 0,
+    command: 0
   };
-  const RT_VOICE_KEYS = Object.keys(RT_VOICE_ALIASES);
-  const RT_ACTIVE_VOICE_STATES = new Set(Object.values(RT_VOICE_ALIASES).flat());
+
+  const RT_SCORE_SECTIONS = [
+    ['summon', 0, 43.75, 0.36],
+    ['open', 43.75, 59.60, 0.72],
+    ['ascent', 59.60, 101.75, 0.78],
+    ['war', 101.75, 149.30, 0.92],
+    ['breath', 149.30, 151.20, 0.48],
+    ['ascent', 151.20, 201.40, 0.84],
+    ['war', 201.40, 240.20, 0.96],
+    ['descent', 240.20, 267.80, 0.88],
+    ['bone', 267.80, 276.80, 0.10],
+    ['awaken', 276.80, 317.60, 1],
+    ['bone', 317.60, 321.90, 0.08],
+    ['awaken', 321.90, 343.40, 1],
+    ['return', 343.40, RT_DURATION, 0.66]
+  ];
+
+  function rtSectionAt(currentTime) {
+    const time = ((currentTime % RT_DURATION) + RT_DURATION) % RT_DURATION;
+    const section = RT_SCORE_SECTIONS.find((entry) => time >= entry[1] && time < entry[2]) || RT_SCORE_SECTIONS[0];
+    return {
+      phase: section[0],
+      progress: clamp((time - section[1]) / Math.max(0.001, section[2] - section[1]), 0, 1),
+      presence: section[3],
+      time
+    };
+  }
+
+  function rtEnvelope(time, start, peak, end) {
+    if (time <= start || time >= end) return 0;
+    if (time < peak) return ease((time - start) / Math.max(0.001, peak - start));
+    return 1 - ease((time - peak) / Math.max(0.001, end - peak));
+  }
+
+  function rtReadScore(t) {
+    let sample = null;
+    try { sample = window.__dreamUnityScore?.sample?.() || null; } catch {}
+    const songTime = Number.isFinite(sample?.currentTime) ? sample.currentTime : (t % RT_DURATION);
+    const section = rtSectionAt(songTime);
+    const sampledPhase = sample?.phase || sample?.section || section.phase;
+    const phase = sampledPhase === 'invocation' ? 'summon'
+      : sampledPhase === 'opening' ? 'open'
+      : sampledPhase === 'first-crown' ? 'war'
+      : sampledPhase === 'embodiment' || sampledPhase === 'rebuild' ? 'ascent'
+      : sampledPhase === 'true-war' ? 'war'
+      : sampledPhase === 'abyss' ? 'bone'
+      : sampledPhase === 'bone-reprise' ? 'bone'
+      : sampledPhase === 'crown' ? 'awaken'
+      : sampledPhase === 'collapse' ? 'return'
+      : sampledPhase;
+    const progress = Number.isFinite(sample?.sectionProgress) ? sample.sectionProgress
+      : Number.isFinite(sample?.progress) ? sample.progress : section.progress;
+    const fallbackPulse = reduced ? 0 : Math.pow(Math.max(0, Math.sin(songTime * Math.PI * 2 / (60 / 86.7))), 8);
+    const bone = clamp(Number.isFinite(sample?.bone) ? sample.bone : phase === 'bone' ? 1 : 0, 0, 1);
+    const rupture = clamp(Number.isFinite(sample?.rupture) ? sample.rupture
+      : phase === 'awaken' ? ease(clamp((songTime - 276.80) / 2.45, 0, 1)) : phase === 'return' ? 1 : 0, 0, 1);
+    const bloom = clamp(Number.isFinite(sample?.bloom) ? sample.bloom : Math.max(
+      rtEnvelope(songTime, 276.80, 279.25, 300.00),
+      rtEnvelope(songTime, 321.90, 323.10, 342.75)
+    ), 0, 1);
+    const release = clamp(Number.isFinite(sample?.release) ? sample.release : phase === 'return' ? ease(progress) : 0, 0, 1);
+    const pressure = Number.isFinite(sample?.pressure) ? sample.pressure : phase === 'ascent' ? 0.45 + progress * 0.38
+      : phase === 'war' ? 0.78 + progress * 0.18
+      : phase === 'descent' ? 0.72 * (1 - progress)
+      : phase === 'bone' ? 0.08 + progress * 0.16
+      : phase === 'awaken' ? 0.84 + 0.16 * Math.sin(progress * Math.PI)
+      : 0.10 + section.presence * 0.24;
+    const basePresence = phase === 'return' ? lerp(0.86, 0.28, release) : section.presence;
+    const bonePresence = phase === 'bone' ? lerp(0.16, 0.09, ease(progress)) : 0.13;
+    rtScoreState = {
+      currentTime: section.time,
+      phase,
+      progress,
+      low: clamp(Number.isFinite(sample?.low) ? sample.low : section.presence * 0.52, 0, 1),
+      mid: clamp(Number.isFinite(sample?.mid) ? sample.mid : section.presence * 0.46, 0, 1),
+      high: clamp(Number.isFinite(sample?.high) ? sample.high : section.presence * 0.34, 0, 1),
+      energy: clamp(Number.isFinite(sample?.energy) ? sample.energy : section.presence, 0, 1),
+      flux: clamp(Number.isFinite(sample?.flux) ? sample.flux : 0, 0, 1),
+      beat: clamp(Number.isFinite(sample?.beat) ? sample.beat : fallbackPulse * section.presence, 0, 1),
+      presence: lerp(basePresence, bonePresence, bone),
+      pressure,
+      bone,
+      rupture,
+      bloom,
+      release,
+      command: ease(clamp((songTime - 276.80) / 3.4, 0, 1))
+    };
+    return rtScoreState;
+  }
 
   function rtSeed(index, salt = 0) {
     const value = Math.sin(index * 127.1 + salt * 311.7) * 43758.5453123;
@@ -69,15 +173,15 @@
 
   function rtCenter() {
     return {
-      x: width > 1060 ? width * 0.53 : width * 0.5,
-      y: width > 760 ? height * 0.505 : height * 0.56
+      x: width > 1060 ? width * 0.60 : width > 760 ? width * 0.54 : width * 0.5,
+      y: width > 760 ? height * 0.51 : height * 0.56
     };
   }
 
   function rtProject(point, scale = 1, cameraZ = 12.6, center = rtCenter()) {
     const depth = cameraZ - point.z;
     const perspective = scale * cameraZ / Math.max(3.1, depth);
-    const spread = width > 1060 ? 0.101 : width > 760 ? 0.092 : 0.086;
+    const spread = width > 1060 ? 0.139 : width > 760 ? 0.116 : 0.145;
     return {
       x: center.x + point.x * unit * spread * perspective,
       y: center.y - point.y * unit * spread * perspective,
@@ -141,7 +245,7 @@
     };
   }
 
-  function rtRotateProject(point, yaw = overviewYaw, pitch = overviewPitch, roll = overviewRoll, scale = overviewZoom) {
+  function rtRotateProject(point, yaw = rtLivingYaw, pitch = rtLivingPitch, roll = rtLivingRoll, scale = overviewZoom) {
     const rotated = rotate3(point, yaw, pitch, roll);
     const projected = rtProject(rotated, scale, 12.6);
     projected.world = rotated;
@@ -192,32 +296,14 @@
     ctx.fillRect(0, 0, width, height);
 
     const center = rtCenter();
-    const reach = unit * (width > 1060 ? 0.41 : 0.45);
-    ctx.strokeStyle = 'rgba(11,16,32,.045)';
+    const score = rtScoreState;
+    const shadowWidth = unit * (0.19 + score.low * 0.045) * (1 - score.release * 0.38);
+    const shadowY = center.y + unit * (width > 760 ? 0.345 : 0.30);
+    ctx.strokeStyle = rgba(RT_INK, 0.028 + score.low * 0.025);
     ctx.lineWidth = 0.7;
     ctx.beginPath();
-    ctx.moveTo(center.x - reach, center.y);
-    ctx.lineTo(center.x + reach, center.y);
-    ctx.moveTo(center.x, center.y - reach * 0.82);
-    ctx.lineTo(center.x, center.y + reach * 0.82);
+    ctx.ellipse(center.x, shadowY, shadowWidth, Math.max(1.5, shadowWidth * 0.025), 0, 0, TAU);
     ctx.stroke();
-
-    for (let index = -4; index <= 4; index++) {
-      if (index === 0) continue;
-      const tick = center.x + index * reach / 4;
-      ctx.strokeStyle = index % 2 ? 'rgba(11,16,32,.035)' : 'rgba(11,16,32,.065)';
-      ctx.beginPath();
-      ctx.moveTo(tick, center.y - 3);
-      ctx.lineTo(tick, center.y + 3);
-      ctx.stroke();
-    }
-
-    ctx.fillStyle = 'rgba(11,16,32,.34)';
-    for (let index = 0; index < 8; index++) {
-      const angle = index * TAU / 8 + t * 0.003;
-      const radius = reach * (0.89 + (index % 3) * 0.025);
-      ctx.fillRect(center.x + Math.cos(angle) * radius, center.y + Math.sin(angle) * radius * 0.74, 1, 1);
-    }
   };
 
   function rtDrawTemporalGhost(alpha) {
@@ -234,12 +320,137 @@
     ctx.setLineDash([1.2, 5.5]);
     segments.forEach((segment) => {
       const depth = clamp(0.62 + segment.z * 0.055, 0.34, 0.88);
-      rtLine(segment.a, segment.b, RT_GREY, alpha * 0.25 * depth, 0.65);
+      const score = rtScoreState;
+      const opacity = 0.13 + (1 - score.command) * 0.18 + score.bone * 0.22 - score.release * 0.12;
+      rtLine(segment.a, segment.b, RT_GREY, alpha * opacity * depth, 0.65 + score.bone * 0.25);
     });
     ctx.setLineDash([]);
   }
 
+  function rtShellPoint(latitude, longitude) {
+    const vertical = Math.sin(latitude);
+    const radial = Math.cos(latitude);
+    const asymmetric = 1 + vertical * 0.12;
+    return {
+      x: Math.cos(longitude) * radial * 1.86 * asymmetric + Math.sin(latitude * 2) * 0.20,
+      y: vertical * 3.28,
+      z: Math.sin(longitude) * radial * 1.48 * asymmetric
+    };
+  }
+
+  function rtOwnedFacetTarget(row, column, rows, columns) {
+    const s = 0.505 + row / rows * 0.215;
+    const lateral = (column / columns - 0.5) * 0.74;
+    const lift = (row / rows - 0.5) * 0.18 + (column % 2 ? 0.035 : -0.035);
+    return rtOffsetPoint(s, lateral, lift);
+  }
+
+  function rtDrawSovereignShell(t, alpha) {
+    const score = rtScoreState;
+    const rows = lowCPU || coarse ? 5 : 7;
+    const columns = lowCPU || coarse ? 12 : 18;
+    const facets = [];
+    const structure = score.rupture * (1 - score.release * 0.70);
+    const yaw = lerp(rtGhostYaw, rtLivingYaw, score.command);
+    const pitch = lerp(rtGhostPitch, rtLivingPitch, score.command);
+    const roll = lerp(rtGhostRoll, rtLivingRoll, score.command);
+
+    for (let row = 0; row < rows; row++) {
+      const latitudeA = -Math.PI * 0.5 + row / rows * Math.PI;
+      const latitudeB = -Math.PI * 0.5 + (row + 1) / rows * Math.PI;
+      for (let column = 0; column < columns; column++) {
+        const longitudeA = column / columns * TAU;
+        const longitudeB = (column + 1) / columns * TAU;
+        const source = [
+          rtShellPoint(latitudeA, longitudeA),
+          rtShellPoint(latitudeB, longitudeA),
+          rtShellPoint(latitudeB, longitudeB),
+          rtShellPoint(latitudeA, longitudeB)
+        ];
+        const destination = [
+          rtOwnedFacetTarget(row, column, rows, columns),
+          rtOwnedFacetTarget(row + 1, column, rows, columns),
+          rtOwnedFacetTarget(row + 1, column + 1, rows, columns),
+          rtOwnedFacetTarget(row, column + 1, rows, columns)
+        ];
+        const stagger = clamp((structure - rtSeed(row * columns + column, 71) * 0.28) / 0.72, 0, 1);
+        const releaseDrift = score.release * (0.25 + rtSeed(row * columns + column, 76) * 0.82);
+        const points = source.map((point, pointIndex) => {
+          const target = destination[pointIndex];
+          const model = {
+            x: lerp(point.x, target.x, ease(stagger)),
+            y: lerp(point.y, target.y, ease(stagger)),
+            z: lerp(point.z, target.z, ease(stagger))
+          };
+          if (score.release > 0) {
+            const ether = rtOffsetPoint(0.74 + rtSeed(column + pointIndex, row + 91) * 0.25,
+              (rtSeed(column, row + pointIndex + 93) - 0.5) * 1.4,
+              (rtSeed(row, column + pointIndex + 97) - 0.5) * 1.2);
+            model.x = lerp(model.x, ether.x, releaseDrift);
+            model.y = lerp(model.y, ether.y, releaseDrift);
+            model.z = lerp(model.z, ether.z, releaseDrift);
+          }
+          return rtRotateProject(model, yaw, pitch, roll);
+        });
+        facets.push({
+          points,
+          row,
+          column,
+          stagger,
+          z: points.reduce((sum, point) => sum + point.z, 0) / points.length
+        });
+      }
+    }
+
+    facets.sort((a, b) => a.z - b.z);
+    facets.forEach((facet) => {
+      const isOwned = facet.stagger > 0.10;
+      const fillColor = isOwned ? rtMixColor(WORLD.reality.rgb, RT_WHITE, 0.28) : RT_PALE;
+      const edgeColor = isOwned ? (facet.column % 5 === 0 ? RT_GOLD : WORLD.reality.rgb) : RT_GREY;
+      const shellPresence = (0.28 + score.bone * 0.54) * (1 - structure * 0.72) * (1 - score.release * 0.70);
+      const ownedPresence = structure * (0.30 + score.energy * 0.30) * (1 - score.release * 0.64);
+      ctx.beginPath();
+      ctx.moveTo(facet.points[0].x, facet.points[0].y);
+      for (let index = 1; index < facet.points.length; index++) ctx.lineTo(facet.points[index].x, facet.points[index].y);
+      ctx.closePath();
+      ctx.fillStyle = rgba(fillColor, alpha * (isOwned ? ownedPresence * 0.055 : shellPresence * 0.040));
+      ctx.fill();
+      if ((facet.row + facet.column) % 2 === 0 || score.bone > 0.5 || isOwned) {
+        ctx.strokeStyle = rgba(edgeColor, alpha * (isOwned ? ownedPresence * 0.54 : shellPresence * 0.42));
+        ctx.lineWidth = isOwned ? 0.75 + score.beat * 0.55 : 0.55;
+        ctx.stroke();
+      }
+      if ((facet.row + facet.column) % 3 === 0) {
+        rtLine(facet.points[0], facet.points[2], edgeColor, alpha * (isOwned ? ownedPresence * 0.28 : shellPresence * 0.17), 0.45);
+      }
+    });
+  }
+
+  function rtDrawLightAxis(t, alpha) {
+    const score = rtScoreState;
+    const points = [];
+    const count = lowCPU || coarse ? 38 : 62;
+    const incision = score.phase === 'summon' ? 0.74 + score.progress * 0.22
+      : score.bone ? 0.92 : 0.46 + score.energy * 0.42;
+    for (let index = 0; index <= count; index++) {
+      const u = index / count;
+      const y = lerp(-3.76, 3.76, u);
+      const refraction = Math.sin(u * Math.PI) * (0.035 + score.high * 0.11) * Math.sin(u * TAU * 3 + t * 0.08);
+      points.push(rtRotateProject({ x: refraction, y, z: Math.sin(u * TAU) * 0.045 }));
+    }
+    for (let index = 1; index < points.length; index++) {
+      const u = index / count;
+      const color = u < 0.36 ? WORLD.machine.rgb : u < 0.65 ? RT_GOLD : WORLD.reality.rgb;
+      rtLine(points[index - 1], points[index], RT_WHITE, alpha * incision * 0.92, 2.4 + score.beat * 1.4);
+      rtLine(points[index - 1], points[index], color, alpha * incision * (0.36 + score.high * 0.36), 0.65 + score.beat * 0.45);
+    }
+    const cut = rtRotateProject({ x: 0, y: 0, z: 0 });
+    ctx.fillStyle = rgba(RT_GOLD, alpha * incision * 0.86);
+    ctx.fillRect(cut.x - 1.2, cut.y - 1.2, 2.4, 2.4);
+  }
+
   function rtDrawPossibleFutures(t, alpha) {
+    const score = rtScoreState;
     const branches = [-1, 0, 1];
     ctx.setLineDash([1, 7]);
     branches.forEach((branch, branchIndex) => {
@@ -247,10 +458,15 @@
       for (let index = 0; index <= 54; index++) {
         const s = 0.27 + index / 54 * 0.39;
         const corridor = Math.sin((s - 0.27) / 0.39 * Math.PI);
-        const drift = branch * corridor * (0.34 + 0.08 * Math.sin(t * 0.23 + branchIndex));
+        const drift = branch * corridor * (0.34 + 0.08 * Math.sin(t * 0.23 + branchIndex)) * (1 - score.command * 0.82);
         const lift = corridor * (branch === 0 ? -0.06 : 0.09);
         const projected = rtRotateProject(rtOffsetPoint(s, drift, lift));
-        if (previous) rtLine(previous, projected, branch === 0 ? RT_GOLD : RT_GREY, alpha * (branch === 0 ? 0.35 : 0.18), branch === 0 ? 1.05 : 0.72);
+        const branchAlpha = branch === 0
+          ? 0.24 + score.command * 0.38 + score.high * 0.15
+          : (0.20 * (1 - score.command * 0.88));
+        if (previous) rtLine(previous, projected, branch === 0 ? RT_GOLD : RT_GREY,
+          alpha * branchAlpha * score.presence * (1 - score.release * 0.72),
+          branch === 0 ? 0.9 + score.beat * 0.55 : 0.62);
         previous = projected;
       }
     });
@@ -266,6 +482,7 @@
   }
 
   function rtDrawDreamMembrane(t, alpha) {
+    const score = rtScoreState;
     const count = lowCPU || coarse ? 72 : 116;
     const facets = [];
     for (let index = 0; index < count; index++) {
@@ -273,8 +490,9 @@
       const next = (index + 1) / count;
       const twistA = Math.sin(s * TAU * 3 + t * 0.035) * 0.065;
       const twistB = Math.sin(next * TAU * 3 + t * 0.035) * 0.065;
-      const widthA = rtRibbonWidth(s);
-      const widthB = rtRibbonWidth(next);
+      const shear = 1 - score.pressure * 0.44 + score.mid * 0.10;
+      const widthA = rtRibbonWidth(s) * shear;
+      const widthB = rtRibbonWidth(next) * shear;
       const leftA = rtRotateProject(rtOffsetPoint(s, -widthA, twistA));
       const rightA = rtRotateProject(rtOffsetPoint(s, widthA, -twistA));
       const leftB = rtRotateProject(rtOffsetPoint(next, -widthB, twistB));
@@ -293,13 +511,17 @@
       for (let pointIndex = 1; pointIndex < facet.points.length; pointIndex++) ctx.lineTo(facet.points[pointIndex].x, facet.points[pointIndex].y);
       ctx.closePath();
       const material = facet.s > 0.50 && facet.s < 0.72;
-      ctx.fillStyle = rgba(facet.color, alpha * (material ? 0.115 : 0.052));
+      const living = score.presence * (1 - score.bone * 0.92) * (1 - score.release * 0.36);
+      ctx.fillStyle = rgba(facet.color, alpha * living * (material ? 0.12 + score.low * 0.05 : 0.045 + score.mid * 0.025));
       ctx.fill();
-      if (index % 4 === 0) rtLine(facet.points[0], facet.points[3], facet.color, alpha * (material ? 0.34 : 0.18), material ? 0.85 : 0.55);
+      if (index % 4 === 0) rtLine(facet.points[0], facet.points[3], facet.color,
+        alpha * living * (material ? 0.30 + score.energy * 0.14 : 0.14 + score.mid * 0.08),
+        material ? 0.75 + score.beat * 0.55 : 0.5);
     });
   }
 
   function rtDrawLivingPath(alpha) {
+    const score = rtScoreState;
     const count = lowCPU || coarse ? 130 : 220;
     const segments = [];
     for (let index = 0; index < count; index++) {
@@ -313,28 +535,34 @@
     segments.forEach((segment) => {
       const material = segment.s > 0.50 && segment.s < 0.72;
       const depth = clamp(0.58 + segment.z * 0.085, 0.34, 1);
-      const widthValue = (material ? 4.15 : segment.s > 0.16 && segment.s < 0.44 ? 2.15 : 1.25) * clamp(segment.a.f, 0.7, 1.35);
-      rtLine(segment.a, segment.b, segment.color, alpha * depth * (material ? 0.86 : 0.76), widthValue);
-      if (material) rtLine(segment.a, segment.b, RT_WHITE, alpha * depth * 0.58, Math.max(0.45, widthValue * 0.24));
+      const widthValue = (material ? 3.7 + score.low * 2.0 : segment.s > 0.16 && segment.s < 0.44 ? 1.8 + score.mid * 1.1 : 1.05 + score.high * 0.55)
+        * clamp(segment.a.f, 0.7, 1.35);
+      const living = score.presence * (1 - score.bone * 0.90) * (1 - score.release * 0.46);
+      rtLine(segment.a, segment.b, segment.color, alpha * living * depth * (material ? 0.90 : 0.78), widthValue);
+      if (material) rtLine(segment.a, segment.b, RT_WHITE, alpha * living * depth * (0.48 + score.beat * 0.25), Math.max(0.45, widthValue * 0.22));
     });
   }
 
   function rtDrawCompressionBraid(t, alpha) {
+    const score = rtScoreState;
     for (let strand = 0; strand < 3; strand++) {
       let previous = null;
       for (let index = 0; index <= 76; index++) {
         const s = 0.14 + index / 76 * 0.34;
         const envelope = Math.sin(index / 76 * Math.PI);
-        const angle = index / 76 * TAU * 5.5 + strand * TAU / 3 + t * 0.16;
-        const radius = (0.09 + envelope * 0.17) * (1 - index / 76 * 0.42);
+        const angle = index / 76 * TAU * 5.5 + strand * TAU / 3 + t * (0.08 + score.mid * 0.24);
+        const radius = (0.09 + envelope * 0.17) * (1 - index / 76 * 0.42) * (1 - score.pressure * 0.46);
         const projected = rtRotateProject(rtOffsetPoint(s, Math.cos(angle) * radius, Math.sin(angle) * radius));
-        if (previous) rtLine(previous, projected, strand === 0 ? WORLD.machine.rgb : strand === 1 ? WORLD.maker.rgb : RT_GOLD, alpha * 0.64, strand === 2 ? 0.85 : 1.05);
+        if (previous) rtLine(previous, projected, strand === 0 ? WORLD.machine.rgb : strand === 1 ? WORLD.maker.rgb : RT_GOLD,
+          alpha * score.presence * (1 - score.bone * 0.95) * (0.44 + score.mid * 0.42) * (1 - score.release * 0.52),
+          strand === 2 ? 0.72 + score.beat * 0.36 : 0.9 + score.beat * 0.48);
         previous = projected;
       }
     }
   }
 
   function rtDrawEtherParticles(t, alpha) {
+    const score = rtScoreState;
     const count = lowCPU || coarse ? 98 : 176;
     for (let index = 0; index < count; index++) {
       const returning = index % 2 === 0;
@@ -343,7 +571,7 @@
       const spread = returning ? ease((s - 0.73) / 0.27) : 1 - ease(s / 0.15);
       const frameAt = rtFrameAt(s);
       const angle = rtSeed(index, 4) * TAU + (reduced ? 0 : t * (0.025 + rtSeed(index, 6) * 0.025));
-      const radius = (0.08 + rtSeed(index, 5) * 0.52) * (0.35 + spread);
+      const radius = (0.08 + rtSeed(index, 5) * 0.52) * (0.35 + spread) * (1 + score.release * 1.30);
       const base = rtCatmull(s);
       const model = {
         x: base.x + frameAt.side.x * Math.cos(angle) * radius + frameAt.up.x * Math.sin(angle) * radius,
@@ -353,9 +581,10 @@
       const point = rtRotateProject(model);
       const size = (0.75 + rtSeed(index, 8) * 1.65) * clamp(point.f, 0.7, 1.3);
       const color = returning ? rtMixColor(WORLD.reality.rgb, WORLD.machine.rgb, spread) : WORLD.machine.rgb;
-      ctx.fillStyle = rgba(color, alpha * (0.29 + rtSeed(index, 9) * 0.52));
+      const etherPresence = (0.16 + score.high * 0.78 + score.release * 0.48) * (1 - score.bone * 0.92);
+      ctx.fillStyle = rgba(color, alpha * etherPresence * (0.24 + rtSeed(index, 9) * 0.46));
       if (index % 5 === 0) {
-        ctx.strokeStyle = rgba(color, alpha * 0.32);
+        ctx.strokeStyle = rgba(color, alpha * etherPresence * 0.30);
         ctx.lineWidth = 0.6;
         ctx.beginPath();
         ctx.arc(point.x, point.y, size * 1.7, 0, TAU);
@@ -366,7 +595,7 @@
     }
   }
 
-  function rtDrawCube(model, size, color, alpha, yaw = overviewYaw, pitch = overviewPitch, roll = overviewRoll, zoom = overviewZoom) {
+  function rtDrawCube(model, size, color, alpha, yaw = rtLivingYaw, pitch = rtLivingPitch, roll = rtLivingRoll, zoom = overviewZoom) {
     const signs = [-1, 1];
     const vertices = [];
     signs.forEach((x) => signs.forEach((y) => signs.forEach((z) => {
@@ -392,14 +621,16 @@
   }
 
   function rtDrawMatter(alpha) {
+    const score = rtScoreState;
     const count = lowCPU || coarse ? 11 : 17;
     for (let index = 0; index < count; index++) {
       const s = 0.51 + index / Math.max(1, count - 1) * 0.20;
       const side = (rtSeed(index, 12) - 0.5) * 0.42;
       const up = (rtSeed(index, 13) - 0.5) * 0.30;
       const model = rtOffsetPoint(s, side, up);
-      const size = 0.10 + rtSeed(index, 14) * 0.125;
-      rtDrawCube(model, size, WORLD.reality.rgb, alpha * (0.64 + rtSeed(index, 15) * 0.32));
+      const size = (0.09 + rtSeed(index, 14) * 0.12) * (0.78 + score.low * 0.42 + score.beat * 0.12);
+      const matterPresence = score.presence * (1 - score.bone * 0.97) * (0.50 + score.low * 0.54 + score.rupture * 0.24) * (1 - score.release * 0.88);
+      rtDrawCube(model, size, WORLD.reality.rgb, alpha * matterPresence * (0.58 + rtSeed(index, 15) * 0.31));
     }
   }
 
@@ -474,131 +705,82 @@
   };
 
   function rtDrawUnity(t, alpha) {
-    const bodyVoiceState = document.body?.dataset.voiceState?.toLowerCase();
-    const appVoiceState = app?.dataset.voiceState?.toLowerCase();
-    const observedStates = [bodyVoiceState, appVoiceState].filter(Boolean);
-    const voiceState = observedStates.find((state) => RT_ACTIVE_VOICE_STATES.has(state))
-      || observedStates[0]
-      || 'idle';
-    const voiceDt = rtVoiceLastTime
-      ? Math.min(0.10, Math.max(0.003, t - rtVoiceLastTime))
-      : 1 / 60;
-    rtVoiceLastTime = t;
-    RT_VOICE_KEYS.forEach((name) => {
-      const target = RT_VOICE_ALIASES[name].includes(voiceState) ? 1 : 0;
-      const response = reduced ? 1 : 1 - Math.exp(-voiceDt * (target ? 9.5 : 5.5));
-      rtVoiceMix[name] = lerp(rtVoiceMix[name], target, response);
-    });
-
-    const listening = rtVoiceMix.listening;
-    const thinking = rtVoiceMix.thinking;
-    const speaking = rtVoiceMix.speaking;
-    const activeVoice = Math.max(listening, thinking, speaking);
+    const score = rtScoreState;
     const motionTime = reduced ? 0 : t;
-    const idleBreath = reduced ? 1 : 1 + Math.sin(t * 0.72) * 0.018 * (1 - activeVoice * 0.55);
-    const thoughtBeat = reduced ? 0.45 : 0.5 + Math.sin(t * 2.15) * 0.5;
-    const speechBeat = reduced
-      ? 0.62
-      : 0.55 + Math.sin(t * 5.1) * 0.22 + Math.sin(t * 8.7 + 0.8) * 0.14;
-    const compression = 1 - thinking * (0.105 + thoughtBeat * 0.045);
-    const aperture = 1 + listening * (0.10 + Math.sin(motionTime * 2.0) * 0.025);
-    const resonance = 1 + speaking * speechBeat * 0.075;
+    const breath = reduced ? 1 : 1 + Math.sin(t * 0.72) * (0.008 + score.energy * 0.018);
+    const compression = 1 - score.pressure * 0.22;
+    const resonance = 1 + score.low * 0.10 + score.beat * 0.06;
+    const unityPresence = (1 - score.bone * 0.90) * (1 - score.release * 0.62);
     const loops = [
-      { color: RT_GOLD, phase: 0, width: 1.25 },
-      { color: RT_INK, phase: 1.7, width: 0.65 },
-      { color: RT_PALE, phase: 3.1, width: 0.85 }
+      { color: RT_GOLD, phase: 0, width: 1.30 },
+      { color: WORLD.machine.rgb, phase: 1.7, width: 0.72 },
+      { color: WORLD.maker.rgb, phase: 3.1, width: 0.84 },
+      { color: WORLD.reality.rgb, phase: 4.4, width: 0.70 }
     ];
+
     loops.forEach((loop, loopIndex) => {
       let previous = null;
       for (let index = 0; index <= 86; index++) {
         const angle = index / 86 * TAU;
         const model = {
-          x: Math.cos(angle) * (1.08 + loopIndex * 0.16) * idleBreath * compression * resonance,
-          y: Math.sin(angle) * (0.34 + loopIndex * 0.05) * idleBreath * compression * aperture,
-          z: Math.sin(angle * 2 + loop.phase + t * (reduced ? 0 : 0.08))
-            * (0.61 + loopIndex * 0.10)
-            * idleBreath
-            * compression
-            * (1 + listening * 0.06 + speaking * speechBeat * 0.10)
+          x: Math.cos(angle) * (1.02 + loopIndex * 0.13) * breath * compression * resonance,
+          y: Math.sin(angle) * (0.29 + loopIndex * 0.045) * breath * compression,
+          z: Math.sin(angle * 2 + loop.phase + motionTime * (0.045 + score.mid * 0.11))
+            * (0.58 + loopIndex * 0.085) * breath * compression * (1 + score.high * 0.09)
         };
         const projected = rtRotateProject(model);
         if (previous) {
-          const lineAlpha = (loopIndex === 0 ? 0.72 : 0.40) * (1 + activeVoice * 0.12);
-          rtLine(previous, projected, loop.color, alpha * lineAlpha, loop.width + speaking * 0.18);
+          const lineAlpha = (loopIndex === 0 ? 0.78 : 0.34 + score.energy * 0.15) * unityPresence;
+          rtLine(previous, projected, loop.color, alpha * lineAlpha, loop.width + score.beat * 0.34);
         }
         previous = projected;
       }
     });
+
     const core = rtRotateProject({ x: 0, y: 0, z: 0 });
     const haloBase = Math.max(9, unit * 0.014);
     ctx.save();
     ctx.globalCompositeOperation = 'source-over';
     ctx.lineCap = 'round';
 
-    if (listening > 0.01) {
-      const listenWave = reduced ? 0.35 : (Math.sin(t * 2.25) + 1) * 0.5;
-      for (let ring = 0; ring < 2; ring++) {
-        const radius = haloBase * (1.28 + ring * 0.64 + listenWave * 0.13);
-        const gap = 0.31 + ring * 0.05;
-        ctx.strokeStyle = rgba(ring ? RT_GOLD : WORLD.machine.rgb, alpha * listening * (ring ? 0.25 : 0.42));
-        ctx.lineWidth = ring ? 0.8 : 1.15;
+    // Re-entry is causal command, not a decorative explosion. Pressure shells
+    // travel through the same body while every fractured facet acquires a role.
+    if (score.bloom > 0.01 && score.release < 0.94) {
+      for (let shell = 0; shell < 5; shell++) {
+        const travel = reduced ? (shell + 1) / 6 : (t * (0.36 + score.energy * 0.34) + shell / 5) % 1;
+        const radius = haloBase * (1.1 + travel * 4.4);
+        const shellAlpha = alpha * score.bloom * (1 - travel) * (0.18 + score.flux * 0.34 + score.beat * 0.12);
+        const color = shell % 3 === 0 ? RT_GOLD : shell % 3 === 1 ? WORLD.machine.rgb : WORLD.reality.rgb;
+        ctx.strokeStyle = rgba(color, shellAlpha);
+        ctx.lineWidth = 0.55 + (1 - travel) * (0.45 + score.beat * 0.55);
         ctx.beginPath();
-        ctx.ellipse(core.x, core.y, radius * 1.18, radius * 0.58, -0.08, gap, Math.PI - gap);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.ellipse(core.x, core.y, radius * 1.18, radius * 0.58, -0.08, Math.PI + gap, TAU - gap);
-        ctx.stroke();
-      }
-      const receivePhase = reduced ? 0.42 : (t * 0.68) % 1;
-      const receiveRadius = haloBase * (1.25 + receivePhase * 1.42);
-      ctx.strokeStyle = rgba(WORLD.machine.rgb, alpha * listening * (1 - receivePhase) * 0.22);
-      ctx.lineWidth = 0.7;
-      ctx.beginPath();
-      ctx.ellipse(core.x, core.y, receiveRadius * 1.16, receiveRadius * 0.58, -0.08, 0, TAU);
-      ctx.stroke();
-    }
-
-    if (thinking > 0.01) {
-      const inward = reduced ? 0.56 : (t * 0.82) % 1;
-      const thoughtRadius = haloBase * (2.75 - inward * 1.38);
-      ctx.strokeStyle = rgba(WORLD.reality.rgb, alpha * thinking * (0.13 + inward * 0.20));
-      ctx.lineWidth = 0.8;
-      ctx.beginPath();
-      ctx.ellipse(core.x, core.y, thoughtRadius * 1.12, thoughtRadius * 0.56, 0.12, 0, TAU);
-      ctx.stroke();
-      for (let orbit = 0; orbit < 3; orbit++) {
-        const orbitRadius = haloBase * (0.86 + orbit * 0.34 - thoughtBeat * 0.08);
-        const start = motionTime * (0.74 + orbit * 0.14) + orbit * TAU / 3;
-        ctx.strokeStyle = rgba(orbit === 1 ? RT_GOLD : RT_PALE, alpha * thinking * (0.30 - orbit * 0.045));
-        ctx.lineWidth = orbit === 1 ? 1.05 : 0.7;
-        ctx.beginPath();
-        ctx.ellipse(core.x, core.y, orbitRadius * 1.22, orbitRadius * 0.54, orbit * 0.18, start, start + 0.70);
+        ctx.ellipse(core.x, core.y, radius * 1.38, radius * 0.48, overviewRoll * 0.2, 0, TAU);
         ctx.stroke();
       }
     }
 
-    if (speaking > 0.01) {
-      // Projected sound shells carry Unity's speech back through the three-world field.
-      for (let shell = 0; shell < 4; shell++) {
-        const travel = reduced ? (shell + 1) / 5 : (t * 1.18 + shell / 4) % 1;
-        const radius = haloBase * (1.18 + travel * 2.65);
-        const shellAlpha = alpha * speaking * (1 - travel) * (0.30 + speechBeat * 0.12);
-        ctx.strokeStyle = rgba(shell % 2 ? WORLD.machine.rgb : RT_GOLD, shellAlpha);
-        ctx.lineWidth = 0.72 + (1 - travel) * 0.48;
-        ctx.beginPath();
-        ctx.ellipse(core.x, core.y, radius * 1.12, radius * 0.54, 0, -0.63, 0.63);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.ellipse(core.x, core.y, radius * 1.12, radius * 0.54, 0, Math.PI - 0.63, Math.PI + 0.63);
-        ctx.stroke();
-      }
-    }
+    const boneLength = haloBase * (1.15 + score.bone * 3.1 + score.low * 0.35);
+    ctx.strokeStyle = rgba(RT_GOLD, alpha * (0.76 + score.bone * 0.20));
+    ctx.lineWidth = 0.85 + score.beat * 0.55;
+    ctx.beginPath();
+    ctx.moveTo(core.x, core.y - boneLength);
+    ctx.lineTo(core.x, core.y + boneLength);
+    ctx.stroke();
 
-    const coreRadius = 5.2 + listening * 0.55 + thinking * thoughtBeat * 0.35 + speaking * speechBeat * 0.72;
-    ctx.fillStyle = '#fff';ctx.beginPath();ctx.arc(core.x,core.y,coreRadius,0,TAU);ctx.fill();
-    ctx.strokeStyle = rgba(listening > thinking && listening > speaking ? WORLD.machine.rgb : RT_GOLD, alpha * (0.88 + activeVoice * 0.10));
-    ctx.lineWidth = 1 + activeVoice * 0.25;ctx.stroke();
-    ctx.fillStyle = rgba(RT_INK, alpha * 0.74);ctx.beginPath();ctx.arc(core.x,core.y,1.25 + speaking * speechBeat * 0.48,0,TAU);ctx.fill();
+    const tooth = 4.2 + score.low * 1.7 + score.beat * 1.2;
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.moveTo(core.x, core.y - tooth);
+    ctx.lineTo(core.x + tooth * 0.72, core.y);
+    ctx.lineTo(core.x, core.y + tooth);
+    ctx.lineTo(core.x - tooth * 0.72, core.y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = rgba(RT_GOLD, alpha * 0.95);
+    ctx.lineWidth = 1 + score.beat * 0.35;
+    ctx.stroke();
+    ctx.fillStyle = rgba(RT_INK, alpha * 0.80);
+    ctx.fillRect(core.x - 0.9, core.y - 0.9, 1.8, 1.8);
     ctx.restore();
     return core;
   }
@@ -607,15 +789,34 @@
     if (alpha <= 0.002) return;
     const dt = Math.min(0.05, Math.max(0, t - rtLastTime));
     rtLastTime = t;
-    const lag = reduced ? 0.10 : 1 - Math.exp(-Math.max(0.003, dt) * 1.35);
-    rtGhostYaw = lerp(rtGhostYaw, overviewYaw, lag);
-    rtGhostPitch = lerp(rtGhostPitch, overviewPitch, lag);
-    rtGhostRoll = lerp(rtGhostRoll, overviewRoll, lag);
+    const score = rtScoreState;
+    const direct = reduced ? 1 : 1 - Math.exp(-Math.max(0.003, dt) * 13.5);
+    const obey = reduced ? 1 : 1 - Math.exp(-Math.max(0.003, dt) * 2.15);
+    const haunt = reduced ? 1 : 1 - Math.exp(-Math.max(0.003, dt) * 1.28);
+    if (score.currentTime < 276.80) {
+      // Before awakening, the predictive reflection receives gesture first.
+      rtGhostYaw = lerp(rtGhostYaw, overviewYaw + overviewYawVelocity * 0.07, direct);
+      rtGhostPitch = lerp(rtGhostPitch, overviewPitch + overviewPitchVelocity * 0.05, direct);
+      rtGhostRoll = lerp(rtGhostRoll, overviewRoll + overviewRollVelocity * 0.05, direct);
+      rtLivingYaw = lerp(rtLivingYaw, rtGhostYaw, obey);
+      rtLivingPitch = lerp(rtLivingPitch, rtGhostPitch, obey);
+      rtLivingRoll = lerp(rtLivingRoll, rtGhostRoll, obey);
+    } else {
+      // At 04:36.8, living agency becomes direct and the former governor can only lag.
+      rtLivingYaw = lerp(rtLivingYaw, overviewYaw, direct);
+      rtLivingPitch = lerp(rtLivingPitch, overviewPitch, direct);
+      rtLivingRoll = lerp(rtLivingRoll, overviewRoll, direct);
+      rtGhostYaw = lerp(rtGhostYaw, rtLivingYaw, haunt);
+      rtGhostPitch = lerp(rtGhostPitch, rtLivingPitch, haunt);
+      rtGhostRoll = lerp(rtGhostRoll, rtLivingRoll, haunt);
+    }
 
     const positions = overviewPositions(t);
     worldKeys.forEach((key) => Object.assign(worldScreen[key], positions[key]));
     ctx.globalCompositeOperation = 'source-over';
+    rtDrawLightAxis(t, alpha);
     rtDrawTemporalGhost(alpha);
+    rtDrawSovereignShell(t, alpha);
     rtDrawPossibleFutures(t, alpha);
     rtDrawEtherParticles(t, alpha);
     rtDrawDreamMembrane(t, alpha);
@@ -625,15 +826,16 @@
     const core = rtDrawUnity(t, alpha);
 
     const depthOrder = [...worldKeys].sort((a, b) => positions[a].z - positions[b].z);
-    depthOrder.forEach((key) => rtDrawNode(positions[key], key, t, alpha, hoverWorld === key ? 1 : 0));
+    const worldPresence = clamp(0.16 + score.presence * 0.92 - score.bone * 0.13, 0.08, 1);
+    depthOrder.forEach((key) => rtDrawNode(positions[key], key, t, alpha * worldPresence, hoverWorld === key ? 1 : 0));
 
     worldKeys.forEach((key, index) => {
       const point = positions[key];
-      rtLine(core, point, WORLD[key].rgb, alpha * 0.085, 0.55);
-      const travel = (t * 0.028 + index / 3) % 1;
+      rtLine(core, point, WORLD[key].rgb, alpha * worldPresence * (0.045 + score.energy * 0.075), 0.55 + score.beat * 0.25);
+      const travel = (t * (0.018 + score.energy * 0.055) + index / 3) % 1;
       const x = lerp(core.x, point.x, travel);
       const y = lerp(core.y, point.y, travel);
-      ctx.fillStyle = rgba(WORLD[key].rgb, alpha * 0.58);
+      ctx.fillStyle = rgba(WORLD[key].rgb, alpha * worldPresence * (0.38 + score.beat * 0.35));
       ctx.fillRect(x - 1, y - 1, 2, 2);
     });
     ctx.globalAlpha = 1;
@@ -777,10 +979,11 @@
     if (!hint || window.__dreamUnityGameActive) return;
     hint.textContent = activeWorld
       ? 'ORBIT THE WORLD · CHOOSE A FORCE'
-      : 'DRAG THE DREAM · ENTER A WORLD';
+      : 'MOVE THE MIRROR · ENTER A WORLD';
   };
 
   render = function rememberedTomorrowRender(t) {
+    rtReadScore(t);
     drawBackground(t);
     const mix = ease(viewMix);
     drawOverview(t, 1 - mix);

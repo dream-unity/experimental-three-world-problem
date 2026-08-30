@@ -59,22 +59,28 @@
     return result;
   }
 
+  function remapSurfaceColor(value, alphaScale, isGame) {
+    if (isGame && typeof value === 'string' && /^#(?:fff|ffffff)$/i.test(value)) return '#0b1020';
+    return remapColor(value, alphaScale);
+  }
+
   HTMLCanvasElement.prototype.getContext = function(type, options) {
     const context = nativeGetContext.call(this, type, options);
-    if (!context || type !== '2d' || this.id !== 'world' || context.__dreamUnityLightOverview) return context;
+    const isGame = this.id === 'gameCanvas';
+    if (!context || type !== '2d' || (this.id !== 'world' && !isGame) || context.__dreamUnityLightSurface) return context;
 
-    Object.defineProperty(context, '__dreamUnityLightOverview', { value: true });
+    Object.defineProperty(context, '__dreamUnityLightSurface', { value: true });
 
     Object.defineProperty(context, 'fillStyle', {
       configurable: true,
       get() { return fillStyleDescriptor.get.call(this); },
-      set(value) { fillStyleDescriptor.set.call(this, remapColor(value, 1)); }
+      set(value) { fillStyleDescriptor.set.call(this, remapSurfaceColor(value, 1, isGame)); }
     });
 
     Object.defineProperty(context, 'strokeStyle', {
       configurable: true,
       get() { return strokeStyleDescriptor.get.call(this); },
-      set(value) { strokeStyleDescriptor.set.call(this, remapColor(value, 1.28)); }
+      set(value) { strokeStyleDescriptor.set.call(this, remapSurfaceColor(value, 1.28, isGame)); }
     });
 
     Object.defineProperty(context, 'globalCompositeOperation', {
@@ -104,7 +110,7 @@
               nativeAdd(offset, 'rgba(255,255,255,0)');
               return;
             }
-            nativeAdd(offset, remapColor(color, isLargeGlow ? 0.48 : 1.12));
+            nativeAdd(offset, remapSurfaceColor(color, isLargeGlow ? 0.48 : 1.12, isGame));
           }
         });
       } catch {}
