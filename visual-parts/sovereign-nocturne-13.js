@@ -108,10 +108,10 @@
   let holdStrength = 0;
   let holdTarget = 0;
 
-  let overviewYaw = 0.40;
-  let overviewPitch = -0.10;
-  let overviewRoll = -0.06;
-  let overviewZoom = 0.92;
+  let overviewYaw = 0.48;
+  let overviewPitch = -0.11;
+  let overviewRoll = 0.035;
+  let overviewZoom = 0.94;
   let overviewYawVelocity = 0;
   let overviewPitchVelocity = 0;
   let overviewRollVelocity = 0;
@@ -123,8 +123,8 @@
   let detailPitchVelocity = 0;
   let detailRollVelocity = 0;
   let ghostYaw = 0.56;
-  let ghostPitch = -0.05;
-  let ghostRoll = -0.11;
+  let ghostPitch = -0.06;
+  let ghostRoll = -0.02;
 
   let gestureTravel = 0;
   let gestureHadPinch = false;
@@ -136,25 +136,25 @@
   const subScreen = [0, 1, 2].map((index) => ({ x: 0, y: 0, r: 25, z: 0, index }));
 
   const WORLD_PINS = {
-    machine: { x: -0.50, y: -0.04, z: 0.35 },
-    maker: { x: 1.88, y: 2.30, z: 0.18 },
-    reality: { x: -1.46, y: -1.92, z: -0.20 },
+    machine: { x: -0.44, y: -0.08, z: 0.15 },
+    maker: { x: 1.25, y: 1.15, z: 1.25 },
+    reality: { x: -0.90, y: -1.48, z: 1.10 },
   };
   const DETAIL_PINS = {
     machine: [
-      { x: -0.42, y: -0.54, z: 1.15 },
-      { x: -0.50, y: -0.04, z: 0.35 },
-      { x: -0.25, y: 0.42, z: 1.00 },
+      { x: -1.02, y: -1.05, z: 1.10 },
+      { x: -0.44, y: -0.08, z: 0.15 },
+      { x: 0.18, y: 1.05, z: 1.00 },
     ],
     maker: [
-      { x: 1.55, y: 2.43, z: 0.82 },
-      { x: 1.88, y: 2.30, z: 0.18 },
-      { x: 2.18, y: 2.12, z: -0.42 },
+      { x: 0.55, y: 0.95, z: 0.95 },
+      { x: 1.25, y: 1.15, z: 1.25 },
+      { x: 1.88, y: 1.52, z: -0.20 },
     ],
     reality: [
-      { x: -1.90, y: -1.70, z: 0.44 },
-      { x: -1.46, y: -1.92, z: -0.20 },
-      { x: -0.96, y: -2.18, z: 0.30 },
+      { x: -1.48, y: -0.90, z: 0.35 },
+      { x: -0.90, y: -1.48, z: 1.10 },
+      { x: -0.35, y: -1.85, z: 0.65 },
     ],
   };
 
@@ -262,53 +262,54 @@
     };
   }
 
-  // Three cleaved mineral fields. Unequal left/right profiles and hard station
-  // breaks keep them geological: no symmetric leaf, glyph or tool.
+  // Three topologically independent weather-fronts, interwoven in projection.
+  // The largest is the sovereign body; the other two are unequal incidents
+  // passing through its crown and grounded edge. None shares a root or hub.
   const LAMELLAE = [
     {
-      stations: [0, 0.25, 0.50, 0.75, 1],
+      stations: [0, 0.22, 0.48, 0.74, 1],
       points: [
-        { x: -0.55, y: -1.05, z: 0.90 },
-        { x: -0.42, y: -0.54, z: 1.15 },
-        { x: -0.50, y: -0.04, z: 0.35 },
-        { x: -0.25, y: 0.42, z: 1.00 },
-        { x: -0.32, y: 0.95, z: 0.15 },
+        { x: -0.62, y: -1.95, z: 0.20 },
+        { x: -1.02, y: -1.05, z: 1.00 },
+        { x: -0.44, y: -0.08, z: -0.15 },
+        { x: 0.18, y: 1.05, z: 0.90 },
+        { x: -0.12, y: 2.10, z: 0.10 },
       ],
-      leftWidths: [0.36, 0.58, 0.68, 0.55, 0.40],
-      rightWidths: [0.28, 0.64, 0.50, 0.62, 0.31],
-      banks: [-0.38, -0.48, -0.44, -0.50, -0.62],
+      leftWidths: [0.10, 0.66, 0.16, 0.44, 0.08],
+      rightWidths: [0.30, 0.72, 0.48, 0.22, 0.14],
+      banks: [-0.52, -0.08, 0.58, -0.36, 0.70],
       camber: 0.13,
-      thickness: 0.17,
+      thickness: 0.16,
     },
     {
-      stations: [0, 0.25, 0.50, 0.75, 1],
+      stations: [0, 0.24, 0.49, 0.73, 1],
       points: [
-        { x: 1.20, y: 2.62, z: 1.30 },
-        { x: 1.55, y: 2.43, z: 0.82 },
-        { x: 1.88, y: 2.30, z: 0.18 },
-        { x: 2.18, y: 2.12, z: -0.42 },
-        { x: 2.42, y: 1.94, z: -0.80 },
+        { x: 0.20, y: 0.55, z: -0.35 },
+        { x: 0.55, y: 0.95, z: 0.85 },
+        { x: 1.25, y: 1.15, z: 1.15 },
+        { x: 1.88, y: 1.52, z: -0.40 },
+        { x: 1.08, y: 2.05, z: 0.65 },
       ],
-      leftWidths: [0.34, 0.47, 0.53, 0.48, 0.36],
-      rightWidths: [0.31, 0.43, 0.59, 0.45, 0.32],
-      banks: [-1.05, -0.95, -0.84, -0.72, -0.62],
+      leftWidths: [0.08, 0.26, 0.20, 0.38, 0.08],
+      rightWidths: [0.12, 0.18, 0.44, 0.16, 0.10],
+      banks: [-0.22, 0.54, -0.66, 0.18, 0.78],
       camber: -0.11,
-      thickness: 0.14,
+      thickness: 0.13,
     },
     {
-      stations: [0, 0.25, 0.50, 0.75, 1],
+      stations: [0, 0.21, 0.50, 0.77, 1],
       points: [
-        { x: -2.30, y: -1.45, z: 1.05 },
-        { x: -1.90, y: -1.70, z: 0.44 },
-        { x: -1.46, y: -1.92, z: -0.20 },
-        { x: -0.96, y: -2.18, z: 0.30 },
-        { x: -0.40, y: -2.46, z: -0.60 },
+        { x: -2.00, y: -0.45, z: 1.05 },
+        { x: -1.48, y: -0.90, z: 0.25 },
+        { x: -0.90, y: -1.48, z: 1.00 },
+        { x: -0.35, y: -1.85, z: 0.55 },
+        { x: 0.28, y: -1.05, z: -0.55 },
       ],
-      leftWidths: [0.34, 0.50, 0.62, 0.48, 0.34],
-      rightWidths: [0.30, 0.58, 0.47, 0.57, 0.38],
-      banks: [0.34, 0.18, 0.02, -0.15, -0.30],
-      camber: 0.16,
-      thickness: 0.19,
+      leftWidths: [0.07, 0.32, 0.15, 0.28, 0.06],
+      rightWidths: [0.14, 0.20, 0.42, 0.14, 0.09],
+      banks: [0.88, 0.16, -0.60, 0.34, -0.86],
+      camber: 0.15,
+      thickness: 0.12,
     },
   ];
 
@@ -426,10 +427,10 @@
     const vertices = [];
     const indices = [];
     const stride = columns + 1;
-    const alongStations = [0.34, 0.41, 0.49, 0.57, 0.64];
-    const acrossStations = [0.20, -0.06, 0.13, -0.11, 0.02];
-    const halfWidths = [0.008, 0.014, 0.020, 0.013, 0.007];
-    const normalLifts = [0.165, 0.170, 0.180, 0.170, 0.160];
+    const alongStations = [0.18, 0.32, 0.48, 0.65, 0.82];
+    const acrossStations = [0.30, 0.04, 0.20, -0.10, 0.08];
+    const halfWidths = [0.010, 0.018, 0.026, 0.018, 0.009];
+    const normalLifts = [0.14, 0.17, 0.19, 0.17, 0.14];
     const sample = (values, t) => {
       const scaled = clamp(t, 0, 1) * (values.length - 1);
       const segment = Math.min(values.length - 2, Math.floor(scaled));
@@ -566,8 +567,19 @@
 
   function buildFibres() {
     const vertices = [];
-    const count = coarse || lowCPU ? 26 : 44;
-    const segments = 6;
+    const segments = coarse || lowCPU ? 12 : 18;
+    // Eight short memories: local pressure-curves rather than diagrammatic rays.
+    // Their palette is primarily bone; colour is a rare interference event.
+    const specs = [
+      { lamella: 0, along: 0.30, across: -0.74, extension: [-1.00, 0.45, 0.25], curl: [-0.04, 0.16, 0.18], color: 3 },
+      { lamella: 0, along: 0.42, across: 0.76, extension: [0.95, 0.25, -0.18], curl: [0.02, 0.18, -0.16], color: 3 },
+      { lamella: 0, along: 0.58, across: -0.66, extension: [-0.80, -0.55, 0.15], curl: [-0.08, -0.14, 0.20], color: 1 },
+      { lamella: 0, along: 0.70, across: 0.72, extension: [0.85, -0.50, 0.28], curl: [0.06, -0.18, 0.14], color: 3 },
+      { lamella: 1, along: 0.32, across: -0.78, extension: [-0.35, 1.15, 0.35], curl: [-0.18, 0.04, 0.12], color: 3 },
+      { lamella: 1, along: 0.68, across: 0.75, extension: [0.45, 1.00, -0.25], curl: [0.18, 0.06, -0.12], color: 2 },
+      { lamella: 2, along: 0.35, across: -0.72, extension: [-0.35, -1.10, 0.30], curl: [-0.16, -0.04, 0.16], color: 3 },
+      { lamella: 2, along: 0.68, across: 0.74, extension: [0.40, -0.95, -0.20], curl: [0.16, -0.08, -0.12], color: 0 },
+    ];
     const quadraticPoint = (start, control, end, t) => {
       const q = 1 - t;
       return {
@@ -576,12 +588,9 @@
         z: q * q * start.z + 2 * q * t * control.z + t * t * end.z,
       };
     };
-    for (let index = 0; index < count; index++) {
-      const side = index % 2 ? -1 : 1;
-      const verticalDirection = index % 4 < 2 ? 1 : -1;
-      const lamellaIndex = index % LAMELLAE.length;
-      const along = 0.16 + hash(index + 41) * 0.70;
-      const across = (hash(index + 53) - 0.5) * 1.30;
+    specs.forEach((spec, index) => {
+      const lamellaIndex = spec.lamella;
+      const { along, across } = spec;
       const end = lamellaPoint(
         lamellaIndex,
         along,
@@ -594,18 +603,19 @@
       end.x += endNormal.x * surfaceLift;
       end.y += endNormal.y * surfaceLift;
       end.z += endNormal.z * surfaceLift;
+      const reach = 0.82 + index % 3 * 0.11;
       const start = {
-        x: side * (3.15 + hash(index + 3) * 1.35),
-        y: verticalDirection * (2.75 + hash(index + 17) * 1.45),
-        z: -0.82 + hash(index + 29) * 1.75,
+        x: end.x + spec.extension[0] * reach,
+        y: end.y + spec.extension[1] * reach,
+        z: end.z + spec.extension[2] * reach,
       };
       const control = {
-        x: lerp(start.x, end.x, 0.48) - side * (0.28 + hash(index + 67) * 0.62),
-        y: lerp(start.y, end.y, 0.48) + verticalDirection * (0.12 + hash(index + 71) * 0.46),
-        z: lerp(start.z, end.z, 0.48) + (hash(index + 79) - 0.5) * 0.92,
+        x: lerp(end.x, start.x, 0.52) + spec.curl[0],
+        y: lerp(end.y, start.y, 0.52) + spec.curl[1],
+        z: lerp(end.z, start.z, 0.52) + spec.curl[2],
       };
-      const color = index % 11 === 0 ? 2 : index % 7 === 0 ? 1 : index % 5 === 0 ? 0 : 3;
-      const seed = index / count;
+      const color = spec.color;
+      const seed = (index + 0.5) / specs.length;
       for (let segment = 0; segment < segments; segment++) {
         // Grow memory continuously from its physical anchor back into ether.
         const aWeight = segment / segments;
@@ -625,7 +635,7 @@
           endNormal.x, endNormal.y, endNormal.z, along, across,
         );
       }
-    }
+    });
     return new Float32Array(vertices);
   }
 
@@ -799,7 +809,7 @@
       point += deformNormal * groundedSheet * worldMask * worldChange * envelope * 0.08;
 
       if (uGhost > 0.5) {
-        float mirrorPlane = -2.50;
+        float mirrorPlane = -2.32;
         float sheetOffset = (aLamella - 1.0) * 0.13 + sin(aAlong * 7.0 + aLamella * 1.9) * 0.025;
         point.x = point.x * 0.965 - 0.10 + sheetOffset;
         point.y = mirrorPlane - (point.y - mirrorPlane) * 0.42 + (aLamella - 1.0) * 0.035;
@@ -953,7 +963,7 @@
         color += bone * specular * 0.08;
         float reflectionFade = smoothstep(-5.45, -2.42, vWorld.y);
         float ghostGrain = hash31(floor(facetCoord * 2.3 + vec3(floor(movingTime * 0.08))));
-        alpha = (0.090 + fresnel * 0.20 + uSubtraction * 0.046)
+        alpha = (0.125 + fresnel * 0.24 + uSubtraction * 0.046)
           * (0.82 + ghostGrain * 0.18) * reflectionFade;
       }
 
@@ -1078,7 +1088,7 @@
     void main(){
       float movingTime=mix(uTime,0.0,uReduced);
       float stagger=clamp((uReturn-aSeed*0.42)*1.72,0.0,1.0);
-      float crownMemory=(1.0-smoothstep(0.36,0.42,aSeed))*uCrown;
+      float crownMemory=(1.0-smoothstep(0.34,0.46,aSeed))*uCrown;
       float reveal=max(stagger,crownMemory*0.62);
       vec3 resolvedRoot=deformAnchor(aStart,aNormal,movingTime);
       vec3 rootDelta=resolvedRoot-aStart;
@@ -1095,8 +1105,8 @@
       gl_Position=clip;
       vec3 cyan=vec3(0.0,0.788,0.910),green=vec3(0.078,0.788,0.545),violet=vec3(0.408,0.251,1.0),bone=vec3(0.914,0.890,0.835);
       vColor=aColorIndex<0.5?cyan:(aColorIndex<1.5?green:(aColorIndex<2.5?violet:bone));
-      float returnAlpha=stagger*mix(0.22,0.62,aPathWeight)*(1.0-uReturn*0.18);
-      float memoryAlpha=crownMemory*mix(0.12,0.42,aPathWeight);
+      float returnAlpha=stagger*mix(0.06,0.30,aPathWeight)*(1.0-uReturn*0.18);
+      float memoryAlpha=crownMemory*mix(0.025,0.16,aPathWeight);
       vAlpha=max(returnAlpha,memoryAlpha);
     }
   `;
@@ -2095,10 +2105,10 @@
         detailYaw = detailPitch = detailRoll = 0;
         detailZoom = 1;
       } else {
-        overviewYaw = 0.40;
-        overviewPitch = -0.10;
-        overviewRoll = -0.06;
-        overviewZoom = 0.92;
+        overviewYaw = 0.48;
+        overviewPitch = -0.11;
+        overviewRoll = 0.035;
+        overviewZoom = 0.94;
       }
     }
     lastTapAt = now;
