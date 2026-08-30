@@ -32,6 +32,7 @@ const resonator = read(overrides[0]);
 const renderer = read(overrides[1]);
 const pointerInput = read('visual-parts/part-05.txt');
 const inertialInput = read('visual-parts/part-06.txt');
+const arcadeInput = read('arcade-parts/part-02.txt');
 
 assert.match(index, /AWAKEN THE TRUE WAR/);
 assert.match(index, /Somewhere out in the universe/);
@@ -113,6 +114,11 @@ for (const input of [pointerInput, inertialInput]) {
 }
 assert.match(pointerInput, /-0\.122, 0\.122/, 'pinch roll must share the renderer roll envelope');
 assert.match(inertialInput, /-0\.122, 0\.122/, 'inertial roll must share the renderer roll envelope');
+assert.match(
+  arcadeInput,
+  /event\.target instanceof Element[\s\S]*?closest\([\s\S]*?input, textarea, select,[\s\S]*?if \(editable\) return/,
+  'global arcade shortcuts must yield to text-entry controls',
+);
 
 for (const marker of [
   "WORLD.machine.css = '#00CFFF'",

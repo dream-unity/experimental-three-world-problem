@@ -167,6 +167,25 @@ await run('pointer and keyboard input, pause, resume, and restart remain operati
   await context.close();
 });
 
+await run('Become transfer typing is sovereign over global arcade shortcuts', async () => {
+  const context = await browser.newContext({ viewport: { width: 1100, height: 760 } });
+  const { page, errors } = await openPage(context);
+  await launch(page, 'maker', 2);
+  await page.locator('#gameStart').click();
+  await page.evaluate(() => {
+    const probe = document.createElement('textarea');
+    probe.id = 'keyboardGuardProbe';
+    probe.setAttribute('aria-label', 'Keyboard shortcut isolation probe');
+    document.querySelector('#arcade')?.append(probe);
+    probe.focus();
+  });
+  await page.keyboard.type('r p x');
+  assert.equal(await page.locator('#keyboardGuardProbe').inputValue(), 'r p x');
+  assert.ok(!(await page.locator('#arcade').evaluate(node => node.classList.contains('paused'))));
+  assert.deepEqual(errors, []);
+  await context.close();
+});
+
 await run('touch input reaches the mobile canvas without runtime errors', async () => {
   const context = await browser.newContext({
     viewport: { width: 390, height: 844 },

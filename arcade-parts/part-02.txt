@@ -71,6 +71,10 @@ sy);
 
   addEventListener('keydown', (event) => {
     if (!active) return;
+    const editable = event.target instanceof Element && event.target.closest(
+      'input, textarea, select, [contenteditable]:not([contenteditable="false"])'
+    );
+    if (editable) return;
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'Spacebar'].includes(event.key)) event.preventDefault();
     if (event.key === 'Escape') { closeGame(); return; }
     if (event.key.toLowerCase() === 'p') { pauseCurrent(); return; }
