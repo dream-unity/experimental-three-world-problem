@@ -682,7 +682,7 @@
     void main(){
       vec3 point=vec3(aPosition.x*uViewportScale.x,aPosition.y*uViewportScale.y,aPosition.z)*uOrientation.w;
       point=rotateZ(rotateX(rotateY(point,uOrientation.x),uOrientation.y),uOrientation.z);
-      vec4 clip=uProjection*vec4(point+vec3(0,0,-uCameraZ),1);
+      vec4 clip=uProjection*vec4(point+vec3(0.0,0.0,-uCameraZ),1.0);
       clip.xy+=uScreenShift*clip.w;
       gl_Position=clip;
       gl_PointSize=aSize*uDpr*clamp(10.0/max(2.0,clip.w),0.72,1.35);
@@ -735,7 +735,7 @@
       point.xy*=uViewportScale;
       point*=uOrientation.w;
       point=rotateZ(rotateX(rotateY(point,uOrientation.x),uOrientation.y),uOrientation.z);
-      vec4 clip=uProjection*vec4(point+vec3(0,0,-uCameraZ),1);
+      vec4 clip=uProjection*vec4(point+vec3(0.0,0.0,-uCameraZ),1.0);
       clip.xy+=uScreenShift*clip.w;
       gl_Position=clip;
       vec3 cyan=vec3(0.0,0.788,0.910),green=vec3(0.078,0.788,0.545),violet=vec3(0.408,0.251,1.0),bone=vec3(0.914,0.890,0.835);
@@ -754,6 +754,7 @@
 
   let gl = null;
   let fallbackContext = null;
+  let fallbackSuspended = false;
   let resources = null;
   let uniformLocations = new WeakMap();
 
@@ -807,7 +808,7 @@
   }
 
   function initGLResources() {
-    if (!gl || gl.isContextLost()) return;
+    if (!gl || gl.isContextLost()) throw new Error('WebGL2 context is unavailable during resource initialisation.');
     uniformLocations = new WeakMap();
     const segments = coarse || lowCPU ? { longitude: 88, latitude: 66 } : { longitude: 132, latitude: 96 };
     const outerMesh = buildSurface(segments.longitude, segments.latitude, false);
@@ -1056,6 +1057,39 @@
     return path;
   }
 
+  function fallbackLayout(detail = false, state = cycleState(elapsed)) {
+    const shift = screenShift(detail);
+    const compact = isCompactLayout();
+    const artifactWidth = width * (compact ? 0.89 : 0.61);
+    const artifactHeight = height * (compact ? 0.64 : 0.79);
+    const orientation = currentOrientation(detail);
+    const scale = Math.min(artifactWidth / 7.4, artifactHeight / 6.55) * orientation.zoom;
+    return {
+      centerX: width * (0.5 + shift.x * 0.5),
+      centerY: height * (0.5 - shift.y * 0.5),
+      scale,
+      orientation,
+      angle: orientation.roll + orientation.yaw * 0.045,
+      scaleX: (1 - state.pressure * 0.105 - state.subtraction * 0.08)
+        * (0.94 + Math.cos(orientation.yaw) * 0.06),
+      scaleY: 1 - state.pressure * 0.035,
+    };
+  }
+
+  function projectFallbackPoint(point, detail = false) {
+    const layout = fallbackLayout(detail);
+    const localX = point.x * layout.scale * layout.scaleX;
+    const localY = -point.y * layout.scale * layout.scaleY;
+    const cosine = Math.cos(layout.angle);
+    const sine = Math.sin(layout.angle);
+    return {
+      x: layout.centerX + localX * cosine - localY * sine,
+      y: layout.centerY + localX * sine + localY * cosine,
+      z: point.z,
+      f: layout.scale / 10,
+    };
+  }
+
   function renderFallback(state) {
     const context = fallbackContext;
     if (!context) return;
@@ -1063,19 +1097,12 @@
     context.setTransform(dpr, 0, 0, dpr, 0, 0);
     context.fillStyle = '#050405';
     context.fillRect(0, 0, width, height);
-    const shift = screenShift(Boolean(activeWorld));
-    const centerX = width * (0.5 + shift.x * 0.5);
-    const centerY = height * (0.5 - shift.y * 0.5);
-    const compact = isCompactLayout();
-    const artifactWidth = width * (compact ? 0.89 : 0.61);
-    const artifactHeight = height * (compact ? 0.64 : 0.79);
-    const scale = Math.min(artifactWidth / 7.4, artifactHeight / 6.55) * currentOrientation(Boolean(activeWorld)).zoom;
-    const orientation = currentOrientation(Boolean(activeWorld));
-    const compression = 1 - state.pressure * 0.105 - state.subtraction * 0.08;
+    const layout = fallbackLayout(Boolean(activeWorld), state);
+    const { centerX, centerY, scale, orientation } = layout;
 
     context.translate(centerX, centerY);
-    context.rotate(orientation.roll + orientation.yaw * 0.045);
-    context.scale(compression * (0.94 + Math.cos(orientation.yaw) * 0.06), 1 - state.pressure * 0.035);
+    context.rotate(layout.angle);
+    context.scale(layout.scaleX, layout.scaleY);
     const body = fallbackBodyPath(context, scale);
     const wound = fallbackWoundPath(scale);
 
@@ -1134,7 +1161,7 @@
     context.restore();
 
     pointSet().forEach(({ point, color, size }) => {
-      const projected = projectPoint(point, Boolean(activeWorld));
+      const projected = projectFallbackPoint(point, Boolean(activeWorld));
       const radius = size * 0.58;
       const gradient = context.createRadialGradient(projected.x, projected.y, 0, projected.x, projected.y, radius);
       const rgb = color.map((value) => Math.round(value * 255));
@@ -1147,13 +1174,18 @@
   }
 
   function updateProjectedTargets() {
+    const projector = fallbackContext ? projectFallbackPoint : projectPoint;
     worldKeys.forEach((key) => {
-      const projected = projectPoint(WORLD_PINS[key], false, currentOrientation(false));
+      const projected = fallbackContext
+        ? projector(WORLD_PINS[key], false)
+        : projector(WORLD_PINS[key], false, currentOrientation(false));
       Object.assign(worldScreen[key], projected, { r: coarse ? 31 : 27 });
     });
     if (activeWorld) {
       DETAIL_PINS[activeWorld].forEach((pin, index) => {
-        const projected = projectPoint(pin, true, currentOrientation(true));
+        const projected = fallbackContext
+          ? projector(pin, true)
+          : projector(pin, true, currentOrientation(true));
         Object.assign(subScreen[index], projected, { r: coarse ? 30 : 25, index });
       });
     }
@@ -1165,15 +1197,16 @@
     const mobile = isCompactLayout();
     const worldY = height * (mobile ? 0.80 : 0.895);
     const subY = height * (mobile ? 0.775 : 0.875);
+    const overviewInteractive = !activeWorld || mix <= 0.05;
     worldKeys.forEach((key, index) => {
       const element = labels[key];
       if (!element) return;
       element.style.left = `${width * (mobile ? (index + 0.5) / 3 : 0.31 + index * 0.19)}px`;
       element.style.top = `${worldY}px`;
       element.style.opacity = String(clamp(1 - mix * 2.1, 0, 1));
-      element.style.pointerEvents = mix < 0.25 ? 'auto' : 'none';
-      element.tabIndex = mix < 0.25 ? 0 : -1;
-      element.setAttribute('aria-hidden', String(mix >= 0.25));
+      element.style.pointerEvents = overviewInteractive ? 'auto' : 'none';
+      element.tabIndex = overviewInteractive ? 0 : -1;
+      element.setAttribute('aria-hidden', String(!overviewInteractive));
     });
 
     if (unityLabel) {
@@ -1237,7 +1270,16 @@
     });
     setHint();
     needsRender = true;
-    window.setTimeout(() => back?.focus?.({ preventScroll: true }), reducedMotion ? 0 : 180);
+    const started = performance.now();
+    const focusDetailBack = () => {
+      if (activeWorld !== key) return;
+      if (app.classList.contains('detail')) {
+        back?.focus?.({ preventScroll: true });
+        return;
+      }
+      if (performance.now() - started < 1200) requestAnimationFrame(focusDetailBack);
+    };
+    requestAnimationFrame(focusDetailBack);
   }
 
   function exitWorld() {
@@ -1249,11 +1291,11 @@
     const started = performance.now();
     const restoreWorldFocus = () => {
       if (targetMix !== 0 || !returnKey) return;
-      if (viewMix < 0.22 || performance.now() - started > 900) {
+      if (!app.classList.contains('detail')) {
         labels[returnKey]?.focus?.({ preventScroll: true });
         return;
       }
-      requestAnimationFrame(restoreWorldFocus);
+      if (performance.now() - started < 1600) requestAnimationFrame(restoreWorldFocus);
     };
     requestAnimationFrame(restoreWorldFocus);
   }
@@ -1658,6 +1700,18 @@
     lastFrame = now;
     const dt = Math.min(rawDt, 0.05);
     const gameActive = Boolean(window.__dreamUnityGameActive);
+    if (fallbackContext) {
+      if (gameActive && !fallbackSuspended) {
+        fallbackSuspended = true;
+        canvas.style.visibility = 'hidden';
+        canvas.width = 1;
+        canvas.height = 1;
+      } else if (!gameActive && fallbackSuspended) {
+        fallbackSuspended = false;
+        canvas.style.visibility = '';
+        resize(true);
+      }
+    }
     if (!document.hidden && !gameActive && rendererStatus.ready && !rendererStatus.contextLost) {
       if (!reducedMotion) elapsed += dt;
       updateMotion(dt);
@@ -1708,9 +1762,19 @@
         detail: { mode: 'webgl', api: 'webgl2', version: RENDERER_VERSION },
       }));
     } catch (error) {
-      rendererStatus.state = 'error';
-      app.dataset.rendererState = 'error';
-      console.error(error);
+      try {
+        replaceCanvasForFallback(error);
+        resize(true);
+        setReady('canvas2d-fallback', 'canvas2d', true);
+        needsRender = true;
+        window.dispatchEvent(new CustomEvent('dreamunity:renderer-context-restored', {
+          detail: { mode: 'canvas2d-fallback', api: 'canvas2d', version: RENDERER_VERSION },
+        }));
+      } catch (fallbackError) {
+        rendererStatus.state = 'error';
+        app.dataset.rendererState = 'error';
+        console.error(fallbackError);
+      }
     }
   });
   }
@@ -1734,6 +1798,7 @@
     bindInteractionCanvas(canvas);
     fallbackContext = canvas.getContext('2d', { alpha: false, desynchronized: true });
     if (!fallbackContext) throw cause || new Error('Canvas2D fallback is unavailable.');
+    if (window.__dreamUnityGameActive) canvas.style.visibility = 'hidden';
     return fallbackContext;
   }
 
@@ -1745,14 +1810,19 @@
   });
   window.addEventListener('dreamunity:launch-game', (event) => {
     clearPointers();
-    if (fallbackContext) canvas.style.visibility = 'hidden';
+    if (fallbackContext) window.setTimeout(() => {
+      if (window.__dreamUnityGameActive) canvas.style.visibility = 'hidden';
+    }, 0);
     const index = Number(event.detail?.index);
     if (Number.isInteger(index) && index >= 0 && index < subLabels.length) selectSub(index);
     window.setTimeout(() => $('#gameStart')?.focus?.({ preventScroll: true }), 0);
   });
   window.addEventListener('dreamunity:game-closed', () => {
     clearPointers();
-    if (fallbackContext) canvas.style.visibility = '';
+    if (fallbackContext) {
+      fallbackSuspended = false;
+      canvas.style.visibility = '';
+    }
     lastFrame = performance.now();
     resize(true);
     setHint();

@@ -63,6 +63,7 @@ jobs:
           grep -q 'webglcontextlost' "$renderer"
           grep -q 'webglcontextrestored' "$renderer"
           grep -q 'dreamunity:renderer-ready' "$renderer"
+          grep -q 'dreamunity:launch-game' "$renderer"
           grep -q 'prefers-reduced-motion' "$renderer"
           grep -q '__dreamUnityRenderer' "$renderer"
           ! grep -Eqi '\.mp3|AudioContext|createMediaElementSource|decodeAudioData' "$renderer"
@@ -99,7 +100,6 @@ jobs:
           test "${#published_mp3[@]}" -eq 1
           test "${published_mp3[0]}" = 'assets/i-remember-tomorrow.mp3'
           ! printf '%s\n' "${published_mp3[@]}" | grep -Eqi 'awaken[ _-]*the[ _-]*true[ _-]*war|\(2\)'
-          grep -q "dreamunity:launch-game" visual-parts/part-05.txt
 
   verify-live:
     if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
@@ -156,6 +156,7 @@ jobs:
           grep -q 'webglcontextlost' "$renderer"
           grep -q 'webglcontextrestored' "$renderer"
           grep -q 'dreamunity:renderer-ready' "$renderer"
+          grep -q 'dreamunity:launch-game' "$renderer"
           grep -q 'prefers-reduced-motion' "$renderer"
           ! grep -Eqi '\.mp3|AudioContext|createMediaElementSource|decodeAudioData' "$renderer"
           grep -q 'AWAKEN THE TRUE WAR' "$live_dir/index.html"
