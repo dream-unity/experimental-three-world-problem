@@ -2032,7 +2032,7 @@
     if (unityLabel) {
       const unityX = width * (mobile ? 0.42 : 0.52);
       const unityY = height * (mobile ? 0.58 : 0.59);
-      const collisionX = mobile ? (phone ? 72 : 98) : 118;
+      const collisionX = mobile ? (phone ? 72 : 128) : 118;
       const collisionY = mobile ? 36 : 42;
       const unityOccluded = placedLabels.some(point =>
         Math.abs(point.x - unityX) < collisionX && Math.abs(point.y - unityY) < collisionY
