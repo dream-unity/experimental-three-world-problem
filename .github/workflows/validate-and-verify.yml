@@ -126,10 +126,11 @@ jobs:
           done
           test "$matched" = true
 
-          grep -q 'main.js?v=20260830-sovereign-resonator-1' "$live_dir/index.html"
-          grep -q 'unity-cycle.css?v=20260830-sovereign-resonator-1' "$live_dir/index.html"
-          grep -q 'styles.css?v=20260830-sovereign-resonator-1' "$live_dir/index.html"
-          grep -q 'light-theme.js?v=20260830-sovereign-resonator-1' "$live_dir/index.html"
+          grep -q 'main.js?v=20260830-sovereign-resonator-2' "$live_dir/index.html"
+          grep -q 'unity-cycle.css?v=20260830-sovereign-resonator-2' "$live_dir/index.html"
+          grep -q 'styles.css?v=20260830-sovereign-resonator-2' "$live_dir/index.html"
+          grep -q 'light-theme.js?v=20260830-sovereign-resonator-2' "$live_dir/index.html"
+          grep -q 'unity-ui.js?v=20260830-sovereign-resonator-2' "$live_dir/index.html"
           grep -q '<div class="unity-label" id="unityLabel" aria-hidden="true">' "$live_dir/index.html"
           ! grep -Eqi 'data-voice|duVoice|du-voice|voice\.css|voice\.js|js\.puter\.com|dream-unity-voice-live\.vercel\.app' "$live_dir/index.html"
           grep -q 'sovereign-resonator-11.txt' "$live_dir/main.js"
@@ -267,7 +268,7 @@ jobs:
                 'backend_release':backend_release
               },
               'renderer_override':'visual-parts/sovereign-resonator-11.txt',
-              'main_cache_version':'20260830-sovereign-resonator-1'
+              'main_cache_version':'20260830-sovereign-resonator-2'
             },
             'become':{
               'scenario_source':'instant_objective_driven_social_agency_maximin_synthesis',
