@@ -51,7 +51,7 @@ html,body{
   transform:translate3d(var(--du-plate-x,0%),var(--du-plate-y,0%),0)
     scale(var(--du-plate-scale,1.035));
   transform-origin:66% 63%;
-  filter:brightness(1.01) saturate(.94) contrast(1.055);
+  filter:brightness(1.00) saturate(.92) contrast(1.05);
   will-change:transform,filter;
 }
 #world{
@@ -68,7 +68,7 @@ html,body{
   filter:none;
 }
 #app.detail .material-plate img{
-  filter:brightness(.90) saturate(.90) contrast(1.09);
+  filter:brightness(.94) saturate(.90) contrast(1.08);
 }
 @media(max-aspect-ratio:3/4){
   .material-plate{inset:-1.8%}
@@ -95,7 +95,7 @@ html,body{
   z-index:2;
   overflow:hidden;
   background:
-    radial-gradient(ellipse at 50% 47%,transparent 24%,rgba(0,0,0,.06) 54%,rgba(0,0,0,.66) 118%),
+    radial-gradient(ellipse at 50% 47%,transparent 24%,rgba(0,0,0,.06) 54%,rgba(0,0,0,.52) 118%),
     linear-gradient(115deg,rgba(105,186,203,.012),transparent 30%,transparent 74%,rgba(128,112,186,.012));
 }
 
@@ -975,4 +975,45 @@ html,body{
 
 @media(prefers-reduced-motion:reduce){
   .material-plate img{will-change:auto;transition:none}
+}
+
+
+/* The authored plate sets the composition; interface language inhabits it. */
+#app:not(.detail) .unity-label{
+  left:62.5%!important;
+  top:57%!important;
+}
+.detail-title strong{
+  color:rgba(233,227,214,.92)!important;
+}
+.detail-title small{
+  color:rgba(255,118,95,.86)!important;
+}
+
+@media(min-width:761px){
+  #app:not(.detail) .world-label>.world-copy strong{
+    color:rgba(233,227,214,.82)!important;
+    font-size:13px;
+    font-weight:540;
+    letter-spacing:.14em;
+  }
+}
+
+@media(min-width:901px){
+  .manifesto{
+    left:3.6vw;
+    bottom:13vh;
+    width:min(430px,32vw);
+  }
+  .manifesto h1{
+    font-size:clamp(48px,4.2vw,68px);
+    line-height:.89;
+  }
+}
+
+@media(max-aspect-ratio:3/4){
+  #app:not(.detail) .unity-label{
+    left:65.5%!important;
+    top:55.5%!important;
+  }
 }
