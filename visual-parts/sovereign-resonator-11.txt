@@ -15,7 +15,7 @@
   const SR_PAPER = [248, 249, 252];
   const SR_INK = [13, 17, 31];
   const SR_GREY = [139, 146, 162];
-  const SR_PALE = [219, 224, 233];
+  const SR_PALE = [199, 207, 220];
   const SR_CYAN = WORLD.machine.rgb;
   const SR_GREEN = WORLD.maker.rgb;
   const SR_VIOLET = WORLD.reality.rgb;
@@ -125,7 +125,7 @@
 
   function srCenter() {
     return {
-      x: width > 1120 ? width * 0.635 : width > 760 ? width * 0.555 : width * 0.5,
+      x: width > 1120 ? width * 0.605 : width > 760 ? width * 0.535 : width * 0.5,
       y: width > 760 ? height * 0.505 : height * 0.55
     };
   }
@@ -133,7 +133,7 @@
   function srProject(point, scale = 1, cameraZ = 13.2, center = srCenter()) {
     const srDepth = cameraZ - point.z;
     const srPerspective = scale * cameraZ / Math.max(3.3, srDepth);
-    const srSpread = width > 1120 ? 0.132 : width > 760 ? 0.117 : 0.142;
+    const srSpread = width > 1120 ? 0.150 : width > 760 ? 0.130 : 0.142;
     return {
       x: center.x + point.x * unit * srSpread * srPerspective,
       y: center.y - point.y * unit * srSpread * srPerspective,
@@ -193,7 +193,7 @@
     else if (srS < 0.43) srColor = srMixColor(SR_GREEN, SR_VIOLET, ease((srS - 0.19) / 0.24) * 0.28);
     else if (srS < 0.73) srColor = srMixColor(SR_VIOLET, SR_CYAN, ease((srS - 0.43) / 0.30) * 0.14);
     else srColor = srMixColor(SR_VIOLET, SR_CYAN, ease((srS - 0.73) / 0.27));
-    if (strand === 1) return srMixColor(srColor, SR_WHITE, 0.12);
+    if (strand === 1) return srMixColor(srColor, SR_WHITE, 0.02);
     if (strand === 2) return srMixColor(srColor, SR_INK, 0.08);
     return srColor;
   }
@@ -283,15 +283,15 @@
     ctx.translate(srOrigin.x, srOrigin.y);
     ctx.rotate(-0.075 + overviewRoll * 0.03);
     ctx.setLineDash([1, 10]);
-    ctx.strokeStyle = rgba(SR_PALE, 0.62);
-    ctx.lineWidth = 0.55;
+    ctx.strokeStyle = rgba(SR_PALE, 0.48);
+    ctx.lineWidth = 0.68;
     for (let srRing = 0; srRing < 3; srRing++) {
       ctx.beginPath();
       ctx.ellipse(0, 0, srRadius * (0.63 + srRing * 0.18), srRadius * (0.15 + srRing * 0.028), 0, 0, TAU);
       ctx.stroke();
     }
     ctx.setLineDash([]);
-    ctx.strokeStyle = rgba(SR_INK, 0.065);
+    ctx.strokeStyle = rgba(SR_INK, 0.095);
     ctx.beginPath();
     ctx.moveTo(-srRadius * 0.94, 0);
     ctx.lineTo(srRadius * 0.94, 0);
@@ -317,7 +317,7 @@
       });
       srPoints.push(srProjected);
     }
-    const srEchoPresence = (0.45 - srForm.reconstitution * 0.16 + srForm.subtraction * 0.34)
+    const srEchoPresence = (0.56 - srForm.reconstitution * 0.14 + srForm.subtraction * 0.36)
       * (1 - srForm.release * 0.36);
     ctx.save();
     ctx.lineJoin = 'round';
@@ -328,7 +328,7 @@
     srPoints.forEach((srPoint, srIndex) => srIndex ? ctx.lineTo(srPoint.x, srPoint.y) : ctx.moveTo(srPoint.x, srPoint.y));
     ctx.stroke();
     ctx.strokeStyle = rgba(SR_GREY, alpha * srEchoPresence);
-    ctx.lineWidth = 0.75 + srForm.subtraction * 0.45;
+    ctx.lineWidth = 0.92 + srForm.subtraction * 0.52;
     ctx.setLineDash([1.25, 5.5]);
     ctx.stroke();
     ctx.setLineDash([]);
@@ -344,8 +344,8 @@
         { x: srPoint.x - srNx * 4.5, y: srPoint.y - srNy * 4.5 },
         { x: srPoint.x + srNx * 4.5, y: srPoint.y + srNy * 4.5 },
         SR_GREY,
-        alpha * srEchoPresence * 0.72,
-        0.55
+        alpha * srEchoPresence * 0.84,
+        0.72
       );
     }
     ctx.restore();
@@ -366,8 +366,8 @@
       const srTension = 0.28 + srFormState.convergence * 0.44 + srFormState.crown * 0.24;
       const srMidX = lerp((srA.x + srB.x) * 0.5, srCenterPoint.x, 0.28 + srFormState.convergence * 0.24);
       const srMidY = lerp((srA.y + srB.y) * 0.5, srCenterPoint.y, 0.28 + srFormState.convergence * 0.24);
-      ctx.strokeStyle = rgba(srColor, alpha * (0.23 + srTension * 0.40) * (1 - srFormState.subtraction * 0.24));
-      ctx.lineWidth = 0.62 + srFormState.beat * 0.35 + (srIndex % 3 === 0 ? 0.25 : 0);
+      ctx.strokeStyle = rgba(srColor, alpha * (0.34 + srTension * 0.46) * (1 - srFormState.subtraction * 0.18));
+      ctx.lineWidth = 0.82 + srFormState.beat * 0.42 + (srIndex % 3 === 0 ? 0.34 : 0);
       ctx.beginPath();
       ctx.moveTo(srA.x, srA.y);
       ctx.quadraticCurveTo(srMidX, srMidY, srB.x, srB.y);
@@ -416,29 +416,52 @@
     srFacets.forEach((srFacet) => {
       const srMatter = srWindow(srFacet.s, 0.39, 0.57, 0.755);
       const srColor = srSectionColor(srFacet.s, srFacet.strand);
-      const srDepth = clamp(0.66 + srFacet.z * 0.055, 0.38, 1);
-      const srFacePresence = (0.13 + srMatter * 0.17 + srForm.reconstitution * 0.08)
-        * (1 - srForm.subtraction * 0.78)
-        * (1 - srFacet.dissolve * 0.58);
+      const srDepth = clamp(0.76 + srFacet.z * 0.14, 0.62, 1);
+      const srFacePresence = (0.40 + srMatter * 0.28 + srForm.reconstitution * 0.12)
+        * (1 - srForm.subtraction * 0.68)
+        * (1 - srFacet.dissolve * 0.64);
       ctx.beginPath();
       ctx.moveTo(srFacet.points[0].x, srFacet.points[0].y);
       for (let srPointIndex = 1; srPointIndex < srFacet.points.length; srPointIndex++) {
         ctx.lineTo(srFacet.points[srPointIndex].x, srFacet.points[srPointIndex].y);
       }
       ctx.closePath();
-      ctx.fillStyle = rgba(srFacet.index % 3 === 0 ? srMixColor(srColor, SR_WHITE, 0.22) : srColor,
+      const srFaceColor = srFacet.index % 5 === 0
+        ? srMixColor(srColor, SR_INK, 0.08)
+        : srFacet.index % 3 === 0 ? srMixColor(srColor, SR_WHITE, 0.10) : srColor;
+      ctx.fillStyle = rgba(srFaceColor,
         alpha * srFacePresence * srDepth);
       ctx.fill();
-      ctx.strokeStyle = rgba(srColor, alpha * (0.52 + srMatter * 0.25 + srForm.crown * 0.16) * srDepth);
-      ctx.lineWidth = 0.65 + srMatter * 0.32 + srForm.beat * 0.28;
+      ctx.strokeStyle = rgba(srMixColor(srColor, SR_INK, 0.10), alpha * (0.42 + srMatter * 0.10 + srForm.crown * 0.06) * srDepth);
+      ctx.lineWidth = 0.58 + srMatter * 0.22 + srForm.beat * 0.16;
       ctx.stroke();
       if (srMatter > 0.12 && (srFacet.index + srFacet.strand) % 2 === 0) {
         srLine(srFacet.points[0], srFacet.points[2],
           srFacet.index % 7 === 0 ? SR_GOLD : SR_VIOLET,
-          alpha * (0.26 + srMatter * 0.34) * srDepth,
-          srFacet.index % 7 === 0 ? 0.92 : 0.52);
+          alpha * (0.38 + srMatter * 0.40) * srDepth,
+          srFacet.index % 7 === 0 ? 1.18 : 0.72);
       }
     });
+  }
+
+  function srDrawStructuralRails(alpha) {
+    const srCount = lowCPU || coarse ? 70 : 106;
+    for (let srStrand = 0; srStrand < 3; srStrand++) {
+      let srPrevious = null;
+      for (let srIndex = 0; srIndex <= srCount; srIndex++) {
+        const srS = srIndex / srCount;
+        const srPoint = srRotateProject(srModelPoint(srS, srStrand, 0));
+        if (srPrevious) {
+          const srMatter = srWindow(srS, 0.39, 0.57, 0.755);
+          const srDissolve = ease(clamp((srS - 0.745) / 0.255, 0, 1));
+          const srColor = srMixColor(srSectionColor(srS, srStrand), SR_INK, 0.18 + Math.max(0, srPoint.z) * 0.025);
+          const srPresence = (0.90 - srDissolve * 0.34) * (1 - srForm.subtraction * 0.08);
+          srLine(srPrevious, srPoint, srColor, alpha * srPresence,
+            1.82 + srMatter * 0.38 + (srStrand === 2 ? 0.24 : 0));
+        }
+        srPrevious = srPoint;
+      }
+    }
   }
 
   function srDrawLoadRibs(alpha) {
@@ -450,14 +473,14 @@
       const srColor = srIndex % 5 === 0 ? SR_GOLD : SR_VIOLET;
       const srDepth = clamp(0.68 + (srOuterA.z + srOuterB.z) * 0.03, 0.44, 1);
       srLine(srOuterA, srOuterB, srColor,
-        alpha * srDepth * (0.54 + srForm.convergence * 0.17 + srForm.crown * 0.18),
-        srIndex % 5 === 0 ? 1.35 : 0.86);
+        alpha * srDepth * (0.70 + srForm.convergence * 0.14 + srForm.crown * 0.12),
+        srIndex % 5 === 0 ? 1.62 : 1.02);
       const srDx = srOuterB.x - srOuterA.x;
       const srDy = srOuterB.y - srOuterA.y;
       const srLength = Math.max(0.001, Math.hypot(srDx, srDy));
       const srNx = -srDy / srLength;
       const srNy = srDx / srLength;
-      const srTooth = 3.4 + srForm.crown * 2 + srForm.beat * 0.9;
+      const srTooth = 5.2 + srForm.crown * 2.6 + srForm.beat * 1.1;
       const srBaseX = srOuterB.x;
       const srBaseY = srOuterB.y;
       ctx.beginPath();
@@ -465,13 +488,13 @@
       ctx.lineTo(srBaseX + srNx * srTooth, srBaseY + srNy * srTooth);
       ctx.lineTo(srBaseX + srDx / srLength * 2.4, srBaseY + srDy / srLength * 2.4);
       ctx.closePath();
-      ctx.fillStyle = rgba(srColor, alpha * srDepth * 0.68);
+      ctx.fillStyle = rgba(srColor, alpha * srDepth * 0.84);
       ctx.fill();
     }
   }
 
   function srDrawEther(t, alpha) {
-    const srCount = lowCPU || coarse ? 36 : 68;
+    const srCount = lowCPU || coarse ? 30 : 44;
     for (let srIndex = 0; srIndex < srCount; srIndex++) {
       const srReturning = srIndex >= srCount * 0.54;
       const srLocal = srReturning
@@ -490,13 +513,13 @@
       };
       const srPoint = srRotateProject(srModel);
       const srColor = srReturning ? srMixColor(SR_VIOLET, SR_CYAN, srLocal) : srMixColor(SR_CYAN, SR_GREEN, srLocal * 0.35);
-      const srSize = 0.65 + srSeed(srIndex, 49) * 1.45 + srForm.high * 0.55;
-      const srPresence = (0.26 + srForm.high * 0.48 + srForm.release * (srReturning ? 0.34 : 0.08))
-        * (1 - srForm.subtraction * 0.66);
-      ctx.fillStyle = rgba(srColor, alpha * srPresence * (0.42 + srSeed(srIndex, 51) * 0.38));
+      const srSize = 1.05 + srSeed(srIndex, 49) * 2.05 + srForm.high * 0.62;
+      const srPresence = (0.36 + srForm.high * 0.50 + srForm.release * (srReturning ? 0.34 : 0.08))
+        * (1 - srForm.subtraction * 0.58);
+      ctx.fillStyle = rgba(srColor, alpha * srPresence * (0.54 + srSeed(srIndex, 51) * 0.38));
       if (srIndex % 6 === 0) {
-        ctx.strokeStyle = rgba(srColor, alpha * srPresence * 0.62);
-        ctx.lineWidth = 0.6;
+        ctx.strokeStyle = rgba(srColor, alpha * srPresence * 0.82);
+        ctx.lineWidth = 0.78;
         ctx.strokeRect(srPoint.x - srSize, srPoint.y - srSize, srSize * 2, srSize * 2);
       } else {
         ctx.fillRect(srPoint.x - srSize * 0.5, srPoint.y - srSize * 0.5, srSize, srSize);
@@ -507,7 +530,7 @@
   function srDrawGravitySeed(alpha) {
     const srS = 0.405;
     const srCenterPoint = srRotateProject(srTrefoil(srS));
-    const srRadius = Math.max(4.5, unit * 0.0105) * (1 + srForm.low * 0.14 + srForm.beat * 0.10);
+    const srRadius = Math.max(8, unit * 0.021) * (1 + srForm.low * 0.14 + srForm.beat * 0.10);
     const srVertices = [];
     for (let srIndex = 0; srIndex < 6; srIndex++) {
       const srAngle = -Math.PI * 0.5 + srIndex * TAU / 6;
@@ -572,7 +595,7 @@
     ctx.save();
     ctx.translate(position.x, position.y);
     ctx.globalAlpha = alpha;
-    ctx.fillStyle = 'rgba(255,255,255,.94)';
+    ctx.fillStyle = rgba(srMixColor(srColor, SR_WHITE, 0.76), 0.96);
     ctx.beginPath();
     for (let srIndex = 0; srIndex < srSides; srIndex++) {
       const srAngle = srRotation + srIndex * TAU / srSides;
@@ -582,8 +605,8 @@
     }
     ctx.closePath();
     ctx.fill();
-    ctx.strokeStyle = rgba(srColor, 0.90);
-    ctx.lineWidth = focus ? 1.8 : 1.12;
+    ctx.strokeStyle = rgba(srColor, 0.98);
+    ctx.lineWidth = focus ? 2.05 : 1.34;
     ctx.stroke();
     for (let srIndex = 0; srIndex < 3; srIndex++) {
       const srAngle = srRotation + srIndex * TAU / 3;
@@ -627,6 +650,7 @@
     srDrawTensions(t, alpha);
     srDrawEther(t, alpha);
     srDrawSheaths(t, alpha);
+    srDrawStructuralRails(alpha);
     srDrawLoadRibs(alpha);
     srDrawGravitySeed(alpha);
     srDrawCrown(alpha);
@@ -660,6 +684,7 @@
   drawMachineField = function srMachineField(t, alpha) {
     const srCenterPoint = { x: width * 0.5, y: height * 0.52 };
     const srNodes = [];
+    const srBands = [[], [], []];
     for (let srIndex = 0; srIndex < 54; srIndex++) {
       const srBand = srIndex % 3;
       const srAngle = srIndex / 54 * TAU * 2 + srBand * 0.26 + t * 0.018;
@@ -670,21 +695,53 @@
         z: Math.sin(srAngle) * srRadius
       };
       const srRotated = rotate3(srModel, detailYaw, detailPitch, detailRoll);
-      srNodes.push(srProject(srRotated, detailZoom * 0.74, 11.8, srCenterPoint));
+      const srProjected = srProject(srRotated, detailZoom * 0.82, 11.8, srCenterPoint);
+      srNodes.push(srProjected);
+      srBands[srBand].push(srProjected);
     }
+    srBands.forEach((srBand, srBandIndex) => {
+      ctx.beginPath();
+      srBand.forEach((srPoint, srIndex) => srIndex
+        ? ctx.lineTo(srPoint.x, srPoint.y)
+        : ctx.moveTo(srPoint.x, srPoint.y));
+      ctx.closePath();
+      ctx.fillStyle = rgba(srBandIndex === 2 ? SR_VIOLET : SR_CYAN, alpha * (srBandIndex === 2 ? 0.055 : 0.075));
+      ctx.fill();
+      ctx.strokeStyle = rgba(srBandIndex === 2 ? SR_VIOLET : SR_CYAN, alpha * (0.66 + srBandIndex * 0.08));
+      ctx.lineWidth = 0.98 + srBandIndex * 0.22;
+      ctx.stroke();
+    });
     srNodes.forEach((srPoint, srIndex) => {
       const srNext = srNodes[(srIndex + 9) % srNodes.length];
       srLine(srPoint, srNext, srIndex % 9 === 0 ? SR_GOLD : SR_CYAN,
-        alpha * (srIndex % 9 === 0 ? 0.35 : 0.16),
-        srIndex % 9 === 0 ? 0.9 : 0.55);
-      const srSize = srIndex % 9 === 0 ? 2.6 : 1.1;
-      ctx.fillStyle = rgba(srIndex % 9 === 0 ? SR_GOLD : SR_CYAN, alpha * (srIndex % 9 === 0 ? 0.78 : 0.48));
+        alpha * (srIndex % 9 === 0 ? 0.84 : 0.42),
+        srIndex % 9 === 0 ? 1.35 : 0.82);
+      if (srIndex % 9 === 0) {
+        srLine(srPoint, srCenterPoint, SR_GOLD, alpha * 0.48, 0.82);
+      }
+      const srSize = srIndex % 9 === 0 ? 3.4 : 1.55;
+      ctx.fillStyle = rgba(srIndex % 9 === 0 ? SR_GOLD : SR_CYAN, alpha * (srIndex % 9 === 0 ? 0.94 : 0.72));
       ctx.fillRect(srPoint.x - srSize * 0.5, srPoint.y - srSize * 0.5, srSize, srSize);
     });
+    for (let srRing = 0; srRing < 3; srRing++) {
+      const srRadius = unit * (0.018 + srRing * 0.012);
+      ctx.beginPath();
+      for (let srIndex = 0; srIndex < 8; srIndex++) {
+        const srAngle = -Math.PI * 0.5 + srIndex * TAU / 8 + detailRoll * 0.25;
+        const srX = srCenterPoint.x + Math.cos(srAngle) * srRadius;
+        const srY = srCenterPoint.y + Math.sin(srAngle) * srRadius * 0.42;
+        srIndex ? ctx.lineTo(srX, srY) : ctx.moveTo(srX, srY);
+      }
+      ctx.closePath();
+      ctx.strokeStyle = rgba(srRing === 0 ? SR_INK : srRing === 1 ? SR_CYAN : SR_GOLD, alpha * (0.88 - srRing * 0.10));
+      ctx.lineWidth = srRing === 0 ? 1.35 : 0.88;
+      ctx.stroke();
+    }
   };
 
   drawMakerField = function srMakerField(t, alpha) {
     const srCenterPoint = { x: width * 0.5, y: height * 0.52 };
+    const srStrands = [[], [], []];
     for (let srStrand = 0; srStrand < 3; srStrand++) {
       let srPrevious = null;
       for (let srIndex = 0; srIndex <= 92; srIndex++) {
@@ -698,15 +755,36 @@
           z: Math.sin(srAngle) * srRadius * 0.52 + srThroat * 0.12
         };
         const srRotated = rotate3(srModel, detailYaw, detailPitch, detailRoll);
-        const srProjected = srProject(srRotated, detailZoom * 0.71, 11.8, srCenterPoint);
+        const srProjected = srProject(srRotated, detailZoom * 0.79, 11.8, srCenterPoint);
+        srStrands[srStrand].push(srProjected);
         if (srPrevious) {
           srLine(srPrevious, srProjected, srStrand === 2 ? SR_GOLD : SR_GREEN,
-            alpha * (srStrand === 2 ? 0.48 : 0.35),
-            srStrand === 2 ? 1.05 : 0.72);
+            alpha * (srStrand === 2 ? 0.90 : 0.76),
+            srStrand === 2 ? 1.56 : 1.12);
         }
         srPrevious = srProjected;
       }
     }
+    for (let srIndex = 7; srIndex < 90; srIndex += 7) {
+      for (let srStrand = 0; srStrand < 3; srStrand++) {
+        const srNext = (srStrand + 1) % 3;
+        const srColor = srIndex === 49 || srIndex === 42 ? SR_GOLD : SR_GREEN;
+        srLine(srStrands[srStrand][srIndex], srStrands[srNext][srIndex], srColor,
+          alpha * (srColor === SR_GOLD ? 0.92 : 0.58),
+          srColor === SR_GOLD ? 1.46 : 0.88);
+      }
+    }
+    const srThroat = srStrands.map((srStrand) => srStrand[46]);
+    ctx.beginPath();
+    srThroat.forEach((srPoint, srIndex) => srIndex
+      ? ctx.lineTo(srPoint.x, srPoint.y)
+      : ctx.moveTo(srPoint.x, srPoint.y));
+    ctx.closePath();
+    ctx.fillStyle = rgba(SR_GOLD, alpha * 0.82);
+    ctx.fill();
+    ctx.strokeStyle = rgba(SR_INK, alpha * 0.94);
+    ctx.lineWidth = 1.28;
+    ctx.stroke();
   };
 
   function srDrawDetailFacet(model, size, color, alpha) {
@@ -725,15 +803,19 @@
       .sort((a, b) => a.z - b.z);
     srFaces.forEach((srFace, srFaceIndex) => {
       const srPoints = srFace.srIndices.map((srIndex) => srVertices[srIndex]);
+      const srFaceDepth = clamp(0.76 + srFace.z * 0.12, 0.50, 1);
       ctx.beginPath();
       ctx.moveTo(srPoints[0].x, srPoints[0].y);
       ctx.lineTo(srPoints[1].x, srPoints[1].y);
       ctx.lineTo(srPoints[2].x, srPoints[2].y);
       ctx.closePath();
-      ctx.fillStyle = rgba(srFaceIndex % 2 ? color : SR_WHITE, alpha * (srFaceIndex % 2 ? 0.22 : 0.72));
+      const srFaceColor = srFaceIndex === 0
+        ? srMixColor(color, SR_WHITE, 0.56)
+        : srFaceIndex === 3 ? srMixColor(color, SR_INK, 0.14) : color;
+      ctx.fillStyle = rgba(srFaceColor, alpha * (0.46 + srFaceIndex * 0.09) * srFaceDepth);
       ctx.fill();
-      ctx.strokeStyle = rgba(color, alpha * 0.82);
-      ctx.lineWidth = 0.7;
+      ctx.strokeStyle = rgba(srFaceIndex === 3 ? SR_INK : srMixColor(color, SR_INK, 0.10), alpha * 0.96 * srFaceDepth);
+      ctx.lineWidth = 0.92;
       ctx.stroke();
     });
   }
@@ -748,14 +830,31 @@
         x: Math.cos(srAngle) * srDistance,
         y: Math.sin(srAngle) * srDistance * 0.68,
         z: (srSeed(srIndex, 88) - 0.5) * 1.45,
-        size: 0.12 + srRing * 0.035,
+        size: 0.17 + srRing * 0.060,
         index: srIndex
       });
+    }
+    const srCenterPoint = { x: width * 0.5, y: height * 0.52 };
+    const srProjected = srFacets.map((srFacet) => {
+      const srRotated = rotate3(srFacet, detailYaw, detailPitch, detailRoll);
+      return srProject(srRotated, detailZoom * 0.84, 11.8, srCenterPoint);
+    });
+    for (let srRing = 0; srRing < 3; srRing++) {
+      for (let srIndex = 0; srIndex < 9; srIndex++) {
+        const srHere = srRing * 9 + srIndex;
+        const srNext = srRing * 9 + (srIndex + 1) % 9;
+        srLine(srProjected[srHere], srProjected[srNext], SR_VIOLET,
+          alpha * (0.56 + srRing * 0.10), 0.88 + srRing * 0.16);
+        if (srRing < 2) {
+          srLine(srProjected[srHere], srProjected[srHere + 9], srIndex % 3 === 0 ? SR_GOLD : SR_VIOLET,
+            alpha * (srIndex % 3 === 0 ? 0.84 : 0.48), srIndex % 3 === 0 ? 1.22 : 0.78);
+        }
+      }
     }
     srFacets.sort((a, b) => a.z - b.z).forEach((srFacet) => {
       srDrawDetailFacet(srFacet, srFacet.size,
         srFacet.index % 9 === 0 ? SR_GOLD : SR_VIOLET,
-        alpha * (0.58 + (srFacet.index % 9 === 0 ? 0.22 : 0)));
+        alpha * (0.82 + (srFacet.index % 9 === 0 ? 0.16 : 0)));
     });
   };
 
@@ -769,7 +868,9 @@
     const srPoints = detailPoints();
     srPoints.forEach((srPoint, srIndex) => Object.assign(subScreen[srIndex], srPoint));
     for (let srIndex = 0; srIndex < srPoints.length; srIndex++) {
-      srLine(srPoints[srIndex], srPoints[(srIndex + 1) % srPoints.length], srConfig.rgb, alpha * 0.25, 0.72);
+      srLine(srPoints[srIndex], srPoints[(srIndex + 1) % srPoints.length], srConfig.rgb, alpha * 0.72, 1.12);
+      srLine(srPoints[srIndex], { x: width * 0.5, y: height * 0.52 },
+        srIndex === 1 ? SR_GOLD : srConfig.rgb, alpha * (srIndex === 1 ? 0.58 : 0.36), 0.78);
     }
     [...srPoints].sort((a, b) => a.z - b.z).forEach((srPoint) => {
       srDrawNode(srPoint, activeWorld, t + srPoint.index * 0.6, alpha,
@@ -778,13 +879,13 @@
     const srCore = { x: width * 0.5, y: height * 0.52 };
     ctx.fillStyle = '#fff';
     ctx.beginPath();
-    ctx.arc(srCore.x, srCore.y, 5.2, 0, TAU);
+    ctx.arc(srCore.x, srCore.y, 7.2, 0, TAU);
     ctx.fill();
     ctx.strokeStyle = rgba(srConfig.rgb, alpha * 0.92);
-    ctx.lineWidth = 1.2;
+    ctx.lineWidth = 1.62;
     ctx.stroke();
     ctx.fillStyle = rgba(SR_GOLD, alpha * 0.92);
-    ctx.fillRect(srCore.x - 1.2, srCore.y - 1.2, 2.4, 2.4);
+    ctx.fillRect(srCore.x - 2.0, srCore.y - 2.0, 4.0, 4.0);
     ctx.globalAlpha = 1;
   };
 
@@ -802,7 +903,7 @@
         const srOutward = srPoint.r + 76;
         if (srKey === 'machine') srLeft -= srOutward;
         else if (srKey === 'maker') srLeft += srOutward;
-        else { srLeft += srOutward * 0.88; srTop += srPoint.r * 0.62; }
+        else { srLeft += srOutward * 0.72; srTop -= srPoint.r * 0.85; }
       } else {
         if (srKey === 'machine') srLeft -= srPoint.r * 0.58;
         if (srKey === 'maker') srLeft += srPoint.r * 0.68;
@@ -812,7 +913,29 @@
       srElement.style.top = `${clamp(srTop, 72, height - 62)}px`;
       srElement.style.opacity = String(clamp(1 - srMix * 2.1, 0, 1));
       srElement.style.pointerEvents = srMix < 0.25 ? 'auto' : 'none';
+      srElement.tabIndex = srMix < 0.25 ? 0 : -1;
+      srElement.setAttribute('aria-hidden', srMix < 0.25 ? 'false' : 'true');
     });
+    const srMachineLabel = labels.machine;
+    const srRealityLabel = labels.reality;
+    if (!srPortrait && srMachineLabel && srRealityLabel) {
+      let srMachineX = Number.parseFloat(srMachineLabel.style.left) || 0;
+      let srMachineY = Number.parseFloat(srMachineLabel.style.top) || 0;
+      let srRealityX = Number.parseFloat(srRealityLabel.style.left) || 0;
+      let srRealityY = Number.parseFloat(srRealityLabel.style.top) || 0;
+      if (Math.abs(srMachineX - srRealityX) < 190 && Math.abs(srMachineY - srRealityY) < 60) {
+        const srShift = (60 - Math.abs(srMachineY - srRealityY)) * 0.5 + 6;
+        if (srRealityY <= srMachineY) {
+          srRealityY = clamp(srRealityY - srShift, 72, height - 62);
+          srMachineY = clamp(srMachineY + srShift, 72, height - 62);
+        } else {
+          srMachineY = clamp(srMachineY - srShift, 72, height - 62);
+          srRealityY = clamp(srRealityY + srShift, 72, height - 62);
+        }
+        srMachineLabel.style.top = `${srMachineY}px`;
+        srRealityLabel.style.top = `${srRealityY}px`;
+      }
+    }
     if (unityLabel) {
       const srCore = srRotateProject(srTrefoil(0.405));
       unityLabel.style.left = `${srCore.x}px`;
@@ -826,13 +949,25 @@
         srElement.style.top = `${srPoint.y - srPoint.r * 1.52}px`;
         srElement.style.opacity = String(ease((srMix - 0.22) / 0.5));
         srElement.style.pointerEvents = srMix > 0.65 ? 'auto' : 'none';
+        srElement.tabIndex = srMix > 0.65 ? 0 : -1;
+        srElement.setAttribute('aria-hidden', srMix > 0.65 ? 'false' : 'true');
+        srElement.style.setProperty('--sub-accent', WORLD[activeWorld].css);
         srElement.classList.toggle('active', srIndex === activeSub);
+        srElement.setAttribute('aria-pressed', srIndex === activeSub ? 'true' : 'false');
       });
     } else {
       subLabels.forEach((srElement) => {
         srElement.style.opacity = '0';
         srElement.style.pointerEvents = 'none';
+        srElement.tabIndex = -1;
+        srElement.setAttribute('aria-hidden', 'true');
+        srElement.setAttribute('aria-pressed', 'false');
       });
+    }
+    if (back) {
+      const srBackVisible = Boolean(activeWorld && srMix > 0.65);
+      back.tabIndex = srBackVisible ? 0 : -1;
+      back.setAttribute('aria-hidden', srBackVisible ? 'false' : 'true');
     }
     app?.classList.toggle('detail', Boolean(activeWorld && srMix > 0.05));
   };
@@ -848,7 +983,8 @@
     srReadForm(t);
     drawBackground(t);
     const srMix = ease(viewMix);
-    drawOverview(t, 1 - srMix);
+    const srOverviewPresence = Math.pow(1 - srMix, 2.2);
+    drawOverview(t, srOverviewPresence);
     drawDetail(t, srMix);
     updateLabels();
     ctx.globalCompositeOperation = 'source-over';

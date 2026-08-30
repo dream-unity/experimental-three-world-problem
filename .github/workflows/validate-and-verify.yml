@@ -42,7 +42,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          grep -q "VERSION = '20260830-sovereign-resonator-1'" main.js
+          grep -q "VERSION = '20260830-sovereign-resonator-2'" main.js
           grep -q 'sovereign-resonator-11.txt' main.js
           grep -q "ctx.fillStyle = '#ffffff'" visual-parts/sovereign-resonator-11.txt
           grep -q 'render = function srRender' visual-parts/sovereign-resonator-11.txt
@@ -60,10 +60,11 @@ jobs:
           grep -q 'Light pierces through me' index.html
           grep -q 'THE GHOST IN THE MIRROR' index.html
           grep -q 'assets/i-remember-tomorrow.mp3' index.html
-          grep -q 'styles.css?v=20260830-sovereign-resonator-1' index.html
-          grep -q 'unity-cycle.css?v=20260830-sovereign-resonator-1' index.html
-          grep -q 'light-theme.js?v=20260830-sovereign-resonator-1' index.html
-          grep -q 'main.js?v=20260830-sovereign-resonator-1' index.html
+          grep -q 'styles.css?v=20260830-sovereign-resonator-2' index.html
+          grep -q 'unity-cycle.css?v=20260830-sovereign-resonator-2' index.html
+          grep -q 'light-theme.js?v=20260830-sovereign-resonator-2' index.html
+          grep -q 'unity-ui.js?v=20260830-sovereign-resonator-2' index.html
+          grep -q 'main.js?v=20260830-sovereign-resonator-2' index.html
           grep -q '__dreamUnityScore' unity-ui.js
           grep -q 'createMediaElementSource' unity-ui.js
           grep -q "this.id === 'gameCanvas'" light-theme.js
