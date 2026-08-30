@@ -89,6 +89,12 @@ async function openPage(context) {
   });
   await page.waitForFunction(() => document.querySelector('#label-machine')?.offsetWidth > 0);
   await page.waitForFunction(() => document.querySelector('#gameCanvas')?.width > 1);
+  await page.waitForFunction(() => {
+    const loader = document.querySelector('#loading');
+    if (!loader?.classList.contains('hide')) return false;
+    const style = getComputedStyle(loader);
+    return style.visibility === 'hidden' && Number.parseFloat(style.opacity || '1') <= 0.01;
+  });
   return { page, errors, requests };
 }
 
@@ -155,7 +161,7 @@ await run('Sovereign Nocturne becomes ready through WebGL without runtime errors
   assert.equal(state.app.rendererState, 'ready');
   assert.equal(state.renderer.mode, 'webgl');
   assert.equal(state.renderer.api, 'webgl2');
-  assert.equal(state.renderer.version, '20260830-sovereign-nocturne-3');
+  assert.equal(state.renderer.version, '20260830-sovereign-nocturne-4');
   assert.ok(state.events.some(event => event.name === 'dreamunity:renderer-ready' && event.detail?.mode === 'webgl'));
   assert.match(state.context, /WebGL2/i);
   assert.deepEqual(errors, []);

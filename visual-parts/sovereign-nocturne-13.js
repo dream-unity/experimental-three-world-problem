@@ -2,7 +2,7 @@
   'use strict';
 
   const RENDERER_ID = 'sovereign-nocturne';
-  const RENDERER_VERSION = '20260830-sovereign-nocturne-3';
+  const RENDERER_VERSION = '20260830-sovereign-nocturne-4';
   const SILENT_CYCLE_SECONDS = 40;
   const TAU = Math.PI * 2;
   const $ = (selector) => document.querySelector(selector);
@@ -708,8 +708,8 @@
       float lateral = dot(point, across);
       float extent = smoothstep(0.018, 0.085, along) * (1.0 - smoothstep(0.66, 0.94, along));
       float family = 0.0;
-      for (int index = 0; index < 4; index++) {
-        float strand = float(index) - 1.5;
+      for (int index = 0; index < 2; index++) {
+        float strand = float(index) - 0.5;
         float fan = smoothstep(-0.015, 0.74, along);
         float irregularity = sin(along * (6.2 + strand * 0.72) + seed + strand * 1.37 + movingTime * 0.11);
         irregularity *= 0.004 + fan * (0.012 + abs(strand) * 0.0025);
@@ -748,22 +748,22 @@
       vec2 screen = vec2(uv.x, 1.0 - uv.y);
       vec2 fieldCenter = mix(vec2(0.548, 0.470), vec2(0.520, 0.500), portrait);
       vec2 fieldPoint = (screen - fieldCenter) * vec2(aspect, 1.0);
-      vec2 machineLocus = mix(vec2(0.535, 0.410), vec2(0.525, 0.420), portrait);
-      vec2 makerLocus = mix(vec2(0.550, 0.475), vec2(0.540, 0.490), portrait);
-      vec2 worldLocus = mix(vec2(0.585, 0.540), vec2(0.575, 0.555), portrait);
+      vec2 machineLocus = mix(vec2(0.500, 0.390), vec2(0.490, 0.405), portrait);
+      vec2 makerLocus = mix(vec2(0.620, 0.490), vec2(0.610, 0.505), portrait);
+      vec2 worldLocus = mix(vec2(0.740, 0.600), vec2(0.720, 0.615), portrait);
       vec2 machinePoint = (screen - machineLocus) * vec2(aspect, 1.0);
       vec2 makerPoint = (screen - makerLocus) * vec2(aspect, 1.0);
       vec2 worldPoint = (screen - worldLocus) * vec2(aspect, 1.0);
 
-      vec2 machineDirection = normalize(vec2(0.66, -0.75));
-      vec2 makerDirection = normalize(vec2(0.985, -0.17));
-      vec2 worldDirection = normalize(vec2(0.75, 0.66));
-      float machine = currentFamily(machinePoint, machineDirection, 0.031, 0.110, 1.4, movingTime);
-      float maker = currentFamily(makerPoint, makerDirection, 0.036, -0.075, 4.7, movingTime);
-      float world = currentFamily(worldPoint, worldDirection, 0.040, 0.085, 8.3, movingTime);
-      float machineVeil = currentVeil(machinePoint, machineDirection, 0.031, 0.110, 1.4, movingTime);
-      float makerVeil = currentVeil(makerPoint, makerDirection, 0.036, -0.075, 4.7, movingTime);
-      float worldVeil = currentVeil(worldPoint, worldDirection, 0.040, 0.085, 8.3, movingTime);
+      vec2 machineDirection = normalize(vec2(0.48, -0.88));
+      vec2 makerDirection = normalize(vec2(0.995, 0.10));
+      vec2 worldDirection = normalize(vec2(0.58, 0.82));
+      float machine = currentFamily(machinePoint, machineDirection, 0.038, 0.160, 1.4, movingTime);
+      float maker = currentFamily(makerPoint, makerDirection, 0.043, -0.130, 4.7, movingTime);
+      float world = currentFamily(worldPoint, worldDirection, 0.047, 0.180, 8.3, movingTime);
+      float machineVeil = currentVeil(machinePoint, machineDirection, 0.038, 0.160, 1.4, movingTime);
+      float makerVeil = currentVeil(makerPoint, makerDirection, 0.043, -0.130, 4.7, movingTime);
+      float worldVeil = currentVeil(worldPoint, worldDirection, 0.047, 0.180, 8.3, movingTime);
       machine *= 1.0 - exp(-dot(machinePoint * vec2(32.0, 24.0), machinePoint * vec2(32.0, 24.0))) * 0.96;
       maker *= 1.0 - exp(-dot(makerPoint * vec2(29.0, 23.0), makerPoint * vec2(29.0, 23.0))) * 0.96;
       world *= 1.0 - exp(-dot(worldPoint * vec2(30.0, 22.0), worldPoint * vec2(30.0, 22.0))) * 0.96;
@@ -781,9 +781,9 @@
       vec2 ghostMachinePoint = (reflectedScreen - machineLocus - mix(vec2(0.024, -0.006), vec2(0.032, -0.009), portrait)) * vec2(aspect, 1.0);
       vec2 ghostMakerPoint = (reflectedScreen - makerLocus - mix(vec2(-0.012, 0.019), vec2(-0.018, 0.024), portrait)) * vec2(aspect, 1.0);
       vec2 ghostWorldPoint = (reflectedScreen - worldLocus - mix(vec2(0.026, 0.028), vec2(0.034, 0.035), portrait)) * vec2(aspect, 1.0);
-      float ghostVeil = currentVeil(ghostMachinePoint, machineDirection, 0.031, 0.110, 1.86, movingTime + 2.8)
-        + currentVeil(ghostMakerPoint, makerDirection, 0.036, -0.075, 5.16, movingTime + 2.8)
-        + currentVeil(ghostWorldPoint, worldDirection, 0.040, 0.085, 8.76, movingTime + 2.8);
+      float ghostVeil = currentVeil(ghostMachinePoint, machineDirection, 0.038, 0.160, 1.86, movingTime + 2.8)
+        + currentVeil(ghostMakerPoint, makerDirection, 0.043, -0.130, 5.16, movingTime + 2.8)
+        + currentVeil(ghostWorldPoint, worldDirection, 0.047, 0.180, 8.76, movingTime + 2.8);
       float belowHorizon = smoothstep(horizonY - 0.008, horizonY + 0.035, screen.y);
       float ghost = ghostVeil * belowHorizon;
 
@@ -816,8 +816,10 @@
       float climax = smoothstep(0.32, 0.94, uReconstitution * 0.70 + uCrown * 0.82 + uReturn * 0.10);
       float granular = hash21(floor(gl_FragCoord.xy * 0.56) + floor(movingTime * 0.27));
 
-      vec2 depositCenter = mix(vec2(0.655, 0.565), vec2(0.625, 0.575), portrait);
-      vec2 depositScale = mix(vec2(0.125, 0.145), vec2(0.205, 0.135), portrait);
+      float worldMaterialization = uDetailMix * worldFocus;
+      vec2 depositCenter = mix(vec2(0.740, 0.655), vec2(0.700, 0.665), portrait);
+      vec2 depositScale = mix(vec2(0.135, 0.125), vec2(0.205, 0.120), portrait)
+        * (1.0 + worldMaterialization * 0.55);
       vec2 depositOffset = screen - depositCenter;
       depositOffset.x -= depositOffset.y * 0.32;
       vec2 depositUv = depositOffset / depositScale + 0.5;
@@ -832,8 +834,9 @@
       float depositDistance = abs(depositDelta.x) * 0.55 + abs(depositDelta.y) * 1.65;
       float deposit = 1.0 - smoothstep(depositRadius, depositRadius * 1.9, depositDistance);
       float depositBounds = step(0.0, depositUv.x) * step(depositUv.x, 1.0)
-        * step(0.0, depositUv.y) * step(depositUv.y, 1.0) * step(0.67, depositSeed);
-      deposit *= depositBounds * (0.20 + uPressure * 0.30 + uReconstitution * 0.50);
+        * step(0.0, depositUv.y) * step(depositUv.y, 1.0)
+        * step(mix(0.67, 0.52, worldMaterialization), depositSeed);
+      deposit *= depositBounds * (0.20 + uPressure * 0.30 + uReconstitution * 0.50 + worldMaterialization * 0.55);
 
       vec3 bone = vec3(0.900, 0.850, 0.755);
       vec3 coral = vec3(0.980, 0.235, 0.245);
@@ -856,7 +859,7 @@
       color += mix(violet, bone, 0.30) * ghost * (0.062 + uReturn * 0.040);
       color += bone * horizon * (0.024 + uReturn * 0.040 + uCrown * 0.015);
       vec3 depositColor = depositHue < 0.08 ? coral : (depositHue < 0.20 ? mix(cyan, violet, depositHue * 4.0) : bone);
-      color += depositColor * deposit * (0.070 + ruptureWindow * 0.110);
+      color += depositColor * deposit * (0.070 + ruptureWindow * 0.110 + worldMaterialization * 0.180);
       color += (granular - 0.5) * 0.0042;
 
       float edge = length((screen - vec2(0.52, 0.49)) * vec2(0.78, 1.0));
@@ -1053,32 +1056,30 @@
         dot(vLocal, vec3(0.42, 0.34, 0.84)) * 1.144
       );
       float facetTone = floor(hash31(floor(facetCoord + vec3(vLamella * 1.73, vBack * 2.9, 0.0))) * 3.0) / 2.0;
-      float groundTone = mix(0.46, facetTone, 0.20);
+      float broadPlaneA = 0.5 + 0.5 * sin(vAlong * 1.31 + vAcross * 0.67 + vLamella * 0.83);
+      float broadPlaneB = 0.5 + 0.5 * sin(vAlong * 0.59 - vAcross * 1.07 + vBack * 2.17 + 1.9);
+      float groundTone = clamp(0.38 + broadPlaneA * 0.14 + broadPlaneB * 0.08, 0.0, 1.0);
 
       if (uMaterial < 0.5) {
         color = mix(obsidian, graphite, 0.30 + groundTone * 0.07);
         color *= mix(0.96, 1.03, groundTone) * (0.68 + wrapDiffuse * 0.38 + skyFill * 0.05);
         color += graphite * fill * 0.07;
-        color += bone * warmBounce * (0.012 + facetTone * 0.004);
-        color = mix(color, ultramarine, (0.045 + fresnel * 0.13) * (0.55 + facetTone * 0.35));
+        color += bone * warmBounce * (0.012 + groundTone * 0.004);
+        color = mix(color, ultramarine, (0.045 + fresnel * 0.13) * (0.55 + groundTone * 0.35));
         color += bone * specular * (0.065 + uReconstitution * 0.025 + uCrown * 0.012);
         color *= mix(1.0, 0.84, clamp(vBack, 0.0, 1.0));
         vec3 foldUndertone = vLamella < 0.5 ? cyan : (vLamella < 1.5 ? emerald : violet);
-        color = mix(color, foldUndertone, 0.006 + facetTone * 0.003);
+        color = mix(color, foldUndertone, 0.006 + groundTone * 0.003);
 
         float nacreA = smoothstep(0.15, 0.22, vAlong) * (1.0 - smoothstep(0.43, 0.52, vAlong));
         nacreA *= smoothstep(-0.92, -0.46, vAcross) * (1.0 - smoothstep(0.18, 0.54, vAcross));
         float nacreB = smoothstep(0.58, 0.66, vAlong) * (1.0 - smoothstep(0.82, 0.90, vAlong));
         nacreB *= smoothstep(-0.40, -0.02, vAcross) * (1.0 - smoothstep(0.70, 0.92, vAcross));
         float nacreMask = vLamella < 0.5
-          ? nacreA * (0.38 + facetTone * 0.16)
+          ? nacreA * (0.38 + groundTone * 0.16)
           : (vLamella < 1.5 ? nacreB * 0.20 : 0.0);
         vec3 nacreMat = mix(bone, vec3(0.56, 0.63, 0.76), 0.16) * (0.28 + wrapDiffuse * 0.20);
         color = mix(color, nacreMat, nacreMask * (0.11 + uCrown * 0.02));
-
-        float mineralSeam = pow(max(0.0, 1.0 - abs(sin(vAlong * 3.8 + vAcross * 1.5 + vLamella * 2.4))), 64.0);
-        mineralSeam *= smoothstep(0.08, 0.24, vAlong) * (1.0 - smoothstep(0.78, 0.94, vAlong));
-        color += bone * mineralSeam * (0.010 + fresnel * 0.006);
 
         float machineMask = 1.0 - smoothstep(0.16, 0.42, abs(uActiveWorld - 1.0));
         float makerMask = 1.0 - smoothstep(0.16, 0.42, abs(uActiveWorld - 2.0));
@@ -1093,9 +1094,7 @@
         color += emerald * makerTrace * makerMask * uDetailMix * 0.09;
         color += mix(violet, bone, 0.28) * worldTrace * worldMask * uDetailMix * 0.14;
 
-        float rareInterference = pow(max(0.0, 1.0 - abs(sin(vAlong * 13.0 - vAcross * 2.3 + vLamella))), 72.0);
-        color += mix(cyan, violet, smoothstep(0.0, 2.0, vLamella)) * rareInterference * fresnel * 0.024;
-        color *= 1.0 - uSubtraction * (0.22 + facetTone * 0.10);
+        color *= 1.0 - uSubtraction * (0.22 + groundTone * 0.10);
         float groundDepth = smoothstep(-0.86, 0.82, vAcross);
         float mirrorFaultX = -0.56 - vLocal.y * 0.38;
         float mirrorCaustic = exp(-abs(vLocal.x - mirrorFaultX) * 3.0);
@@ -1111,14 +1110,16 @@
         float fade = smoothstep(0.22, 0.34, vAlong) * (1.0 - smoothstep(0.91, 1.0, vAlong));
         float heat = clamp(vBack, 0.0, 1.0);
         float phrasing = 0.90 + 0.10 * pow(max(0.0, sin(vAlong * 16.9646 + movingTime * 0.030)), 4.0);
-        float discontinuity = 1.0 - smoothstep(0.48, 0.51, vAlong) * (1.0 - smoothstep(0.60, 0.63, vAlong));
+        float discontinuity = 1.0 - 0.84 * smoothstep(0.48, 0.51, vAlong) * (1.0 - smoothstep(0.60, 0.63, vAlong));
+        float pressureHeat = smoothstep(0.54, 0.64, vAlong) * (1.0 - smoothstep(0.80, 0.90, vAlong));
         vec3 sovereignGold = vec3(0.960, 0.875, 0.720);
         color = mix(vec3(0.006, 0.005, 0.008), sovereignGold, core * 0.90);
         color = mix(color, mix(coral, sovereignGold, 0.24), pow(core, 3.0) * (0.10 + heat * 0.16));
+        color = mix(color, mix(coral, sovereignGold, 0.28), pressureHeat * core * (0.18 + uCrown * 0.24));
         color += coral * edgeGlow * (0.045 + heat * 0.075 + uPressure * 0.025 + uCrown * 0.055);
         color += bone * core * (underLight * (0.14 + uReconstitution * 0.070) + phrasing * (0.12 + climax * 0.16));
         alpha = (0.19 + heat * 0.20 + core * (0.69 + heat * 0.16 + uCrown * 0.10) * (0.94 + phrasing * 0.06)) * fade * discontinuity;
-        alpha *= mix(1.0, 0.20, uGhost);
+        alpha *= mix(1.0, 0.30, uGhost);
       } else {
         color = mix(obsidian, graphite, 0.34 + facetTone * 0.30);
         color += ultramarine * fresnel * 0.11;
@@ -1704,9 +1705,9 @@
     const horizon = compact ? 0.635 : 0.625;
     const climax = fallbackClimax(state);
     const families = [
-      { color: 'rgb(178,190,187)', shadow: 'rgba(94,166,181,.34)', points: [[1.06, -0.04], [0.88, 0.08], [0.69, 0.28], [0.535, 0.410]] },
-      { color: 'rgb(179,188,179)', shadow: 'rgba(86,153,126,.31)', points: [[1.04, 0.33], [0.86, 0.38], [0.69, 0.44], [0.550, 0.475]] },
-      { color: 'rgb(181,176,194)', shadow: 'rgba(118,99,173,.33)', points: [[1.08, 0.88], [0.90, 0.74], [0.72, 0.61], [0.585, 0.540]] },
+      { color: 'rgb(178,190,187)', shadow: 'rgba(94,166,181,.34)', points: [[0.96, -0.08], [0.79, 0.02], [0.61, 0.20], [0.500, 0.390]] },
+      { color: 'rgb(179,188,179)', shadow: 'rgba(86,153,126,.31)', points: [[1.08, 0.57], [0.91, 0.50], [0.76, 0.46], [0.620, 0.490]] },
+      { color: 'rgb(181,176,194)', shadow: 'rgba(118,99,173,.33)', points: [[1.03, 1.02], [0.94, 0.86], [0.83, 0.71], [0.740, 0.600]] },
     ];
     const minSide = Math.min(width, height);
     context.save();
@@ -1717,8 +1718,8 @@
       context.clip();
     }
     families.forEach((family, familyIndex) => {
-      for (let phrase = 0; phrase < 4; phrase++) {
-        const offset = (phrase - 1.5) * (compact ? 0.011 : 0.0085);
+      for (let phrase = 0; phrase < 2; phrase++) {
+        const offset = (phrase - 0.5) * (compact ? 0.016 : 0.0125);
         const mapped = family.points.map(([x, y], pointIndex) => {
           const fan = pointIndex / 3;
           const px = x + offset * (0.25 + fan * 1.7) + Math.sin((phrase + 1) * (pointIndex + 1) * 1.91) * 0.003;
@@ -1819,8 +1820,8 @@
       const a = random(index + 0.31);
       const b = random(index + 7.93);
       const c = random(index + 18.47);
-      const y = height * (0.50 + b * 0.22);
-      const x = width * (0.61 + a * 0.21 + (y / height - 0.61) * 0.18);
+      const y = height * (0.57 + b * 0.21);
+      const x = width * (0.66 + a * 0.21 + (y / height - 0.67) * 0.16);
       const size = index < 4 ? 1.8 + c : 0.4 + c * 1.2;
       const alpha = (0.035 + c * 0.125) * (0.48 + climax * 0.52);
       context.globalAlpha = alpha;

@@ -704,12 +704,22 @@ html,body{
   border-radius:2px;
 }
 
+#app.detail .brand,
+#app.detail .world-label,
+#app.detail .unity-label{
+  opacity:0!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+  transition:none!important;
+}
+
 #app.detail .manifesto,
 #app.detail .cycle-index,
 #app.detail .live{
-  opacity:0;
-  visibility:hidden;
+  opacity:0!important;
+  visibility:hidden!important;
   transform:translateY(7px);
+  transition:none!important;
 }
 
 #app.detail .score-control{opacity:.48}
