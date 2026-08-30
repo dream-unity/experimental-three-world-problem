@@ -2,7 +2,7 @@
   'use strict';
 
   const RENDERER_ID = 'sovereign-nocturne';
-  const RENDERER_VERSION = '20260830-sovereign-nocturne-19';
+  const RENDERER_VERSION = '20260830-sovereign-nocturne-20';
   const SILENT_CYCLE_SECONDS = 40;
   const TAU = Math.PI * 2;
   const $ = (selector) => document.querySelector(selector);
@@ -1808,18 +1808,10 @@
     gl.viewport(0, 0, canvas.width, canvas.height);
     drawBackgroundGL(state);
 
-    const orientation = currentOrientation(Boolean(activeWorld), false);
-    drawBackgroundGL(state, true);
-    const environmentOrientation = activeWorld ? {
-      yaw: orientation.yaw * 0.22,
-      pitch: -0.18 + orientation.pitch * 0.12,
-      roll: orientation.roll * 0.18,
-      zoom: Math.min(1.08, orientation.zoom),
-    } : orientation;
-    gl.enable(gl.DEPTH_TEST);
-    gl.depthMask(true);
-    drawSurfaceGL(resources.outer, 0, state, environmentOrientation, false);
-    if (activeWorld) drawPointsGL();
+    // The photographic mineral plate carries realised matter. WebGL becomes
+    // its quiet living weather: pressure, refraction and parallax without
+    // superimposing another object or diagram over the authored landscape.
+    drawBackgroundGL(state);
   }
 
   function fallbackBodyPaths(scale) {
@@ -2771,6 +2763,12 @@
     ghostPitch = damp(ghostPitch, targetOrientation.pitch, 0.76 + holdStrength * 0.36, dt);
     ghostRoll = damp(ghostRoll, targetOrientation.roll, 0.70 + holdStrength * 0.30, dt);
     app.style.setProperty('--du-pressure', holdStrength.toFixed(4));
+    const plateX = clamp((targetOrientation.yaw - 0.16) * -2.15, -1.55, 1.55);
+    const plateY = clamp((targetOrientation.pitch + 0.125) * 1.35, -0.75, 0.75);
+    const plateScale = 1.035 + ease(viewMix) * 0.070 + holdStrength * 0.016;
+    app.style.setProperty('--du-plate-x', `${plateX.toFixed(3)}%`);
+    app.style.setProperty('--du-plate-y', `${plateY.toFixed(3)}%`);
+    app.style.setProperty('--du-plate-scale', plateScale.toFixed(4));
   }
 
   function governor(dt) {

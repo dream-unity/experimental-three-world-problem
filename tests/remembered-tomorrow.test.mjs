@@ -3,8 +3,8 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync, statSync } from 'node:fs';
 
 const root = new URL('../', import.meta.url);
-const RELEASE = '20260830-sovereign-nocturne-19';
-const RENDERER_PATH = 'visual-parts/sovereign-nocturne-19.js';
+const RELEASE = '20260830-sovereign-nocturne-20';
+const RENDERER_PATH = 'visual-parts/sovereign-nocturne-20.js';
 const read = (path) => readFileSync(new URL(path, root), 'utf8');
 const exists = (path) => statSync(new URL(path, root)).isFile();
 
@@ -59,7 +59,7 @@ for (const asset of ['styles.css', 'become.css', 'unity-cycle.css', 'unity-ui.js
   assert.match(index, new RegExp(`${asset.replace('.', '\\.')}\\?v=${RELEASE}`), `${asset} does not use the Nocturne release`);
 }
 assert.match(loader, new RegExp(`VERSION\\s*=\\s*['"]${RELEASE}['"]`));
-assert.match(loader, /visual-parts\/sovereign-nocturne-19\.js/);
+assert.match(loader, /visual-parts\/sovereign-nocturne-20\.js/);
 assert.doesNotMatch(loader, /bearing-mirror|sovereign-resonator|visual-parts\/part-0[1-6]\.txt|\bFunction\s*\(|fetchParts/i, 'the loader must not concatenate a retired Canvas2D renderer');
 
 // Near-black material field with bone and concentrated Coral accents.
@@ -119,6 +119,9 @@ assert.deepEqual(repositoryMp3, ['assets/i-remember-tomorrow.mp3'], 'a private M
 assert.doesNotMatch(trackedMp3.join('\n'), /awaken[ _-]*the[ _-]*true[ _-]*war|\(2\)/i);
 assert.doesNotMatch(renderer, /\.mp3\b|scoreAudio|AudioContext|webkitAudioContext|createMediaElementSource|decodeAudioData/i, 'the visual renderer must be non-auditory');
 assert.match(index, /id="scoreControl"/);
+assert.match(index, /<picture class="material-plate" id="materialPlate"/);
+assert.match(index, /pressure-becomes-weather-landscape-v20\.png/);
+assert.match(index, /pressure-becomes-weather-portrait-v20\.png/);
 assert.match(index, /assets\/i-remember-tomorrow\.mp3/);
 for (const marker of ['__dreamUnityScore', 'createMediaElementSource', 'createAnalyser']) {
   assert.ok(scoreRuntime.includes(marker), `existing public score control ${marker} missing`);

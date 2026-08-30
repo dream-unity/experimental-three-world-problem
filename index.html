@@ -7,12 +7,16 @@
   <meta name="color-scheme" content="dark" />
   <meta name="description" content="Dream Unity — the Countermirror where ether is compressed into matter, made sovereign, and returned as a new dream." />
   <title>Dream Unity — The Countermirror</title>
-  <link rel="stylesheet" href="./styles.css?v=20260830-sovereign-nocturne-19" />
-  <link rel="stylesheet" href="./become.css?v=20260830-sovereign-nocturne-19" />
-  <link rel="stylesheet" href="./unity-cycle.css?v=20260830-sovereign-nocturne-19" />
+  <link rel="stylesheet" href="./styles.css?v=20260830-sovereign-nocturne-20" />
+  <link rel="stylesheet" href="./become.css?v=20260830-sovereign-nocturne-20" />
+  <link rel="stylesheet" href="./unity-cycle.css?v=20260830-sovereign-nocturne-20" />
 </head>
 <body>
   <main id="app" aria-label="Dream Unity interactive simulation">
+    <picture class="material-plate" id="materialPlate" aria-hidden="true">
+      <source media="(max-aspect-ratio:3/4)" srcset="./assets/pressure-becomes-weather-portrait-v20.png?v=20260830-sovereign-nocturne-20" />
+      <img src="./assets/pressure-becomes-weather-landscape-v20.png?v=20260830-sovereign-nocturne-20" alt="" draggable="false" decoding="async" fetchpriority="high" />
+    </picture>
     <canvas id="world" aria-label="Interactive Dream Unity field"></canvas>
     <audio id="scoreAudio" src="./assets/i-remember-tomorrow.mp3" preload="auto" autoplay loop aria-hidden="true"></audio>
     <div class="vignette" aria-hidden="true"></div>
@@ -69,8 +73,8 @@
   </main>
   <noscript>This experience requires JavaScript.</noscript>
   <script>window.setTimeout(function(){var el=document.getElementById('loading');if(el)el.classList.add('hide');},1800);</script>
-  <script src="./unity-ui.js?v=20260830-sovereign-nocturne-19"></script>
-  <script src="./main.js?v=20260830-sovereign-nocturne-19"></script>
-  <script src="./arcade.js?v=20260830-sovereign-nocturne-19"></script>
+  <script src="./unity-ui.js?v=20260830-sovereign-nocturne-20"></script>
+  <script src="./main.js?v=20260830-sovereign-nocturne-20"></script>
+  <script src="./arcade.js?v=20260830-sovereign-nocturne-20"></script>
 </body>
 </html>
