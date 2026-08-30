@@ -155,7 +155,9 @@
         impulse = 0;
         setHint();
       }
-      if (activeWorld && activeSubUntil < time) activeSub = Math.floor(time / 3.9) % 3;
+      // A chosen tension remains chosen. Authority does not drift merely because
+      // time passes; hover or direct input is the only thing allowed to move it.
+      if (activeWorld && activeSubUntil < time) activeSubUntil = Number.POSITIVE_INFINITY;
       impulse *= Math.exp(-dt * 2.35);
       render(time);
       governor(Math.min(rawDt, 0.1));

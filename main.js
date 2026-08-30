@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const VERSION = '20260830-sovereign-resonator-1';
+  const VERSION = '20260830-sovereign-resonator-2';
   const baseParts = Array.from({ length: 6 }, (_, index) =>
     `./visual-parts/part-${String(index + 1).padStart(2, '0')}.txt?v=${VERSION}`
   );
