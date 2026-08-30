@@ -2,7 +2,7 @@
   'use strict';
 
   const RENDERER_ID = 'sovereign-nocturne';
-  const RENDERER_VERSION = '20260830-sovereign-nocturne-6';
+  const RENDERER_VERSION = '20260830-sovereign-nocturne-7';
   const SILENT_CYCLE_SECONDS = 40;
   const TAU = Math.PI * 2;
   const $ = (selector) => document.querySelector(selector);
@@ -90,13 +90,15 @@
   let height = 1;
   let dpr = 1;
   let dprScale = 1;
-  // Begin in reconstitution rather than the cycle's visually empty gather.
-  let elapsed = SILENT_CYCLE_SECONDS * 0.735;
+  // Begin inside the score-derived cathartic crown: the three currents have
+  // survived compression and are briefly phase-locked before returning.
+  let elapsed = SILENT_CYCLE_SECONDS * 0.85;
   let lastFrame = performance.now();
   let labelTick = 0;
   let fpsFrames = 0;
   let fpsElapsed = 0;
   let slowWindows = 0;
+  let lastDrawAt = 0;
 
   let activeWorld = null;
   let activeSub = 0;
@@ -166,16 +168,16 @@
   }
 
   function cycleState(time) {
-    const phase = reducedMotion ? 0.735 : ((time / SILENT_CYCLE_SECONDS) % 1 + 1) % 1;
+    const phase = reducedMotion ? 0.85 : ((time / SILENT_CYCLE_SECONDS) % 1 + 1) % 1;
     return {
       phase,
-      gather: windowPulse(phase, 0.00, 0.13, 0.27),
-      pressure: Math.max(windowPulse(phase, 0.12, 0.34, 0.455), holdStrength),
-      subtraction: reducedMotion ? 0.06 : windowPulse(phase, 0.405, 0.485, 0.565),
-      inversion: reducedMotion ? 0.28 : windowPulse(phase, 0.49, 0.575, 0.67),
-      reconstitution: reducedMotion ? 0.78 : windowPulse(phase, 0.535, 0.68, 0.81),
-      crown: reducedMotion ? 0.64 : windowPulse(phase, 0.67, 0.775, 0.875),
-      return: reducedMotion ? 0 : ease((phase - 0.81) / 0.19),
+      gather: windowPulse(phase, 0.00, 0.16, 0.34),
+      pressure: Math.max(windowPulse(phase, 0.15, 0.43, 0.61), holdStrength),
+      subtraction: reducedMotion ? 0.04 : windowPulse(phase, 0.56, 0.625, 0.70),
+      inversion: reducedMotion ? 0.12 : windowPulse(phase, 0.58, 0.655, 0.73),
+      reconstitution: reducedMotion ? 0.88 : windowPulse(phase, 0.70, 0.82, 0.94),
+      crown: reducedMotion ? 0.92 : windowPulse(phase, 0.74, 0.855, 0.94),
+      return: reducedMotion ? 0 : ease((phase - 0.93) / 0.07),
     };
   }
 
@@ -301,7 +303,7 @@
       { x: 0.04, y: -1.16, z: 0.02 },
       { x: 0.62, y: -2.80, z: -0.22 },
     ],
-    halfWidths: [0.008, 0.012, 0.018, 0.028, 0.045, 0.064, 0.035, 0.010],
+    halfWidths: [0.018, 0.026, 0.042, 0.072, 0.118, 0.178, 0.106, 0.022],
     heat: [0.04, 0.10, 0.22, 0.46, 0.78, 1.00, 0.58, 0.08],
   };
 
@@ -688,11 +690,11 @@
 
     float fbm(vec2 point) {
       float value = 0.0;
-      float amplitude = 0.55;
-      for (int octave = 0; octave < 3; octave++) {
+      float amplitude = 0.62;
+      for (int octave = 0; octave < 2; octave++) {
         value += noise(point) * amplitude;
         point = mat2(1.63, -1.12, 1.12, 1.63) * point + vec2(4.7, -2.9);
-        amplitude *= 0.46;
+        amplitude *= 0.42;
       }
       return value;
     }
@@ -739,7 +741,9 @@
       float widthBreath = 0.76 + 0.28 * sin(along * 5.2 + seed * 1.6 - movingTime * 0.012);
       float width = mix(0.018, spread * 3.45, fan) * widthBreath;
       float body = exp(-pow(abs(lateral - axis) / max(0.001, width), 1.26));
-      float breath = 0.34 + 0.66 * noise(vec2(along * 4.1 + seed, lateral * 12.0 - movingTime * 0.005));
+      float breath = 0.48 + 0.28 * sin(along * 5.7 + lateral * 8.0 + seed * 1.9 - movingTime * 0.009);
+      breath += 0.24 * sin(along * 2.8 - lateral * 3.2 + seed * 0.7 + movingTime * 0.004);
+      breath = clamp(breath, 0.08, 1.0);
       float phrasing = 0.58 + 0.42 * smoothstep(0.18, 0.84, sin(along * 6.4 + seed - movingTime * 0.014) * 0.5 + 0.5);
       return body * extent * breath * phrasing;
     }
@@ -762,9 +766,11 @@
       vec2 machineDirection = normalize(vec2(0.48, -0.88));
       vec2 makerDirection = normalize(vec2(0.995, 0.10));
       vec2 worldDirection = normalize(vec2(0.58, 0.82));
-      float machine = currentFamily(machinePoint, machineDirection, 0.038, 0.160, 1.4, movingTime);
-      float maker = currentFamily(makerPoint, makerDirection, 0.043, -0.130, 4.7, movingTime);
-      float world = currentFamily(worldPoint, worldDirection, 0.047, 0.180, 8.3, movingTime);
+      // The currents are volumetric phrases. Hairline cores made them read as
+      // CAD rails, so the field now carries only their unequal veils.
+      float machine = 0.0;
+      float maker = 0.0;
+      float world = 0.0;
       float machineVeil = currentVeil(machinePoint, machineDirection, 0.038, 0.160, 1.4, movingTime);
       float makerVeil = currentVeil(makerPoint, makerDirection, 0.043, -0.130, 4.7, movingTime);
       float worldVeil = currentVeil(worldPoint, worldDirection, 0.047, 0.180, 8.3, movingTime);
@@ -800,7 +806,7 @@
       float faultExtent = smoothstep(0.005, 0.055, screen.y)
         * (1.0 - smoothstep(0.945, 0.995, screen.y));
       float faultBand = exp(-abs(signedFault) * mix(42.0, 36.0, portrait)) * faultExtent;
-      float membraneWidth = mix(0.165, 0.235, portrait)
+      float membraneWidth = mix(0.190, 0.270, portrait)
         * (0.88 + 0.12 * sin(faultProgress * 7.3 - movingTime * 0.010));
       float membrane = exp(-pow(abs(signedFault) / membraneWidth, 1.34)) * faultExtent;
       float membraneGrain = fbm(vec2(faultProgress * 4.8 - movingTime * 0.003, signedFault * 8.4 + 3.7));
@@ -830,6 +836,11 @@
       counterBloom *= (0.16 + veilUnion * 0.38)
         * (0.34 + 0.66 * fbm(bloomPoint * vec2(3.8, 4.6) + vec2(2.1, -1.7)));
       float climax = smoothstep(0.32, 0.94, uReconstitution * 0.70 + uCrown * 0.82 + uReturn * 0.10);
+      float chordInterference = min(machineVeil, makerVeil)
+        + min(makerVeil, worldVeil) + min(worldVeil, machineVeil);
+      float chordLock = smoothstep(0.11, 0.72, chordInterference) * climax;
+      float coherentWave = exp(-abs(signedFault) * mix(5.6, 4.6, portrait))
+        * faultExtent * climax * (0.72 + 0.28 * membraneGrain);
       float granular = hash21(floor(gl_FragCoord.xy * 0.56) + floor(movingTime * 0.27));
       float worldMaterialization = uDetailMix * worldFocus;
       vec2 sedimentPoint = screen - mix(vec2(0.745, 0.785), vec2(0.630, 0.815), portrait);
@@ -842,26 +853,23 @@
       float sedimentVein = sedimentShape * (1.0 - smoothstep(0.012, 0.044,
         abs(fract(sedimentNoise * 2.3 + screen.y * 3.1) - 0.5)));
 
-      vec2 depositCenter = mix(vec2(0.740, 0.655), vec2(0.700, 0.665), portrait);
-      vec2 depositScale = mix(vec2(0.185, 0.165), vec2(0.255, 0.170), portrait)
+      vec2 depositCenter = mix(vec2(0.755, 0.680), vec2(0.690, 0.690), portrait);
+      vec2 depositScale = mix(vec2(0.255, 0.205), vec2(0.310, 0.215), portrait)
         * (1.0 + worldMaterialization * 0.72);
       vec2 depositOffset = screen - depositCenter;
       depositOffset.x -= depositOffset.y * 0.32;
       vec2 depositUv = depositOffset / depositScale + 0.5;
-      vec2 depositGrid = depositUv * vec2(12.0, 10.0);
-      vec2 depositCell = floor(depositGrid);
-      vec2 depositLocal = fract(depositGrid);
-      float depositSeed = hash21(depositCell + vec2(19.7, 41.3));
-      vec2 depositPoint = vec2(hash21(depositCell + 2.1), hash21(depositCell + 8.7));
-      float depositRadius = mix(0.040, 0.120, hash21(depositCell + 14.4));
-      float depositHue = hash21(depositCell + vec2(31.4, 7.6));
-      vec2 depositDelta = depositLocal - depositPoint;
-      float depositDistance = abs(depositDelta.x) * 0.55 + abs(depositDelta.y) * 1.65;
-      float deposit = 1.0 - smoothstep(depositRadius, depositRadius * 1.9, depositDistance);
       float depositBounds = step(0.0, depositUv.x) * step(depositUv.x, 1.0)
-        * step(0.0, depositUv.y) * step(depositUv.y, 1.0)
-        * step(mix(0.58, 0.40, worldMaterialization), depositSeed);
-      deposit *= depositBounds * (0.38 + uPressure * 0.34 + uReconstitution * 0.56 + worldMaterialization * 0.72);
+        * step(0.0, depositUv.y) * step(depositUv.y, 1.0);
+      float bandA = exp(-abs(depositUv.y - (0.28 + 0.10 * sin(depositUv.x * 5.1 + 0.4))) * 20.0);
+      float bandB = exp(-abs(depositUv.y - (0.54 - 0.08 * sin(depositUv.x * 4.2 + 1.6))) * 16.0);
+      float bandC = exp(-abs(depositUv.y - (0.78 + 0.06 * sin(depositUv.x * 6.3 + 3.0))) * 24.0);
+      float cleavedBands = min(1.0, bandA + bandB * 0.86 + bandC * 0.62);
+      float depositBreak = smoothstep(0.34, 0.72,
+        sedimentNoise + 0.18 * sin(depositUv.x * 17.0 + depositUv.y * 9.0));
+      float deposit = cleavedBands * depositBreak * depositBounds
+        * (0.26 + uPressure * 0.24 + uReconstitution * 0.44 + worldMaterialization * 0.58);
+      float depositHue = clamp(depositUv.x * 0.72 + depositUv.y * 0.28, 0.0, 1.0);
 
       vec3 bone = vec3(0.847, 0.804, 0.741);
       vec3 coral = vec3(0.929, 0.376, 0.306);
@@ -871,14 +879,14 @@
       vec3 smokedPlum = vec3(0.071, 0.047, 0.075);
       vec3 tarnishedGold = vec3(0.612, 0.455, 0.271);
       vec3 ghostViolet = vec3(0.318, 0.255, 0.373);
-      vec3 color = vec3(0.0135, 0.0105, 0.0175);
+      vec3 color = vec3(0.0175, 0.0135, 0.0225);
       float radiance = 0.96 + uPressure * 0.24 + uReconstitution * 0.48 + uCrown * 0.68;
-      color += smokedPlum * atmospheric * fieldMask * 0.82;
+      color += smokedPlum * atmospheric * fieldMask * 0.94;
       color += mix(vec3(0.105, 0.115, 0.185), vec3(0.235, 0.095, 0.085), smoothstep(-0.22, 0.30, bloomPoint.y))
         * counterBloom * (0.064 + 0.098 * climax);
       vec3 membranePearl = mix(smokedPlum, bone, 0.24 + membraneGrain * 0.22);
       membranePearl = mix(membranePearl, signedFault < 0.0 ? ghostViolet : tarnishedGold, 0.10 + climax * 0.08);
-      color += membranePearl * membrane * (0.082 + uPressure * 0.030 + uReconstitution * 0.050);
+      color += membranePearl * membrane * (0.105 + uPressure * 0.038 + uReconstitution * 0.068);
       color += mix(bone, cyan, 0.42) * coldShoulder * (0.032 + uGather * 0.030);
       color += mix(tarnishedGold, bone, 0.24) * warmShoulder * (0.040 + uPressure * 0.040 + climax * 0.034);
       color += bone * innerShoulder * (0.015 + uReconstitution * 0.035 + uCrown * 0.042);
@@ -888,11 +896,13 @@
         ? mix(cyan, emerald, faultProgress * 2.0)
         : mix(emerald, violet, (faultProgress - 0.50) * 2.0);
       float spectralShoulder = membrane * (1.0 - smoothstep(0.18, 0.78, innerShoulder));
-      color += mix(spectralColor, bone, 0.18) * spectralShoulder * spectralWave
-        * (0.040 + uGather * 0.016 + uReconstitution * 0.022);
-      color += mix(bone, cyan, 0.34) * machineVeil * 0.165 * radiance;
-      color += mix(bone, emerald, 0.33) * makerVeil * 0.152 * radiance;
-      color += mix(bone, violet, 0.40) * worldVeil * 0.178 * radiance;
+      color += mix(spectralColor, bone, 0.12) * spectralShoulder * spectralWave
+        * (0.064 + uGather * 0.022 + uReconstitution * 0.038);
+      color += mix(bone, cyan, 0.58) * machineVeil * 0.205 * radiance;
+      color += mix(bone, emerald, 0.56) * makerVeil * 0.192 * radiance;
+      color += mix(bone, violet, 0.62) * worldVeil * 0.220 * radiance;
+      color += mix(coral, bone, 0.52) * chordLock * (0.105 + uCrown * 0.085);
+      color += mix(coral, bone, 0.30) * coherentWave * (0.085 + uCrown * 0.105);
       color += mix(bone, cyan, 0.42) * machine * 0.075 * radiance;
       color += mix(bone, emerald, 0.40) * maker * 0.070 * radiance;
       color += mix(bone, violet, 0.45) * world * 0.080 * radiance;
@@ -911,12 +921,12 @@
         : (depositHue < 0.46
           ? mix(cyan, violet, smoothstep(0.08, 0.46, depositHue))
           : mix(bone, violet, 0.10 + worldMaterialization * 0.28));
-      color += depositColor * deposit * (0.115 + ruptureWindow * 0.135 + worldMaterialization * 0.235);
+      color += depositColor * deposit * (0.105 + ruptureWindow * 0.115 + worldMaterialization * 0.205);
       color += (granular - 0.5) * 0.0034;
 
       float edge = length((screen - vec2(0.52, 0.49)) * vec2(0.78, 1.0));
       color *= 1.0 - smoothstep(0.42, 0.98, edge) * 0.30;
-      outColor = vec4(pow(max(color, vec3(0.0)), vec3(0.84)), 1.0);
+      outColor = vec4(pow(max(color, vec3(0.0)), vec3(0.81)), 1.0);
     }
   `;
 
@@ -1124,6 +1134,16 @@
         vec3 foldUndertone = vLamella < 0.5 ? cyan : (vLamella < 1.5 ? emerald : violet);
         color = mix(color, foldUndertone, 0.020 + groundTone * 0.010);
 
+        // Two broad, non-repeating strata keep the near field geological. The
+        // previous nearly uniform fill read as a flat purple UI slab.
+        float strataWarp = sin(vAlong * 4.2 + sin(vAcross * 2.1) * 0.7);
+        float stratumA = smoothstep(0.38, 0.66,
+          sin(vAcross * 3.7 + vAlong * 1.8 + strataWarp * 0.32) * 0.5 + 0.5);
+        float stratumB = smoothstep(0.56, 0.78,
+          sin(vAcross * 6.1 - vAlong * 2.3 + 1.7) * 0.5 + 0.5);
+        color = mix(color, mix(graphite, violet, 0.28), stratumA * 0.16);
+        color += mix(bone, ultramarine, 0.48) * stratumB * (0.016 + uCrown * 0.012);
+
         float nacreA = smoothstep(0.15, 0.22, vAlong) * (1.0 - smoothstep(0.43, 0.52, vAlong));
         nacreA *= smoothstep(-0.92, -0.46, vAcross) * (1.0 - smoothstep(0.18, 0.54, vAcross));
         float nacreB = smoothstep(0.58, 0.66, vAlong) * (1.0 - smoothstep(0.82, 0.90, vAlong));
@@ -1158,30 +1178,33 @@
         alpha = mix(0.88, 0.97, groundDepth);
         alpha *= 1.0 - uReturn * (1.0 - groundDepth) * 0.24;
       } else if (uMaterial < 1.5) {
-        float core = pow(clamp(1.0 - abs(vAcross + 0.18), 0.0, 1.0), 5.2);
-        float incisionEdge = exp(-abs(vAcross + 0.58) * 8.5);
-        float darkLip = smoothstep(-0.04, 0.34, vAcross) * (1.0 - smoothstep(0.72, 0.98, vAcross));
-        float edgeGlow = smoothstep(0.16, 0.48, abs(vAcross + 0.16))
-          * (1.0 - smoothstep(0.62, 0.92, abs(vAcross + 0.16)));
+        float core = exp(-abs(vAcross + 0.50) * 16.0);
+        float incisionEdge = exp(-abs(vAcross + 0.66) * 31.0);
+        float mineralLip = smoothstep(-0.16, 0.10, vAcross)
+          * (1.0 - smoothstep(0.70, 0.96, vAcross));
+        float recessedVoid = smoothstep(-0.42, -0.02, vAcross)
+          * (1.0 - smoothstep(0.24, 0.62, vAcross));
+        float edgeHeat = exp(-abs(vAcross + 0.60) * 9.5);
         float fade = smoothstep(0.22, 0.34, vAlong) * (1.0 - smoothstep(0.91, 1.0, vAlong));
         float heat = clamp(vBack, 0.0, 1.0);
         float phrasing = 0.90 + 0.10 * pow(max(0.0, sin(vAlong * 16.9646 + movingTime * 0.030)), 4.0);
         float discontinuity = 1.0 - 0.84 * smoothstep(0.48, 0.51, vAlong) * (1.0 - smoothstep(0.60, 0.63, vAlong));
         float pressureHeat = smoothstep(0.54, 0.64, vAlong) * (1.0 - smoothstep(0.80, 0.90, vAlong));
         vec3 sovereignGold = vec3(0.960, 0.875, 0.720);
-        color = mix(vec3(0.008, 0.006, 0.010), sovereignGold, core * 0.92);
-        color = mix(color, mix(coral, sovereignGold, 0.24), pow(core, 3.0) * (0.16 + heat * 0.20));
-        color = mix(color, mix(coral, sovereignGold, 0.28), pressureHeat * core * (0.26 + uCrown * 0.30));
-        color += coral * edgeGlow * (0.060 + heat * 0.090 + uPressure * 0.035 + uCrown * 0.068);
-        color *= 1.0 - darkLip * (0.34 + uPressure * 0.08);
-        color += mix(coral, bone, 0.72) * incisionEdge * (0.075 + uReconstitution * 0.055 + uCrown * 0.045);
-        color += bone * core * (underLight * (0.18 + uReconstitution * 0.085) + phrasing * (0.16 + climax * 0.20));
-        alpha = (0.27 + heat * 0.24 + core * (0.74 + heat * 0.18 + uCrown * 0.12) * (0.94 + phrasing * 0.06)) * fade * discontinuity;
+        vec3 mineralDark = mix(vec3(0.012, 0.006, 0.014), violet, 0.16);
+        color = mix(mineralDark, mix(graphite, violet, 0.20), mineralLip * 0.62);
+        color *= 1.0 - recessedVoid * (0.54 + uPressure * 0.14);
+        color = mix(color, mix(coral, sovereignGold, 0.28), pressureHeat * edgeHeat * (0.34 + uCrown * 0.32));
+        color += coral * edgeHeat * pressureHeat * (0.16 + heat * 0.08 + uCrown * 0.12);
+        color += mix(coral, bone, 0.82) * incisionEdge * (0.34 + uReconstitution * 0.18 + uCrown * 0.16);
+        color += bone * core * (underLight * (0.20 + uReconstitution * 0.09) + phrasing * (0.18 + climax * 0.22));
+        alpha = (0.42 + heat * 0.18 + mineralLip * 0.28 + incisionEdge * 0.76)
+          * fade * discontinuity;
         float ghostPhase = fract(vAlong * 5.3 + 0.17);
         float ghostCadence = 0.28 + 0.72 * smoothstep(0.08, 0.22, ghostPhase)
           * (1.0 - smoothstep(0.62, 0.88, ghostPhase));
         color = mix(color, mix(violet, bone, 0.16), uGhost * 0.34);
-        alpha *= mix(1.0, 0.32 * ghostCadence, uGhost);
+        alpha *= mix(1.0, 0.52 * ghostCadence, uGhost);
       } else {
         color = mix(obsidian, graphite, 0.34 + facetTone * 0.30);
         color += ultramarine * fresnel * 0.11;
@@ -1622,15 +1645,18 @@
     };
     gl.enable(gl.DEPTH_TEST);
     gl.depthMask(true);
+    drawSurfaceGL(resources.outer, 0, state, orientation, false);
+
+    // Reflection is delayed information on the surface, not geometry hidden
+    // behind an opaque floor. Composite it after the mineral field so the same
+    // broken wound remains legible below the horizon.
+    gl.disable(gl.DEPTH_TEST);
     gl.depthMask(false);
     drawSurfaceGL(resources.inner, 1, state, ghostOrientation, true);
-    gl.depthMask(true);
-    gl.clear(gl.DEPTH_BUFFER_BIT);
-    drawSurfaceGL(resources.outer, 0, state, orientation, false);
     gl.depthMask(false);
     drawSurfaceGL(resources.inner, 1, state, orientation, false);
     gl.depthMask(true);
-    drawFibresGL(state);
+    gl.enable(gl.DEPTH_TEST);
     drawPointsGL();
   }
 
@@ -1719,7 +1745,10 @@
   }
 
   function projectFallbackPoint(point, detail = false) {
-    const layout = fallbackLayout(detail);
+    // Navigation anchors remain stable throughout the score-derived cycle even
+    // while the fallback artwork itself compresses and releases.
+    const stableState = cycleState(SILENT_CYCLE_SECONDS * 0.85);
+    const layout = fallbackLayout(detail, stableState);
     const localX = point.x * layout.scale * layout.scaleX;
     const localY = -point.y * layout.scale * layout.scaleY;
     const cosine = Math.cos(layout.angle);
@@ -2055,7 +2084,8 @@
     const phone = width <= 520;
     const subY = height * (mobile ? 0.775 : 0.875);
     const overviewInteractive = !activeWorld;
-    const labelHalf = mobile ? (phone ? 78 : 96) : 112;
+    const labelHalf = mobile ? (phone ? 62 : 88) : 112;
+    const safeGutter = phone ? 18 : (mobile ? 20 : 24);
     const placedLabels = [];
     const offsets = mobile
       ? [
@@ -2078,14 +2108,22 @@
       } else if (key === 'maker' && anchor.x < width * 0.24) {
         offsetX = width * (mobile ? 0.17 : 0.10);
       }
-      const measuredHalf = Math.max(labelHalf, element.getBoundingClientRect().width * 0.5 + 8);
-      const left = clamp(anchor.x + offsetX, measuredHalf, width - measuredHalf);
+      element.style.maxWidth = `${Math.max(1, width - safeGutter * 2)}px`;
+      const layoutHalf = Math.min(
+        Math.max(labelHalf, (element.offsetWidth || labelHalf * 2) * 0.5),
+        Math.max(1, width * 0.5 - safeGutter),
+      );
+      const minLeft = safeGutter + layoutHalf;
+      const maxLeft = width - safeGutter - layoutHalf;
+      const left = minLeft <= maxLeft
+        ? clamp(anchor.x + offsetX, minLeft, maxLeft)
+        : width * 0.5;
       const top = clamp(
         anchor.y + offsets[index].y,
         height * (mobile ? (phone ? 0.30 : 0.17) : 0.15),
         height * (mobile ? 0.73 : 0.72),
       );
-      placedLabels.push({ x: left, y: top, half: measuredHalf });
+      placedLabels.push({ x: left, y: top, half: layoutHalf });
       element.style.left = `${left}px`;
       element.style.top = `${top}px`;
       element.style.opacity = String(clamp(1 - mix * 2.1, 0, 1));
@@ -2509,8 +2547,11 @@
     const rect = canvas.getBoundingClientRect();
     width = Math.max(1, rect.width || innerWidth || 1);
     height = Math.max(1, rect.height || innerHeight || 1);
-    const cap = coarse || lowCPU ? 1.16 : 1.58;
-    dpr = Math.max(0.72, Math.min(devicePixelRatio || 1, cap) * dprScale);
+    const cap = coarse || lowCPU ? 1.08 : 1.32;
+    const proposedDpr = Math.min(devicePixelRatio || 1, cap) * dprScale;
+    const pixelBudget = coarse || lowCPU ? 900000 : 1200000;
+    const budgetScale = Math.min(1, Math.sqrt(pixelBudget / Math.max(1, width * height * proposedDpr * proposedDpr)));
+    dpr = Math.max(0.66, proposedDpr * budgetScale);
     const targetWidth = Math.max(1, Math.round(width * dpr));
     const targetHeight = Math.max(1, Math.round(height * dpr));
     if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
@@ -2624,14 +2665,19 @@
         || holdStrength > 0.002
         || Math.abs(overviewYawVelocity) + Math.abs(overviewPitchVelocity)
           + Math.abs(detailYawVelocity) + Math.abs(detailPitchVelocity) > 0.002;
-      if (!reducedMotion || needsRender || moving) {
+      const renderInterval = fallbackContext ? 1000 / 18 : (lowCPU ? 1000 / 24 : 1000 / 30);
+      const renderDue = now >= lastDrawAt;
+      if ((needsRender || renderDue) && (!reducedMotion || needsRender || moving)) {
         const state = cycleState(elapsed);
         if (gl) renderGL(state);
         else renderFallback(state);
         rendererStatus.frame++;
         needsRender = false;
+        // Budget from completion, not frame start. A slow software-rendered
+        // frame therefore yields real main-thread time before the next draw.
+        lastDrawAt = performance.now() + renderInterval;
       }
-      if (!reducedMotion) governor(Math.min(rawDt, 0.1));
+      if (!reducedMotion) governor(rawDt);
     }
     requestAnimationFrame(animate);
   }

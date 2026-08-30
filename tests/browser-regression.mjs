@@ -51,6 +51,11 @@ async function run(name, callback) {
   } catch (error) {
     failures.push({ name, error });
     console.error(`FAIL ${name}\n${error.stack || error}`);
+  } finally {
+    // A failed visual assertion must not leave an animated renderer consuming
+    // the browser process and poisoning every later, otherwise independent,
+    // regression group.
+    await Promise.all(browser.contexts().map(context => context.close().catch(() => {})));
   }
 }
 
@@ -165,7 +170,7 @@ await run('Sovereign Nocturne becomes ready through WebGL without runtime errors
   assert.equal(state.app.rendererState, 'ready');
   assert.equal(state.renderer.mode, 'webgl');
   assert.equal(state.renderer.api, 'webgl2');
-  assert.equal(state.renderer.version, '20260830-sovereign-nocturne-6');
+  assert.equal(state.renderer.version, '20260830-sovereign-nocturne-7');
   assert.ok(state.events.some(event => event.name === 'dreamunity:renderer-ready' && event.detail?.mode === 'webgl'));
   assert.match(state.context, /WebGL2/i);
   assert.deepEqual(errors, []);
