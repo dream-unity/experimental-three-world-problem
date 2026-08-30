@@ -48,6 +48,20 @@ jobs:
           path: ${{ runner.temp }}/sovereign-nocturne-visuals
           if-no-files-found: warn
           retention-days: 14
+      - name: Emit visual proof for inspection fallback
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in overview-1363x936.png overview-768x1024.png overview-390x844.png detail-dream-world-1363x936.png; do
+            path="${{ runner.temp }}/sovereign-nocturne-visuals/$file"
+            if [[ -f "$path" ]]; then
+              echo "DU_IMAGE_BEGIN:$file"
+              base64 -w 50000 "$path"
+              echo
+              echo "DU_IMAGE_END:$file"
+            fi
+          done
       - name: Validate Sovereign Nocturne release and paused Unity voice
         shell: bash
         run: |
