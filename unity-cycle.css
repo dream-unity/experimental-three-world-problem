@@ -51,7 +51,7 @@ html,body{
   transform:translate3d(var(--du-plate-x,0%),var(--du-plate-y,0%),0)
     scale(var(--du-plate-scale,1.035));
   transform-origin:66% 63%;
-  filter:brightness(.93) saturate(.86) contrast(1.08);
+  filter:brightness(1.01) saturate(.94) contrast(1.055);
   will-change:transform,filter;
 }
 #world{
@@ -61,15 +61,21 @@ html,body{
   opacity:calc(.055 + var(--du-pressure,0) * .105 + var(--du-view-mix,0) * .025);
   filter:saturate(.72) contrast(1.08);
 }
+
+#app.plate-error #world{
+  opacity:1;
+  mix-blend-mode:normal;
+  filter:none;
+}
 #app.detail .material-plate img{
-  filter:brightness(.82) saturate(.82) contrast(1.13);
+  filter:brightness(.90) saturate(.90) contrast(1.09);
 }
 @media(max-aspect-ratio:3/4){
   .material-plate{inset:-1.8%}
   .material-plate img{
     object-position:50% 50%;
     transform-origin:68% 58%;
-    filter:brightness(.90) saturate(.88) contrast(1.08);
+    filter:brightness(.97) saturate(.94) contrast(1.055);
   }
   #world{
     opacity:calc(.045 + var(--du-pressure,0) * .095 + var(--du-view-mix,0) * .022);
@@ -839,6 +845,7 @@ html,body{
 }
 
 @media(max-width:900px){
+  .live{display:none}
   .brand{left:max(16px,calc(env(safe-area-inset-left) + 10px))}
   .manifesto{
     left:max(18px,calc(env(safe-area-inset-left) + 12px));

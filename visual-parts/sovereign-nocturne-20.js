@@ -1578,81 +1578,16 @@
   function initGLResources() {
     if (!gl || gl.isContextLost()) throw new Error('WebGL2 context is unavailable during resource initialisation.');
     uniformLocations = new WeakMap();
-    const segments = coarse || lowCPU ? { longitude: 88, latitude: 66 } : { longitude: 132, latitude: 96 };
-    const outerMesh = buildSurface(segments.longitude, segments.latitude, false);
-    const innerMesh = buildSurface(
-      Math.max(56, Math.round(segments.longitude * 0.72)),
-      Math.max(42, Math.round(segments.latitude * 0.72)),
-      true,
-    );
-    const backgroundProgram = createProgram(gl, BACKGROUND_VERTEX, BACKGROUND_FRAGMENT, 'nocturne background');
-    const surfaceProgram = createProgram(gl, SURFACE_VERTEX, SURFACE_FRAGMENT, 'nocturne surface');
-    const pointProgram = createProgram(gl, POINT_VERTEX, POINT_FRAGMENT, 'nocturne portal');
-    const fibreProgram = createProgram(gl, FIBRE_VERTEX, FIBRE_FRAGMENT, 'nocturne fibre');
+
+    // The authored mineral plate is the material body. WebGL now carries only
+    // the score-derived atmospheric pressure that makes that body breathe.
+    const backgroundProgram = createProgram(gl, BACKGROUND_VERTEX, BACKGROUND_FRAGMENT, 'nocturne weather');
     const emptyVao = gl.createVertexArray();
-    const outer = uploadSurface(gl, outerMesh);
-    const inner = uploadSurface(gl, innerMesh);
+    if (!emptyVao) throw new Error('WebGL2 could not create the atmospheric field.');
 
-    const pointVao = gl.createVertexArray();
-    const pointBuffer = gl.createBuffer();
-    gl.bindVertexArray(pointVao);
-    gl.bindBuffer(gl.ARRAY_BUFFER, pointBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, 7 * 6 * Float32Array.BYTES_PER_ELEMENT, gl.DYNAMIC_DRAW);
-    const pointStride = 7 * Float32Array.BYTES_PER_ELEMENT;
-    gl.enableVertexAttribArray(0);
-    gl.vertexAttribPointer(0, 3, gl.FLOAT, false, pointStride, 0);
-    gl.enableVertexAttribArray(1);
-    gl.vertexAttribPointer(1, 3, gl.FLOAT, false, pointStride, 3 * Float32Array.BYTES_PER_ELEMENT);
-    gl.enableVertexAttribArray(2);
-    gl.vertexAttribPointer(2, 1, gl.FLOAT, false, pointStride, 6 * Float32Array.BYTES_PER_ELEMENT);
-    gl.bindVertexArray(null);
-
-    const fibreData = buildFibres();
-    const fibreVao = gl.createVertexArray();
-    const fibreBuffer = gl.createBuffer();
-    gl.bindVertexArray(fibreVao);
-    gl.bindBuffer(gl.ARRAY_BUFFER, fibreBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, fibreData, gl.STATIC_DRAW);
-    const fibreStride = 15 * Float32Array.BYTES_PER_ELEMENT;
-    gl.enableVertexAttribArray(0);
-    gl.vertexAttribPointer(0, 3, gl.FLOAT, false, fibreStride, 0);
-    gl.enableVertexAttribArray(1);
-    gl.vertexAttribPointer(1, 3, gl.FLOAT, false, fibreStride, 3 * Float32Array.BYTES_PER_ELEMENT);
-    gl.enableVertexAttribArray(2);
-    gl.vertexAttribPointer(2, 1, gl.FLOAT, false, fibreStride, 6 * Float32Array.BYTES_PER_ELEMENT);
-    gl.enableVertexAttribArray(3);
-    gl.vertexAttribPointer(3, 1, gl.FLOAT, false, fibreStride, 7 * Float32Array.BYTES_PER_ELEMENT);
-    gl.enableVertexAttribArray(4);
-    gl.vertexAttribPointer(4, 1, gl.FLOAT, false, fibreStride, 8 * Float32Array.BYTES_PER_ELEMENT);
-    gl.enableVertexAttribArray(5);
-    gl.vertexAttribPointer(5, 1, gl.FLOAT, false, fibreStride, 9 * Float32Array.BYTES_PER_ELEMENT);
-    gl.enableVertexAttribArray(6);
-    gl.vertexAttribPointer(6, 3, gl.FLOAT, false, fibreStride, 10 * Float32Array.BYTES_PER_ELEMENT);
-    gl.enableVertexAttribArray(7);
-    gl.vertexAttribPointer(7, 1, gl.FLOAT, false, fibreStride, 13 * Float32Array.BYTES_PER_ELEMENT);
-    gl.enableVertexAttribArray(8);
-    gl.vertexAttribPointer(8, 1, gl.FLOAT, false, fibreStride, 14 * Float32Array.BYTES_PER_ELEMENT);
-    gl.bindVertexArray(null);
-
-    resources = {
-      backgroundProgram,
-      surfaceProgram,
-      pointProgram,
-      fibreProgram,
-      emptyVao,
-      outer,
-      inner,
-      pointVao,
-      pointBuffer,
-      fibreVao,
-      fibreBuffer,
-      fibreCount: fibreData.length / 15,
-    };
-    gl.enable(gl.DEPTH_TEST);
-    gl.depthFunc(gl.LEQUAL);
+    resources = { backgroundProgram, emptyVao };
     gl.disable(gl.CULL_FACE);
-    gl.enable(gl.BLEND);
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    gl.disable(gl.BLEND);
   }
 
   function uniformLocation(program, name) {
@@ -1806,8 +1741,6 @@
   function renderGL(state) {
     if (!gl || !resources || gl.isContextLost()) return;
     gl.viewport(0, 0, canvas.width, canvas.height);
-    drawBackgroundGL(state);
-
     // The photographic mineral plate carries realised matter. WebGL becomes
     // its quiet living weather: pressure, refraction and parallax without
     // superimposing another object or diagram over the authored landscape.
@@ -2099,117 +2032,38 @@
   function renderFallback(state) {
     const context = fallbackContext;
     if (!context) return;
+
+    // Canvas2D is deliberately not a second artwork. It keeps a restrained
+    // atmospheric field behind the authored plate when WebGL is unavailable.
     context.save();
     context.setTransform(dpr, 0, 0, dpr, 0, 0);
-    context.fillStyle = '#07070b';
+    context.globalCompositeOperation = 'source-over';
+    context.fillStyle = '#000';
     context.fillRect(0, 0, width, height);
-    const abyssGlow = context.createRadialGradient(width * 0.57, height * 0.47, 0, width * 0.57, height * 0.47, Math.max(width, height) * 0.62);
-    abyssGlow.addColorStop(0, `rgba(94,35,45,${0.070 + state.pressure * 0.040 + state.crown * 0.060})`);
-    abyssGlow.addColorStop(0.42, 'rgba(27,21,34,.34)');
-    abyssGlow.addColorStop(1, 'rgba(7,7,11,0)');
-    context.fillStyle = abyssGlow;
-    context.fillRect(0, 0, width, height);
-    context.globalAlpha = 1;
-    drawFallbackCounterfield(context, state);
-    drawFallbackCurrents(context, state, false);
-    const layout = fallbackLayout(Boolean(activeWorld), state);
-    const { centerX, centerY, scale, orientation } = layout;
 
-    context.translate(centerX, centerY);
-    context.rotate(layout.angle);
-    context.scale(layout.scaleX, layout.scaleY);
-    const paths = fallbackBodyPaths(scale);
-    const body = paths.compound;
-    const wound = fallbackWoundPath(scale);
-    const ghostWound = fallbackWoundPath(scale, true);
-
-    const mineralGradient = context.createLinearGradient(-scale * 2.8, -scale * 3.1, scale * 2.5, scale * 2.8);
-    mineralGradient.addColorStop(0, '#060811');
-    mineralGradient.addColorStop(0.26, '#111522');
-    mineralGradient.addColorStop(0.52, '#222536');
-    mineralGradient.addColorStop(0.74, '#121624');
-    mineralGradient.addColorStop(1, '#05070d');
-    context.globalAlpha = 1 - state.subtraction * 0.28;
-    context.fillStyle = mineralGradient;
-    context.save();
-    context.lineJoin = 'round';
-    context.lineWidth = Math.max(1.2, scale * 0.032);
-    context.strokeStyle = '#050405';
-    paths.fields.forEach((path, index) => {
-      if (index > 0) context.stroke(path);
-      context.fill(path);
-    });
-    context.restore();
-
-    context.save();
-    context.clip(body);
+    const compact = isCompactLayout();
+    const weldX = width * (compact ? 0.64 : 0.625);
+    const weldY = height * (compact ? 0.54 : 0.535);
+    const reach = Math.max(width, height) * 0.72;
+    const pressure = 0.020 + state.pressure * 0.026 + state.crown * 0.030;
+    const cool = context.createRadialGradient(
+      width * (compact ? 0.28 : 0.24), height * 0.22, 0,
+      width * (compact ? 0.28 : 0.24), height * 0.22, reach,
+    );
+    cool.addColorStop(0, `rgba(24,63,72,${0.045 + state.return * 0.020})`);
+    cool.addColorStop(0.46, 'rgba(8,24,31,.024)');
+    cool.addColorStop(1, 'rgba(0,0,0,0)');
     context.globalCompositeOperation = 'screen';
-    context.setLineDash([scale * 0.16, scale * 0.24, scale * 0.09, scale * 0.31]);
-    context.lineDashOffset = -scale * (0.11 + state.inversion * 0.08);
-    context.shadowColor = 'rgba(157,139,194,.30)';
-    context.shadowBlur = Math.max(14, scale * 0.18);
-    context.globalAlpha = 0.10 + fallbackClimax(state) * 0.08;
-    context.lineWidth = Math.max(2.5, scale * 0.034);
-    context.strokeStyle = '#8f879e';
-    context.stroke(ghostWound);
-    context.shadowBlur = 0;
-    context.globalAlpha = 0.18 + fallbackClimax(state) * 0.12;
-    context.lineWidth = Math.max(0.65, scale * 0.008);
-    context.strokeStyle = '#c9bfd0';
-    context.stroke(ghostWound);
-    context.restore();
+    context.fillStyle = cool;
+    context.fillRect(0, 0, width, height);
 
-    context.save();
-    context.globalAlpha = 0.12 + state.crown * 0.045;
-    context.lineWidth = Math.max(0.45, scale * 0.009);
-    context.strokeStyle = '#cbbda8';
-    context.stroke(wound);
-    context.restore();
-
-    if (activeWorld && viewMix > 0.24) {
-      context.save();
-      context.globalAlpha = ease(viewMix) * 0.24;
-      context.lineWidth = Math.max(0.55, scale * 0.010);
-      const activeIndex = activeWorld === 'machine' ? 0 : activeWorld === 'maker' ? 1 : 2;
-      context.strokeStyle = activeIndex === 0 ? '#00c9e8' : activeIndex === 1 ? '#14c98b' : '#6840ff';
-      if (activeIndex === 2) context.clip(body);
-      context.stroke(activeIndex === 2 ? body : wound);
-      context.restore();
-    }
-
-    context.save();
-    context.shadowColor = 'rgba(225,94,80,.44)';
-    context.shadowBlur = scale * (0.080 + state.crown * 0.055);
-    context.globalAlpha = 0.10 + state.crown * 0.12 + state.pressure * 0.035;
-    context.lineWidth = Math.max(2.2, scale * 0.040);
-    context.strokeStyle = '#e15e50';
-    context.stroke(wound);
-    context.shadowBlur = 0;
-    context.setLineDash([scale * 0.24, scale * 0.055, scale * 0.42, scale * 0.08]);
-    context.lineDashOffset = -scale * state.phase * 0.18;
-    context.globalAlpha = 0.78 + state.reconstitution * 0.14;
-    context.lineWidth = Math.max(0.75, scale * 0.012);
-    context.strokeStyle = '#fff0d4';
-    context.stroke(wound);
-    context.restore();
-    context.restore();
-
-    context.save();
-    context.setTransform(dpr, 0, 0, dpr, 0, 0);
-    drawFallbackCurrents(context, state, true);
-    drawFallbackHorizon(context, state);
-    drawFallbackMatter(context, state);
-    pointSet().forEach(({ point, color, size }) => {
-      const projected = projectFallbackPoint(point, Boolean(activeWorld));
-      const radius = size * 0.58;
-      const gradient = context.createRadialGradient(projected.x, projected.y, 0, projected.x, projected.y, radius);
-      const rgb = color.map((value) => Math.round(value * 255));
-      gradient.addColorStop(0, 'rgba(255,233,214,.90)');
-      gradient.addColorStop(0.25, `rgba(${rgb[0]},${rgb[1]},${rgb[2]},.62)`);
-      gradient.addColorStop(1, `rgba(${rgb[0]},${rgb[1]},${rgb[2]},0)`);
-      context.fillStyle = gradient;
-      context.fillRect(projected.x - radius, projected.y - radius, radius * 2, radius * 2);
-    });
+    const ember = context.createRadialGradient(weldX, weldY, 0, weldX, weldY, reach * 0.42);
+    ember.addColorStop(0, `rgba(255,168,132,${pressure})`);
+    ember.addColorStop(0.10, `rgba(181,74,61,${pressure * 0.58})`);
+    ember.addColorStop(0.48, 'rgba(74,21,24,.014)');
+    ember.addColorStop(1, 'rgba(0,0,0,0)');
+    context.fillStyle = ember;
+    context.fillRect(0, 0, width, height);
     context.restore();
   }
 
@@ -2787,6 +2641,36 @@
     }
   }
 
+  function revealFieldWhenPlateIsReady() {
+    const plate = $('#materialPlate img');
+    if (!plate) {
+      app.classList.add('plate-error');
+      loading?.classList.add('hide');
+      return;
+    }
+
+    let settled = false;
+    const finish = (status) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      plate.removeEventListener('load', onLoad);
+      plate.removeEventListener('error', onError);
+      if (status === true) app.dataset.plateReady = 'true';
+      if (status === false) app.classList.add('plate-error');
+      loading?.classList.add('hide');
+    };
+    const onLoad = () => finish(plate.naturalWidth > 0);
+    const onError = () => finish(false);
+    const timer = window.setTimeout(() => finish(null), 1750);
+
+    if (plate.complete) queueMicrotask(() => finish(plate.naturalWidth > 0));
+    else {
+      plate.addEventListener('load', onLoad, { once: true });
+      plate.addEventListener('error', onError, { once: true });
+    }
+  }
+
   function setReady(mode, api, restored = false) {
     rendererStatus.mode = mode;
     rendererStatus.api = api;
@@ -2979,7 +2863,7 @@
     const initialState = cycleState(elapsed);
     if (gl) renderGL(initialState);
     else renderFallback(initialState);
-    loading?.classList.add('hide');
+    revealFieldWhenPlateIsReady();
   } catch (error) {
     rendererStatus.ready = false;
     rendererStatus.state = 'error';
