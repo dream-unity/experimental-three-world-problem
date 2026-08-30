@@ -170,7 +170,7 @@ await run('Sovereign Nocturne becomes ready through WebGL without runtime errors
   assert.equal(state.app.rendererState, 'ready');
   assert.equal(state.renderer.mode, 'webgl');
   assert.equal(state.renderer.api, 'webgl2');
-  assert.equal(state.renderer.version, '20260830-sovereign-nocturne-15');
+  assert.equal(state.renderer.version, '20260830-sovereign-nocturne-16');
   assert.ok(state.events.some(event => event.name === 'dreamunity:renderer-ready' && event.detail?.mode === 'webgl'));
   assert.match(state.context, /WebGL2/i);
   assert.deepEqual(errors, []);
