@@ -239,8 +239,19 @@ html,body{
   width:min(390px,31vw);
   color:var(--bone);
   pointer-events:none;
+  isolation:isolate;
   text-shadow:0 2px 28px rgba(0,0,0,.88);
   transition:opacity .34s ease,transform .34s ease,visibility .34s ease;
+}
+
+.manifesto::after{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  inset:-28px -48px -32px -28px;
+  pointer-events:none;
+  background:radial-gradient(ellipse at 20% 50%,rgba(3,5,9,.66),rgba(3,5,9,.26) 52%,transparent 76%);
+  filter:blur(9px);
 }
 
 .manifesto::before{
@@ -271,6 +282,7 @@ html,body{
   font-weight:400;
   line-height:.91;
   letter-spacing:-.050em;
+  text-wrap:balance;
 }
 
 .manifesto h1 span{
@@ -347,6 +359,7 @@ html,body{
 .world-label{
   --portal:var(--machine);
   min-width:154px;
+  max-width:calc(100vw - 20px);
   min-height:44px;
   padding:5px 10px 5px 15px;
   display:grid;
@@ -842,9 +855,9 @@ html,body{
   .score-control{min-width:76px;gap:5px}
   .score-control small{display:inline;font-size:8.5px}
   .score-control b{min-width:24px;font-size:9.5px}
-  .manifesto{left:max(15px,env(safe-area-inset-left));width:235px}
+  .manifesto{left:max(15px,env(safe-area-inset-left));width:min(235px,calc(100vw - 30px))}
   .manifesto>p{color:rgba(233,227,214,.66);font-size:9.5px;letter-spacing:.07em}
-  .manifesto h1{font-size:31px}
+  .manifesto h1{font-size:clamp(28px,7.95vw,31px)}
   .manifesto-copy{color:rgba(233,227,214,.62);font-size:10.5px}
   .manifesto-rule{color:rgba(255,118,95,.84);font-size:9.5px}
   .cycle-index i{display:none}
@@ -853,7 +866,8 @@ html,body{
   .world-label{min-width:116px;grid-template-columns:12px minmax(0,1fr)}
   .world-label[data-world="reality"]{min-width:142px}
   .world-label>.world-copy small{display:none}
-  .world-label>.world-copy strong{font-size:12.5px;letter-spacing:.03em}
+  .world-label>.world-copy strong{font-size:clamp(11.5px,3.2vw,12.5px);letter-spacing:.03em}
+  .manifesto::after{inset:-18px -25px -22px -16px}
   .unity-label small{display:none}
   .hint{font-size:9px;letter-spacing:.04em}
   .detail-title strong{font-size:13px}

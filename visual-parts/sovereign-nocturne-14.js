@@ -2,7 +2,7 @@
   'use strict';
 
   const RENDERER_ID = 'sovereign-nocturne';
-  const RENDERER_VERSION = '20260830-sovereign-nocturne-13';
+  const RENDERER_VERSION = '20260830-sovereign-nocturne-14';
   const SILENT_CYCLE_SECONDS = 40;
   const TAU = Math.PI * 2;
   const $ = (selector) => document.querySelector(selector);
@@ -154,9 +154,9 @@
       { x: 0.72, y: -0.36, z: 0.35 },
     ],
     reality: [
-      { x: -1.55, y: -0.92, z: -0.15 },
-      { x: 0.42, y: -0.92, z: 0.10 },
-      { x: 1.82, y: -0.88, z: 0.45 },
+      { x: -1.55, y: -2.02, z: 0.10 },
+      { x: 0.42, y: -2.12, z: 0.34 },
+      { x: 1.82, y: -2.06, z: 0.58 },
     ],
   };
 
@@ -205,7 +205,7 @@
       ? { yaw: 0.19, pitch: -0.04 }
       : activeWorld === 'maker'
         ? { yaw: -0.23, pitch: 0.01 }
-        : { yaw: 0.28, pitch: 0.08 };
+        : { yaw: 0.28, pitch: 0.15 };
     const overview = ghost
       ? { yaw: ghostYaw, pitch: ghostPitch, roll: ghostRoll, zoom: overviewZoom }
       : { yaw: overviewYaw, pitch: overviewPitch, roll: overviewRoll, zoom: overviewZoom };
@@ -221,7 +221,7 @@
   function screenShift(detail = false) {
     const mix = detail ? ease(viewMix) : 0;
     const detailY = activeWorld === 'reality'
-      ? (isCompactLayout() ? 0.22 : 0.26)
+      ? (isCompactLayout() ? 0.27 : 0.34)
       : activeWorld === 'maker'
         ? 0.12
         : 0.08;
@@ -769,7 +769,11 @@
     }
 
     float curvedPhrase(vec2 point, vec2 start, vec2 control, vec2 end,
-      float aspect, float width) {
+      float aspect, float width, float seed) {
+      vec2 boundsMin = min(start, min(control, end)) - vec2(0.034);
+      vec2 boundsMax = max(start, max(control, end)) + vec2(0.034);
+      if (point.x < boundsMin.x || point.x > boundsMax.x
+        || point.y < boundsMin.y || point.y > boundsMax.y) return 0.0;
       float nearestDistance = 100.0;
       float nearestPhase = 0.0;
       for (int segment = 0; segment < 6; segment++) {
@@ -790,18 +794,21 @@
           nearestPhase = mix(phaseA, phaseB, weight);
         }
       }
-      float taper = pow(max(0.0, sin(3.14159265 * nearestPhase)), 0.58)
+      float taper = pow(max(0.0, sin(3.14159265 * nearestPhase)), 0.56)
         * (0.82 + 0.18 * nearestPhase);
       float endpointFade = smoothstep(0.018, 0.090, nearestPhase)
         * (1.0 - smoothstep(0.900, 0.982, nearestPhase));
-      float localWidth = width * max(0.08, taper);
+      float nib = 0.72 + 0.28 * sin(nearestPhase * (5.1 + seed * 2.7) + seed * 11.0);
+      float localWidth = width * max(0.08, taper) * nib;
       float core = 1.0 - smoothstep(localWidth * localWidth,
         localWidth * localWidth * 7.0, nearestDistance);
       float veil = exp(-nearestDistance / max(0.000001,
-        width * width * 18.0)) * 0.055;
-      float dryGrain = 0.88 + 0.12 * sin(nearestPhase * 8.3
-        + start.x * 19.0 + end.y * 11.0);
-      return (core + veil) * endpointFade * dryGrain;
+        width * width * 18.0)) * 0.045;
+      float gap = 0.22 + fract(seed * 2.17) * 0.54;
+      float breakMask = smoothstep(0.018, 0.050, abs(nearestPhase - gap));
+      float pigmentCell = hash21(vec2(floor(nearestPhase * 8.0), floor(seed * 17.0)));
+      float pigment = 0.30 + 0.70 * smoothstep(0.22, 0.62, pigmentCell);
+      return (core + veil) * endpointFade * breakMask * pigment;
     }
 
     void main() {
@@ -812,8 +819,8 @@
       vec2 screen = vec2(uv.x, 1.0 - uv.y);
       screen += uParallax;
       float worldDetail = (1.0 - smoothstep(0.16, 0.42, abs(uActiveWorld - 3.0))) * uDetailMix;
-      vec2 detailSource = vec2(0.540, 0.515)
-        + (screen - vec2(0.540, 0.500)) * vec2(0.940, 0.920);
+      vec2 detailSource = vec2(0.560, 0.650)
+        + (screen - vec2(0.540, 0.470)) * vec2(0.780, 0.760);
       screen = mix(screen, detailSource, worldDetail);
       if (uOverlay > 0.5) {
         float echoHorizonY = mix(0.735, 0.750, portrait);
@@ -843,34 +850,37 @@
       vec2 fieldPoint = (screen - fieldCenter) * vec2(aspect, 1.0);
       // Nine authored score phrases: unequal curves, unequal silences, and no
       // common terminus. They are pressure entering matter, never a diagram.
-      float phraseWidth = mix(0.00112, 0.00148, portrait);
+      float phraseWidth = mix(0.00108, 0.00144, portrait);
       float machine =
         curvedPhrase(screen,
-          mix(vec2(0.32, 0.00), vec2(0.62, -0.02), portrait),
-          mix(vec2(0.35, 0.08), vec2(0.66, 0.06), portrait),
-          mix(vec2(0.40, 0.13), vec2(0.70, 0.12), portrait), aspect, phraseWidth)
+          mix(vec2(0.30, 0.00), vec2(0.62, -0.02), portrait),
+          mix(vec2(0.35, 0.07), vec2(0.66, 0.06), portrait),
+          mix(vec2(0.41, 0.15), vec2(0.70, 0.12), portrait),
+          aspect, phraseWidth * 1.18, 0.13) * 1.00
         + curvedPhrase(screen,
-          mix(vec2(0.51, 0.08), vec2(0.78, 0.08), portrait),
-          mix(vec2(0.56, 0.10), vec2(0.82, 0.12), portrait),
-          mix(vec2(0.53, 0.17), vec2(0.76, 0.18), portrait), aspect, phraseWidth * 0.92)
+          mix(vec2(0.49, 0.07), vec2(0.78, 0.08), portrait),
+          mix(vec2(0.57, 0.11), vec2(0.82, 0.12), portrait),
+          mix(vec2(0.53, 0.22), vec2(0.76, 0.18), portrait),
+          aspect, phraseWidth * 0.84, 0.31) * 0.42
         + curvedPhrase(screen,
-          mix(vec2(0.60, 0.22), vec2(0.64, 0.22), portrait),
-          mix(vec2(0.55, 0.25), vec2(0.72, 0.24), portrait),
-          mix(vec2(0.57, 0.31), vec2(0.69, 0.31), portrait), aspect, phraseWidth * 0.84);
+          mix(vec2(0.61, 0.23), vec2(0.64, 0.22), portrait),
+          mix(vec2(0.55, 0.24), vec2(0.72, 0.24), portrait),
+          mix(vec2(0.58, 0.33), vec2(0.69, 0.31), portrait),
+          aspect, phraseWidth * 0.72, 0.57) * 0.24;
       float maker =
-        curvedPhrase(screen, vec2(0.03, 0.33), vec2(0.10, 0.29), vec2(0.17, 0.34),
-          aspect, phraseWidth * 1.06)
-        + curvedPhrase(screen, vec2(0.22, 0.43), vec2(0.27, 0.50), vec2(0.35, 0.47),
-          aspect, phraseWidth * 0.92)
-        + curvedPhrase(screen, vec2(0.08, 0.59), vec2(0.15, 0.54), vec2(0.23, 0.52),
-          aspect, phraseWidth * 0.84);
+        curvedPhrase(screen, vec2(0.015, 0.34), vec2(0.11, 0.30), vec2(0.20, 0.35),
+          aspect, phraseWidth * 0.92, 0.19) * 0.68
+        + curvedPhrase(screen, vec2(0.205, 0.43), vec2(0.28, 0.50), vec2(0.37, 0.49),
+          aspect, phraseWidth * 1.28, 0.46) * 1.00
+        + curvedPhrase(screen, vec2(0.05, 0.62), vec2(0.15, 0.55), vec2(0.255, 0.52),
+          aspect, phraseWidth * 0.78, 0.82) * 0.34;
       float world =
-        curvedPhrase(screen, vec2(0.70, 0.42), vec2(0.77, 0.38), vec2(0.84, 0.42),
-          aspect, phraseWidth * 1.10)
-        + curvedPhrase(screen, vec2(0.66, 0.58), vec2(0.75, 0.63), vec2(0.84, 0.59),
-          aspect, phraseWidth * 0.94)
-        + curvedPhrase(screen, vec2(0.78, 0.71), vec2(0.85, 0.76), vec2(0.92, 0.72),
-          aspect, phraseWidth * 0.86);
+        curvedPhrase(screen, vec2(0.69, 0.41), vec2(0.80, 0.36), vec2(0.91, 0.45),
+          aspect, phraseWidth * 0.96, 0.24) * 0.52
+        + curvedPhrase(screen, vec2(0.64, 0.56), vec2(0.76, 0.62), vec2(0.90, 0.61),
+          aspect, phraseWidth * 0.74, 0.63) * 0.28
+        + curvedPhrase(screen, vec2(0.72, 0.74), vec2(0.84, 0.71), vec2(0.97, 0.72),
+          aspect, phraseWidth * 1.30, 0.91) * 1.00;
       float machineFocus = 1.0 - smoothstep(0.16, 0.42, abs(uActiveWorld - 1.0));
       float makerFocus = 1.0 - smoothstep(0.16, 0.42, abs(uActiveWorld - 2.0));
       float worldFocus = 1.0 - smoothstep(0.16, 0.42, abs(uActiveWorld - 3.0));
@@ -921,8 +931,15 @@
         * (1.0 - smoothstep(0.73, 0.82, faultProgress));
       float edgeCaustic = exp(-abs(signedFault - halfRight) * mix(205.0, 142.0, portrait))
         * faultExtent * edgeWindow * (0.14 + edgeChip * 0.86);
+      float ridgeNoise = fbm(vec2(faultProgress * 8.4, 6.7));
+      float ridgeGate = smoothstep(0.48, 0.69, ridgeNoise) * max(
+        smoothstep(0.45, 0.50, faultProgress)
+          * (1.0 - smoothstep(0.56, 0.61, faultProgress)),
+        smoothstep(0.63, 0.67, faultProgress)
+          * (1.0 - smoothstep(0.73, 0.78, faultProgress)));
+      edgeCaustic *= ridgeGate;
       float ivoryRidge = (1.0 - smoothstep(cutAA, cutAA * 3.0,
-        abs(signedFault - halfRight))) * faultExtent * edgeWindow;
+        abs(signedFault - halfRight))) * faultExtent * edgeWindow * ridgeGate;
       float rupture = clamp(uCrown * 0.92 + uReconstitution * 0.32 + uPressure * 0.08, 0.0, 1.0);
 
       float horizonNoise = fbm(vec2(screen.x * 5.2, movingTime * 0.006));
@@ -962,6 +979,19 @@
       float rightRelease = exp(-pow(abs(signedFault - releaseCenter)
         / max(0.001, releaseWidth), 1.45))
         * rightMatter * releaseWindow * climax * (0.48 + rightGrain * 0.52);
+      float plumeWindow = smoothstep(0.40, 0.49, faultProgress)
+        * (1.0 - smoothstep(0.71, 0.83, faultProgress));
+      float plumeAxis = halfRight + mix(0.070, 0.096, portrait)
+        + smoothstep(0.47, 0.70, faultProgress) * mix(0.105, 0.145, portrait)
+        + (rightGrain - 0.5) * 0.030;
+      float plumeWidth = mix(0.046, 0.064, portrait)
+        + smoothstep(0.46, 0.68, faultProgress) * mix(0.052, 0.074, portrait);
+      float detach = smoothstep(halfRight + 0.026, halfRight + 0.058, signedFault);
+      float plume = exp(-pow(abs(signedFault - plumeAxis)
+        / max(0.001, plumeWidth), 1.55))
+        * plumeWindow * detach * climax * (0.34 + 0.66 * rightGrain);
+      float pearlFold = 0.5 + 0.5 * cos(faultProgress * 15.7
+        + signedFault * 21.0 + membraneGrain * 3.2);
       float sovereignBloom = exp(-pow((signedFault - halfRight)
         / mix(0.026, 0.038, portrait), 2.0))
         * rightMatter * releaseWindow * climax * (0.34 + rightGrain * 0.66);
@@ -986,14 +1016,34 @@
       vec3 color = vec3(0.0065, 0.0055, 0.0090);
       float radiance = 0.82 + uPressure * 0.14 + uReconstitution * 0.24 + uCrown * 0.32;
       color += smokedPlum * atmospheric * fieldMask * 0.18;
+      float coldBrush = noise(mat2(0.93, -0.37, 0.37, 0.93)
+        * screen * vec2(3.4, 8.6) + vec2(1.7, 5.1));
+      float warmBrush = noise(mat2(0.78, 0.63, -0.63, 0.78)
+        * screen * vec2(2.8, 7.2) + vec2(9.4, 2.2));
+      float coldScumble = smoothstep(0.26, 0.74, mix(leftGrain, coldBrush, 0.56));
+      float warmScumble = smoothstep(0.24, 0.76, mix(rightGrain, warmBrush, 0.60));
       vec3 leftMaterial = mix(vec3(0.018, 0.027, 0.052), vec3(0.090, 0.120, 0.175),
         0.24 + leftGrain * 0.28);
       leftMaterial = mix(leftMaterial, cyan, 0.024 + leftGrain * 0.022);
+      leftMaterial *= 0.76 + 0.48 * coldScumble;
       vec3 rightMaterial = mix(vec3(0.052, 0.012, 0.028), vec3(0.150, 0.055, 0.110),
         0.20 + rightGrain * 0.28);
       rightMaterial = mix(rightMaterial, violet, 0.026 + rightGrain * 0.025);
+      rightMaterial *= 0.72 + 0.58 * warmScumble;
       color += leftMaterial * leftMatter * (0.52 + uGather * 0.060 + lock * 0.050);
       color += rightMaterial * rightMatter * (0.58 + uPressure * 0.050 + lock * 0.060);
+      color += mix(cyan, bone, 0.18) * leftMatter * pow(coldScumble, 3.0)
+        * (0.010 + 0.014 * climax);
+      color += mix(coral, bone, 0.22) * rightMatter * pow(warmScumble, 3.0)
+        * (0.014 + 0.020 * climax);
+      float coldMemory = smoothstep(0.12, 0.20, faultProgress)
+        * (1.0 - smoothstep(0.32, 0.40, faultProgress))
+        * leftMatter * smoothstep(0.62, 0.84, warmBrush);
+      float warmMemory = smoothstep(0.60, 0.68, faultProgress)
+        * (1.0 - smoothstep(0.78, 0.86, faultProgress))
+        * rightMatter * smoothstep(0.66, 0.86, coldBrush);
+      color += mix(oxblood, coral, 0.45) * coldMemory * 0.010;
+      color += mix(cyan, emerald, 0.40) * warmMemory * 0.008;
       vec3 film = 0.5 + 0.5 * cos(sheetPhase * 0.73 + vec3(0.00, 2.15, 4.25));
       vec3 filmWeight = pow(vec3(0.15) + film * 0.85, vec3(2.0));
       vec3 spectralSheet = (cyan * filmWeight.r + emerald * filmWeight.g + violet * filmWeight.b)
@@ -1001,32 +1051,37 @@
       vec3 releaseHue = mix(coral, vec3(0.480, 0.310, 0.640),
         smoothstep(0.46, 0.78, faultProgress));
       vec3 releasePearl = mix(releaseHue, bone, 0.28 + pressureFold * 0.16);
+      vec3 plumeHue = mix(coral, vec3(0.485, 0.315, 0.625),
+        0.30 + 0.25 * pearlFold);
+      vec3 plumePearl = mix(plumeHue, bone, 0.28 + 0.28 * pow(pearlFold, 2.0));
       color += mix(cyan, emerald, 0.46) * leftRefraction
         * (0.008 + uGather * 0.005 + uReconstitution * 0.006);
-      color += releasePearl * rightRelease
-        * (0.180 + uCrown * 0.200);
+      color += releasePearl * rightRelease * (0.035 + uCrown * 0.055);
+      color += plumePearl * plume * (0.145 + uCrown * 0.235);
+      color += coral * plume * (0.022 + uCrown * 0.048)
+        * smoothstep(0.48, 0.78, pearlFold);
       color += mix(coral, tarnishedGold, 0.38) * sovereignBloom
-        * (0.040 + uReconstitution * 0.055 + uCrown * 0.075);
+        * (0.020 + uReconstitution * 0.027 + uCrown * 0.038);
       color += mix(graphiteViolet, cyan, 0.42) * coldShoulder * (0.004 + uGather * 0.002);
-      color += mix(tarnishedGold, coral, 0.16) * warmShoulder * edgeWindow
+      color += mix(tarnishedGold, coral, 0.16) * warmShoulder * edgeWindow * ridgeGate
         * (0.024 + uPressure * 0.012 + climax * 0.014);
       color += mix(bone, tarnishedGold, 0.18) * ivoryRidge
         * (0.105 + uReconstitution * 0.045 + uCrown * 0.060);
       color += mix(tarnishedGold, coral, 0.34) * edgeCaustic
         * (0.026 + uCrown * 0.024);
-      color += coral * warmShoulder * edgeWindow * pressureBend
+      color += coral * warmShoulder * edgeWindow * pressureBend * ridgeGate
         * (0.095 + uPressure * 0.040 + climax * 0.070);
       color += mix(coral, bone, 0.48) * chordLock * (0.070 + uCrown * 0.090);
       color += spectralSheet * coherentWave * (0.018 + uCrown * 0.026);
       color += mix(tarnishedGold, ghostViolet, 0.34) * sovereignBloom * uReturn * 0.036;
-      color += mix(cyan, bone, 0.06) * machine * 0.080 * radiance;
-      color += mix(emerald, bone, 0.05) * maker * 0.074 * radiance;
-      color += mix(violet, bone, 0.07) * world * 0.086 * radiance;
+      color += mix(cyan, bone, 0.32) * machine * 0.130 * radiance;
+      color += mix(emerald, bone, 0.28) * maker * 0.120 * radiance;
+      color += mix(violet, bone, 0.36) * world * 0.140 * radiance;
       color = mix(color, oxblood * 0.20, faultBand * (0.78 - rupture * 0.10));
       color = mix(color, vec3(0.0015, 0.0010, 0.0020), faultCore * 0.96);
       color += bone * horizon * (0.012 + uReturn * 0.014 + uCrown * 0.008);
       color += (granular - 0.5) * 0.0034;
-      color *= mix(1.0, 0.52, worldDetail);
+      color *= mix(1.0, 0.90, worldDetail);
 
       float edge = length((screen - vec2(0.52, 0.49)) * vec2(0.78, 1.0));
       color *= 1.0 - smoothstep(0.42, 0.98, edge) * 0.16;
@@ -1111,7 +1166,17 @@
         point.z -= uSubtraction * (0.025 + horizonProximity * 0.030);
         float detailRelief = sin(aAlong * 9.1 + aAcross * 3.7 - movingTime * 0.022) * 0.040
           + sin(aAlong * 4.3 - aAcross * 5.9 + 1.7) * 0.026;
-        point += deformNormal * detailRelief * worldMask * worldChange;
+        float ledgeA = -0.43 + 0.10 * sin(aAlong * 8.3 + 1.1)
+          + 0.035 * sin(aAlong * 19.7);
+        float ledgeB = 0.18 + 0.075 * sin(aAlong * 5.9 - 0.8)
+          + 0.045 * sin(aAlong * 15.1);
+        float terraces = smoothstep(ledgeA - 0.045, ledgeA + 0.045, aAcross) * 0.105
+          - smoothstep(ledgeB - 0.055, ledgeB + 0.055, aAcross) * 0.070;
+        float brokenTerrace = 0.62 + 0.38 * sin(aAlong * 12.7 + aAcross * 4.1);
+        point += deformNormal * (detailRelief + terraces * brokenTerrace)
+          * worldMask * worldChange;
+        point.z += worldMask * worldChange
+          * (0.12 * (aAcross + 1.0) * 0.5 + terraces * 0.48);
         point.y += worldMask * worldChange
           * (0.08 + smoothstep(-0.15, 0.92, aAcross) * 0.10);
         point.z += machineMask * worldChange * horizonProximity * 0.018;
@@ -1211,7 +1276,14 @@
 
     void main() {
       vec3 safeNormal = vNormal / max(length(vNormal), 0.0001);
-      vec3 normal = gl_FrontFacing ? safeNormal : -safeNormal;
+      vec3 faceNormal = gl_FrontFacing ? safeNormal : -safeNormal;
+      vec3 derivativeCross = cross(dFdx(vWorld), dFdy(vWorld));
+      vec3 derivativeNormal = derivativeCross / max(length(derivativeCross), 0.0001);
+      if (dot(derivativeNormal, safeNormal) < 0.0) derivativeNormal = -derivativeNormal;
+      float worldRelief = (1.0 - step(0.5, uMaterial))
+        * (1.0 - smoothstep(0.16, 0.42, abs(uActiveWorld - 3.0))) * uDetailMix;
+      vec3 detailNormal = gl_FrontFacing ? derivativeNormal : -derivativeNormal;
+      vec3 normal = normalize(mix(faceNormal, detailNormal, worldRelief * 0.78));
       vec3 viewDirection = normalize(vec3(0.0, 0.0, 10.0) - vWorld);
       vec3 keyDirection = normalize(vec3(-0.62, 0.76, 0.20));
       vec3 fillDirection = normalize(vec3(0.74, -0.16, 0.52));
@@ -1314,13 +1386,13 @@
         color = mix(color, mix(vec3(0.018, 0.014, 0.027), violet, 0.30),
           worldCleave * (cleaveMass * 0.56 + worldDensity * 0.22));
         color += mix(violet, bone, 0.24) * worldCleave
-          * (cleaveEdge * (0.055 + 0.110 * climax)
-            + worldDensity * groundBloom * 0.095);
+          * (cleaveEdge * (0.095 + 0.170 * climax)
+            + worldDensity * groundBloom * 0.115);
         float detailSeam = exp(-abs(vAcross - upperBoundary) * 13.0)
           * smoothstep(0.48, 0.70,
             rockFbm(vec2(vAlong * 2.10 + 8.4, vAcross * 0.76 + 3.2)));
         color += mix(violet, bone, 0.52) * worldCleave * detailSeam
-          * (0.060 + 0.060 * climax);
+          * (0.085 + 0.095 * climax);
 
         color *= 1.0 - uSubtraction * (0.18 + macro * 0.12);
         float groundDepth = smoothstep(-0.86, 0.82, vAcross);
@@ -1371,7 +1443,7 @@
       float selectedPulse = 0.5 + 0.5 * sin(movingTime * 1.12 + uActiveSub * 1.9);
       color += coral * uDetailMix * selectedPulse * 0.006;
       color += vec3(0.008, 0.007, 0.012) * uReturn;
-      float outputGamma = uMaterial < 0.5 ? 0.92 : 0.84;
+      float outputGamma = uMaterial < 0.5 ? mix(0.92, 0.80, worldRelief) : 0.84;
       color = pow(max(color, vec3(0.0)), vec3(outputGamma));
       outColor = vec4(color, alpha);
     }
