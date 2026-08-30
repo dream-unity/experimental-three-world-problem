@@ -2,7 +2,7 @@
   'use strict';
 
   const RENDERER_ID = 'sovereign-nocturne';
-  const RENDERER_VERSION = '20260830-sovereign-nocturne-1';
+  const RENDERER_VERSION = '20260830-sovereign-nocturne-2';
   const SILENT_CYCLE_SECONDS = 40;
   const TAU = Math.PI * 2;
   const $ = (selector) => document.querySelector(selector);
@@ -229,7 +229,7 @@
   function viewportShapeScale() {
     const aspect = Math.max(0.25, width / Math.max(1, height));
     const targetWidth = lerp(0.93, 0.65, smoothstep(0.75, 1.30, aspect));
-    const compactMantleCompensation = lerp(1.26, 1, smoothstep(0.75, 1.30, aspect));
+    const compactMantleCompensation = lerp(1.05, 1, smoothstep(0.75, 1.30, aspect));
     return {
       x: clamp(targetWidth * aspect / 1.21 * compactMantleCompensation, 0.34, 1),
       y: clamp(0.38 + aspect * 0.38, 0.55, 1),
@@ -262,74 +262,48 @@
     };
   }
 
-  function woundCenter(y) {
-    return 0.12 + Math.sin(y * 1.08 - 0.22) * 0.42 + Math.sin(y * 3.35 + 0.65) * 0.055;
+  const LAMELLAE = [
+    { base: 2.32, twist: -0.32, phase: 0.20, crown: 0.36, drift: -0.12 },
+    { base: 0.72, twist: 0.38, phase: 2.10, crown: 0.10, drift: 0.12 },
+    { base: 4.12, twist: 0.78, phase: 4.30, crown: 0.62, drift: -0.05 },
+  ];
+
+  function fractureCenter(y) {
+    return 1.26 + Math.sin(y * 1.12 - 0.15) * 0.27 + Math.sin(y * 3.5 + 0.7) * 0.035;
   }
 
   function woundAmount(point) {
-    const front = smoothstep(0.18, 1.18, point.z);
-    const vertical = Math.abs((point.y + 0.02) / 1.62);
-    const taper = Math.pow(clamp(1 - vertical, 0, 1), 0.58);
-    const halfWidth = 0.34 + taper * 0.43;
-    const lateral = Math.abs(point.x - woundCenter(point.y)) / halfWidth;
-    const torn = Math.pow(lateral, 1.58) + Math.pow(vertical, 3.15)
-      + Math.sin(point.y * 4.25 - point.x * 1.4) * 0.026
-      + Math.sin(point.y * 7.1 + 0.8) * 0.014;
-    return (1 - smoothstep(0.72, 1.04, torn)) * front;
+    const front = smoothstep(0.52, 1.34, point.z);
+    const vertical = Math.abs((point.y + 0.03) / 1.40);
+    const taper = Math.pow(clamp(1 - vertical, 0, 1), 0.62);
+    const halfWidth = 0.18 + taper * 0.18;
+    const lateral = Math.abs(point.x - fractureCenter(point.y)) / halfWidth;
+    const torn = Math.pow(lateral, 1.72) + Math.pow(vertical, 3.25)
+      + Math.sin(point.y * 5.1 - point.x * 1.8) * 0.018;
+    return (1 - smoothstep(0.76, 1.035, torn)) * front;
   }
 
-  function bodyPoint(u, v, inner = false) {
-    const theta = ((u % 1) + 1) % 1 * TAU;
-    const phi = clamp(v, 0, 1) * Math.PI;
-    const sinPhi = Math.sin(phi);
-    const cosPhi = Math.cos(phi);
-    const corrugation = 1
-      + 0.030 * Math.sin(theta * 3 + phi * 1.8)
-      + 0.015 * Math.sin(theta * 7 - phi * 2.4);
-    const shoulder = 1 + 0.14 * Math.sin(phi * 1.35 - 0.55) * Math.sin(theta + 0.8);
-    let x = 3.75 * sinPhi * Math.cos(theta) * corrugation * shoulder;
-    let y = 3.05 * cosPhi
-      + 0.24 * Math.sin(theta * 1.7 + 0.5) * sinPhi * sinPhi
-      - 0.12 * Math.sin(phi * 3.2);
-    let z = 1.65 * sinPhi * Math.sin(theta)
-      * (1 + 0.11 * Math.cos(theta * 2 - phi));
-
-    const lower = smoothstep(0.60, 0.96, v);
-    x *= 1 + lower * (0.11 + 0.04 * Math.sin(theta * 2.0));
-    z *= 1 + lower * 0.12;
-    y -= lower * 0.24;
-    y += 0.24 * Math.sin(phi * 1.7 + theta * 0.55) * sinPhi;
-    const mantleFold = sinPhi * sinPhi * (0.67 * Math.sin(theta * 1.45 + 0.72) + 0.34 * Math.sin(theta * 3.3 - phi));
-    x += 0.32 * Math.sin(phi * 2.1 + 0.4) - 0.18 * lower + mantleFold;
-    y += 0.42 * Math.sin(theta + 0.42) * sinPhi * sinPhi;
-    z += 0.24 * Math.sin(phi * 2.8 - theta * 0.7) * sinPhi;
-
-    // One authored mantle warp: a high sheared crown, bitten right shoulder,
-    // and a dense lower-left anchor. These affect silhouette, not surface noise.
-    const normalizedY = clamp(y / 3.05, -1, 1);
-    const upper = smoothstep(0.18, 0.90, normalizedY);
-    const right = smoothstep(0.02, 0.88, x / 3.75);
-    const left = smoothstep(0.02, 0.82, -x / 3.75);
-    x += normalizedY * 0.46;
-    x -= upper * right * 0.38;
-    y -= upper * right * 0.22;
-    x -= lower * left * 0.46;
-    y -= lower * left * 0.12;
-
-    const preliminary = { x, y, z };
-    const wound = woundAmount(preliminary);
-    if (inner) {
-      const center = woundCenter(y);
-      x = center + (x - center) * 0.54;
-      y = y * 0.68 - 0.04;
-      z = z * 0.30 - 0.35 - wound * 0.10;
-    } else {
-      const lip = smoothstep(0.08, 0.54, wound) * (1 - smoothstep(0.66, 0.94, wound));
-      z -= wound * (0.82 + 0.13 * Math.sin(y * 3.2)) + lip * 0.16;
-      x += Math.sign(x - woundCenter(y) || 1) * lip * 0.16;
-      y -= wound * 0.06;
-    }
-    return { position: { x, y, z }, wound };
+  function lamellaPoint(index, along, across) {
+    const config = LAMELLAE[index];
+    const t = clamp(along, 0, 1);
+    const s = clamp(across, -1, 1);
+    const q = t * 2 - 1;
+    const arch = Math.pow(Math.max(0, Math.sin(Math.PI * t)), 0.58);
+    const envelope = 0.12 + arch * 0.88;
+    const keel = 1 - smoothstep(0.0, 0.24, t);
+    const crown = smoothstep(0.70, 1.0, t);
+    const span = (0.17 + envelope * 0.38) * (1 + 0.08 * Math.sin(config.phase + t * Math.PI));
+    const angle = config.base + config.twist * q
+      + Math.sin(t * TAU + config.phase) * 0.11 + s * span;
+    let radial = 0.46 + envelope * 1.78;
+    radial *= 1 - keel * 0.38;
+    radial += (s * s - 0.34) * envelope * 0.28
+      + Math.sin(s * Math.PI + config.phase) * envelope * 0.10;
+    const x = radial * Math.cos(angle) * 1.34 + config.drift * q;
+    const z = radial * Math.sin(angle) + Math.cos(s * Math.PI) * envelope * 0.12;
+    const y = q * 2.86 + crown * config.crown - keel * 0.12
+      + s * Math.sin(Math.PI * t + config.phase) * 0.18;
+    return { x, y, z };
   }
 
   function normalize(vector) {
@@ -349,36 +323,26 @@
     };
   }
 
-  function buildSurface(longitudes, latitudes, inner = false) {
-    const stride = longitudes + 1;
+  function buildFracturePocket(rows, columns) {
     const vertices = [];
-    for (let row = 0; row <= latitudes; row++) {
-      const v = row / latitudes;
-      for (let column = 0; column <= longitudes; column++) {
-        const u = column / longitudes;
-        const sample = bodyPoint(u, v, inner);
-        const du = 0.0015;
-        const dv = 0.0015;
-        const beforeU = bodyPoint(u - du, v, inner).position;
-        const afterU = bodyPoint(u + du, v, inner).position;
-        const beforeV = bodyPoint(u, Math.max(0, v - dv), inner).position;
-        const afterV = bodyPoint(u, Math.min(1, v + dv), inner).position;
-        let normal = normalize(cross(subtract(afterV, beforeV), subtract(afterU, beforeU)));
-        if (v < 0.0001 || v > 0.9999) normal = normalize(sample.position);
-        if (normal.x * sample.position.x + normal.y * sample.position.y + normal.z * sample.position.z < 0) {
-          normal = { x: -normal.x, y: -normal.y, z: -normal.z };
-        }
-        vertices.push(
-          sample.position.x, sample.position.y, sample.position.z,
-          normal.x, normal.y, normal.z,
-          sample.wound,
-        );
+    const indices = [];
+    const stride = columns + 1;
+    for (let row = 0; row <= rows; row++) {
+      const t = row / rows;
+      const y = -1.40 + t * 2.80;
+      const vertical = Math.abs((y + 0.03) / 1.40);
+      const taper = Math.pow(clamp(1 - vertical, 0, 1), 0.62);
+      const halfWidth = 0.18 + taper * 0.18;
+      for (let column = 0; column <= columns; column++) {
+        const s = column / columns * 2 - 1;
+        const x = fractureCenter(y) + s * halfWidth * 0.96;
+        const z = 0.20 - (1 - s * s) * 0.22 - Math.sin(y * 2.1) * 0.025;
+        const wound = clamp((1 - Math.abs(s)) * (1 - vertical * vertical), 0, 1);
+        vertices.push(x, y, z, 0, 0, 1, wound);
       }
     }
-
-    const indices = [];
-    for (let row = 0; row < latitudes; row++) {
-      for (let column = 0; column < longitudes; column++) {
+    for (let row = 0; row < rows; row++) {
+      for (let column = 0; column < columns; column++) {
         const a = row * stride + column;
         const b = a + 1;
         const c = a + stride;
@@ -386,10 +350,102 @@
         indices.push(a, c, b, b, c, d);
       }
     }
-    return {
-      vertices: new Float32Array(vertices),
-      indices: new Uint32Array(indices),
-    };
+    return { vertices: new Float32Array(vertices), indices: new Uint32Array(indices) };
+  }
+
+  function buildSurface(longitudes, latitudes, inner = false) {
+    if (inner) {
+      return buildFracturePocket(
+        Math.max(42, Math.round(latitudes * 0.82)),
+        Math.max(12, Math.round(longitudes * 0.12)),
+      );
+    }
+
+    const rows = Math.max(48, latitudes);
+    const columns = Math.max(18, Math.round(longitudes * 0.20));
+    const stride = columns + 1;
+    const faceCount = (rows + 1) * stride;
+    const vertices = [];
+    const indices = [];
+
+    LAMELLAE.forEach((config, lamellaIndex) => {
+      const baseVertex = vertices.length / 7;
+      for (let row = 0; row <= rows; row++) {
+        const t = row / rows;
+        for (let column = 0; column <= columns; column++) {
+          const s = column / columns * 2 - 1;
+          const point = lamellaPoint(lamellaIndex, t, s);
+          const beforeT = lamellaPoint(lamellaIndex, Math.max(0, t - 0.002), s);
+          const afterT = lamellaPoint(lamellaIndex, Math.min(1, t + 0.002), s);
+          const beforeS = lamellaPoint(lamellaIndex, t, Math.max(-1, s - 0.003));
+          const afterS = lamellaPoint(lamellaIndex, t, Math.min(1, s + 0.003));
+          let normal = normalize(cross(subtract(afterT, beforeT), subtract(afterS, beforeS)));
+          if (normal.x * point.x + normal.z * point.z < 0) {
+            normal = { x: -normal.x, y: -normal.y, z: -normal.z };
+          }
+          const envelope = 0.12 + Math.pow(Math.max(0, Math.sin(Math.PI * t)), 0.58) * 0.88;
+          const thickness = 0.065 + envelope * 0.075 + lamellaIndex * 0.008;
+          const wound = woundAmount(point);
+          vertices.push(
+            point.x + normal.x * thickness, point.y + normal.y * thickness, point.z + normal.z * thickness,
+            normal.x, normal.y, normal.z, wound,
+          );
+        }
+      }
+      for (let row = 0; row <= rows; row++) {
+        const t = row / rows;
+        for (let column = 0; column <= columns; column++) {
+          const s = column / columns * 2 - 1;
+          const point = lamellaPoint(lamellaIndex, t, s);
+          const beforeT = lamellaPoint(lamellaIndex, Math.max(0, t - 0.002), s);
+          const afterT = lamellaPoint(lamellaIndex, Math.min(1, t + 0.002), s);
+          const beforeS = lamellaPoint(lamellaIndex, t, Math.max(-1, s - 0.003));
+          const afterS = lamellaPoint(lamellaIndex, t, Math.min(1, s + 0.003));
+          let normal = normalize(cross(subtract(afterT, beforeT), subtract(afterS, beforeS)));
+          if (normal.x * point.x + normal.z * point.z < 0) {
+            normal = { x: -normal.x, y: -normal.y, z: -normal.z };
+          }
+          const envelope = 0.12 + Math.pow(Math.max(0, Math.sin(Math.PI * t)), 0.58) * 0.88;
+          const thickness = 0.065 + envelope * 0.075 + lamellaIndex * 0.008;
+          const wound = woundAmount(point);
+          vertices.push(
+            point.x - normal.x * thickness, point.y - normal.y * thickness, point.z - normal.z * thickness,
+            -normal.x, -normal.y, -normal.z, wound,
+          );
+        }
+      }
+
+      for (let row = 0; row < rows; row++) {
+        for (let column = 0; column < columns; column++) {
+          const a = baseVertex + row * stride + column;
+          const b = a + 1;
+          const c = a + stride;
+          const d = c + 1;
+          const backA = a + faceCount;
+          const backB = b + faceCount;
+          const backC = c + faceCount;
+          const backD = d + faceCount;
+          indices.push(a, c, b, b, c, d);
+          indices.push(backA, backB, backC, backB, backD, backC);
+        }
+      }
+
+      const bridge = (frontA, frontB) => {
+        const backA = frontA + faceCount;
+        const backB = frontB + faceCount;
+        indices.push(frontA, frontB, backA, frontB, backB, backA);
+      };
+      for (let row = 0; row < rows; row++) {
+        bridge(baseVertex + row * stride, baseVertex + (row + 1) * stride);
+        bridge(baseVertex + row * stride + columns, baseVertex + (row + 1) * stride + columns);
+      }
+      for (let column = 0; column < columns; column++) {
+        bridge(baseVertex + column, baseVertex + column + 1);
+        bridge(baseVertex + rows * stride + column, baseVertex + rows * stride + column + 1);
+      }
+    });
+
+    return { vertices: new Float32Array(vertices), indices: new Uint32Array(indices) };
   }
 
   function buildFibres() {
@@ -398,15 +454,15 @@
     for (let index = 0; index < count; index++) {
       const side = index % 2 ? -1 : 1;
       const start = {
-        x: 0.14 + side * (0.18 + hash(index + 3) * 0.72),
-        y: 0.84 + hash(index + 17) * 1.36,
-        z: 1.12 + hash(index + 29) * 0.32,
+        x: side * (2.85 + hash(index + 3) * 1.10),
+        y: -2.30 + hash(index + 17) * 5.25,
+        z: -0.72 + hash(index + 29) * 1.15,
       };
-      const end = {
-        x: start.x + side * (0.54 + hash(index + 41) * 1.65),
-        y: start.y + 1.16 + hash(index + 53) * 1.92,
-        z: start.z - 0.34 - hash(index + 67) * 1.14,
-      };
+      const end = lamellaPoint(
+        index % LAMELLAE.length,
+        0.16 + hash(index + 41) * 0.70,
+        (hash(index + 53) - 0.5) * 1.30,
+      );
       const color = index % 11 === 0 ? 2 : index % 7 === 0 ? 1 : index % 5 === 0 ? 0 : 3;
       vertices.push(start.x, start.y, start.z, end.x, end.y, end.z, 0, color, index / count);
       vertices.push(start.x, start.y, start.z, end.x, end.y, end.z, 1, color, index / count);
@@ -508,6 +564,7 @@
     uniform float uReconstitution;
     uniform float uCrown;
     uniform float uDetailMix;
+    uniform float uActiveWorld;
     uniform float uGhost;
     uniform float uReduced;
     out vec3 vWorld;
@@ -548,11 +605,26 @@
       point += normal * resolvedWave * uReconstitution * (0.026 + aWound * 0.042);
       point += normal * uCrown * aWound * 0.055;
 
+      float machineMask = 1.0 - smoothstep(0.16, 0.42, abs(uActiveWorld - 1.0));
+      float makerMask = 1.0 - smoothstep(0.16, 0.42, abs(uActiveWorld - 2.0));
+      float worldMask = 1.0 - smoothstep(0.16, 0.42, abs(uActiveWorld - 3.0));
+      float worldChange = uDetailMix;
+      point += normal * machineMask * worldChange
+        * (0.018 + sin(point.y * 8.0 - point.x * 3.4) * 0.024);
+      point.y *= 1.0 + makerMask * worldChange * 0.052;
+      point.x *= 1.0 - makerMask * worldChange * 0.026;
+      point += normal * makerMask * worldChange * sin(point.y * 2.4 + point.z) * 0.032;
+      float tectonicFacet = sign(sin(point.y * 4.2 + point.x * 3.1 - point.z * 2.0));
+      point += normal * worldMask * worldChange * tectonicFacet * 0.068;
+
       if (uGhost > 0.5) {
         float mirrorPlane = -2.45;
+        float sheetMisregister = sin(atan(point.z, point.x) * 3.0 + point.y * 0.18);
         point.x = point.x * 0.97 - 0.12;
         point.y = mirrorPlane - (point.y - mirrorPlane) * 0.48;
         point.z -= 0.54;
+        point.x += sheetMisregister * 0.075;
+        point.y += sheetMisregister * 0.035;
         normal = normalize(vec3(normal.x / 0.97, -normal.y / 0.48, normal.z));
       }
 
@@ -621,17 +693,16 @@
     }
 
     float analyticalWound(vec3 point) {
-      float front = smoothstep(-0.15, 0.45, point.z);
-      float vertical = abs((point.y + 0.02) / 1.62);
-      float taper = pow(clamp(1.0 - vertical, 0.0, 1.0), 0.58);
-      float halfWidth = 0.34 + taper * 0.43;
-      float center = 0.12 + sin(point.y * 1.08 - 0.22) * 0.42
-        + sin(point.y * 3.35 + 0.65) * 0.055;
+      float front = smoothstep(0.42, 0.96, point.z);
+      float vertical = abs((point.y + 0.03) / 1.40);
+      float taper = pow(clamp(1.0 - vertical, 0.0, 1.0), 0.62);
+      float halfWidth = 0.18 + taper * 0.18;
+      float center = 1.26 + sin(point.y * 1.12 - 0.15) * 0.27
+        + sin(point.y * 3.5 + 0.7) * 0.035;
       float lateral = abs(point.x - center) / halfWidth;
-      float torn = pow(lateral, 1.58) + pow(vertical, 3.15)
-        + sin(point.y * 4.25 - point.x * 1.4) * 0.026
-        + sin(point.y * 7.1 + 0.8) * 0.014;
-      return (1.0 - smoothstep(0.72, 1.04, torn)) * front;
+      float torn = pow(lateral, 1.72) + pow(vertical, 3.25)
+        + sin(point.y * 5.1 - point.x * 1.8) * 0.018;
+      return (1.0 - smoothstep(0.76, 1.035, torn)) * front;
     }
 
     void main() {
@@ -682,14 +753,21 @@
         float machineMask = 1.0 - smoothstep(0.16, 0.42, abs(uActiveWorld - 1.0));
         float makerMask = 1.0 - smoothstep(0.16, 0.42, abs(uActiveWorld - 2.0));
         float worldMask = 1.0 - smoothstep(0.16, 0.42, abs(uActiveWorld - 3.0));
+        vec2 facetCell = fract(vec2(vLocal.x * 1.12 + vLocal.y * 0.31, vLocal.y * 1.18 - vLocal.z * 0.42));
+        float facetEdge = 1.0 - smoothstep(0.018, 0.075, min(abs(facetCell.x - facetCell.y), abs(facetCell.x + facetCell.y - 1.0)));
+        color += bone * facetEdge * (0.010 + uPressure * 0.050 + uReconstitution * 0.014);
         float axialTrace = exp(-abs(vLocal.x + vLocal.y * 0.24 + 0.92) * 10.5)
           * smoothstep(-1.8, 1.8, vLocal.y);
         float tensileTrace = exp(-abs(vLocal.y + vLocal.x * 0.46 - 0.28) * 9.5)
           * smoothstep(-2.5, 1.4, vLocal.x);
         float tectonicTrace = exp(-abs(vLocal.y + 1.46 + sin(vLocal.x * 1.55) * 0.13) * 11.5);
-        color += cyan * axialTrace * machineMask * uDetailMix * 0.075;
-        color += emerald * tensileTrace * makerMask * uDetailMix * 0.068;
-        color += violet * tectonicTrace * worldMask * uDetailMix * 0.082;
+        float machineLattice = pow(max(0.0, 1.0 - abs(sin(vLocal.y * 6.4 + vLocal.z * 2.0))), 30.0)
+          + pow(max(0.0, 1.0 - abs(sin(vLocal.x * 6.0 - vLocal.z * 2.4))), 30.0);
+        float makerGrowth = pow(max(0.0, 1.0 - abs(sin(vLocal.y * 3.2 - vLocal.x * 1.25 + macroNoise))), 24.0);
+        float worldCrystal = max(facetEdge, pow(max(0.0, 1.0 - abs(sin(vLocal.y * 5.1 + vLocal.x * 3.3))), 30.0));
+        color += cyan * (axialTrace * 0.70 + machineLattice * 0.30) * machineMask * uDetailMix * 0.16;
+        color += emerald * (tensileTrace * 0.72 + makerGrowth * 0.28) * makerMask * uDetailMix * 0.145;
+        color += violet * (tectonicTrace * 0.62 + worldCrystal * 0.38) * worldMask * uDetailMix * 0.17;
         float ambientInterference = pow(max(0.0, 1.0 - abs(sin(vLocal.y * 5.7 + vLocal.x * 1.8 - vLocal.z * 3.4))), 34.0);
         color += mix(cyan, violet, smoothstep(-1.2, 1.2, vLocal.x)) * ambientInterference * fresnel * 0.018;
         float dissolve = hash31(floor(vLocal * 17.0) + vec3(3.0, 11.0, 7.0));
@@ -705,7 +783,8 @@
         color += coral * caustic * (1.0 - throat * 0.70) * (0.11 + uCrown * 0.10 + uPressure * 0.045);
         color += bone * fineCaustic * (1.0 - throat * 0.82) * (0.055 + uReconstitution * 0.065);
         color += furnace * innerLight * (0.028 + uReconstitution * 0.025);
-        float sovereignCurve = 0.08 + sin(vLocal.y * 1.48 - 0.24) * 0.24;
+        float sovereignCurve = 1.26 + sin(vLocal.y * 1.12 - 0.15) * 0.27
+          + sin(vLocal.y * 3.5 + 0.7) * 0.035;
         float sovereignRay = exp(-abs(vLocal.x - sovereignCurve) * 58.0)
           * smoothstep(-1.24, -0.92, vLocal.y) * (1.0 - smoothstep(0.92, 1.24, vLocal.y));
         color += mix(coral, bone, 0.72) * sovereignRay * (0.54 + uCrown * 0.20 + uReconstitution * 0.10);
@@ -1067,7 +1146,7 @@
   }
 
   function drawFibresGL(state) {
-    if ((state.return <= 0.006 && state.crown <= 0.025) || reducedMotion) return;
+    if (state.return <= 0.006 && state.crown <= 0.025) return;
     const program = resources.fibreProgram;
     gl.useProgram(program);
     setProjectionUniforms(program, currentOrientation(Boolean(activeWorld), false), Boolean(activeWorld));
@@ -1110,25 +1189,38 @@
 
   function fallbackBodyPath(context, scale) {
     const path = new Path2D();
-    path.moveTo(-1.10 * scale, -3.10 * scale);
-    path.bezierCurveTo(-2.72 * scale, -3.04 * scale, -3.86 * scale, -1.82 * scale, -3.34 * scale, -0.34 * scale);
-    path.bezierCurveTo(-3.70 * scale, 0.98 * scale, -2.88 * scale, 2.76 * scale, -1.20 * scale, 2.98 * scale);
-    path.bezierCurveTo(-0.18 * scale, 3.52 * scale, 1.90 * scale, 3.05 * scale, 2.60 * scale, 1.64 * scale);
-    path.bezierCurveTo(3.38 * scale, 0.82 * scale, 2.90 * scale, -0.40 * scale, 2.12 * scale, -1.18 * scale);
-    path.bezierCurveTo(2.26 * scale, -2.20 * scale, 0.48 * scale, -2.70 * scale, -1.10 * scale, -3.10 * scale);
+    // Rear fold: crosses behind the left mantle but never closes the central rift.
+    path.moveTo(-0.34 * scale, 2.94 * scale);
+    path.bezierCurveTo(-1.42 * scale, 1.82 * scale, -2.18 * scale, 0.28 * scale, -1.66 * scale, -2.64 * scale);
+    path.bezierCurveTo(-1.36 * scale, -3.16 * scale, -0.57 * scale, -3.08 * scale, -0.34 * scale, -2.44 * scale);
+    path.bezierCurveTo(-0.74 * scale, -1.66 * scale, -1.24 * scale, -0.48 * scale, -0.76 * scale, 0.66 * scale);
+    path.bezierCurveTo(-0.46 * scale, 1.52 * scale, -0.33 * scale, 2.30 * scale, -0.34 * scale, 2.94 * scale);
+    path.closePath();
+    // Left load-bearing fold.
+    path.moveTo(-0.18 * scale, 2.96 * scale);
+    path.bezierCurveTo(-2.18 * scale, 2.50 * scale, -3.06 * scale, 0.10 * scale, -2.26 * scale, -2.80 * scale);
+    path.bezierCurveTo(-1.78 * scale, -3.24 * scale, -0.92 * scale, -2.82 * scale, -0.75 * scale, -2.10 * scale);
+    path.bezierCurveTo(-1.26 * scale, -0.90 * scale, -1.18 * scale, 0.48 * scale, -0.56 * scale, 1.52 * scale);
+    path.bezierCurveTo(-0.35 * scale, 2.18 * scale, -0.21 * scale, 2.72 * scale, -0.18 * scale, 2.96 * scale);
+    path.closePath();
+    // Right fold: fracture-bearing, tall and tensile.
+    path.moveTo(0.12 * scale, 2.96 * scale);
+    path.bezierCurveTo(1.62 * scale, 2.34 * scale, 2.82 * scale, 0.52 * scale, 2.36 * scale, -1.80 * scale);
+    path.bezierCurveTo(2.10 * scale, -2.80 * scale, 1.18 * scale, -3.06 * scale, 0.75 * scale, -2.45 * scale);
+    path.bezierCurveTo(0.55 * scale, -1.58 * scale, 1.04 * scale, -0.48 * scale, 0.72 * scale, 0.56 * scale);
+    path.bezierCurveTo(0.45 * scale, 1.46 * scale, 0.20 * scale, 2.48 * scale, 0.12 * scale, 2.96 * scale);
     path.closePath();
     return path;
   }
 
   function fallbackWoundPath(scale) {
     const path = new Path2D();
-    path.moveTo(0.40 * scale, -1.38 * scale);
-    path.bezierCurveTo(0.05 * scale, -1.18 * scale, -0.08 * scale, -0.68 * scale, -0.32 * scale, -0.32 * scale);
-    path.bezierCurveTo(-0.55 * scale, 0.04 * scale, -0.43 * scale, 0.52 * scale, -0.13 * scale, 0.72 * scale);
-    path.bezierCurveTo(0.08 * scale, 0.96 * scale, -0.05 * scale, 1.25 * scale, -0.28 * scale, 1.45 * scale);
-    path.bezierCurveTo(0.12 * scale, 1.36 * scale, 0.38 * scale, 0.96 * scale, 0.30 * scale, 0.55 * scale);
-    path.bezierCurveTo(0.18 * scale, 0.18 * scale, 0.55 * scale, -0.14 * scale, 0.66 * scale, -0.52 * scale);
-    path.bezierCurveTo(0.74 * scale, -0.90 * scale, 0.63 * scale, -1.22 * scale, 0.40 * scale, -1.38 * scale);
+    path.moveTo(1.49 * scale, -1.35 * scale);
+    path.bezierCurveTo(1.17 * scale, -1.02 * scale, 1.11 * scale, -0.56 * scale, 1.27 * scale, -0.14 * scale);
+    path.bezierCurveTo(1.42 * scale, 0.25 * scale, 1.08 * scale, 0.76 * scale, 1.03 * scale, 1.34 * scale);
+    path.bezierCurveTo(1.31 * scale, 1.22 * scale, 1.43 * scale, 0.76 * scale, 1.34 * scale, 0.30 * scale);
+    path.bezierCurveTo(1.25 * scale, -0.15 * scale, 1.56 * scale, -0.65 * scale, 1.55 * scale, -1.01 * scale);
+    path.bezierCurveTo(1.56 * scale, -1.20 * scale, 1.53 * scale, -1.31 * scale, 1.49 * scale, -1.35 * scale);
     path.closePath();
     return path;
   }
@@ -1136,7 +1228,7 @@
   function fallbackLayout(detail = false, state = cycleState(elapsed)) {
     const shift = screenShift(detail);
     const compact = isCompactLayout();
-    const artifactWidth = width * (compact ? 0.97 : 0.61);
+    const artifactWidth = width * (compact ? 0.82 : 0.61);
     const artifactHeight = height * (compact ? 0.64 : 0.79);
     const orientation = currentOrientation(detail);
     const scale = Math.min(artifactWidth / 7.4, artifactHeight / 6.55) * orientation.zoom;
@@ -1232,10 +1324,53 @@
     }
     context.restore();
 
+    if (activeWorld && viewMix > 0.24) {
+      context.save();
+      context.clip(body);
+      context.globalAlpha = ease(viewMix) * 0.20;
+      context.lineWidth = Math.max(0.55, scale * 0.010);
+      if (activeWorld === 'machine') {
+        context.strokeStyle = '#00c9e8';
+        for (let index = -3; index <= 3; index++) {
+          context.beginPath();
+          context.moveTo(index * scale * 0.72, -3.15 * scale);
+          context.lineTo((index * 0.72 + 0.56) * scale, 3.20 * scale);
+          context.stroke();
+        }
+        for (let index = -2; index <= 2; index++) {
+          context.beginPath();
+          context.moveTo(-3.10 * scale, index * scale * 0.88);
+          context.lineTo(2.90 * scale, (index * 0.88 - 0.30) * scale);
+          context.stroke();
+        }
+      } else if (activeWorld === 'maker') {
+        context.strokeStyle = '#14c98b';
+        for (let index = 0; index < 7; index++) {
+          const x = (-2.5 + index * 0.78) * scale;
+          context.beginPath();
+          context.moveTo(x, 2.95 * scale);
+          context.bezierCurveTo(x - 0.44 * scale, 1.10 * scale, x + 0.62 * scale, -1.30 * scale, x + 0.24 * scale, -3.0 * scale);
+          context.stroke();
+        }
+      } else {
+        context.strokeStyle = '#6840ff';
+        for (let index = -2; index <= 2; index++) {
+          const y = index * scale * 0.92;
+          context.beginPath();
+          context.moveTo(-3.0 * scale, y + 0.32 * scale);
+          context.lineTo(-1.4 * scale, y - 0.28 * scale);
+          context.lineTo(0.15 * scale, y + 0.24 * scale);
+          context.lineTo(2.75 * scale, y - 0.38 * scale);
+          context.stroke();
+        }
+      }
+      context.restore();
+    }
+
     context.save();
     context.shadowColor = 'rgba(255,68,79,.42)';
     context.shadowBlur = scale * (0.10 + state.crown * 0.045);
-    const innerGradient = context.createRadialGradient(0.08 * scale, 0.10 * scale, scale * 0.03, 0.08 * scale, 0.10 * scale, scale * 1.40);
+    const innerGradient = context.createRadialGradient(1.29 * scale, 0.10 * scale, scale * 0.03, 1.29 * scale, 0.10 * scale, scale * 1.10);
     innerGradient.addColorStop(0, '#050205');
     innerGradient.addColorStop(0.46, '#0b0307');
     innerGradient.addColorStop(0.78, '#27080e');
@@ -1257,18 +1392,18 @@
     context.lineWidth = Math.max(0.55, scale * 0.009);
     context.strokeStyle = '#ff7669';
     context.beginPath();
-    context.moveTo(0.38 * scale, -1.22 * scale);
-    context.bezierCurveTo(-0.10 * scale, -0.56 * scale, 0.32 * scale, 0.18 * scale, -0.13 * scale, 1.20 * scale);
+    context.moveTo(1.47 * scale, -1.22 * scale);
+    context.bezierCurveTo(1.16 * scale, -0.56 * scale, 1.46 * scale, 0.18 * scale, 1.08 * scale, 1.20 * scale);
     context.stroke();
     context.globalAlpha = 0.20 + state.reconstitution * 0.08;
     context.strokeStyle = '#e9dcc8';
     context.beginPath();
-    context.moveTo(0.53 * scale, -0.84 * scale);
-    context.bezierCurveTo(0.08 * scale, -0.26 * scale, 0.48 * scale, 0.40 * scale, 0.02 * scale, 0.90 * scale);
+    context.moveTo(1.50 * scale, -0.84 * scale);
+    context.bezierCurveTo(1.20 * scale, -0.26 * scale, 1.49 * scale, 0.40 * scale, 1.14 * scale, 0.90 * scale);
     context.stroke();
     context.restore();
 
-    if ((state.return > 0.01 || state.crown > 0.025) && !reducedMotion) {
+    if (state.return > 0.01 || state.crown > 0.025) {
       context.lineWidth = 0.75;
       for (let index = 0; index < 18; index++) {
         const crownMemory = index < 7 ? state.crown * 0.28 : 0;
@@ -1276,16 +1411,22 @@
         if (reveal <= 0.006) continue;
         context.globalAlpha = state.return > crownMemory ? state.return * 0.34 : crownMemory * 0.45;
         const side = index % 2 ? -1 : 1;
-        const startX = side * scale * (0.15 + hash(index + 4) * 0.5);
-        const startY = -scale * (0.68 + hash(index + 8) * 0.78);
+        const startX = side * scale * (2.85 + hash(index + 4) * 0.85);
+        const startY = scale * (-2.20 + hash(index + 8) * 4.65);
+        const lamella = index % 3;
+        const anchorX = scale * (lamella === 0 ? -1.34 : lamella === 1 ? 1.38 : -0.92)
+          + side * scale * (hash(index + 12) - 0.5) * 0.22;
+        const anchorY = scale * (-1.82 + hash(index + 19) * 3.72);
+        const endX = lerp(startX, anchorX, reveal);
+        const endY = lerp(startY, anchorY, reveal);
         context.strokeStyle = index % 9 === 0 ? '#6840ff' : index % 6 === 0 ? '#00c9e8' : '#e9e3d6';
         context.beginPath();
         context.moveTo(startX, startY);
         context.quadraticCurveTo(
-          startX + side * scale * 0.38,
-          startY - scale * 0.64 * reveal,
-          startX + side * scale * (0.38 + hash(index + 15) * 0.8) * reveal,
-          startY - scale * (0.78 + hash(index + 21) * 1.15) * reveal,
+          lerp(startX, endX, 0.46) - side * scale * 0.24 * reveal,
+          lerp(startY, endY, 0.46) - scale * 0.16 * reveal,
+          endX,
+          endY,
         );
         context.stroke();
       }

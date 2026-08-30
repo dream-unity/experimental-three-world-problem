@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '20260830-sovereign-nocturne-1';
+  const VERSION = '20260830-sovereign-nocturne-2';
   const source = `./visual-parts/sovereign-nocturne-13.js?v=${VERSION}`;
   const loader = document.getElementById('loading');
   const hint = document.getElementById('hint');
