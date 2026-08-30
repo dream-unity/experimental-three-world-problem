@@ -90,7 +90,8 @@
   let height = 1;
   let dpr = 1;
   let dprScale = 1;
-  let elapsed = 0;
+  // Begin in reconstitution rather than the cycle's visually empty gather.
+  let elapsed = SILENT_CYCLE_SECONDS * 0.705;
   let lastFrame = performance.now();
   let labelTick = 0;
   let fpsFrames = 0;
@@ -260,16 +261,20 @@
     };
   }
 
+  function woundCenter(y) {
+    return 0.12 + Math.sin(y * 1.08 - 0.22) * 0.42 + Math.sin(y * 3.35 + 0.65) * 0.055;
+  }
+
   function woundAmount(point) {
-    const front = smoothstep(0.10, 1.28, point.z);
-    const curve = 0.20 + Math.sin(point.y * 1.16 - 0.28) * 0.34;
-    const halfWidth = 0.61 + (1 - smoothstep(0.0, 1.52, Math.abs(point.y - 0.08))) * 0.18;
-    const lateral = Math.abs(point.x - curve) / halfWidth;
-    const vertical = Math.abs(point.y - 0.08) / 1.42;
-    const torn = Math.pow(lateral, 1.28) + Math.pow(vertical, 2.35)
-      + Math.sin(point.y * 4.1 + point.x * 1.7) * 0.065
-      + Math.sin(point.x * 5.2 - point.y * 1.3) * 0.038;
-    return (1 - smoothstep(0.54, 1.04, torn)) * front;
+    const front = smoothstep(0.18, 1.18, point.z);
+    const vertical = Math.abs((point.y + 0.02) / 1.62);
+    const taper = Math.pow(clamp(1 - vertical, 0, 1), 0.58);
+    const halfWidth = 0.34 + taper * 0.43;
+    const lateral = Math.abs(point.x - woundCenter(point.y)) / halfWidth;
+    const torn = Math.pow(lateral, 1.58) + Math.pow(vertical, 3.15)
+      + Math.sin(point.y * 4.25 - point.x * 1.4) * 0.026
+      + Math.sin(point.y * 7.1 + 0.8) * 0.014;
+    return (1 - smoothstep(0.72, 1.04, torn)) * front;
   }
 
   function bodyPoint(u, v, inner = false) {
@@ -278,8 +283,8 @@
     const sinPhi = Math.sin(phi);
     const cosPhi = Math.cos(phi);
     const corrugation = 1
-      + 0.075 * Math.sin(theta * 3 + phi * 1.8)
-      + 0.035 * Math.sin(theta * 7 - phi * 2.4);
+      + 0.030 * Math.sin(theta * 3 + phi * 1.8)
+      + 0.015 * Math.sin(theta * 7 - phi * 2.4);
     const shoulder = 1 + 0.14 * Math.sin(phi * 1.35 - 0.55) * Math.sin(theta + 0.8);
     let x = 4.35 * sinPhi * Math.cos(theta) * corrugation * shoulder;
     let y = 2.72 * cosPhi
@@ -289,25 +294,39 @@
       * (1 + 0.11 * Math.cos(theta * 2 - phi));
 
     const lower = smoothstep(0.60, 0.96, v);
-    x *= 1 + lower * (0.23 + 0.08 * Math.sin(theta * 2.0));
-    z *= 1 + lower * 0.18;
+    x *= 1 + lower * (0.11 + 0.04 * Math.sin(theta * 2.0));
+    z *= 1 + lower * 0.12;
     y -= lower * 0.24;
     y += 0.24 * Math.sin(phi * 1.7 + theta * 0.55) * sinPhi;
-    const mantleFold = sinPhi * sinPhi * (0.42 * Math.sin(theta * 1.45 + 0.72) + 0.22 * Math.sin(theta * 3.3 - phi));
-    x += 0.28 * Math.sin(phi * 2.1 + 0.4) - 0.15 * lower + mantleFold;
-    y += 0.31 * Math.sin(theta + 0.42) * sinPhi * sinPhi;
-    z += 0.15 * Math.sin(phi * 2.8 - theta * 0.7) * sinPhi;
+    const mantleFold = sinPhi * sinPhi * (0.67 * Math.sin(theta * 1.45 + 0.72) + 0.34 * Math.sin(theta * 3.3 - phi));
+    x += 0.32 * Math.sin(phi * 2.1 + 0.4) - 0.18 * lower + mantleFold;
+    y += 0.42 * Math.sin(theta + 0.42) * sinPhi * sinPhi;
+    z += 0.24 * Math.sin(phi * 2.8 - theta * 0.7) * sinPhi;
+
+    // One authored mantle warp: a high sheared crown, bitten right shoulder,
+    // and a dense lower-left anchor. These affect silhouette, not surface noise.
+    const normalizedY = clamp(y / 2.72, -1, 1);
+    const upper = smoothstep(0.18, 0.90, normalizedY);
+    const right = smoothstep(0.02, 0.88, x / 4.35);
+    const left = smoothstep(0.02, 0.82, -x / 4.35);
+    x += normalizedY * 0.46;
+    x -= upper * right * 0.38;
+    y -= upper * right * 0.22;
+    x -= lower * left * 0.46;
+    y -= lower * left * 0.12;
 
     const preliminary = { x, y, z };
     const wound = woundAmount(preliminary);
     if (inner) {
-      x = x * 0.64 + 0.12;
-      y = y * 0.74 - 0.02;
-      z = z * 0.60 + 0.14;
+      const center = woundCenter(y);
+      x = center + (x - center) * 0.54;
+      y = y * 0.68 - 0.04;
+      z = z * 0.30 - 0.35 - wound * 0.10;
     } else {
-      z -= wound * (0.62 + 0.16 * Math.sin(y * 3.2));
-      x += wound * 0.18 * Math.sin(y * 2.7 + 0.4);
-      y -= wound * 0.08;
+      const lip = smoothstep(0.08, 0.54, wound) * (1 - smoothstep(0.66, 0.94, wound));
+      z -= wound * (0.82 + 0.13 * Math.sin(y * 3.2)) + lip * 0.16;
+      x += Math.sign(x - woundCenter(y) || 1) * lip * 0.16;
+      y -= wound * 0.06;
     }
     return { position: { x, y, z }, wound };
   }
@@ -332,7 +351,6 @@
   function buildSurface(longitudes, latitudes, inner = false) {
     const stride = longitudes + 1;
     const vertices = [];
-    const zones = [];
     for (let row = 0; row <= latitudes; row++) {
       const v = row / latitudes;
       for (let column = 0; column <= longitudes; column++) {
@@ -354,7 +372,6 @@
           normal.x, normal.y, normal.z,
           sample.wound,
         );
-        zones.push(sample.wound);
       }
     }
 
@@ -365,8 +382,6 @@
         const b = a + 1;
         const c = a + stride;
         const d = c + 1;
-        const zone = (zones[a] + zones[b] + zones[c] + zones[d]) * 0.25;
-        if (!inner && zone > 0.695) continue;
         indices.push(a, c, b, b, c, d);
       }
     }
@@ -456,6 +471,7 @@
       float broadNoise = noise(centered * 2.8 + vec2(movingTime * 0.007, -movingTime * 0.004));
       float fineNoise = hash21(floor(gl_FragCoord.xy * 0.48) + floor(movingTime * 0.5));
       float mirrorHorizon = exp(-abs(uv.y - 0.145) * 44.0) * (1.0 - smoothstep(0.18, 0.92, radius));
+      float brokenHorizon = mirrorHorizon * smoothstep(0.42, 0.72, broadNoise);
       float abyss = 1.0 - smoothstep(0.08, 1.16, radius);
       float woundField = exp(-dot(centered - vec2(0.025, 0.025), centered - vec2(0.025, 0.025)) * 3.8);
       float caustic = pow(max(0.0, sin(centered.x * 6.2 - centered.y * 4.4 + broadNoise * 4.0)), 12.0);
@@ -466,6 +482,7 @@
       color += vec3(0.055, 0.032, 0.030) * woundField * (0.10 + uPressure * 0.12 + uCrown * 0.18);
       color += vec3(1.0, 0.28, 0.23) * caustic;
       color += vec3(0.11, 0.095, 0.085) * mirrorHorizon * (0.12 + uReturn * 0.10);
+      color += vec3(0.42, 0.17, 0.14) * brokenHorizon * (0.025 + uCrown * 0.035);
       color += (fineNoise - 0.5) * 0.006;
       color *= 1.0 - smoothstep(0.38, 1.18, radius) * 0.78;
       outColor = vec4(max(color, vec3(0.0)), 1.0);
@@ -610,12 +627,20 @@
       float diffuse = max(0.0, dot(normal, keyDirection));
       float innerLight = max(0.0, dot(normal, coralDirection));
       float fresnel = pow(1.0 - max(0.0, dot(normal, viewDirection)), 3.2);
-      float grain = valueNoise(vLocal * 2.8);
-      float vein = valueNoise(vLocal * 8.0 + grain * 2.1);
+      vec3 halfDirection = normalize(keyDirection + viewDirection);
+      float specular = pow(max(0.0, dot(normal, halfDirection)), 28.0);
+      float macroNoise = valueNoise(vLocal * 0.82 + vec3(1.7, 4.1, 0.6));
+      float mineralNoise = valueNoise(vLocal * 2.35 + macroNoise * 1.8);
+      float strataPhase = vLocal.y * 3.35 + vLocal.x * 0.72 - vLocal.z * 1.45 + macroNoise * 4.2;
+      float strata = pow(max(0.0, 1.0 - abs(sin(strataPhase))), 14.0);
+      float crossStrata = pow(max(0.0, 1.0 - abs(sin(vLocal.y * 1.2 - vLocal.x * 2.8 + macroNoise * 3.1))), 24.0);
+      float woundSoftness = max(fwidth(vWound) * 1.45, 0.004);
+      float opening = smoothstep(0.595 - woundSoftness, 0.665 + woundSoftness, vWound);
+      float woundRim = smoothstep(0.20, 0.50, vWound) * (1.0 - smoothstep(0.54, 0.68, vWound));
       float movingTime = mix(uTime, 0.0, uReduced);
       vec3 abyss = vec3(0.018, 0.016, 0.021);
-      vec3 mineral = vec3(0.19, 0.18, 0.18);
-      vec3 bone = vec3(0.914, 0.890, 0.835);
+      vec3 mineral = vec3(0.125, 0.116, 0.121);
+      vec3 bone = vec3(0.760, 0.716, 0.650);
       vec3 coral = vec3(1.0, 0.305, 0.335);
       vec3 furnace = vec3(1.0, 0.455, 0.37);
       vec3 cyan = vec3(0.0, 0.788, 0.910);
@@ -625,33 +650,54 @@
       float alpha = 1.0;
 
       if (uMaterial < 0.5) {
-        float boneDeposit = smoothstep(0.58, 0.91, vein + diffuse * 0.20 - grain * 0.16);
-        boneDeposit *= 0.30 + 0.70 * smoothstep(-2.75, 1.65, vLocal.y);
-        color = mix(abyss, mineral, 0.24 + diffuse * 0.24 + grain * 0.12);
-        color = mix(color, bone, boneDeposit * (0.28 + diffuse * 0.34));
-        float woundRim = smoothstep(0.22, 0.58, vWound) * (1.0 - smoothstep(0.62, 0.74, vWound));
-        color += coral * woundRim * (0.30 + uPressure * 0.38 + uCrown * 0.56);
-        color += bone * fresnel * (0.055 + uReconstitution * 0.055);
-        float interferenceBand = pow(max(0.0, sin(vLocal.y * 7.8 + vLocal.x * 2.4 - vLocal.z * 5.5)), 28.0);
-        interferenceBand *= smoothstep(0.54, 0.94, fresnel + woundRim * 0.48) * 0.30;
-        vec3 interference = vLocal.x < -0.45 ? cyan : (vLocal.x > 0.72 ? emerald : violet);
-        color += interference * interferenceBand * (0.28 + uDetailMix * 0.24);
+        alpha = 1.0 - opening;
+        if (alpha < 0.012) discard;
+        float boneDeposit = strata * (0.48 + mineralNoise * 0.34) + crossStrata * 0.16;
+        boneDeposit *= 0.46 + 0.54 * smoothstep(-2.72, 1.72, vLocal.y);
+        color = mix(abyss, mineral, 0.15 + diffuse * 0.19 + macroNoise * 0.045);
+        color += vec3(0.105, 0.092, 0.088) * specular * (0.18 + uReconstitution * 0.08);
+        color = mix(color, bone, boneDeposit * (0.065 + diffuse * 0.075 + uCrown * 0.025));
+        float suture = pow(max(0.0, 1.0 - abs(sin(vLocal.y * 10.8 - vLocal.x * 3.2 + macroNoise))), 22.0);
+        color += coral * woundRim * (0.115 + uPressure * 0.16 + uCrown * 0.20);
+        color += bone * woundRim * suture * (0.16 + uReconstitution * 0.10);
+        color += bone * fresnel * (0.034 + uReconstitution * 0.026);
+
+        float machineMask = 1.0 - smoothstep(0.16, 0.42, abs(uActiveWorld - 1.0));
+        float makerMask = 1.0 - smoothstep(0.16, 0.42, abs(uActiveWorld - 2.0));
+        float worldMask = 1.0 - smoothstep(0.16, 0.42, abs(uActiveWorld - 3.0));
+        float axialTrace = exp(-abs(vLocal.x + vLocal.y * 0.24 + 0.92) * 10.5)
+          * smoothstep(-1.8, 1.8, vLocal.y);
+        float tensileTrace = exp(-abs(vLocal.y + vLocal.x * 0.46 - 0.28) * 9.5)
+          * smoothstep(-2.5, 1.4, vLocal.x);
+        float tectonicTrace = exp(-abs(vLocal.y + 1.46 + sin(vLocal.x * 1.55) * 0.13) * 11.5);
+        color += cyan * axialTrace * machineMask * uDetailMix * 0.075;
+        color += emerald * tensileTrace * makerMask * uDetailMix * 0.068;
+        color += violet * tectonicTrace * worldMask * uDetailMix * 0.082;
+        float ambientInterference = pow(max(0.0, 1.0 - abs(sin(vLocal.y * 5.7 + vLocal.x * 1.8 - vLocal.z * 3.4))), 34.0);
+        color += mix(cyan, violet, smoothstep(-1.2, 1.2, vLocal.x)) * ambientInterference * fresnel * 0.018;
         float dissolve = hash31(floor(vLocal * 17.0) + vec3(3.0, 11.0, 7.0));
         float subtractField = uSubtraction * (0.26 + 0.40 * smoothstep(-1.65, 2.35, vLocal.y));
         if (dissolve < subtractField) discard;
       } else if (uMaterial < 1.5) {
-        float caustic = pow(max(0.0, sin(vLocal.y * 4.7 - vLocal.x * 3.1 + grain * 4.8 + movingTime * 0.22)), 8.0);
-        float hot = 0.44 + caustic * 0.56 + uCrown * 0.18 + uPressure * 0.12;
-        color = mix(coral, bone, clamp(hot, 0.0, 1.0));
-        color += furnace * innerLight * (0.18 + uReconstitution * 0.22);
-        color *= 0.56 + diffuse * 0.34 + fresnel * 0.26;
+        float throat = smoothstep(0.34, 0.88, vWound);
+        float caustic = pow(max(0.0, 1.0 - abs(sin(vLocal.y * 5.2 - vLocal.x * 3.6 + macroNoise * 3.2 + movingTime * 0.12))), 20.0);
+        float fineCaustic = pow(max(0.0, 1.0 - abs(sin(vLocal.y * 9.4 + vLocal.x * 2.1 - macroNoise * 2.4))), 34.0);
+        vec3 oxblood = vec3(0.095, 0.014, 0.022);
+        vec3 throatBlack = vec3(0.010, 0.004, 0.008);
+        color = mix(oxblood, throatBlack, throat * 0.90);
+        color += coral * caustic * (1.0 - throat * 0.70) * (0.11 + uCrown * 0.10 + uPressure * 0.045);
+        color += bone * fineCaustic * (1.0 - throat * 0.82) * (0.055 + uReconstitution * 0.065);
+        color += furnace * innerLight * (0.028 + uReconstitution * 0.025);
+        color *= 0.78 + diffuse * 0.10 + fresnel * 0.09;
       } else {
         if (vLocal.y < -2.54) discard;
         float ghostGrain = valueNoise(vLocal * 4.2 + vec3(0.0, movingTime * 0.018, 0.0));
-        color = mix(vec3(0.055, 0.052, 0.060), vec3(0.36, 0.34, 0.35), fresnel * 0.36 + ghostGrain * 0.10);
-        color += coral * vWound * uCrown * 0.025;
+        color = mix(vec3(0.040, 0.037, 0.045), vec3(0.25, 0.23, 0.24), fresnel * 0.34 + ghostGrain * 0.07);
+        color += coral * woundRim * (0.065 + uCrown * 0.075);
+        color += bone * woundRim * strata * 0.045;
         float reflectionFade = smoothstep(-5.6, -2.42, vWorld.y);
-        alpha = (0.025 + fresnel * 0.075 + uSubtraction * 0.045) * (0.82 + ghostGrain * 0.18) * reflectionFade;
+        alpha = (0.038 + fresnel * 0.090 + uSubtraction * 0.045)
+          * (0.84 + ghostGrain * 0.16) * reflectionFade * (1.0 - opening);
       }
 
       float selectedPulse = 0.5 + 0.5 * sin(movingTime * 1.35 + uActiveSub * 1.9);
@@ -719,6 +765,7 @@
     uniform vec2 uViewportScale;
     uniform float uCameraZ;
     uniform float uReturn;
+    uniform float uCrown;
     uniform float uTime;
     uniform float uReduced;
     out vec3 vColor;
@@ -729,8 +776,10 @@
     void main(){
       float movingTime=mix(uTime,0.0,uReduced);
       float stagger=clamp((uReturn-aSeed*0.42)*1.72,0.0,1.0);
-      vec3 end=mix(aStart,aEnd,stagger);
-      end.x+=sin(movingTime*0.24+aSeed*18.0)*0.12*stagger;
+      float crownMemory=(1.0-smoothstep(0.24,0.29,aSeed))*uCrown;
+      float reveal=max(stagger,crownMemory*0.62);
+      vec3 end=mix(aStart,aEnd,reveal);
+      end.x+=sin(movingTime*0.24+aSeed*18.0)*0.12*reveal;
       vec3 point=mix(aStart,end,aEndPoint);
       point.xy*=uViewportScale;
       point*=uOrientation.w;
@@ -740,7 +789,9 @@
       gl_Position=clip;
       vec3 cyan=vec3(0.0,0.788,0.910),green=vec3(0.078,0.788,0.545),violet=vec3(0.408,0.251,1.0),bone=vec3(0.914,0.890,0.835);
       vColor=aColorIndex<0.5?cyan:(aColorIndex<1.5?green:(aColorIndex<2.5?violet:bone));
-      vAlpha=stagger*(aEndPoint>0.5?0.34:0.10)*(1.0-uReturn*0.28);
+      float returnAlpha=stagger*(aEndPoint>0.5?0.34:0.10)*(1.0-uReturn*0.28);
+      float memoryAlpha=crownMemory*(aEndPoint>0.5?0.070:0.018);
+      vAlpha=max(returnAlpha,memoryAlpha);
     }
   `;
 
@@ -995,11 +1046,12 @@
   }
 
   function drawFibresGL(state) {
-    if (state.return <= 0.006 || reducedMotion) return;
+    if ((state.return <= 0.006 && state.crown <= 0.025) || reducedMotion) return;
     const program = resources.fibreProgram;
     gl.useProgram(program);
     setProjectionUniforms(program, currentOrientation(Boolean(activeWorld), false), Boolean(activeWorld));
     uniform1(program, 'uReturn', state.return);
+    uniform1(program, 'uCrown', state.crown);
     uniform1(program, 'uTime', elapsed);
     uniform1(program, 'uReduced', reducedMotion ? 1 : 0);
     gl.disable(gl.DEPTH_TEST);
@@ -1037,22 +1089,25 @@
 
   function fallbackBodyPath(context, scale) {
     const path = new Path2D();
-    path.moveTo(-0.56 * scale, -3.12 * scale);
-    path.bezierCurveTo(-2.86 * scale, -3.00 * scale, -3.82 * scale, -1.44 * scale, -3.08 * scale, 0.08 * scale);
-    path.bezierCurveTo(-3.48 * scale, 1.42 * scale, -2.34 * scale, 3.20 * scale, -0.82 * scale, 3.02 * scale);
-    path.bezierCurveTo(0.24 * scale, 3.54 * scale, 2.48 * scale, 2.66 * scale, 2.76 * scale, 1.28 * scale);
-    path.bezierCurveTo(3.54 * scale, 0.34 * scale, 2.90 * scale, -0.92 * scale, 2.22 * scale, -1.36 * scale);
-    path.bezierCurveTo(2.48 * scale, -2.42 * scale, 1.28 * scale, -3.20 * scale, -0.56 * scale, -3.12 * scale);
+    path.moveTo(-1.10 * scale, -3.10 * scale);
+    path.bezierCurveTo(-2.72 * scale, -3.04 * scale, -3.86 * scale, -1.82 * scale, -3.34 * scale, -0.34 * scale);
+    path.bezierCurveTo(-3.70 * scale, 0.98 * scale, -2.88 * scale, 2.76 * scale, -1.20 * scale, 2.98 * scale);
+    path.bezierCurveTo(-0.18 * scale, 3.52 * scale, 1.90 * scale, 3.05 * scale, 2.60 * scale, 1.64 * scale);
+    path.bezierCurveTo(3.38 * scale, 0.82 * scale, 2.90 * scale, -0.40 * scale, 2.12 * scale, -1.18 * scale);
+    path.bezierCurveTo(2.26 * scale, -2.20 * scale, 0.48 * scale, -2.70 * scale, -1.10 * scale, -3.10 * scale);
     path.closePath();
     return path;
   }
 
   function fallbackWoundPath(scale) {
     const path = new Path2D();
-    path.moveTo(-0.54 * scale, -1.05 * scale);
-    path.bezierCurveTo(-1.12 * scale, -0.44 * scale, -1.08 * scale, 0.74 * scale, -0.30 * scale, 1.26 * scale);
-    path.bezierCurveTo(0.46 * scale, 1.04 * scale, 1.04 * scale, 0.32 * scale, 0.74 * scale, -0.54 * scale);
-    path.bezierCurveTo(0.44 * scale, -1.14 * scale, -0.02 * scale, -1.42 * scale, -0.54 * scale, -1.05 * scale);
+    path.moveTo(0.40 * scale, -1.38 * scale);
+    path.bezierCurveTo(0.05 * scale, -1.18 * scale, -0.08 * scale, -0.68 * scale, -0.32 * scale, -0.32 * scale);
+    path.bezierCurveTo(-0.55 * scale, 0.04 * scale, -0.43 * scale, 0.52 * scale, -0.13 * scale, 0.72 * scale);
+    path.bezierCurveTo(0.08 * scale, 0.96 * scale, -0.05 * scale, 1.25 * scale, -0.28 * scale, 1.45 * scale);
+    path.bezierCurveTo(0.12 * scale, 1.36 * scale, 0.38 * scale, 0.96 * scale, 0.30 * scale, 0.55 * scale);
+    path.bezierCurveTo(0.18 * scale, 0.18 * scale, 0.55 * scale, -0.14 * scale, 0.66 * scale, -0.52 * scale);
+    path.bezierCurveTo(0.74 * scale, -0.90 * scale, 0.63 * scale, -1.22 * scale, 0.40 * scale, -1.38 * scale);
     path.closePath();
     return path;
   }
@@ -1114,35 +1169,91 @@
     context.scale(0.97, -0.48);
     context.globalAlpha = 0.075 + state.subtraction * 0.05;
     const ghostGradient = context.createLinearGradient(-scale * 2, -scale * 3, scale * 2, scale * 3);
-    ghostGradient.addColorStop(0, '#302d33');
-    ghostGradient.addColorStop(1, '#0a090c');
+    ghostGradient.addColorStop(0, '#242127');
+    ghostGradient.addColorStop(1, '#08070a');
     context.fillStyle = ghostGradient;
     context.fill(body);
+    context.globalAlpha = 0.075 + state.crown * 0.035;
+    context.fillStyle = '#4a151b';
+    context.fill(wound);
+    context.globalAlpha = 0.12 + state.crown * 0.04;
+    context.lineWidth = Math.max(0.45, scale * 0.012);
+    context.strokeStyle = '#c95b5c';
+    context.stroke(wound);
     context.restore();
 
     const mineralGradient = context.createLinearGradient(-scale * 2.8, -scale * 3.1, scale * 2.5, scale * 2.8);
-    mineralGradient.addColorStop(0, '#09080b');
-    mineralGradient.addColorStop(0.38, '#272426');
-    mineralGradient.addColorStop(0.61, '#b4aea3');
-    mineralGradient.addColorStop(0.72, '#302b2c');
-    mineralGradient.addColorStop(1, '#0a090b');
+    mineralGradient.addColorStop(0, '#08070a');
+    mineralGradient.addColorStop(0.36, '#171519');
+    mineralGradient.addColorStop(0.58, '#302b2b');
+    mineralGradient.addColorStop(0.66, '#4a433f');
+    mineralGradient.addColorStop(0.74, '#211d20');
+    mineralGradient.addColorStop(1, '#070609');
     context.globalAlpha = 1 - state.subtraction * 0.28;
     context.fillStyle = mineralGradient;
     context.fill(body);
 
-    const innerGradient = context.createRadialGradient(0, 0, scale * 0.06, 0, 0, scale * 1.55);
-    innerGradient.addColorStop(0, '#f1e7d4');
-    innerGradient.addColorStop(0.28, '#ff8a70');
-    innerGradient.addColorStop(0.62, '#ff4e57');
-    innerGradient.addColorStop(1, '#160d10');
-    context.globalAlpha = 0.86 + state.crown * 0.14;
+    context.save();
+    context.clip(body);
+    context.globalAlpha = 0.055 + state.crown * 0.025;
+    context.lineWidth = Math.max(0.45, scale * 0.012);
+    context.strokeStyle = '#d7c9b3';
+    for (let index = 0; index < 11; index++) {
+      const y = (-2.62 + index * 0.53) * scale;
+      context.beginPath();
+      context.moveTo(-3.55 * scale, y);
+      context.bezierCurveTo(
+        -1.72 * scale, y - (0.22 + (index % 3) * 0.08) * scale,
+        0.35 * scale, y + (0.26 - (index % 2) * 0.10) * scale,
+        3.05 * scale, y - 0.13 * scale,
+      );
+      context.stroke();
+    }
+    context.restore();
+
+    context.save();
+    context.shadowColor = 'rgba(255,68,79,.42)';
+    context.shadowBlur = scale * (0.10 + state.crown * 0.045);
+    const innerGradient = context.createRadialGradient(0.08 * scale, 0.10 * scale, scale * 0.03, 0.08 * scale, 0.10 * scale, scale * 1.40);
+    innerGradient.addColorStop(0, '#050205');
+    innerGradient.addColorStop(0.46, '#0b0307');
+    innerGradient.addColorStop(0.78, '#27080e');
+    innerGradient.addColorStop(1, '#741f25');
+    context.globalAlpha = 0.98;
     context.fillStyle = innerGradient;
     context.fill(wound);
+    context.shadowBlur = 0;
+    context.globalAlpha = 0.26 + state.crown * 0.10 + state.pressure * 0.08;
+    context.lineWidth = Math.max(1, scale * 0.050);
+    context.strokeStyle = '#ff4e57';
+    context.stroke(wound);
+    context.globalAlpha = 0.42 + state.reconstitution * 0.12;
+    context.lineWidth = Math.max(0.55, scale * 0.010);
+    context.strokeStyle = '#e6d8c2';
+    context.stroke(wound);
+    context.clip(wound);
+    context.globalAlpha = 0.28 + state.crown * 0.10;
+    context.lineWidth = Math.max(0.55, scale * 0.009);
+    context.strokeStyle = '#ff7669';
+    context.beginPath();
+    context.moveTo(0.38 * scale, -1.22 * scale);
+    context.bezierCurveTo(-0.10 * scale, -0.56 * scale, 0.32 * scale, 0.18 * scale, -0.13 * scale, 1.20 * scale);
+    context.stroke();
+    context.globalAlpha = 0.20 + state.reconstitution * 0.08;
+    context.strokeStyle = '#e9dcc8';
+    context.beginPath();
+    context.moveTo(0.53 * scale, -0.84 * scale);
+    context.bezierCurveTo(0.08 * scale, -0.26 * scale, 0.48 * scale, 0.40 * scale, 0.02 * scale, 0.90 * scale);
+    context.stroke();
+    context.restore();
 
-    if (state.return > 0.01 && !reducedMotion) {
-      context.globalAlpha = state.return * 0.34;
+    if ((state.return > 0.01 || state.crown > 0.025) && !reducedMotion) {
       context.lineWidth = 0.75;
       for (let index = 0; index < 18; index++) {
+        const crownMemory = index < 7 ? state.crown * 0.18 : 0;
+        const reveal = Math.max(state.return, crownMemory);
+        if (reveal <= 0.006) continue;
+        context.globalAlpha = state.return > crownMemory ? state.return * 0.34 : crownMemory * 0.32;
         const side = index % 2 ? -1 : 1;
         const startX = side * scale * (0.15 + hash(index + 4) * 0.5);
         const startY = -scale * (0.68 + hash(index + 8) * 0.78);
@@ -1151,9 +1262,9 @@
         context.moveTo(startX, startY);
         context.quadraticCurveTo(
           startX + side * scale * 0.38,
-          startY - scale * 0.64 * state.return,
-          startX + side * scale * (0.38 + hash(index + 15) * 0.8) * state.return,
-          startY - scale * (0.78 + hash(index + 21) * 1.15) * state.return,
+          startY - scale * 0.64 * reveal,
+          startX + side * scale * (0.38 + hash(index + 15) * 0.8) * reveal,
+          startY - scale * (0.78 + hash(index + 21) * 1.15) * reveal,
         );
         context.stroke();
       }

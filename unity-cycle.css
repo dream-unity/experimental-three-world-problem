@@ -777,6 +777,7 @@ html,body{
     justify-content:space-between;
     gap:12px;
   }
+  .world-label>.world-copy small{display:none}
 }
 
 @media(max-width:760px){
@@ -828,20 +829,21 @@ html,body{
 @media(max-width:480px){
   .brand{left:max(12px,env(safe-area-inset-left))}
   .brand i{margin-right:-2px}
-  .brand span{font-size:10px;letter-spacing:.16em}
+  .brand span{display:inline;font-size:10px;letter-spacing:.16em}
   .score-control{min-width:55px;gap:5px}
   .score-control small{display:none}
   .score-control b{min-width:24px;font-size:8px}
   .manifesto{left:max(15px,env(safe-area-inset-left));width:190px}
-  .manifesto>p{font-size:7.5px;letter-spacing:.09em}
+  .manifesto>p{color:rgba(233,227,214,.52);font-size:8.5px;letter-spacing:.08em}
   .manifesto h1{font-size:21px}
-  .manifesto-copy{font-size:8.5px}
-  .manifesto-rule{font-size:7.5px}
+  .manifesto-copy{color:rgba(233,227,214,.50);font-size:9.5px}
+  .manifesto-rule{color:rgba(255,118,95,.72);font-size:8.5px}
   .cycle-index i{display:none}
-  .cycle-index b{font-size:7.5px;letter-spacing:.045em}
+  .cycle-index b{color:rgba(233,227,214,.52);font-size:8px;letter-spacing:.04em}
+  .cycle-index li:last-child b{color:rgba(255,118,95,.72)}
   .world-label{min-width:94px;grid-template-columns:12px minmax(0,1fr)}
   .world-label>.world-copy small{display:none}
-  .world-label>.world-copy strong{font-size:9.5px;letter-spacing:.035em}
+  .world-label>.world-copy strong{font-size:10px;letter-spacing:.03em}
   .unity-label small{display:none}
   .hint{font-size:6.5px}
   .detail-title strong{font-size:10px}

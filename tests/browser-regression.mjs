@@ -58,6 +58,11 @@ async function openPage(context) {
   const page = await context.newPage();
   const errors = [];
   const requests = [];
+  // The browser suite validates the public score URL but never needs to decode
+  // several minutes of audio for a visual/interaction assertion. Aborting the
+  // transfer keeps every context deterministic and makes CI render evidence
+  // available without changing the production page.
+  await page.route(/\.mp3(?:[?#]|$)/i, route => route.abort('blockedbyclient'));
   await page.addInitScript(() => {
     window.__dreamUnityRendererEvents = [];
     for (const name of [
