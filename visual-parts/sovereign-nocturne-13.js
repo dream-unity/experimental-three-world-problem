@@ -136,25 +136,25 @@
   const subScreen = [0, 1, 2].map((index) => ({ x: 0, y: 0, r: 25, z: 0, index }));
 
   const WORLD_PINS = {
-    machine: { x: -1.85, y: 0.18, z: 1.05 },
-    maker: { x: 0.00, y: 0.64, z: 1.15 },
-    reality: { x: 1.50, y: -0.94, z: 0.25 },
+    machine: { x: 0.00, y: 0.02, z: 1.00 },
+    maker: { x: -1.50, y: 0.38, z: 0.60 },
+    reality: { x: 1.65, y: -0.20, z: 0.70 },
   };
   const DETAIL_PINS = {
     machine: [
-      { x: -1.85, y: 0.18, z: 1.05 },
-      { x: -0.25, y: -0.12, z: -0.55 },
-      { x: 1.65, y: 0.14, z: 0.85 },
+      { x: -1.50, y: -0.18, z: -0.40 },
+      { x: 0.00, y: 0.02, z: 1.00 },
+      { x: 1.70, y: 0.16, z: -0.55 },
     ],
     maker: [
-      { x: -1.45, y: 0.88, z: 0.55 },
-      { x: 0.00, y: 0.64, z: 1.15 },
-      { x: 1.35, y: 0.90, z: -0.35 },
+      { x: -2.70, y: 0.90, z: 0.50 },
+      { x: -0.10, y: 0.10, z: -0.80 },
+      { x: 1.80, y: 0.12, z: 0.65 },
     ],
     reality: [
-      { x: -1.55, y: -0.92, z: -0.30 },
-      { x: 0.05, y: -0.68, z: 1.00 },
-      { x: 1.50, y: -0.94, z: 0.25 },
+      { x: -2.80, y: -0.82, z: -0.30 },
+      { x: 0.00, y: -0.06, z: -0.75 },
+      { x: 1.65, y: -0.20, z: 0.70 },
     ],
   };
 
@@ -230,9 +230,11 @@
     const aspect = Math.max(0.25, width / Math.max(1, height));
     return {
       x: aspect < 0.95
-        ? lerp(0.255, 0.58, smoothstep(0.46, 0.75, aspect))
+        ? lerp(0.38, 0.62, smoothstep(0.46, 0.75, aspect))
         : clamp(aspect * 0.77, 0.88, 1.55),
-      y: clamp(0.58 + aspect * 0.26, 0.70, 1),
+      y: aspect < 0.95
+        ? lerp(0.80, 0.84, smoothstep(0.46, 0.75, aspect))
+        : clamp(0.58 + aspect * 0.26, 0.70, 1),
     };
   }
 
@@ -262,76 +264,157 @@
     };
   }
 
-  // Three topologically independent tectonic strata occupy one horizon.
-  // They overlap in depth as a single pressure-field rather than forming a
-  // mascot, glyph, portal, or three diagrammatic objects.
+  // Seven open lamellae form one boundary-crossing pressure choir. Their three
+  // world identities converge without becoming three slabs or a closed logo.
   const LAMELLAE = [
     {
-      stations: [0, 0.21, 0.48, 0.76, 1],
+      world: 0,
+      stations: [0, 0.16, 0.33, 0.50, 0.68, 0.84, 1],
       points: [
-        { x: -3.35, y: -0.10, z: 0.30 },
-        { x: -1.85, y: 0.18, z: 1.05 },
-        { x: -0.25, y: -0.12, z: -0.55 },
-        { x: 1.65, y: 0.14, z: 0.85 },
-        { x: 3.35, y: -0.08, z: -0.25 },
+        { x: -4.40, y: -0.10, z: 0.25 },
+        { x: -3.00, y: 0.12, z: 0.85 },
+        { x: -1.50, y: -0.18, z: -0.40 },
+        { x: 0.00, y: 0.02, z: 1.00 },
+        { x: 1.70, y: 0.16, z: -0.55 },
+        { x: 3.30, y: -0.12, z: 0.72 },
+        { x: 4.80, y: 0.08, z: -0.20 },
       ],
-      leftWidths: [0.42, 0.72, 0.90, 0.62, 0.38],
-      rightWidths: [0.34, 0.86, 0.66, 0.82, 0.44],
-      banks: [-0.22, 0.18, -0.15, 0.24, -0.18],
+      leftWidths: [0.34, 0.42, 0.52, 0.48, 0.56, 0.40, 0.30],
+      rightWidths: [0.28, 0.52, 0.40, 0.60, 0.42, 0.50, 0.34],
+      banks: [-0.16, 0.18, -0.14, 0.20, -0.18, 0.16, -0.12],
       sideAxis: { x: 0, y: 1, z: 0 },
-      camber: 0.10,
-      thickness: 0.16,
+      camber: 0.06,
+      thickness: 0.105,
     },
     {
-      stations: [0, 0.24, 0.50, 0.75, 1],
+      world: 1,
+      stations: [0, 0.16, 0.33, 0.50, 0.68, 0.84, 1],
       points: [
-        { x: -2.90, y: 0.72, z: -0.55 },
-        { x: -1.45, y: 0.88, z: 0.55 },
-        { x: 0.00, y: 0.64, z: 1.15 },
-        { x: 1.35, y: 0.90, z: -0.35 },
-        { x: 2.85, y: 0.68, z: 0.45 },
+        { x: -4.00, y: 1.18, z: -0.40 },
+        { x: -2.70, y: 0.90, z: 0.50 },
+        { x: -1.30, y: 0.62, z: 1.00 },
+        { x: 0.10, y: 0.24, z: -0.20 },
+        { x: 1.80, y: 0.46, z: 0.70 },
+        { x: 3.50, y: 0.80, z: -0.50 },
+        { x: 5.00, y: 1.08, z: 0.35 },
       ],
-      leftWidths: [0.22, 0.38, 0.46, 0.34, 0.24],
-      rightWidths: [0.34, 0.44, 0.32, 0.50, 0.28],
-      banks: [0.28, -0.18, 0.22, -0.24, 0.16],
+      leftWidths: [0.14, 0.20, 0.24, 0.19, 0.23, 0.18, 0.13],
+      rightWidths: [0.18, 0.24, 0.18, 0.25, 0.17, 0.22, 0.15],
+      banks: [0.18, -0.14, 0.20, -0.18, 0.16, -0.20, 0.12],
       sideAxis: { x: 0, y: 1, z: 0 },
-      camber: -0.08,
-      thickness: 0.13,
+      camber: -0.05,
+      thickness: 0.075,
     },
     {
-      stations: [0, 0.24, 0.51, 0.76, 1],
+      world: 2,
+      stations: [0, 0.16, 0.33, 0.50, 0.68, 0.84, 1],
       points: [
-        { x: -3.00, y: -0.72, z: 0.55 },
-        { x: -1.55, y: -0.92, z: -0.30 },
-        { x: 0.05, y: -0.68, z: 1.00 },
-        { x: 1.50, y: -0.94, z: 0.25 },
-        { x: 2.90, y: -0.70, z: -0.60 },
+        { x: -4.20, y: -1.05, z: 0.50 },
+        { x: -2.80, y: -0.82, z: -0.30 },
+        { x: -1.40, y: -0.50, z: 0.80 },
+        { x: 0.00, y: -0.18, z: 0.10 },
+        { x: 1.60, y: -0.42, z: -0.60 },
+        { x: 3.10, y: -0.72, z: 0.65 },
+        { x: 4.60, y: -1.00, z: -0.40 },
       ],
-      leftWidths: [0.28, 0.50, 0.34, 0.46, 0.24],
-      rightWidths: [0.22, 0.36, 0.48, 0.32, 0.28],
-      banks: [-0.24, 0.20, -0.18, 0.26, -0.20],
+      leftWidths: [0.16, 0.22, 0.18, 0.25, 0.19, 0.23, 0.14],
+      rightWidths: [0.14, 0.19, 0.24, 0.18, 0.25, 0.17, 0.16],
+      banks: [-0.16, 0.18, -0.20, 0.14, -0.18, 0.20, -0.14],
       sideAxis: { x: 0, y: 1, z: 0 },
-      camber: 0.09,
-      thickness: 0.12,
+      camber: 0.05,
+      thickness: 0.072,
+    },
+    {
+      world: 1,
+      stations: [0, 0.16, 0.33, 0.50, 0.68, 0.84, 1],
+      points: [
+        { x: -4.50, y: 0.66, z: -0.70 },
+        { x: -3.00, y: 0.55, z: 0.20 },
+        { x: -1.50, y: 0.38, z: 0.60 },
+        { x: -0.10, y: 0.10, z: -0.80 },
+        { x: 1.50, y: 0.28, z: 0.90 },
+        { x: 3.00, y: 0.50, z: -0.10 },
+        { x: 4.50, y: 0.72, z: 0.50 },
+      ],
+      leftWidths: [0.11, 0.17, 0.20, 0.15, 0.19, 0.16, 0.10],
+      rightWidths: [0.15, 0.20, 0.14, 0.22, 0.13, 0.19, 0.12],
+      banks: [-0.12, 0.16, -0.18, 0.20, -0.14, 0.18, -0.10],
+      sideAxis: { x: 0, y: 1, z: 0 },
+      camber: 0.04,
+      thickness: 0.060,
+    },
+    {
+      world: 2,
+      stations: [0, 0.16, 0.33, 0.50, 0.68, 0.84, 1],
+      points: [
+        { x: -4.35, y: -0.58, z: 0.75 },
+        { x: -2.90, y: -0.46, z: -0.50 },
+        { x: -1.45, y: -0.32, z: 0.35 },
+        { x: 0.00, y: -0.06, z: -0.75 },
+        { x: 1.65, y: -0.20, z: 0.70 },
+        { x: 3.20, y: -0.48, z: -0.20 },
+        { x: 4.75, y: -0.66, z: 0.45 },
+      ],
+      leftWidths: [0.13, 0.19, 0.15, 0.21, 0.14, 0.18, 0.11],
+      rightWidths: [0.10, 0.15, 0.20, 0.14, 0.22, 0.13, 0.12],
+      banks: [0.14, -0.18, 0.16, -0.20, 0.18, -0.14, 0.10],
+      sideAxis: { x: 0, y: 1, z: 0 },
+      camber: -0.04,
+      thickness: 0.058,
+    },
+    {
+      world: 1,
+      stations: [0, 0.16, 0.33, 0.50, 0.68, 0.84, 1],
+      points: [
+        { x: -3.90, y: 1.48, z: 0.20 },
+        { x: -2.60, y: 1.12, z: -0.55 },
+        { x: -1.25, y: 0.72, z: 0.80 },
+        { x: 0.20, y: 0.32, z: 0.40 },
+        { x: 1.80, y: 0.12, z: -0.70 },
+        { x: 3.35, y: 0.55, z: 0.65 },
+        { x: 4.90, y: 0.92, z: -0.25 },
+      ],
+      leftWidths: [0.09, 0.15, 0.18, 0.13, 0.17, 0.14, 0.08],
+      rightWidths: [0.12, 0.18, 0.12, 0.20, 0.11, 0.16, 0.10],
+      banks: [0.20, -0.16, 0.14, -0.22, 0.18, -0.12, 0.16],
+      sideAxis: { x: 0, y: 1, z: 0 },
+      camber: 0.035,
+      thickness: 0.052,
+    },
+    {
+      world: 2,
+      stations: [0, 0.16, 0.33, 0.50, 0.68, 0.84, 1],
+      points: [
+        { x: -4.10, y: -1.42, z: -0.25 },
+        { x: -2.75, y: -1.08, z: 0.65 },
+        { x: -1.35, y: -0.70, z: -0.45 },
+        { x: 0.10, y: -0.34, z: 0.55 },
+        { x: 1.70, y: -0.08, z: -0.60 },
+        { x: 3.25, y: -0.38, z: 0.45 },
+        { x: 4.70, y: -0.82, z: -0.30 },
+      ],
+      leftWidths: [0.10, 0.16, 0.13, 0.19, 0.12, 0.17, 0.09],
+      rightWidths: [0.08, 0.12, 0.18, 0.11, 0.20, 0.12, 0.10],
+      banks: [-0.18, 0.14, -0.20, 0.16, -0.22, 0.18, -0.12],
+      sideAxis: { x: 0, y: 1, z: 0 },
+      camber: -0.035,
+      thickness: 0.050,
     },
   ];
 
   const SOVEREIGN_SEAM = {
-    along: [0.18, 0.32, 0.48, 0.65, 0.82],
-    across: [0.72, 0.38, 0.12, -0.24, -0.48],
-    halfWidths: [0.010, 0.018, 0.026, 0.018, 0.009],
-    normalLifts: [0.14, 0.17, 0.19, 0.17, 0.14],
+    along: [0.39, 0.43, 0.48, 0.52, 0.57, 0.61],
+    across: [0.64, 0.38, 0.12, -0.06, -0.34, -0.62],
+    halfWidths: [0.005, 0.011, 0.020, 0.016, 0.010, 0.004],
+    normalLifts: [0.10, 0.14, 0.18, 0.17, 0.13, 0.09],
   };
 
   const MEMORY_FIBRES = [
-    { lamella: 0, along: 0.22, across: 0.74, extension: [-0.12, 0.78, 0.20], curl: [-0.16, 0.02, 0.16], color: 3 },
-    { lamella: 1, along: 0.46, across: 0.70, extension: [0.10, 0.82, -0.16], curl: [0.18, 0.04, -0.12], color: 3 },
-    { lamella: 2, along: 0.38, across: -0.72, extension: [-0.10, -0.78, 0.18], curl: [-0.14, -0.02, 0.14], color: 3 },
-    { lamella: 0, along: 0.62, across: -0.74, extension: [0.18, -0.76, -0.18], curl: [0.16, -0.04, -0.14], color: 1 },
-    { lamella: 1, along: 0.72, across: 0.72, extension: [0.16, 0.70, 0.22], curl: [-0.10, 0.08, 0.12], color: 3 },
-    { lamella: 2, along: 0.68, across: -0.70, extension: [0.14, -0.74, -0.22], curl: [0.12, -0.06, -0.10], color: 2 },
-    { lamella: 0, along: 0.40, across: -0.76, extension: [-0.16, -0.68, 0.24], curl: [0.14, -0.06, 0.12], color: 3 },
-    { lamella: 0, along: 0.78, across: 0.70, extension: [0.12, 0.72, -0.20], curl: [-0.12, 0.06, -0.10], color: 0 },
+    { lamella: 0, along: 0.44, across: 0.84, extension: [-0.10, 0.45, 0.20], curl: [-0.12, 0.02, 0.14], color: 3 },
+    { lamella: 3, along: 0.50, across: 0.80, extension: [0.08, 0.44, -0.15], curl: [0.14, 0.03, -0.10], color: 3 },
+    { lamella: 4, along: 0.55, across: -0.80, extension: [0.10, -0.44, 0.18], curl: [-0.12, -0.02, 0.12], color: 3 },
+    { lamella: 0, along: 0.58, across: -0.82, extension: [0.12, -0.42, -0.18], curl: [0.12, -0.03, -0.12], color: 1 },
+    { lamella: 5, along: 0.64, across: 0.76, extension: [0.10, 0.38, 0.20], curl: [-0.10, 0.04, 0.12], color: 2 },
   ];
 
   function stationSegment(config, t, preferred = null) {
@@ -577,7 +660,7 @@
             point.y + extrusionNormal.y * thickness * direction,
             point.z + extrusionNormal.z * thickness * direction,
             normal.x * direction, normal.y * direction, normal.z * direction,
-            t, s, lamellaIndex, back,
+            t, s, config.world, back,
             extrusionNormal.x * direction,
             extrusionNormal.y * direction,
             extrusionNormal.z * direction,
@@ -660,13 +743,13 @@
         vertices.push(
           end.x, end.y, end.z,
           a.x, a.y, a.z,
-          aWeight, color, seed, lamellaIndex,
+          aWeight, color, seed, LAMELLAE[lamellaIndex].world,
           endNormal.x, endNormal.y, endNormal.z, along, across,
         );
         vertices.push(
           end.x, end.y, end.z,
           b.x, b.y, b.z,
-          bWeight, color, seed, lamellaIndex,
+          bWeight, color, seed, LAMELLAE[lamellaIndex].world,
           endNormal.x, endNormal.y, endNormal.z, along, across,
         );
       }
@@ -819,7 +902,7 @@
       float embodiedUnity = max(compression, max(uInversion * 0.88, uReconstitution * 0.62 + uCrown * 0.16));
       vec3 convergence = aLamella < 0.5
         ? vec3(0.0, 0.0, 0.10)
-        : (aLamella < 1.5 ? vec3(0.0, -0.34, 0.16) : vec3(0.0, 0.34, -0.14));
+        : (aLamella < 1.5 ? vec3(0.0, -0.44, 0.16) : vec3(0.0, 0.42, -0.14));
       point += convergence * embodiedUnity;
       float resolvedWave = sin(aAlong * 12.0 + aAcross * 2.8 - movingTime * 0.30 + aLamella * 1.7);
       point += deformNormal * resolvedWave * envelope * uReconstitution * (0.040 + aLamella * 0.010);
@@ -844,10 +927,10 @@
       point += deformNormal * groundedSheet * worldMask * worldChange * envelope * 0.08;
 
       if (uGhost > 0.5) {
-        float mirrorPlane = -2.32;
-        float sheetOffset = (aLamella - 1.0) * 0.13 + sin(aAlong * 7.0 + aLamella * 1.9) * 0.025;
+        float mirrorPlane = -3.35;
+        float sheetOffset = (aLamella - 1.0) * 0.08 + sin(aAlong * 7.0 + aLamella * 1.9) * 0.018;
         point.x = point.x * 0.965 - 0.10 + sheetOffset;
-        point.y = mirrorPlane - (point.y - mirrorPlane) * 0.42 + (aLamella - 1.0) * 0.035;
+        point.y = mirrorPlane - (point.y - mirrorPlane) * 0.18 + (aLamella - 1.0) * 0.025;
         point.z -= 0.48 + aLamella * 0.045;
         normal = normalize(vec3(normal.x / 0.965, -normal.y / 0.42, normal.z));
       }
@@ -924,8 +1007,8 @@
       float specular = pow(max(0.0, dot(normal, halfDirection)), 78.0);
       float movingTime = mix(uTime, 0.0, uReduced);
 
-      vec3 obsidian = vec3(0.020, 0.022, 0.030);
-      vec3 graphite = vec3(0.125, 0.124, 0.138);
+      vec3 obsidian = vec3(0.024, 0.027, 0.038);
+      vec3 graphite = vec3(0.175, 0.168, 0.195);
       vec3 ultramarine = vec3(0.046, 0.055, 0.150);
       vec3 bone = vec3(0.860, 0.800, 0.700);
       vec3 coral = vec3(0.910, 0.125, 0.135);
@@ -943,10 +1026,10 @@
       float facetTone = floor(hash31(floor(facetCoord + vec3(vLamella * 1.73, vBack * 2.9, 0.0))) * 3.0) / 2.0;
 
       if (uMaterial < 0.5) {
-        color = mix(obsidian, graphite, 0.30 + facetTone * 0.52);
-        color *= mix(0.80, 1.20, facetTone) * (0.64 + wrapDiffuse * 0.48 + skyFill * 0.05);
-        color += graphite * fill * 0.10;
-        color += bone * warmBounce * (0.014 + facetTone * 0.006);
+        color = mix(obsidian, graphite, 0.34 + facetTone * 0.44);
+        color *= mix(0.82, 1.18, facetTone) * (0.68 + wrapDiffuse * 0.50 + skyFill * 0.07);
+        color += graphite * fill * 0.14;
+        color += bone * warmBounce * (0.018 + facetTone * 0.006);
         color = mix(color, ultramarine, (0.045 + fresnel * 0.13) * (0.55 + facetTone * 0.35));
         color += bone * specular * (0.22 + uReconstitution * 0.05);
         color *= mix(1.0, 0.84, clamp(vBack, 0.0, 1.0));
@@ -957,7 +1040,9 @@
         nacreA *= smoothstep(-0.92, -0.46, vAcross) * (1.0 - smoothstep(0.18, 0.54, vAcross));
         float nacreB = smoothstep(0.58, 0.66, vAlong) * (1.0 - smoothstep(0.82, 0.90, vAlong));
         nacreB *= smoothstep(-0.40, -0.02, vAcross) * (1.0 - smoothstep(0.70, 0.92, vAcross));
-        float nacreMask = max(nacreA * (0.34 + facetTone * 0.22), nacreB * (0.30 + (1.0 - facetTone) * 0.20));
+        float nacreMask = vLamella < 0.5
+          ? nacreA * (0.38 + facetTone * 0.16)
+          : (vLamella < 1.5 ? nacreB * 0.20 : 0.0);
         vec3 nacreMat = mix(bone, vec3(0.56, 0.63, 0.76), 0.16) * (0.52 + wrapDiffuse * 0.38);
         color = mix(color, nacreMat, nacreMask * (0.38 + uCrown * 0.04));
 
@@ -1097,7 +1182,7 @@
       point.z-=compression*(0.025+envelope*0.035);
       point=mix(point,vec3(point.x*0.84,point.y*0.955,point.z*0.78),uSubtraction*0.44);
       float embodiedUnity=max(compression,max(uInversion*0.88,uReconstitution*0.62+uCrown*0.16));
-      vec3 convergence=aLamella<0.5?vec3(0.0,0.0,0.10):(aLamella<1.5?vec3(0.0,-0.34,0.16):vec3(0.0,0.34,-0.14));
+      vec3 convergence=aLamella<0.5?vec3(0.0,0.0,0.10):(aLamella<1.5?vec3(0.0,-0.44,0.16):vec3(0.0,0.42,-0.14));
       point+=convergence*embodiedUnity;
       float resolvedWave=sin(aAlong*12.0+aAcross*2.8-movingTime*0.30+aLamella*1.7);
       point+=normal*resolvedWave*envelope*uReconstitution*(0.040+aLamella*0.010);
@@ -1124,7 +1209,7 @@
     void main(){
       float movingTime=mix(uTime,0.0,uReduced);
       float stagger=clamp((uReturn-aSeed*0.42)*1.72,0.0,1.0);
-      float crownMemory=(1.0-smoothstep(0.34,0.46,aSeed))*uCrown;
+      float crownMemory=(1.0-smoothstep(0.48,0.64,aSeed))*uCrown;
       float reveal=max(stagger,crownMemory*0.62);
       vec3 resolvedRoot=deformAnchor(aStart,aNormal,movingTime);
       vec3 rootDelta=resolvedRoot-aStart;
@@ -1482,15 +1567,12 @@
       return path;
     };
 
-    const blade = field(0);
-    const sail = field(1);
-    const keel = field(2);
+    const fields = LAMELLAE.map((_, index) => field(index));
+    const [blade, sail, keel] = fields;
 
     const compound = new Path2D();
-    compound.addPath(blade);
-    compound.addPath(keel);
-    compound.addPath(sail);
-    return { blade, keel, sail, compound };
+    fields.forEach((path) => compound.addPath(path));
+    return { blade, keel, sail, fields, compound };
   }
 
   function fallbackWoundPath(scale) {
@@ -1589,38 +1671,18 @@
     mineralGradient.addColorStop(1, '#020307');
     context.globalAlpha = 1 - state.subtraction * 0.28;
     context.fillStyle = mineralGradient;
-    context.fill(paths.blade);
     context.save();
     context.lineJoin = 'round';
-    context.lineWidth = Math.max(2, scale * 0.055);
+    context.lineWidth = Math.max(1.2, scale * 0.032);
     context.strokeStyle = '#050405';
-    context.stroke(paths.keel);
-    context.fill(paths.keel);
-    context.stroke(paths.sail);
-    context.fill(paths.sail);
+    paths.fields.forEach((path, index) => {
+      if (index > 0) context.stroke(path);
+      context.fill(path);
+    });
     context.restore();
 
     context.save();
     context.clip(body);
-    context.globalAlpha = 0.045 + state.crown * 0.020;
-    context.fillStyle = '#e2d3bc';
-    context.beginPath();
-    context.moveTo(-0.94 * scale, -1.02 * scale);
-    context.lineTo(-0.38 * scale, -0.16 * scale);
-    context.lineTo(0.12 * scale, 0.98 * scale);
-    context.lineTo(-0.30 * scale, 1.76 * scale);
-    context.lineTo(-0.62 * scale, 0.34 * scale);
-    context.closePath();
-    context.fill();
-    context.globalAlpha = 0.032 + state.reconstitution * 0.018;
-    context.fillStyle = '#3a4c98';
-    context.beginPath();
-    context.moveTo(0.28 * scale, 0.62 * scale);
-    context.lineTo(1.90 * scale, 1.42 * scale);
-    context.lineTo(1.12 * scale, 1.94 * scale);
-    context.lineTo(0.58 * scale, 0.96 * scale);
-    context.closePath();
-    context.fill();
     context.globalAlpha = 0.12 + state.crown * 0.045;
     context.lineWidth = Math.max(0.45, scale * 0.009);
     context.strokeStyle = '#cbbda8';
@@ -1630,34 +1692,13 @@
     if (activeWorld && viewMix > 0.24) {
       context.save();
       context.clip(body);
-      context.globalAlpha = ease(viewMix) * 0.20;
-      context.lineWidth = Math.max(0.55, scale * 0.012);
-      if (activeWorld === 'machine') {
-        context.strokeStyle = '#00c9e8';
-        context.beginPath();
-        context.moveTo(-0.98 * scale, -1.04 * scale);
-        context.lineTo(0.12 * scale, 1.04 * scale);
-        context.moveTo(-0.70 * scale, -0.10 * scale);
-        context.lineTo(0.02 * scale, 0.58 * scale);
-        context.stroke();
-      } else if (activeWorld === 'maker') {
-        context.strokeStyle = '#14c98b';
-        context.beginPath();
-        context.moveTo(0.52 * scale, 0.92 * scale);
-        context.lineTo(1.84 * scale, 1.50 * scale);
-        context.moveTo(0.78 * scale, 1.00 * scale);
-        context.lineTo(1.30 * scale, 1.22 * scale);
-        context.stroke();
-      } else {
-        context.strokeStyle = '#6840ff';
-        context.beginPath();
-        context.moveTo(-1.84 * scale, -0.54 * scale);
-        context.lineTo(-0.88 * scale, -1.48 * scale);
-        context.lineTo(0.18 * scale, -1.10 * scale);
-        context.moveTo(-1.44 * scale, -0.88 * scale);
-        context.lineTo(-0.38 * scale, -1.76 * scale);
-        context.stroke();
-      }
+      context.globalAlpha = ease(viewMix) * 0.24;
+      context.lineWidth = Math.max(0.55, scale * 0.010);
+      const activeIndex = activeWorld === 'machine' ? 0 : activeWorld === 'maker' ? 1 : 2;
+      context.strokeStyle = activeIndex === 0 ? '#00c9e8' : activeIndex === 1 ? '#14c98b' : '#6840ff';
+      paths.fields.forEach((path, index) => {
+        if (LAMELLAE[index].world === activeIndex) context.stroke(path);
+      });
       context.restore();
     }
 
@@ -1665,10 +1706,9 @@
     context.save();
     context.globalAlpha = 0.82;
     context.lineJoin = 'round';
-    context.lineWidth = Math.max(1, scale * 0.025);
+    context.lineWidth = Math.max(0.8, scale * 0.014);
     context.strokeStyle = '#050405';
-    context.stroke(paths.keel);
-    context.stroke(paths.sail);
+    paths.fields.slice(1).forEach((path) => context.stroke(path));
     context.restore();
 
     context.save();
