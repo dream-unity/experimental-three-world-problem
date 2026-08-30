@@ -108,10 +108,10 @@
   let holdStrength = 0;
   let holdTarget = 0;
 
-  let overviewYaw = -0.34;
-  let overviewPitch = -0.08;
-  let overviewRoll = -0.035;
-  let overviewZoom = 0.84;
+  let overviewYaw = 0.48;
+  let overviewPitch = -0.16;
+  let overviewRoll = -0.12;
+  let overviewZoom = 0.97;
   let overviewYawVelocity = 0;
   let overviewPitchVelocity = 0;
   let overviewRollVelocity = 0;
@@ -122,9 +122,9 @@
   let detailYawVelocity = 0;
   let detailPitchVelocity = 0;
   let detailRollVelocity = 0;
-  let ghostYaw = overviewYaw - 0.12;
-  let ghostPitch = overviewPitch + 0.035;
-  let ghostRoll = overviewRoll - 0.018;
+  let ghostYaw = overviewYaw + 0.18;
+  let ghostPitch = overviewPitch + 0.05;
+  let ghostRoll = overviewRoll - 0.06;
 
   let gestureTravel = 0;
   let gestureHadPinch = false;
@@ -136,25 +136,25 @@
   const subScreen = [0, 1, 2].map((index) => ({ x: 0, y: 0, r: 25, z: 0, index }));
 
   const WORLD_PINS = {
-    machine: { x: -2.08, y: 0.94, z: 1.18 },
-    maker: { x: 1.70, y: 0.24, z: 1.28 },
-    reality: { x: 0.26, y: -2.18, z: 1.18 },
+    machine: { x: -0.71, y: -0.10, z: 0.53 },
+    maker: { x: 1.54, y: 2.06, z: 0.86 },
+    reality: { x: -0.86, y: -1.17, z: 0.52 },
   };
   const DETAIL_PINS = {
     machine: [
-      { x: -1.68, y: 1.28, z: 1.26 },
-      { x: -1.02, y: 0.18, z: 1.55 },
-      { x: -1.38, y: -1.02, z: 1.30 },
+      { x: -1.32, y: -1.44, z: 0.37 },
+      { x: -0.71, y: -0.10, z: 0.53 },
+      { x: -0.05, y: 1.45, z: 0.43 },
     ],
     maker: [
-      { x: 1.34, y: 1.10, z: 1.22 },
-      { x: 1.76, y: 0.02, z: 1.30 },
-      { x: 1.18, y: -1.16, z: 1.28 },
+      { x: 1.08, y: 2.35, z: 1.16 },
+      { x: 1.54, y: 2.06, z: 0.86 },
+      { x: 1.95, y: 1.61, z: 0.41 },
     ],
     reality: [
-      { x: -0.84, y: -1.18, z: 1.34 },
-      { x: 0.18, y: -1.76, z: 1.47 },
-      { x: 1.12, y: -1.28, z: 1.22 },
+      { x: -1.56, y: -0.60, z: 0.98 },
+      { x: -0.86, y: -1.17, z: 0.52 },
+      { x: -0.01, y: -1.56, z: 0.01 },
     ],
   };
 
@@ -218,8 +218,8 @@
 
   function screenShift(detail = false) {
     const mix = detail ? ease(viewMix) : 0;
-    if (isCompactLayout()) return { x: 0, y: lerp(0.015, 0.035, mix) };
-    return { x: lerp(0.105, -0.010, mix), y: lerp(0, 0.015, mix) };
+    if (isCompactLayout()) return { x: 0.06, y: lerp(-0.065, 0.015, mix) };
+    return { x: lerp(0.115, -0.015, mix), y: lerp(0, 0.015, mix) };
   }
 
   function isCompactLayout() {
@@ -228,11 +228,11 @@
 
   function viewportShapeScale() {
     const aspect = Math.max(0.25, width / Math.max(1, height));
-    const targetWidth = lerp(0.93, 0.65, smoothstep(0.75, 1.30, aspect));
-    const compactMantleCompensation = lerp(1.05, 1, smoothstep(0.75, 1.30, aspect));
     return {
-      x: clamp(targetWidth * aspect / 1.21 * compactMantleCompensation, 0.34, 1),
-      y: clamp(0.38 + aspect * 0.38, 0.55, 1),
+      x: aspect < 0.95
+        ? lerp(0.55, 0.88, smoothstep(0.46, 0.75, aspect))
+        : clamp(aspect * 0.77, 0.88, 1.55),
+      y: clamp(0.58 + aspect * 0.26, 0.70, 1),
     };
   }
 
@@ -268,39 +268,39 @@
   const LAMELLAE = [
     {
       points: [
-        { x: -0.42, y: -2.74, z: 0.24 },
-        { x: -2.18, y: -1.88, z: 0.72 },
-        { x: -2.44, y: 0.92, z: 0.42 },
-        { x: -0.88, y: 3.18, z: 0.70 },
+        { x: -1.72, y: -2.42, z: -0.18 },
+        { x: -1.38, y: -1.42, z: 0.86 },
+        { x: -0.12, y: 0.92, z: 0.56 },
+        { x: 0.52, y: 3.08, z: 0.18 },
       ],
-      widths: [0.20, 0.72, 0.58, 0.18],
-      banks: [0.12, -0.18, 0.22, -0.10],
-      camber: 0.19,
-      thickness: 0.15,
+      widths: [0.22, 0.72, 0.52, 0.20],
+      banks: [-0.72, -0.22, 0.38, 0.96],
+      camber: 0.16,
+      thickness: 0.16,
     },
     {
       points: [
-        { x: 0.48, y: -2.42, z: 0.50 },
-        { x: 1.58, y: -1.46, z: 0.94 },
-        { x: 1.92, y: 0.52, z: 0.36 },
-        { x: 0.72, y: 2.30, z: 0.84 },
+        { x: 0.62, y: 2.52, z: 1.20 },
+        { x: 1.22, y: 2.38, z: 1.35 },
+        { x: 1.92, y: 1.92, z: 0.58 },
+        { x: 2.28, y: 1.02, z: -0.10 },
       ],
-      widths: [0.14, 0.50, 0.43, 0.12],
-      banks: [-0.24, 0.18, -0.12, 0.24],
-      camber: -0.15,
+      widths: [0.16, 0.44, 0.36, 0.15],
+      banks: [0.88, 0.46, -0.24, -0.82],
+      camber: -0.18,
+      thickness: 0.14,
+    },
+    {
+      points: [
+        { x: -2.12, y: 0.02, z: 1.34 },
+        { x: -1.48, y: -0.78, z: 0.94 },
+        { x: -0.42, y: -1.82, z: 0.18 },
+        { x: 0.96, y: -1.62, z: -0.52 },
+      ],
+      widths: [0.14, 0.40, 0.31, 0.12],
+      banks: [1.06, 0.32, -0.46, -1.10],
+      camber: 0.20,
       thickness: 0.12,
-    },
-    {
-      points: [
-        { x: -1.48, y: -2.30, z: 0.02 },
-        { x: -0.88, y: -2.66, z: 0.68 },
-        { x: 0.22, y: -2.36, z: 0.90 },
-        { x: 1.18, y: -1.56, z: 0.28 },
-      ],
-      widths: [0.13, 0.34, 0.28, 0.10],
-      banks: [0.42, -0.16, 0.28, -0.30],
-      camber: 0.12,
-      thickness: 0.10,
     },
   ];
 
@@ -384,24 +384,30 @@
     const vertices = [];
     const indices = [];
     const stride = columns + 1;
+    const path = [
+      { x: -1.16, y: -1.72, z: 1.72 },
+      { x: 0.14, y: -1.08, z: 2.08 },
+      { x: -0.12, y: 0.32, z: 1.70 },
+      { x: 0.98, y: 1.48, z: 1.04 },
+    ];
     for (let row = 0; row <= rows; row++) {
       const t = row / rows;
-      const foldT = 0.13 + t * 0.79;
-      const seamS = -0.34 + Math.sin(t * Math.PI * 2.15 - 0.55) * 0.14
-        + Math.sin(t * Math.PI * 5.2) * 0.025;
-      const halfParamWidth = 0.045 + Math.sin(Math.PI * t) * 0.040;
+      const center = cubicPoint(path, t);
+      const before = cubicPoint(path, Math.max(0, t - 0.002));
+      const after = cubicPoint(path, Math.min(1, t + 0.002));
+      const tangent = normalize(subtract(after, before));
+      const guide = normalize({ x: 0.15, y: -0.25, z: 1 });
+      const side = normalize(cross(tangent, guide));
+      const normal = normalize(cross(side, tangent));
+      const halfWidth = 0.020 + Math.sin(Math.PI * t) * 0.024;
       for (let column = 0; column <= columns; column++) {
         const s = column / columns * 2 - 1;
-        const foldS = seamS + s * halfParamWidth;
-        const point = lamellaPoint(1, foldT, foldS);
-        const normal = lamellaNormal(1, foldT, foldS);
-        const lift = 0.145 + (1 - Math.abs(s)) * 0.008;
         vertices.push(
-          point.x + normal.x * lift,
-          point.y + normal.y * lift,
-          point.z + normal.z * lift,
+          center.x + side.x * s * halfWidth,
+          center.y + side.y * s * halfWidth,
+          center.z + side.z * s * halfWidth,
           normal.x, normal.y, normal.z,
-          t, s, 1, 0,
+          t, s, 3, 0,
         );
       }
     }
@@ -695,7 +701,8 @@
       point.y *= 1.0 + makerMask * worldChange * 0.035;
       point += normal * makerMask * worldChange * sin(aAlong * 6.283 + aLamella) * envelope * 0.040;
       float tectonicFacet = sign(sin(aAlong * 22.0 + aAcross * 4.4 + aLamella * 2.1));
-      point += normal * worldMask * worldChange * tectonicFacet * envelope * 0.055;
+      float edgeGuard = 1.0 - smoothstep(0.72, 0.94, abs(aAcross));
+      point += normal * worldMask * worldChange * tectonicFacet * envelope * edgeGuard * 0.055;
       point.y -= worldMask * worldChange * smoothstep(0.0, 0.46, 1.0 - aAlong) * 0.10;
 
       if (uGhost > 0.5) {
@@ -763,19 +770,24 @@
     void main() {
       vec3 normal = gl_FrontFacing ? normalize(vNormal) : -normalize(vNormal);
       vec3 viewDirection = normalize(vec3(0.0, 0.0, 10.0) - vWorld);
-      vec3 keyDirection = normalize(vec3(-0.48, 0.76, 0.44));
-      vec3 rimDirection = normalize(vec3(0.34, -0.04, 0.94));
-      float diffuse = max(0.0, dot(normal, keyDirection));
+      vec3 keyDirection = normalize(vec3(-0.55, 0.68, 0.48));
+      vec3 fillDirection = normalize(vec3(0.74, -0.16, 0.52));
+      vec3 rimDirection = normalize(vec3(0.16, -0.32, 0.93));
+      float ndl = dot(normal, keyDirection);
+      float wrapDiffuse = clamp((ndl + 0.30) / 1.30, 0.0, 1.0);
+      float skyFill = 0.5 + 0.5 * normal.y;
+      float fill = max(0.0, dot(normal, fillDirection));
       float underLight = max(0.0, dot(normal, rimDirection));
-      float fresnel = pow(1.0 - max(0.0, dot(normal, viewDirection)), 3.0);
+      float facing = max(0.0, dot(normal, viewDirection));
+      float fresnel = pow(1.0 - facing, 4.6);
       vec3 halfDirection = normalize(keyDirection + viewDirection);
-      float specular = pow(max(0.0, dot(normal, halfDirection)), 46.0);
+      float specular = pow(max(0.0, dot(normal, halfDirection)), 84.0);
       float movingTime = mix(uTime, 0.0, uReduced);
 
-      vec3 obsidian = vec3(0.010, 0.012, 0.019);
-      vec3 graphite = vec3(0.050, 0.052, 0.070);
-      vec3 ultramarine = vec3(0.030, 0.041, 0.118);
-      vec3 bone = vec3(0.875, 0.824, 0.735);
+      vec3 obsidian = vec3(0.016, 0.019, 0.029);
+      vec3 graphite = vec3(0.115, 0.120, 0.150);
+      vec3 ultramarine = vec3(0.052, 0.063, 0.170);
+      vec3 bone = vec3(0.820, 0.760, 0.660);
       vec3 coral = vec3(0.910, 0.125, 0.135);
       vec3 cyan = vec3(0.0, 0.788, 0.910);
       vec3 emerald = vec3(0.078, 0.788, 0.545);
@@ -784,32 +796,31 @@
       float alpha = 1.0;
 
       vec3 facetCoord = vec3(
-        dot(vLocal, vec3(0.78, 0.18, -0.59)) * 1.12,
-        dot(vLocal, vec3(-0.22, 0.92, 0.31)) * 0.76,
-        dot(vLocal, vec3(0.42, 0.34, 0.84)) * 0.88
+        dot(vLocal, vec3(0.78, 0.18, -0.59)) * 0.58,
+        dot(vLocal, vec3(-0.22, 0.92, 0.31)) * 0.43,
+        dot(vLocal, vec3(0.42, 0.34, 0.84)) * 0.52
       );
-      float facetTone = hash31(floor(facetCoord + vec3(vLamella * 1.73, vBack * 2.9, 0.0)));
+      float facetTone = floor(hash31(floor(facetCoord + vec3(vLamella * 1.73, vBack * 2.9, 0.0))) * 3.0) / 2.0;
 
       if (uMaterial < 0.5) {
-        color = mix(obsidian, graphite, 0.22 + facetTone * 0.34);
-        color *= 0.32 + diffuse * 0.76;
-        color += ultramarine * fresnel * (0.13 + vLamella * 0.018);
-        color += bone * specular * (0.23 + uReconstitution * 0.06);
-        color *= mix(1.0, 0.56, clamp(vBack, 0.0, 1.0));
+        color = mix(obsidian, graphite, 0.32 + facetTone * 0.54);
+        color *= mix(0.88, 1.12, facetTone) * (0.58 + wrapDiffuse * 0.44 + skyFill * 0.06);
+        color += graphite * fill * 0.24;
+        color = mix(color, ultramarine, (0.045 + fresnel * 0.13) * (0.55 + facetTone * 0.35));
+        color += bone * specular * (0.30 + uReconstitution * 0.06);
+        color *= mix(1.0, 0.76, clamp(vBack, 0.0, 1.0));
 
         float nacreA = smoothstep(0.15, 0.22, vAlong) * (1.0 - smoothstep(0.43, 0.52, vAlong));
         nacreA *= smoothstep(-0.92, -0.46, vAcross) * (1.0 - smoothstep(0.18, 0.54, vAcross));
         float nacreB = smoothstep(0.58, 0.66, vAlong) * (1.0 - smoothstep(0.82, 0.90, vAlong));
         nacreB *= smoothstep(-0.40, -0.02, vAcross) * (1.0 - smoothstep(0.70, 0.92, vAcross));
-        float planeLight = max(nacreA * (0.30 + facetTone * 0.28), nacreB * (0.20 + (1.0 - facetTone) * 0.24));
-        color += bone * planeLight * (0.050 + diffuse * 0.040 + uCrown * 0.018);
+        float nacreMask = max(nacreA * (0.34 + facetTone * 0.22), nacreB * (0.30 + (1.0 - facetTone) * 0.20));
+        vec3 nacreMat = bone * (0.48 + wrapDiffuse * 0.38);
+        color = mix(color, nacreMat, nacreMask * (0.28 + uCrown * 0.025));
 
-        float mineralSeam = pow(max(0.0, 1.0 - abs(sin(vAlong * 8.6 + vAcross * 1.8 + vLamella * 2.4))), 48.0);
+        float mineralSeam = pow(max(0.0, 1.0 - abs(sin(vAlong * 3.8 + vAcross * 1.5 + vLamella * 2.4))), 64.0);
         mineralSeam *= smoothstep(0.08, 0.24, vAlong) * (1.0 - smoothstep(0.78, 0.94, vAlong));
-        color += bone * mineralSeam * (0.018 + fresnel * 0.035);
-        float edge = smoothstep(0.88, 0.985, abs(vAcross));
-        float serration = step(0.62, fract(vAlong * 19.0 + vLamella * 0.37));
-        color += bone * edge * serration * (0.030 + fresnel * 0.055);
+        color += bone * mineralSeam * (0.035 + fresnel * 0.025);
 
         float machineMask = 1.0 - smoothstep(0.16, 0.42, abs(uActiveWorld - 1.0));
         float makerMask = 1.0 - smoothstep(0.16, 0.42, abs(uActiveWorld - 2.0));
@@ -831,10 +842,11 @@
         float core = pow(clamp(1.0 - abs(vAcross), 0.0, 1.0), 5.0);
         float edgeGlow = smoothstep(0.18, 0.62, abs(vAcross)) * (1.0 - smoothstep(0.72, 0.98, abs(vAcross)));
         float fade = smoothstep(0.0, 0.09, vAlong) * (1.0 - smoothstep(0.91, 1.0, vAlong));
-        color = mix(vec3(0.006, 0.005, 0.008), bone, core * 0.78);
-        color += coral * edgeGlow * (0.055 + uPressure * 0.030 + uCrown * 0.035);
-        color += bone * core * underLight * (0.08 + uReconstitution * 0.05);
-        alpha = (0.10 + core * (0.72 + uCrown * 0.12)) * fade;
+        vec3 sovereignGold = vec3(0.960, 0.875, 0.720);
+        color = mix(vec3(0.006, 0.005, 0.008), sovereignGold, core * 0.90);
+        color += coral * edgeGlow * (0.040 + uPressure * 0.025 + uCrown * 0.030);
+        color += bone * core * underLight * (0.10 + uReconstitution * 0.055);
+        alpha = (0.12 + core * (0.80 + uCrown * 0.08)) * fade;
         alpha *= mix(1.0, 0.20, uGhost);
       } else {
         color = mix(obsidian, graphite, 0.18 + facetTone * 0.24);
@@ -849,7 +861,7 @@
       float selectedPulse = 0.5 + 0.5 * sin(movingTime * 1.12 + uActiveSub * 1.9);
       color += coral * uDetailMix * selectedPulse * 0.006;
       color += vec3(0.008, 0.007, 0.012) * uReturn;
-      color = pow(max(color, vec3(0.0)), vec3(0.92));
+      color = pow(max(color, vec3(0.0)), vec3(0.84));
       outColor = vec4(color, alpha);
     }
   `;
@@ -1241,60 +1253,63 @@
     drawPointsGL();
   }
 
-  function fallbackBodyPath(context, scale) {
-    const path = new Path2D();
-    // Long rising blade: load-bearing, open at both crown and keel.
-    path.moveTo(-0.86 * scale, 3.14 * scale);
-    path.bezierCurveTo(-2.18 * scale, 2.34 * scale, -2.54 * scale, -0.46 * scale, -1.10 * scale, -2.74 * scale);
-    path.bezierCurveTo(-0.91 * scale, -2.92 * scale, -0.62 * scale, -2.82 * scale, -0.49 * scale, -2.50 * scale);
-    path.bezierCurveTo(-1.18 * scale, -1.10 * scale, -1.06 * scale, 0.46 * scale, -0.20 * scale, 2.66 * scale);
-    path.bezierCurveTo(-0.30 * scale, 2.98 * scale, -0.58 * scale, 3.18 * scale, -0.86 * scale, 3.14 * scale);
-    path.closePath();
+  function fallbackBodyPaths(scale) {
+    const blade = new Path2D();
+    // Long load blade: lower-left to upper-right, never a returning arc.
+    blade.moveTo(-1.86 * scale, -2.50 * scale);
+    blade.bezierCurveTo(-1.46 * scale, -1.34 * scale, -0.22 * scale, 1.12 * scale, 0.40 * scale, 3.18 * scale);
+    blade.bezierCurveTo(0.48 * scale, 3.38 * scale, 0.70 * scale, 3.26 * scale, 0.64 * scale, 3.02 * scale);
+    blade.bezierCurveTo(0.08 * scale, 0.74 * scale, -1.10 * scale, -1.60 * scale, -1.52 * scale, -2.66 * scale);
+    blade.bezierCurveTo(-1.64 * scale, -2.82 * scale, -1.84 * scale, -2.72 * scale, -1.86 * scale, -2.50 * scale);
+    blade.closePath();
 
-    // Counter-rotated sail: shorter, narrower and deliberately misregistered.
-    path.moveTo(0.76 * scale, 2.28 * scale);
-    path.bezierCurveTo(1.82 * scale, 1.48 * scale, 2.04 * scale, -0.34 * scale, 1.20 * scale, -1.92 * scale);
-    path.bezierCurveTo(1.00 * scale, -2.22 * scale, 0.68 * scale, -2.36 * scale, 0.48 * scale, -2.08 * scale);
-    path.bezierCurveTo(1.04 * scale, -0.88 * scale, 1.03 * scale, 0.48 * scale, 0.36 * scale, 1.88 * scale);
-    path.bezierCurveTo(0.44 * scale, 2.14 * scale, 0.61 * scale, 2.29 * scale, 0.76 * scale, 2.28 * scale);
-    path.closePath();
+    // Detached upper sail: a short horizontal counter-pressure.
+    const sail = new Path2D();
+    sail.moveTo(0.52 * scale, 2.34 * scale);
+    sail.bezierCurveTo(1.14 * scale, 2.30 * scale, 2.02 * scale, 1.84 * scale, 2.40 * scale, 1.04 * scale);
+    sail.bezierCurveTo(2.50 * scale, 0.84 * scale, 2.32 * scale, 0.72 * scale, 2.16 * scale, 0.84 * scale);
+    sail.bezierCurveTo(1.66 * scale, 1.42 * scale, 1.06 * scale, 1.80 * scale, 0.68 * scale, 2.70 * scale);
+    sail.bezierCurveTo(0.54 * scale, 2.84 * scale, 0.38 * scale, 2.54 * scale, 0.52 * scale, 2.34 * scale);
+    sail.closePath();
 
-    // Grounding keel: a third, low diagonal fold rather than a shared root.
-    path.moveTo(-1.62 * scale, -1.96 * scale);
-    path.bezierCurveTo(-0.72 * scale, -2.44 * scale, 0.34 * scale, -2.20 * scale, 1.30 * scale, -1.32 * scale);
-    path.bezierCurveTo(1.42 * scale, -1.16 * scale, 1.28 * scale, -0.98 * scale, 1.02 * scale, -1.00 * scale);
-    path.bezierCurveTo(0.18 * scale, -1.60 * scale, -0.72 * scale, -1.78 * scale, -1.74 * scale, -1.66 * scale);
-    path.bezierCurveTo(-1.88 * scale, -1.72 * scale, -1.82 * scale, -1.90 * scale, -1.62 * scale, -1.96 * scale);
-    path.closePath();
-    return path;
+    // Detached cross-keel: transverse, grounded and face-visible.
+    const keel = new Path2D();
+    keel.moveTo(-2.22 * scale, 0.18 * scale);
+    keel.bezierCurveTo(-1.50 * scale, -0.82 * scale, -0.34 * scale, -1.86 * scale, 1.04 * scale, -1.74 * scale);
+    keel.bezierCurveTo(1.18 * scale, -1.70 * scale, 1.18 * scale, -1.48 * scale, 0.98 * scale, -1.40 * scale);
+    keel.bezierCurveTo(-0.18 * scale, -1.16 * scale, -1.14 * scale, -0.36 * scale, -2.02 * scale, 0.42 * scale);
+    keel.bezierCurveTo(-2.18 * scale, 0.56 * scale, -2.34 * scale, 0.40 * scale, -2.22 * scale, 0.18 * scale);
+    keel.closePath();
+
+    const compound = new Path2D();
+    compound.addPath(blade);
+    compound.addPath(keel);
+    compound.addPath(sail);
+    return { blade, keel, sail, compound };
   }
 
   function fallbackWoundPath(scale) {
     const path = new Path2D();
-    path.moveTo(-0.20 * scale, 2.58 * scale);
-    path.bezierCurveTo(0.10 * scale, 2.24 * scale, 0.42 * scale, 2.06 * scale, 0.70 * scale, 1.74 * scale);
-    path.bezierCurveTo(0.49 * scale, 1.18 * scale, 0.92 * scale, 0.62 * scale, 0.66 * scale, 0.06 * scale);
-    path.bezierCurveTo(0.48 * scale, -0.36 * scale, 0.86 * scale, -0.92 * scale, 0.70 * scale, -1.54 * scale);
-    path.bezierCurveTo(0.62 * scale, -1.74 * scale, 0.38 * scale, -1.92 * scale, 0.10 * scale, -2.08 * scale);
+    path.moveTo(-1.16 * scale, -1.72 * scale);
+    path.bezierCurveTo(0.14 * scale, -1.08 * scale, -0.12 * scale, 0.32 * scale, 0.98 * scale, 1.48 * scale);
     return path;
   }
 
   function fallbackLayout(detail = false, state = cycleState(elapsed)) {
     const shift = screenShift(detail);
-    const compact = isCompactLayout();
-    const artifactWidth = width * (compact ? 0.82 : 0.61);
-    const artifactHeight = height * (compact ? 0.64 : 0.79);
     const orientation = currentOrientation(detail);
-    const scale = Math.min(artifactWidth / 7.4, artifactHeight / 6.55) * orientation.zoom;
+    const viewportScale = viewportShapeScale();
+    const focal = 1 / Math.tan(43 * Math.PI / 360);
+    const scale = height * focal / 20 * orientation.zoom;
     return {
       centerX: width * (0.5 + shift.x * 0.5),
       centerY: height * (0.5 - shift.y * 0.5),
       scale,
       orientation,
       angle: orientation.roll + orientation.yaw * 0.045,
-      scaleX: (1 - state.pressure * 0.105 - state.subtraction * 0.08)
+      scaleX: viewportScale.x * (1 - state.pressure * 0.105 - state.subtraction * 0.08)
         * (0.94 + Math.cos(orientation.yaw) * 0.06),
-      scaleY: 1 - state.pressure * 0.035,
+      scaleY: viewportScale.y * (1 - state.pressure * 0.035),
     };
   }
 
@@ -1325,7 +1340,8 @@
     context.translate(centerX, centerY);
     context.rotate(layout.angle);
     context.scale(layout.scaleX, layout.scaleY);
-    const body = fallbackBodyPath(context, scale);
+    const paths = fallbackBodyPaths(scale);
+    const body = paths.compound;
     const wound = fallbackWoundPath(scale);
 
     context.save();
@@ -1354,7 +1370,16 @@
     mineralGradient.addColorStop(1, '#020307');
     context.globalAlpha = 1 - state.subtraction * 0.28;
     context.fillStyle = mineralGradient;
-    context.fill(body);
+    context.fill(paths.blade);
+    context.save();
+    context.lineJoin = 'round';
+    context.lineWidth = Math.max(2, scale * 0.055);
+    context.strokeStyle = '#050405';
+    context.stroke(paths.keel);
+    context.fill(paths.keel);
+    context.stroke(paths.sail);
+    context.fill(paths.sail);
+    context.restore();
 
     context.save();
     context.clip(body);
@@ -1421,6 +1446,17 @@
       context.restore();
     }
 
+    // Reinstate negative-space channels after world accents so the three
+    // pressure folds keep crossing in depth rather than collapsing into a rune.
+    context.save();
+    context.globalAlpha = 0.82;
+    context.lineJoin = 'round';
+    context.lineWidth = Math.max(1, scale * 0.025);
+    context.strokeStyle = '#050405';
+    context.stroke(paths.keel);
+    context.stroke(paths.sail);
+    context.restore();
+
     context.save();
     context.shadowColor = 'rgba(219,164,114,.22)';
     context.shadowBlur = scale * (0.055 + state.crown * 0.025);
@@ -1466,6 +1502,8 @@
     }
     context.restore();
 
+    context.save();
+    context.setTransform(dpr, 0, 0, dpr, 0, 0);
     pointSet().forEach(({ point, color, size }) => {
       const projected = projectFallbackPoint(point, Boolean(activeWorld));
       const radius = size * 0.58;
@@ -1477,6 +1515,7 @@
       context.fillStyle = gradient;
       context.fillRect(projected.x - radius, projected.y - radius, radius * 2, radius * 2);
     });
+    context.restore();
   }
 
   function updateProjectedTargets() {
@@ -1803,8 +1842,8 @@
         detailPitch = clamp(pinchState.detailPitch - midDy * 0.0022, -0.24, 0.24);
       } else {
         overviewZoom = clamp(pinchState.overviewZoom * ratio, 0.80, 1.10);
-        overviewRoll = clamp(pinchState.overviewRoll + rotation, -0.10, 0.10);
-        overviewYaw = clamp(pinchState.overviewYaw - midDx * 0.0024, -0.68, 0.52);
+        overviewRoll = clamp(pinchState.overviewRoll + rotation, -0.18, 0.16);
+        overviewYaw = clamp(pinchState.overviewYaw - midDx * 0.0024, -0.72, 0.76);
         overviewPitch = clamp(pinchState.overviewPitch - midDy * 0.0022, -0.26, 0.24);
       }
       gestureHadPinch = true;
@@ -1822,7 +1861,7 @@
         detailPitchVelocity = -dy * 0.0038 / dt;
         hoverSub = -1;
       } else if (viewMix < 0.38) {
-        overviewYaw = clamp(overviewYaw - dx * 0.0042, -0.68, 0.52);
+        overviewYaw = clamp(overviewYaw - dx * 0.0042, -0.72, 0.76);
         overviewPitch = clamp(overviewPitch - dy * 0.0038, -0.26, 0.24);
         overviewYawVelocity = -dx * 0.0042 / dt;
         overviewPitchVelocity = -dy * 0.0038 / dt;
@@ -1869,10 +1908,10 @@
         detailYaw = detailPitch = detailRoll = 0;
         detailZoom = 1;
       } else {
-        overviewYaw = -0.34;
-        overviewPitch = -0.08;
-        overviewRoll = -0.035;
-        overviewZoom = 0.84;
+        overviewYaw = 0.48;
+        overviewPitch = -0.16;
+        overviewRoll = -0.12;
+        overviewZoom = 0.97;
       }
     }
     lastTapAt = now;
@@ -1944,7 +1983,7 @@
         detailPitchVelocity *= decay;
         detailRollVelocity *= decay;
       } else if (viewMix < 0.45) {
-        overviewYaw = clamp(overviewYaw + overviewYawVelocity * dt, -0.68, 0.52);
+        overviewYaw = clamp(overviewYaw + overviewYawVelocity * dt, -0.72, 0.76);
         overviewPitch = clamp(overviewPitch + overviewPitchVelocity * dt, -0.26, 0.24);
         const decay = Math.exp(-dt * 6.8);
         overviewYawVelocity *= decay;

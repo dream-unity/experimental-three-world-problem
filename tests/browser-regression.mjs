@@ -430,7 +430,7 @@ await run('all nine games keep responsive frame scheduling without long tasks', 
     await launch(page, world, index);
     await page.locator('#gameStart').click();
     await page.evaluate(() => {
-      const probe = window.__dreamUnityPerformanceProbe = { frames: 0, maxGap: 0, last: performance.now(), running: true, longTasks: 0 };
+      const probe = window.__dreamUnityPerformanceProbe = { frames: 0, maxGap: 0, last: null, running: true, longTasks: 0 };
       try {
         probe.observer = new PerformanceObserver(list => {
           probe.longTasks += list.getEntries().filter(entry => entry.duration >= 120).length;
@@ -439,7 +439,7 @@ await run('all nine games keep responsive frame scheduling without long tasks', 
       } catch { /* Long Task API is optional. */ }
       requestAnimationFrame(function tick(now) {
         if (!probe.running) return;
-        probe.maxGap = Math.max(probe.maxGap, now - probe.last);
+        if (probe.last !== null) probe.maxGap = Math.max(probe.maxGap, now - probe.last);
         probe.last = now;
         probe.frames++;
         requestAnimationFrame(tick);
@@ -447,12 +447,13 @@ await run('all nine games keep responsive frame scheduling without long tasks', 
     });
     // Wait for the browser to prove that animation is scheduling instead of
     // sampling an arbitrary fixed window. SwiftShader occasionally defers the
-    // first rAF while a newly opened game uploads its canvas state; two frames
-    // inside one second still catches a real stall without manufacturing one.
+    // first rAF while a newly opened game uploads its canvas state. Ignore that
+    // startup latency, then require three frames so two real scheduling gaps are
+    // measured. Long-task observation independently catches blocking startup.
     await page.waitForFunction(
-      () => window.__dreamUnityPerformanceProbe?.frames >= 2,
+      () => window.__dreamUnityPerformanceProbe?.frames >= 3,
       null,
-      { timeout: 1000, polling: 40 },
+      { timeout: 1500, polling: 40 },
     );
     const probe = await page.evaluate(() => {
       const value = window.__dreamUnityPerformanceProbe;
@@ -462,7 +463,7 @@ await run('all nine games keep responsive frame scheduling without long tasks', 
     });
     console.log(`PERF ${world}:${index} ${probe.frames} frames · ${probe.maxGap.toFixed(1)}ms max gap · ${probe.longTasks} long tasks`);
     assert.ok(probe.maxGap < 140, `${world}:${index} stalled for ${probe.maxGap.toFixed(1)}ms across ${probe.frames} frames`);
-    assert.ok(probe.frames >= 2, `${world}:${index} stopped scheduling frames; max gap ${probe.maxGap.toFixed(1)}ms`);
+    assert.ok(probe.frames >= 3, `${world}:${index} stopped scheduling frames; max gap ${probe.maxGap.toFixed(1)}ms`);
     assert.equal(probe.longTasks, 0, `${world}:${index} produced a long task`);
     await close(page);
   }
