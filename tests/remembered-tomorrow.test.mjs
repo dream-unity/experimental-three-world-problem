@@ -30,6 +30,8 @@ const theme = read('unity-cycle.css');
 const lightSurface = read('light-theme.js');
 const resonator = read(overrides[0]);
 const renderer = read(overrides[1]);
+const pointerInput = read('visual-parts/part-05.txt');
+const inertialInput = read('visual-parts/part-06.txt');
 
 assert.match(index, /AWAKEN THE TRUE WAR/);
 assert.match(index, /Somewhere out in the universe/);
@@ -68,6 +70,7 @@ assert.match(theme, /\.arcade\{background:var\(--paper\)/);
 assert.match(theme, /no neon bunker/);
 assert.match(theme, /\.score-control\{[\s\S]*?height:44px/);
 assert.doesNotMatch(theme, /radial-gradient\(circle at 50% 46%/i);
+assert.doesNotMatch(theme, /#app\[data-score-phase=/, 'the public score must not create a contradictory visible phase clock');
 assert.match(lightSurface, /this\.id === 'gameCanvas'/);
 assert.match(lightSurface, /__dreamUnityLightSurface/);
 assert.match(lightSurface, /!isGame/);
@@ -102,6 +105,14 @@ assert.doesNotMatch(
   /Math\.max\(\s*score\.(?:subtraction|rebuild|crown|release)\s*,\s*srForm/,
   'independent score clocks must never be max-mixed into contradictory material states',
 );
+
+for (const input of [pointerInput, inertialInput]) {
+  assert.match(input, /-0\.314, 0\.314/, 'input pitch must share the renderer pitch envelope');
+  assert.match(input, /0\.88, 1\.12/, 'input zoom must share the renderer zoom envelope');
+  assert.doesNotMatch(input, /-1\.1[68], 1\.1[68]|0\.(?:66|72), 1\.(?:55|62)/, 'latent input dead zones must not return');
+}
+assert.match(pointerInput, /-0\.122, 0\.122/, 'pinch roll must share the renderer roll envelope');
+assert.match(inertialInput, /-0\.122, 0\.122/, 'inertial roll must share the renderer roll envelope');
 
 for (const marker of [
   "WORLD.machine.css = '#00CFFF'",
