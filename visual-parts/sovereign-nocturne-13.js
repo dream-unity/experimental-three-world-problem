@@ -136,9 +136,9 @@
   const subScreen = [0, 1, 2].map((index) => ({ x: 0, y: 0, r: 25, z: 0, index }));
 
   const WORLD_PINS = {
-    machine: { x: 0.34, y: 2.55, z: 0.30 },
-    maker: { x: 0.58, y: 0.24, z: 0.72 },
-    reality: { x: 1.12, y: -1.10, z: 0.10 },
+    machine: { x: -1.15, y: 3.55, z: 0.28 },
+    maker: { x: -2.65, y: 0.42, z: 0.25 },
+    reality: { x: 3.35, y: -1.04, z: 0.35 },
   };
   const DETAIL_PINS = {
     machine: [
@@ -270,16 +270,16 @@
       world: 2,
       stations: [0, 0.15, 0.31, 0.49, 0.66, 0.83, 1],
       points: [
-        { x: -9.50, y: -1.18, z: 0.05 },
-        { x: -6.30, y: -1.30, z: 0.35 },
-        { x: -3.40, y: -1.08, z: -0.20 },
-        { x: -0.65, y: -1.22, z: 0.22 },
-        { x: 2.40, y: -0.98, z: -0.28 },
-        { x: 6.00, y: -1.16, z: 0.42 },
-        { x: 9.80, y: -1.04, z: -0.08 },
+        { x: -9.50, y: -1.38, z: 0.05 },
+        { x: -6.30, y: -1.50, z: 0.35 },
+        { x: -3.40, y: -1.28, z: -0.20 },
+        { x: -0.65, y: -1.42, z: 0.22 },
+        { x: 2.40, y: -1.18, z: -0.28 },
+        { x: 6.00, y: -1.36, z: 0.42 },
+        { x: 9.80, y: -1.24, z: -0.08 },
       ],
       leftWidths: [0.28, 0.22, 0.36, 0.18, 0.31, 0.24, 0.34],
-      rightWidths: [4.20, 5.00, 4.40, 5.60, 4.70, 5.20, 4.10],
+      rightWidths: [8.40, 9.20, 8.70, 10.00, 8.80, 9.40, 8.30],
       banks: [-0.08, 0.10, -0.06, 0.12, -0.10, 0.07, -0.05],
       sideAxis: { x: 0, y: -0.42, z: 1 },
       camber: 0.025,
@@ -292,14 +292,14 @@
   const SOVEREIGN_WOUND = {
     stations: [0, 0.14, 0.29, 0.45, 0.61, 0.76, 0.84, 1],
     points: [
-      { x: 0.12, y: 5.00, z: -0.35 },
-      { x: 0.46, y: 3.75, z: 0.15 },
-      { x: 0.24, y: 2.55, z: -0.18 },
-      { x: 0.72, y: 1.35, z: 0.48 },
-      { x: 0.52, y: 0.18, z: 0.72 },
-      { x: 0.94, y: -0.74, z: 0.28 },
-      { x: 1.16, y: -1.16, z: 0.02 },
-      { x: 1.54, y: -2.80, z: -0.22 },
+      { x: -1.15, y: 5.00, z: -0.35 },
+      { x: -0.82, y: 3.75, z: 0.15 },
+      { x: -0.52, y: 2.55, z: -0.18 },
+      { x: -0.05, y: 1.35, z: 0.48 },
+      { x: 0.62, y: 0.18, z: 0.72 },
+      { x: 1.25, y: -0.74, z: 0.28 },
+      { x: 1.82, y: -1.16, z: 0.02 },
+      { x: 2.90, y: -2.80, z: -0.22 },
     ],
     halfWidths: [0.004, 0.006, 0.010, 0.018, 0.035, 0.052, 0.028, 0.006],
     heat: [0.04, 0.10, 0.22, 0.46, 0.78, 1.00, 0.58, 0.08],
@@ -663,6 +663,7 @@
     uniform float uPressure;
     uniform float uCrown;
     uniform float uReturn;
+    uniform float uReconstitution;
     uniform float uReduced;
     uniform float uActiveWorld;
     uniform float uDetailMix;
@@ -717,10 +718,25 @@
         float distanceToStrand = abs(lateral - trajectory);
         float width = 0.00058 + 0.00022 * hash21(vec2(strand + seed, seed * 3.1));
         float filament = 1.0 - smoothstep(width, width * 3.4, distanceToStrand);
-        float phrasing = 0.30 + 0.70 * smoothstep(0.26, 0.82, noise(vec2(along * 8.4 + seed, strand * 2.7 + seed)));
+        float phraseWave = 0.5 + 0.5 * sin(along * 11.7 + seed * 2.1 + strand * 1.83 - movingTime * 0.026);
+        float phrasing = 0.30 + 0.70 * smoothstep(0.18, 0.86, phraseWave);
         family += filament * extent * phrasing;
       }
       return min(family, 1.35);
+    }
+
+    float currentVeil(vec2 point, vec2 direction, float spread, float seed, float movingTime) {
+      vec2 across = vec2(-direction.y, direction.x);
+      float along = dot(point, direction);
+      float lateral = dot(point, across);
+      float fan = smoothstep(-0.025, 0.72, along);
+      float extent = smoothstep(-0.055, 0.035, along) * (1.0 - smoothstep(0.70, 1.02, along));
+      float axis = sin(along * 4.7 + seed + movingTime * 0.018) * (0.004 + fan * spread * 0.18);
+      axis += sin(along * 10.9 - seed * 1.7) * fan * spread * 0.07;
+      float width = mix(0.012, spread * 2.35, fan);
+      float body = exp(-pow(abs(lateral - axis) / max(0.001, width), 1.72));
+      float breath = 0.42 + 0.58 * noise(vec2(along * 5.6 + seed, lateral * 19.0 - movingTime * 0.006));
+      return body * extent * breath;
     }
 
     void main() {
@@ -738,23 +754,29 @@
       float machine = currentFamily(point, machineDirection, 0.031, 1.4, movingTime);
       float maker = currentFamily(point, makerDirection, 0.036, 4.7, movingTime);
       float world = currentFamily(point, worldDirection, 0.040, 8.3, movingTime);
+      float machineVeil = currentVeil(point, machineDirection, 0.031, 1.4, movingTime);
+      float makerVeil = currentVeil(point, makerDirection, 0.036, 4.7, movingTime);
+      float worldVeil = currentVeil(point, worldDirection, 0.040, 8.3, movingTime);
       float machineFocus = 1.0 - smoothstep(0.16, 0.42, abs(uActiveWorld - 1.0));
       float makerFocus = 1.0 - smoothstep(0.16, 0.42, abs(uActiveWorld - 2.0));
       float worldFocus = 1.0 - smoothstep(0.16, 0.42, abs(uActiveWorld - 3.0));
       machine *= mix(1.0, mix(0.74, 1.34, machineFocus), uDetailMix);
       maker *= mix(1.0, mix(0.74, 1.34, makerFocus), uDetailMix);
       world *= mix(1.0, mix(0.74, 1.34, worldFocus), uDetailMix);
+      machineVeil *= mix(1.0, mix(0.70, 1.28, machineFocus), uDetailMix);
+      makerVeil *= mix(1.0, mix(0.70, 1.28, makerFocus), uDetailMix);
+      worldVeil *= mix(1.0, mix(0.70, 1.28, worldFocus), uDetailMix);
       float convergence = exp(-dot(point * vec2(17.0, 10.0), point * vec2(17.0, 10.0)));
       float embodied = smoothstep(0.03, 0.34, machine + maker + world) * convergence;
 
       float horizonY = mix(0.615, 0.640, portrait);
       vec2 reflectedScreen = vec2(screen.x, horizonY * 2.0 - screen.y);
       vec2 reflectedPoint = (reflectedScreen - throat) * vec2(aspect, 1.0) + vec2(-0.020, 0.012);
-      float ghostMachine = currentFamily(reflectedPoint, machineDirection, 0.031, 1.86, movingTime + 2.8);
-      float ghostMaker = currentFamily(reflectedPoint, makerDirection, 0.036, 5.16, movingTime + 2.8);
-      float ghostWorld = currentFamily(reflectedPoint, worldDirection, 0.040, 8.76, movingTime + 2.8);
+      float ghostVeil = currentVeil(reflectedPoint, machineDirection, 0.031, 1.86, movingTime + 2.8)
+        + currentVeil(reflectedPoint, makerDirection, 0.036, 5.16, movingTime + 2.8)
+        + currentVeil(reflectedPoint, worldDirection, 0.040, 8.76, movingTime + 2.8);
       float belowHorizon = smoothstep(horizonY - 0.008, horizonY + 0.035, screen.y);
-      float ghost = (ghostMachine + ghostMaker + ghostWorld) * belowHorizon;
+      float ghost = ghostVeil * belowHorizon;
 
       float faultX = mix(0.462, 0.450, portrait) + (screen.y - mix(0.19, 0.31, portrait)) * mix(0.205, 0.145, portrait);
       float signedFault = screen.x - faultX;
@@ -764,45 +786,77 @@
       float leadingGhost = smoothstep(0.0, 0.016, signedFault)
         * exp(-abs(signedFault) * 28.0) * faultExtent * (machine + maker + world);
 
-      vec2 cutStart = mix(vec2(0.420, 0.165), vec2(0.450, 0.305), portrait);
-      vec2 cutEnd = mix(vec2(0.640, 0.755), vec2(0.575, 0.635), portrait);
+      vec2 cutStart = mix(vec2(0.400, 0.130), vec2(0.430, 0.240), portrait);
+      vec2 cutEnd = mix(vec2(0.680, 0.820), vec2(0.690, 0.780), portrait);
       float cutNoise = (noise(screen * vec2(86.0, 62.0) + vec2(movingTime * 0.025, 7.1)) - 0.5) * 0.0035;
       float cutDistance = max(0.0, sdSegment(screen, cutStart, cutEnd) + cutNoise);
       float rupture = clamp(uCrown * 0.92 + uReconstitution * 0.32 + uPressure * 0.08, 0.0, 1.0);
+      float ruptureWindow = smoothstep(0.24, 0.34, screen.y) * (1.0 - smoothstep(0.73, 0.84, screen.y));
       float cutCore = (1.0 - smoothstep(0.00045, 0.0021, cutDistance)) * rupture;
-      float cutHalo = exp(-cutDistance * mix(58.0, 76.0, portrait)) * rupture;
+      float cutHalo = exp(-cutDistance * mix(38.0, 48.0, portrait)) * rupture * (0.20 + ruptureWindow * 0.80);
       float serration = smoothstep(0.53, 0.78, noise(screen * vec2(74.0, 93.0) + 3.7));
       cutCore *= 0.72 + serration * 0.38;
 
       float horizonNoise = fbm(vec2(screen.x * 5.2, movingTime * 0.006));
       float horizon = exp(-abs(screen.y - horizonY - (horizonNoise - 0.5) * 0.0032) * 104.0);
-      horizon *= 1.0 - smoothstep(0.18, 0.98, abs(screen.x - throat.x) * 1.3);
+      float horizonFaultX = mix(cutStart.x, cutEnd.x, clamp((horizonY - cutStart.y) / max(0.001, cutEnd.y - cutStart.y), 0.0, 1.0));
+      float horizonGap = exp(-pow((screen.x - horizonFaultX) / mix(0.042, 0.064, portrait), 2.0));
+      horizon *= mix(1.0, 0.18, horizonGap) * mix(0.42, 1.0, smoothstep(0.38, 0.72, horizonNoise));
       float atmospheric = fbm(point * vec2(1.8, 2.6) + vec2(movingTime * 0.004, -movingTime * 0.002));
       float fieldMask = exp(-dot(point * vec2(0.62, 0.84), point * vec2(0.62, 0.84)));
+      vec2 bloomPoint = screen - mix(vec2(0.590, 0.460), vec2(0.560, 0.480), portrait);
+      bloomPoint.x += bloomPoint.y * 0.28;
+      float counterBloom = exp(-dot(bloomPoint * vec2(3.25, 1.85), bloomPoint * vec2(3.25, 1.85)));
+      counterBloom *= 0.34 + 0.66 * fbm(bloomPoint * vec2(3.8, 4.6) + vec2(2.1, -1.7));
+      float climax = smoothstep(0.32, 0.94, uReconstitution * 0.70 + uCrown * 0.82 + uReturn * 0.10);
       float granular = hash21(floor(gl_FragCoord.xy * 0.56) + floor(movingTime * 0.27));
+
+      vec2 depositCenter = mix(vec2(0.585, 0.555), vec2(0.565, 0.565), portrait);
+      vec2 depositScale = mix(vec2(0.115, 0.145), vec2(0.205, 0.135), portrait);
+      vec2 depositUv = (screen - depositCenter) / depositScale + 0.5;
+      vec2 depositGrid = depositUv * vec2(12.0, 10.0);
+      vec2 depositCell = floor(depositGrid);
+      vec2 depositLocal = fract(depositGrid);
+      float depositSeed = hash21(depositCell + vec2(19.7, 41.3));
+      vec2 depositPoint = vec2(hash21(depositCell + 2.1), hash21(depositCell + 8.7));
+      float depositRadius = mix(0.055, 0.18, hash21(depositCell + 14.4));
+      float depositHue = hash21(depositCell + vec2(31.4, 7.6));
+      float deposit = 1.0 - smoothstep(depositRadius, depositRadius * 1.9, length(depositLocal - depositPoint));
+      float depositBounds = step(0.0, depositUv.x) * step(depositUv.x, 1.0)
+        * step(0.0, depositUv.y) * step(depositUv.y, 1.0) * step(0.30, depositSeed);
+      deposit *= depositBounds * (0.20 + uPressure * 0.30 + uReconstitution * 0.50);
 
       vec3 bone = vec3(0.900, 0.850, 0.755);
       vec3 coral = vec3(0.980, 0.235, 0.245);
       vec3 cyan = vec3(0.160, 0.535, 0.590);
       vec3 emerald = vec3(0.160, 0.465, 0.340);
       vec3 violet = vec3(0.345, 0.265, 0.550);
-      vec3 color = vec3(0.0055, 0.0052, 0.0072);
-      color += vec3(0.018, 0.012, 0.018) * atmospheric * fieldMask * 0.30;
-      color += cyan * machine * 0.145;
-      color += emerald * maker * 0.135;
-      color += violet * world * 0.150;
+      vec3 color = vec3(0.0090, 0.0080, 0.0125);
+      float radiance = 0.72 + uPressure * 0.18 + uReconstitution * 0.42 + uCrown * 0.58;
+      color += vec3(0.045, 0.027, 0.043) * atmospheric * fieldMask * 0.48;
+      color += mix(vec3(0.105, 0.115, 0.185), vec3(0.235, 0.095, 0.085), smoothstep(-0.22, 0.30, bloomPoint.y))
+        * counterBloom * (0.030 + 0.068 * climax);
+      color += mix(cyan, bone, 0.42) * machineVeil * 0.090 * radiance;
+      color += mix(emerald, bone, 0.46) * makerVeil * 0.082 * radiance;
+      color += mix(violet, bone, 0.40) * worldVeil * 0.096 * radiance;
+      color += cyan * machine * 0.265 * radiance;
+      color += emerald * maker * 0.245 * radiance;
+      color += violet * world * 0.275 * radiance;
       color = mix(color, color * 0.12, faultBand * (0.72 - rupture * 0.24));
       color += mix(vec3(0.10, 0.14, 0.18), bone, 0.18) * leadingGhost * 0.10 * (1.0 - uCrown * 0.82);
-      color += mix(violet, bone, 0.22) * ghost * (0.038 + uReturn * 0.024);
-      color += bone * embodied * (0.14 + uPressure * 0.16 + uReconstitution * 0.22);
-      color += vec3(0.22, 0.105, 0.090) * convergence * (0.055 + uPressure * 0.075 + uCrown * 0.11);
-      color += bone * horizon * (0.012 + uReturn * 0.025);
-      color += coral * cutHalo * (0.020 + uCrown * 0.040);
-      color += mix(coral, bone, 1.0 - smoothstep(0.0004, 0.0021, cutDistance)) * cutCore * 0.76;
+      color += mix(violet, bone, 0.34) * ghostVeil * belowHorizon * (0.020 + uReturn * 0.030);
+      color += mix(violet, bone, 0.30) * ghost * (0.062 + uReturn * 0.040);
+      color += bone * embodied * (0.24 + uPressure * 0.22 + uReconstitution * 0.34);
+      color += vec3(0.34, 0.145, 0.115) * convergence * (0.085 + uPressure * 0.11 + uCrown * 0.18);
+      color += bone * horizon * (0.024 + uReturn * 0.040 + uCrown * 0.015);
+      color += coral * cutHalo * (0.070 + uCrown * 0.160);
+      color += mix(coral, bone, 1.0 - smoothstep(0.0004, 0.0021, cutDistance)) * cutCore * (0.84 + ruptureWindow * 0.28);
+      vec3 depositColor = depositHue < 0.18 ? coral : (depositHue < 0.30 ? mix(cyan, violet, depositHue * 3.0) : bone);
+      color += depositColor * deposit * (0.10 + ruptureWindow * 0.15);
       color += (granular - 0.5) * 0.0042;
 
       float edge = length((screen - vec2(0.52, 0.49)) * vec2(0.78, 1.0));
-      color *= 1.0 - smoothstep(0.35, 0.86, edge) * 0.70;
+      color *= 1.0 - smoothstep(0.38, 0.91, edge) * 0.46;
       outColor = vec4(pow(max(color, vec3(0.0)), vec3(0.88)), 1.0);
     }
   `;
@@ -976,11 +1030,12 @@
       vec3 halfDirection = normalize(keyDirection + viewDirection);
       float specular = pow(max(0.0, dot(normal, halfDirection)), 78.0);
       float movingTime = mix(uTime, 0.0, uReduced);
+      float climax = smoothstep(0.32, 0.94, uReconstitution * 0.70 + uCrown * 0.82 + uReturn * 0.10);
 
-      vec3 obsidian = vec3(0.024, 0.027, 0.038);
-      vec3 graphite = vec3(0.155, 0.150, 0.170);
+      vec3 obsidian = vec3(0.032, 0.035, 0.052);
+      vec3 graphite = vec3(0.220, 0.212, 0.252);
       vec3 ultramarine = vec3(0.046, 0.055, 0.150);
-      vec3 bone = vec3(0.860, 0.800, 0.700);
+      vec3 bone = vec3(0.920, 0.860, 0.765);
       vec3 coral = vec3(0.910, 0.125, 0.135);
       vec3 cyan = vec3(0.0, 0.788, 0.910);
       vec3 emerald = vec3(0.078, 0.788, 0.545);
@@ -996,12 +1051,12 @@
       float facetTone = floor(hash31(floor(facetCoord + vec3(vLamella * 1.73, vBack * 2.9, 0.0))) * 3.0) / 2.0;
 
       if (uMaterial < 0.5) {
-        color = mix(obsidian, graphite, 0.34 + facetTone * 0.42);
-        color *= mix(0.82, 1.18, facetTone) * (0.68 + wrapDiffuse * 0.50 + skyFill * 0.07);
-        color += graphite * fill * 0.10;
-        color += bone * warmBounce * (0.014 + facetTone * 0.005);
+        color = mix(obsidian, graphite, 0.42 + facetTone * 0.40);
+        color *= mix(0.88, 1.20, facetTone) * (0.78 + wrapDiffuse * 0.56 + skyFill * 0.10);
+        color += graphite * fill * 0.14;
+        color += bone * warmBounce * (0.024 + facetTone * 0.009);
         color = mix(color, ultramarine, (0.045 + fresnel * 0.13) * (0.55 + facetTone * 0.35));
-        color += bone * specular * (0.22 + uReconstitution * 0.05);
+        color += bone * specular * (0.30 + uReconstitution * 0.10 + uCrown * 0.08);
         color *= mix(1.0, 0.84, clamp(vBack, 0.0, 1.0));
         vec3 foldUndertone = vLamella < 0.5 ? cyan : (vLamella < 1.5 ? emerald : violet);
         color = mix(color, foldUndertone, 0.006 + facetTone * 0.003);
@@ -1040,7 +1095,12 @@
         float groundNacre = pow(max(0.0, sin(vAlong * 17.0 + vAcross * 4.6)), 18.0);
         groundNacre *= smoothstep(-0.72, 0.12, vAcross) * (1.0 - smoothstep(0.72, 0.98, vAcross));
         color += mix(bone, violet, 0.08) * groundNacre * (0.018 + uReconstitution * 0.026 + uCrown * 0.018);
-        alpha = mix(0.46, 0.90, groundDepth);
+        float mirrorFaultX = 0.99 - vLocal.y * 0.23;
+        float mirrorCaustic = exp(-abs(vLocal.x - mirrorFaultX) * 3.0);
+        mirrorCaustic *= smoothstep(-0.75, -0.54, vAcross) * (1.0 - smoothstep(0.48, 0.62, vAcross));
+        mirrorCaustic *= 0.52 + 0.48 * hash31(floor(facetCoord * 3.1 + vec3(4.2, 1.7, 9.4)));
+        color += mix(violet, bone, 0.74) * mirrorCaustic * (0.035 + 0.090 * climax);
+        alpha = mix(0.58, 0.96, groundDepth);
         alpha *= 1.0 - uReturn * (1.0 - groundDepth) * 0.24;
         alpha *= mix(1.0, 0.76, clamp(vBack, 0.0, 1.0));
       } else if (uMaterial < 1.5) {
@@ -1048,12 +1108,13 @@
         float edgeGlow = smoothstep(0.18, 0.62, abs(vAcross)) * (1.0 - smoothstep(0.72, 0.98, abs(vAcross)));
         float fade = smoothstep(0.0, 0.09, vAlong) * (1.0 - smoothstep(0.91, 1.0, vAlong));
         float heat = clamp(vBack, 0.0, 1.0);
+        float phrasing = 0.58 + 0.42 * pow(max(0.0, sin(vAlong * 16.9646 + movingTime * 0.030)), 8.0);
         vec3 sovereignGold = vec3(0.960, 0.875, 0.720);
         color = mix(vec3(0.006, 0.005, 0.008), sovereignGold, core * 0.90);
         color = mix(color, mix(coral, sovereignGold, 0.24), pow(core, 3.0) * (0.10 + heat * 0.16));
-        color += coral * edgeGlow * (0.025 + heat * 0.055 + uPressure * 0.020 + uCrown * 0.030);
-        color += bone * core * underLight * (0.10 + uReconstitution * 0.055);
-        alpha = (0.14 + heat * 0.16 + core * (0.64 + heat * 0.14 + uCrown * 0.08)) * fade;
+        color += coral * edgeGlow * (0.045 + heat * 0.075 + uPressure * 0.025 + uCrown * 0.055);
+        color += bone * core * (underLight * (0.14 + uReconstitution * 0.070) + phrasing * (0.12 + climax * 0.16));
+        alpha = (0.19 + heat * 0.20 + core * (0.69 + heat * 0.16 + uCrown * 0.10) * phrasing) * fade;
         alpha *= mix(1.0, 0.20, uGhost);
       } else {
         color = mix(obsidian, graphite, 0.34 + facetTone * 0.30);
@@ -1171,13 +1232,16 @@
       gl_Position=clip;
       vec3 cyan=vec3(0.0,0.788,0.910),green=vec3(0.078,0.788,0.545),violet=vec3(0.408,0.251,1.0),bone=vec3(0.914,0.890,0.835);
       vec3 accent=aColorIndex<0.5?cyan:(aColorIndex<1.5?green:(aColorIndex<2.5?violet:bone));
-      float colourAmount=aColorIndex>2.5?0.0:(0.08+uCrown*0.07+uReturn*0.05);
+      float colourAmount=aColorIndex>2.5?0.0:(0.12+uCrown*0.10+uReturn*0.07);
       vColor=mix(bone,accent,colourAmount);
       float phrasing=0.72+0.28*sin(aPathWeight*15.0+aSeed*31.0+movingTime*0.032);
-      float baseAlpha=mix(0.105,0.040,aPathWeight)*phrasing;
-      float stateAlpha=uGather*0.035+uPressure*anchorInfluence*0.045+uCrown*(0.025+anchorInfluence*0.035)+uReturn*aPathWeight*0.10;
+      float phrasePhase=fract(aPathWeight*3.15+aSeed*5.7);
+      float phraseMask=smoothstep(0.055,0.16,phrasePhase)*(1.0-smoothstep(0.64,0.84,phrasePhase));
+      float endpointFade=smoothstep(0.018,0.075,aPathWeight)*(1.0-smoothstep(0.88,0.975,aPathWeight));
+      float baseAlpha=mix(0.190,0.072,aPathWeight)*phrasing;
+      float stateAlpha=uGather*0.050+uPressure*anchorInfluence*0.060+uCrown*(0.050+anchorInfluence*0.055)+uReturn*aPathWeight*0.12;
       float detailAlpha=mix(0.72,1.18,selected*uDetailMix);
-      vAlpha=(baseAlpha+stateAlpha)*detailAlpha*(1.0-uSubtraction*0.38);
+      vAlpha=(baseAlpha+stateAlpha)*detailAlpha*(1.0-uSubtraction*0.38)*phraseMask*endpointFade;
     }
   `;
 
@@ -1379,6 +1443,7 @@
     uniform1(program, 'uPressure', state.pressure);
     uniform1(program, 'uCrown', state.crown);
     uniform1(program, 'uReturn', state.return);
+    uniform1(program, 'uReconstitution', state.reconstitution);
     uniform1(program, 'uReduced', reducedMotion ? 1 : 0);
     uniform1(program, 'uActiveWorld', activeWorld ? worldKeys.indexOf(activeWorld) + 1 : 0);
     uniform1(program, 'uDetailMix', ease(viewMix));
@@ -1597,29 +1662,205 @@
     };
   }
 
+  function fallbackClimax(state) {
+    return ease(clamp((state.reconstitution * 0.70 + state.crown * 0.82 + state.return * 0.10 - 0.32) / 0.62, 0, 1));
+  }
+
+  function drawFallbackCounterfield(context, state) {
+    const compact = isCompactLayout();
+    const climax = fallbackClimax(state);
+    const cx = width * (compact ? 0.56 : 0.59);
+    const cy = height * (compact ? 0.48 : 0.46);
+    const rx = width * (compact ? 0.38 : 0.29);
+    const ry = height * (compact ? 0.30 : 0.34);
+    context.save();
+    context.globalCompositeOperation = 'screen';
+    context.translate(cx, cy);
+    context.transform(1, 0, 0.28, 1, 0, 0);
+    context.scale(rx, ry);
+    const upper = context.createRadialGradient(-0.16, -0.18, 0, -0.16, -0.18, 1);
+    upper.addColorStop(0, `rgba(105,125,170,${0.045 + climax * 0.050})`);
+    upper.addColorStop(0.44, `rgba(63,75,112,${0.026 + climax * 0.024})`);
+    upper.addColorStop(1, 'rgba(10,11,18,0)');
+    context.fillStyle = upper;
+    context.fillRect(-1.35, -1.35, 2.7, 2.7);
+    const lower = context.createRadialGradient(0.18, 0.20, 0, 0.18, 0.20, 1);
+    lower.addColorStop(0, `rgba(150,55,55,${0.065 + climax * 0.075})`);
+    lower.addColorStop(0.48, `rgba(92,31,40,${0.032 + climax * 0.035})`);
+    lower.addColorStop(1, 'rgba(12,7,10,0)');
+    context.fillStyle = lower;
+    context.fillRect(-1.35, -1.35, 2.7, 2.7);
+    context.restore();
+  }
+
+  function drawFallbackCurrents(context, state, reflected = false) {
+    const compact = isCompactLayout();
+    const horizon = compact ? 0.635 : 0.625;
+    const climax = fallbackClimax(state);
+    const families = [
+      { color: 'rgb(126,174,184)', shadow: 'rgba(94,166,181,.48)', points: [[1.06, -0.04], [0.91, 0.08], [0.72, 0.27], [0.55, 0.46]] },
+      { color: 'rgb(126,166,146)', shadow: 'rgba(86,153,126,.44)', points: [[-0.08, 0.32], [0.14, 0.35], [0.36, 0.43], [0.57, 0.47]] },
+      { color: 'rgb(139,126,180)', shadow: 'rgba(118,99,173,.46)', points: [[1.08, 0.88], [0.89, 0.73], [0.73, 0.58], [0.59, 0.49]] },
+    ];
+    const minSide = Math.min(width, height);
+    context.save();
+    context.globalCompositeOperation = 'screen';
+    if (reflected) {
+      context.beginPath();
+      context.rect(0, height * horizon, width, height * (1 - horizon));
+      context.clip();
+    }
+    families.forEach((family, familyIndex) => {
+      for (let phrase = 0; phrase < 4; phrase++) {
+        const offset = (phrase - 1.5) * (compact ? 0.011 : 0.0085);
+        const mapped = family.points.map(([x, y], pointIndex) => {
+          const fan = pointIndex / 3;
+          const px = x + offset * (0.25 + fan * 1.7) + Math.sin((phrase + 1) * (pointIndex + 1) * 1.91) * 0.003;
+          const authoredY = y + offset * (familyIndex === 1 ? 0.65 : 1.0) + Math.cos((phrase + 2) * (pointIndex + 1)) * 0.0025;
+          const py = reflected ? horizon * 2 - authoredY + 0.010 + phrase * 0.002 : authoredY;
+          return [px * width, py * height];
+        });
+        const path = new Path2D();
+        path.moveTo(mapped[0][0], mapped[0][1]);
+        path.bezierCurveTo(mapped[1][0], mapped[1][1], mapped[2][0], mapped[2][1], mapped[3][0], mapped[3][1]);
+        if (!reflected) {
+          context.setLineDash([]);
+          context.shadowBlur = minSide * 0.020;
+          context.shadowColor = family.shadow;
+          context.globalAlpha = 0.022 + climax * 0.026;
+          context.lineWidth = Math.max(12, minSide * (0.028 + phrase * 0.002));
+          context.strokeStyle = family.color;
+          context.stroke(path);
+        }
+        context.shadowBlur = reflected ? minSide * 0.010 : minSide * 0.007;
+        context.shadowColor = family.shadow;
+        context.setLineDash([
+          minSide * (0.075 + phrase * 0.010),
+          minSide * (0.042 + familyIndex * 0.009),
+          minSide * (0.115 + familyIndex * 0.012),
+          minSide * (0.050 + phrase * 0.006),
+        ]);
+        context.lineDashOffset = -minSide * (phrase * 0.053 + familyIndex * 0.071 + (reflected ? 0.093 : 0));
+        context.globalAlpha = (0.145 + state.gather * 0.07 + state.crown * 0.095) * (reflected ? 0.38 : 1);
+        context.lineWidth = Math.max(0.75, minSide * (0.00082 + phrase * 0.00008));
+        context.strokeStyle = family.color;
+        context.stroke(path);
+      }
+    });
+    context.setLineDash([]);
+    context.restore();
+  }
+
+  function drawFallbackHorizon(context, state) {
+    const compact = isCompactLayout();
+    const horizon = height * (compact ? 0.635 : 0.625);
+    const fault = width * (compact ? 0.615 : 0.595);
+    const gap = width * (compact ? 0.064 : 0.046);
+    const climax = fallbackClimax(state);
+    const path = new Path2D();
+    const samples = 96;
+    let drawing = false;
+    for (let index = 0; index <= samples; index++) {
+      const x = width * index / samples;
+      const broken = Math.abs(x - fault) < gap || (index > 17 && index < 23) || (index > 72 && index < 78);
+      const y = horizon + Math.sin(index * 0.37) * height * 0.0018 + Math.sin(index * 0.11 + 2.7) * height * 0.0012;
+      if (broken) {
+        drawing = false;
+      } else if (!drawing) {
+        path.moveTo(x, y);
+        drawing = true;
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    context.save();
+    context.globalCompositeOperation = 'screen';
+    context.strokeStyle = '#d9d1c4';
+    context.globalAlpha = 0.020 + climax * 0.016;
+    context.shadowColor = 'rgba(210,198,178,.30)';
+    context.shadowBlur = Math.max(18, Math.min(width, height) * 0.024);
+    context.lineWidth = Math.max(16, Math.min(width, height) * 0.020);
+    context.stroke(path);
+    context.shadowBlur = 0;
+    context.globalAlpha = 0.22 + climax * 0.10;
+    context.lineWidth = 0.8;
+    context.stroke(path);
+    const fragments = [[0.08, 0.14], [0.31, 0.36], [0.69, 0.74], [0.84, 0.90]];
+    fragments.forEach(([start, end], index) => {
+      context.beginPath();
+      context.moveTo(width * start, horizon + Math.sin(start * 31) * 2);
+      context.lineTo(width * end, horizon + Math.sin(end * 29) * 2);
+      context.globalAlpha = 0.34 + climax * 0.16;
+      context.lineWidth = index === 2 ? 1.15 : 0.75;
+      context.strokeStyle = index === 2 ? '#e4735f' : '#f0e5d1';
+      context.stroke();
+    });
+    context.restore();
+  }
+
+  function drawFallbackMatter(context, state) {
+    const compact = isCompactLayout();
+    const count = compact ? 26 : 48;
+    const climax = fallbackClimax(state);
+    const horizon = height * (compact ? 0.635 : 0.625);
+    const random = (seed) => {
+      const value = Math.sin(seed * 91.733 + 17.171) * 43758.5453;
+      return value - Math.floor(value);
+    };
+    context.save();
+    context.globalCompositeOperation = 'screen';
+    for (let index = 0; index < count; index++) {
+      const a = random(index + 0.31);
+      const b = random(index + 7.93);
+      const c = random(index + 18.47);
+      const y = height * (0.27 + b * 0.53);
+      const woundX = width * (0.43 + clamp((y / height - 0.24) / 0.54, 0, 1) * 0.26);
+      const freeX = width * (0.35 + a * 0.47);
+      const x = index % 10 < 7 ? lerp(freeX, woundX + (a - 0.5) * width * 0.18, 0.72) : freeX;
+      const size = index < 4 ? 1.8 + c : 0.4 + c * 1.2;
+      const alpha = (0.035 + c * 0.125) * (0.48 + climax * 0.52);
+      context.globalAlpha = alpha;
+      context.fillStyle = c < 0.10 ? '#df695b' : c < 0.15 ? '#8394bf' : '#e8dfcf';
+      context.strokeStyle = context.fillStyle;
+      if (index % 5 < 3) {
+        context.lineWidth = Math.max(0.45, size * 0.52);
+        context.beginPath();
+        context.moveTo(x - size * 1.6, y + size * 0.35);
+        context.lineTo(x + size * 1.8, y - size * 0.25);
+        context.stroke();
+      } else {
+        context.beginPath();
+        context.moveTo(x, y - size);
+        context.lineTo(x + size * 0.9, y + size * 0.65);
+        context.lineTo(x - size * 0.55, y + size * 0.25);
+        context.closePath();
+        context.fill();
+      }
+      if (index % 3 === 0 && y < horizon) {
+        context.globalAlpha = alpha * 0.35;
+        const reflectedY = horizon * 2 - y;
+        context.fillRect(x + width * 0.012, reflectedY, Math.max(0.6, size * 1.2), Math.max(0.45, size * 0.32));
+      }
+    }
+    context.restore();
+  }
+
   function renderFallback(state) {
     const context = fallbackContext;
     if (!context) return;
     context.save();
     context.setTransform(dpr, 0, 0, dpr, 0, 0);
-    context.fillStyle = '#050405';
+    context.fillStyle = '#07070b';
     context.fillRect(0, 0, width, height);
     const abyssGlow = context.createRadialGradient(width * 0.57, height * 0.47, 0, width * 0.57, height * 0.47, Math.max(width, height) * 0.62);
-    abyssGlow.addColorStop(0, `rgba(83,28,31,${0.055 + state.pressure * 0.035 + state.crown * 0.045})`);
-    abyssGlow.addColorStop(0.42, 'rgba(19,15,21,.28)');
-    abyssGlow.addColorStop(1, 'rgba(5,4,5,0)');
+    abyssGlow.addColorStop(0, `rgba(94,35,45,${0.070 + state.pressure * 0.040 + state.crown * 0.060})`);
+    abyssGlow.addColorStop(0.42, 'rgba(27,21,34,.34)');
+    abyssGlow.addColorStop(1, 'rgba(7,7,11,0)');
     context.fillStyle = abyssGlow;
     context.fillRect(0, 0, width, height);
-    context.globalAlpha = 0.10 + state.reconstitution * 0.045;
-    context.strokeStyle = '#c9bba3';
-    context.lineWidth = 0.6;
-    context.beginPath();
-    context.moveTo(width * 0.08, height * (isCompactLayout() ? 0.64 : 0.615));
-    context.lineTo(width * 0.48, height * (isCompactLayout() ? 0.641 : 0.616));
-    context.moveTo(width * 0.61, height * (isCompactLayout() ? 0.639 : 0.614));
-    context.lineTo(width * 0.94, height * (isCompactLayout() ? 0.64 : 0.615));
-    context.stroke();
     context.globalAlpha = 1;
+    drawFallbackCounterfield(context, state);
+    drawFallbackCurrents(context, state, false);
     const layout = fallbackLayout(Boolean(activeWorld), state);
     const { centerX, centerY, scale, orientation } = layout;
 
@@ -1631,19 +1872,12 @@
     const wound = fallbackWoundPath(scale);
     const ghostWound = fallbackWoundPath(scale, true);
 
-    context.save();
-    context.globalAlpha = 0.075 + state.inversion * 0.045 + state.return * 0.025;
-    context.lineWidth = Math.max(0.45, scale * 0.008);
-    context.strokeStyle = '#766d78';
-    context.stroke(ghostWound);
-    context.restore();
-
     const mineralGradient = context.createLinearGradient(-scale * 2.8, -scale * 3.1, scale * 2.5, scale * 2.8);
-    mineralGradient.addColorStop(0, '#03050a');
-    mineralGradient.addColorStop(0.30, '#10131f');
-    mineralGradient.addColorStop(0.56, '#262736');
-    mineralGradient.addColorStop(0.68, '#111421');
-    mineralGradient.addColorStop(1, '#020307');
+    mineralGradient.addColorStop(0, '#080b14');
+    mineralGradient.addColorStop(0.26, '#171b2d');
+    mineralGradient.addColorStop(0.52, '#34364a');
+    mineralGradient.addColorStop(0.74, '#181c2d');
+    mineralGradient.addColorStop(1, '#060810');
     context.globalAlpha = 1 - state.subtraction * 0.28;
     context.fillStyle = mineralGradient;
     context.save();
@@ -1654,6 +1888,24 @@
       if (index > 0) context.stroke(path);
       context.fill(path);
     });
+    context.restore();
+
+    context.save();
+    context.clip(body);
+    context.globalCompositeOperation = 'screen';
+    context.setLineDash([scale * 0.16, scale * 0.24, scale * 0.09, scale * 0.31]);
+    context.lineDashOffset = -scale * (0.11 + state.inversion * 0.08);
+    context.shadowColor = 'rgba(157,139,194,.30)';
+    context.shadowBlur = Math.max(14, scale * 0.18);
+    context.globalAlpha = 0.10 + fallbackClimax(state) * 0.08;
+    context.lineWidth = Math.max(2.5, scale * 0.034);
+    context.strokeStyle = '#8f879e';
+    context.stroke(ghostWound);
+    context.shadowBlur = 0;
+    context.globalAlpha = 0.18 + fallbackClimax(state) * 0.12;
+    context.lineWidth = Math.max(0.65, scale * 0.008);
+    context.strokeStyle = '#c9bfd0';
+    context.stroke(ghostWound);
     context.restore();
 
     context.save();
@@ -1675,42 +1927,27 @@
     }
 
     context.save();
-    context.shadowColor = 'rgba(219,164,114,.22)';
-    context.shadowBlur = scale * (0.055 + state.crown * 0.025);
-    context.globalAlpha = 0.075 + state.crown * 0.035 + state.pressure * 0.025;
-    context.lineWidth = Math.max(0.8, scale * 0.022);
-    context.strokeStyle = '#9f2528';
+    context.shadowColor = 'rgba(225,94,80,.44)';
+    context.shadowBlur = scale * (0.080 + state.crown * 0.055);
+    context.globalAlpha = 0.10 + state.crown * 0.12 + state.pressure * 0.035;
+    context.lineWidth = Math.max(2.2, scale * 0.040);
+    context.strokeStyle = '#e15e50';
     context.stroke(wound);
     context.shadowBlur = 0;
-    context.globalAlpha = 0.68 + state.reconstitution * 0.14;
-    context.lineWidth = Math.max(0.65, scale * 0.011);
-    context.strokeStyle = '#eadcc3';
+    context.setLineDash([scale * 0.24, scale * 0.055, scale * 0.42, scale * 0.08]);
+    context.lineDashOffset = -scale * state.phase * 0.18;
+    context.globalAlpha = 0.78 + state.reconstitution * 0.14;
+    context.lineWidth = Math.max(0.75, scale * 0.012);
+    context.strokeStyle = '#fff0d4';
     context.stroke(wound);
     context.restore();
-
-    {
-      context.lineWidth = Math.max(0.55, scale * 0.0055);
-      ETHER_THREADS.forEach((spec, index) => {
-        context.globalAlpha = 0.075 + state.gather * 0.035 + state.crown * 0.035 + state.return * (0.035 + index * 0.006);
-        context.strokeStyle = spec.color === 2 ? '#9d8bd1' : spec.color === 1 ? '#88b69c' : spec.color === 0 ? '#87b9c1' : '#e1d5bf';
-        const [start, controlA, controlB, end] = spec.points;
-        context.beginPath();
-        context.moveTo(start.x * scale, -start.y * scale);
-        context.bezierCurveTo(
-          controlA.x * scale,
-          -controlA.y * scale,
-          controlB.x * scale,
-          -controlB.y * scale,
-          end.x * scale,
-          -end.y * scale,
-        );
-        context.stroke();
-      });
-    }
     context.restore();
 
     context.save();
     context.setTransform(dpr, 0, 0, dpr, 0, 0);
+    drawFallbackCurrents(context, state, true);
+    drawFallbackHorizon(context, state);
+    drawFallbackMatter(context, state);
     pointSet().forEach(({ point, color, size }) => {
       const projected = projectFallbackPoint(point, Boolean(activeWorld));
       const radius = size * 0.58;
@@ -1747,9 +1984,10 @@
     if (!force && ++labelTick % 2) return;
     const mix = ease(viewMix);
     const mobile = isCompactLayout();
+    const phone = width <= 520;
     const subY = height * (mobile ? 0.775 : 0.875);
     const overviewInteractive = !activeWorld || mix <= 0.05;
-    const labelHalf = mobile ? 54 : 96;
+    const labelHalf = mobile ? (phone ? 54 : 70) : 96;
     const offsets = mobile
       ? [
         { x: width * 0.22, y: 8 },
@@ -1768,7 +2006,7 @@
       const left = clamp(anchor.x + offsets[index].x, labelHalf, width - labelHalf);
       const top = clamp(
         anchor.y + offsets[index].y,
-        height * (mobile ? 0.30 : 0.15),
+        height * (mobile ? (phone ? 0.30 : 0.17) : 0.15),
         height * (mobile ? 0.73 : 0.72),
       );
       element.style.left = `${left}px`;
