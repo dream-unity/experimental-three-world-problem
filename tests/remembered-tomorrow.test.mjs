@@ -1,157 +1,158 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, statSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { readFileSync, statSync } from 'node:fs';
 
 const root = new URL('../', import.meta.url);
+const RELEASE = '20260830-sovereign-nocturne-1';
+const RENDERER_PATH = 'visual-parts/sovereign-nocturne-13.js';
 const read = (path) => readFileSync(new URL(path, root), 'utf8');
 const exists = (path) => statSync(new URL(path, root)).isFile();
-const parts = [1, 2, 3, 4, 5, 6].map((number) => `visual-parts/part-${String(number).padStart(2, '0')}.txt`);
-const overrides = [
-  'visual-parts/sovereign-resonator-11.txt',
-  'visual-parts/bearing-mirror-12.txt',
-];
 
 for (const path of [
   'index.html',
+  'styles.css',
   'unity-cycle.css',
   'unity-ui.js',
-  'light-theme.js',
   'main.js',
-  ...overrides,
-  'assets/i-remember-tomorrow.mp3',
-  ...parts
+  'arcade.js',
+  'arcade-parts/part-02.txt',
+  'arcade-parts/part-05.txt',
+  RENDERER_PATH,
 ]) assert.ok(exists(path), `${path} missing`);
 
 const index = read('index.html');
 const loader = read('main.js');
 const theme = read('unity-cycle.css');
-const lightSurface = read('light-theme.js');
-const resonator = read(overrides[0]);
-const renderer = read(overrides[1]);
-const pointerInput = read('visual-parts/part-05.txt');
-const inertialInput = read('visual-parts/part-06.txt');
+const renderer = read(RENDERER_PATH);
+const scoreRuntime = read('unity-ui.js');
+const arcadeDefinitions = read('arcade-parts/part-05.txt');
 const arcadeInput = read('arcade-parts/part-02.txt');
+const publicText = index.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 
-assert.match(index, /AWAKEN THE TRUE WAR/);
-assert.match(index, /Somewhere out in the universe/);
-assert.match(index, /I wonder in my heart/);
-assert.match(index, /Light pierces through me/);
-assert.match(index, /AWARENESS[\s\S]*MUST BEAR[\s\S]*WEIGHT/);
-assert.match(index, /THE BEARING MIRROR/);
-assert.match(index, /THE GHOST IN THE MIRROR · OF SLAVERY AND FREEDOM/);
+// Editorial meaning is a public contract. The visual may evolve without losing
+// the lyric fragment, the essay's material/spirit cycle, or the three worlds.
+for (const phrase of [
+  'DREAM UNITY',
+  'THE GHOST IN THE MIRROR · OF SLAVERY AND FREEDOM',
+  'Somewhere out in the universe',
+  'I wonder in my heart',
+  'Light pierces through me',
+  'AWAKEN THE TRUE WAR',
+  'DREAM MACHINE',
+  'PERCEIVE · MODEL · PREDICT',
+  'DREAM MAKER',
+  'INTEND · ACT · BECOME',
+  'DREAM WORLD',
+  'MATTER · STRUCTURE · EMERGE',
+]) assert.ok(publicText.includes(phrase), `public meaning ${phrase} missing`);
 assert.match(index, /DREAM[\s\S]*COMPRESS[\s\S]*REALISE[\s\S]*RETURN/);
-assert.match(index, /assets\/i-remember-tomorrow\.mp3/);
-assert.equal((index.match(/<audio\b/gi) || []).length, 1, 'the homepage must publish exactly one audio element');
-const trackedMp3 = execFileSync('git', ['ls-files', '*.mp3'], { cwd: root, encoding: 'utf8' })
-  .trim().split(/\r?\n/).filter(Boolean);
-assert.deepEqual(trackedMp3, ['assets/i-remember-tomorrow.mp3'], 'the published score is the only MP3 allowed in the repository');
-assert.match(index, /id="scoreControl"/);
-assert.doesNotMatch(index, /MAKE THE<br \/>MIRROR|coralTexture|coral-sovereign-engine|phase-rail/);
-assert.match(index, /styles\.css\?v=20260830-bearing-mirror-1/);
-assert.match(index, /unity-cycle\.css\?v=20260830-bearing-mirror-1/);
-assert.match(index, /light-theme\.js\?v=20260830-bearing-mirror-1/);
-assert.match(index, /unity-ui\.js\?v=20260830-bearing-mirror-1/);
-assert.match(index, /main\.js\?v=20260830-bearing-mirror-1/);
-assert.match(index, /<div\b(?=[^>]*\bid=["']unityLabel["'])(?=[^>]*\baria-hidden=["']true["'])[^>]*>/i, 'the owned Unity core must remain a passive visual label');
-assert.doesNotMatch(index, /<button\b[^>]*\bid=["']unityLabel["']/i, 'the disabled Unity core must not remain a dead button');
-assert.doesNotMatch(index, /data-voice-launcher|duVoice|du-voice|duEnhanced|du-enhanced|voice\.css|voice\.js/i, 'the homepage must not mount the archived voice interface');
-assert.doesNotMatch(index, /dream-unity-voice-live\.vercel\.app|js\.puter\.com/i, 'the homepage must not preconnect to an inactive voice service');
-assert.match(loader, /VERSION = '20260830-bearing-mirror-1'/);
-assert.match(loader, /sovereign-resonator-11\.txt/);
-assert.match(loader, /bearing-mirror-12\.txt/);
-assert.match(loader, /source\.slice\(baseParts\.length\)\.join/);
-assert.match(theme, /--paper:#fff/);
-assert.match(theme, /--machine:#00cfff/);
-assert.match(theme, /--maker:#00d88a/);
-assert.match(theme, /--reality:#6633f5/);
-assert.match(theme, /#app>\.vignette\{display:none!important/);
-assert.match(theme, /\.arcade\{background:var\(--paper\)/);
-assert.match(theme, /no neon bunker/);
-assert.match(theme, /\.score-control\{[\s\S]*?height:44px/);
-assert.doesNotMatch(theme, /radial-gradient\(circle at 50% 46%/i);
-assert.doesNotMatch(theme, /#app\[data-score-phase=/, 'the public score must not create a contradictory visible phase clock');
-assert.match(lightSurface, /this\.id === 'gameCanvas'/);
-assert.match(lightSurface, /__dreamUnityLightSurface/);
-assert.match(lightSurface, /!isGame/);
 
+assert.equal((index.match(/<button\b[^>]*\bclass=["'][^"']*\bworld-label\b[^"']*["']/gi) || []).length, 3, 'the overview must expose exactly three world portals');
+for (const id of ['label-machine', 'label-maker', 'label-reality', 'sub-0', 'sub-1', 'sub-2', 'back']) {
+  assert.match(index, new RegExp(`id=["']${id}["']`), `${id} navigation control missing`);
+}
+assert.match(index, /<div\b(?=[^>]*\bid=["']unityLabel["'])(?=[^>]*\baria-hidden=["']true["'])[^>]*>/i, 'Unity must remain a passive visual label');
+assert.doesNotMatch(index, /<button\b[^>]*\bid=["']unityLabel["']/i, 'Unity must not become a dead button');
+
+// One release identity must invalidate every active overview resource together.
+for (const asset of ['styles.css', 'become.css', 'unity-cycle.css', 'unity-ui.js', 'main.js', 'arcade.js']) {
+  assert.match(index, new RegExp(`${asset.replace('.', '\\.')}\\?v=${RELEASE}`), `${asset} does not use the Nocturne release`);
+}
+assert.match(loader, new RegExp(`VERSION\\s*=\\s*['"]${RELEASE}['"]`));
+assert.match(loader, /visual-parts\/sovereign-nocturne-13\.js/);
+assert.doesNotMatch(loader, /bearing-mirror|sovereign-resonator|visual-parts\/part-0[1-6]\.txt|\bFunction\s*\(|fetchParts/i, 'the loader must not concatenate a retired Canvas2D renderer');
+
+// Near-black material field with bone and concentrated Coral accents.
+for (const [name, value] of [
+  ['void', '#050505'],
+  ['basalt', '#111010'],
+  ['bone', '#e9e3d6'],
+  ['coral-hot', '#ff4e57'],
+  ['coral', '#ff765f'],
+]) assert.match(theme, new RegExp(`--${name}\\s*:\\s*${value}`, 'i'), `${name} palette token missing`);
+assert.doesNotMatch(theme, /--paper\s*:\s*#fff(?:fff)?\b/i, 'the overview must not regress to a white presentation field');
+assert.match(index, /<meta\b(?=[^>]*\bname=["']theme-color["'])(?=[^>]*\bcontent=["']#050505["'])[^>]*>/i);
+
+// Renderer contracts are observable by tests and assistive/fallback UI; these
+// checks deliberately avoid prescribing meshes, vertex counts, or composition.
 for (const marker of [
-  'bmOverview',
-  'bmDetail',
-  'bmRender',
-  'bmOverviewGhost',
-  'bmMotionScore',
-  'bmAddTeeth',
-  'bmReturnFibres',
-  'bmMachineGeometry',
-  'bmMakerGeometry',
-  'bmWorldGeometry',
-  'MAKE THE GHOST BEAR WEIGHT',
-  "ctx.fillStyle = '#ffffff'",
-]) assert.ok(renderer.includes(marker), `renderer marker ${marker} missing`);
+  'sovereign-nocturne',
+  RELEASE,
+  'SILENT_CYCLE_SECONDS',
+  'webgl2',
+  'canvas2d-fallback',
+  'rendererReady',
+  'rendererState',
+  'dreamunity:renderer-ready',
+  'webglcontextlost',
+  'webglcontextrestored',
+  'dreamunity:renderer-context-lost',
+  'dreamunity:renderer-context-restored',
+  '__dreamUnityRenderer',
+  'prefers-reduced-motion: reduce',
+]) assert.ok(renderer.includes(marker), `renderer behavior contract ${marker} missing`);
+assert.match(renderer, /getContext\(\s*['"]webgl2['"]/);
+assert.match(renderer, /getContext\(\s*['"]2d['"]/);
+assert.match(renderer, /preventDefault\s*\(/, 'WebGL context loss must be explicitly handled');
+assert.match(renderer, /reducedMotion[\s\S]*dataset\.motion|dataset\.motion[\s\S]*reducedMotion/i, 'reduced-motion state must be observable');
 
-for (const marker of [
-  'const phase = reduced ? 0.24',
-  'const subtraction = score.subtraction',
-  'const crown = score.crown * (1 - subtraction)',
-  'Completion belongs to interaction',
-  'const bmEnterWorldBase = enterWorld',
-  'back?.focus?.({ preventScroll: true })',
-  'labels[returnKey]?.focus?.({ preventScroll: true })',
-]) assert.ok(renderer.includes(marker), `coherence/accessibility marker ${marker} missing`);
-
+// Reject the literal construction-kit vocabulary that made the previous form
+// read as gears, blocks, interface frames, leader cards, loops and ribbons.
 assert.doesNotMatch(
   renderer,
-  /Math\.max\(\s*score\.(?:subtraction|rebuild|crown|release)\s*,\s*srForm/,
-  'independent score clocks must never be max-mixed into contradictory material states',
+  /\b(?:gear|cog|sprocket|tooth|teeth|leader[-_ ]?card|callout[-_ ]?card|ribbon)\b|(?:gear|cog|block|frame|loop|ribbon)(?:Geometry|Mesh)|(?:draw|build|make|create)(?:Gear|Cog|Block|Frame|Loop|Ribbon)/i,
+  'a forbidden mechanical/UI motif returned to the Nocturne sculpture',
 );
 
-for (const input of [pointerInput, inertialInput]) {
-  assert.match(input, /-0\.314, 0\.314/, 'input pitch must share the renderer pitch envelope');
-  assert.match(input, /0\.88, 1\.12/, 'input zoom must share the renderer zoom envelope');
-  assert.doesNotMatch(input, /-1\.1[68], 1\.1[68]|0\.(?:66|72), 1\.(?:55|62)/, 'latent input dead zones must not return');
+// The private reference track informs the art but is never copied, requested,
+// decoded, analysed, or coupled to the renderer. The existing public score is
+// the sole tracked MP3 and remains independently controlled by unity-ui.js.
+const trackedMp3 = execFileSync('git', ['ls-files', '*.mp3'], { cwd: root, encoding: 'utf8' })
+  .trim().split(/\r?\n/).filter(Boolean);
+assert.deepEqual(trackedMp3, ['assets/i-remember-tomorrow.mp3'], 'a private or unapproved MP3 entered the repository');
+const repositoryMp3 = execFileSync(
+  'find',
+  ['.', '(', '-path', './.git', '-o', '-path', './node_modules', ')', '-prune', '-o', '-type', 'f', '-iname', '*.mp3', '-print'],
+  { cwd: root, encoding: 'utf8' },
+).trim().split(/\r?\n/).filter(Boolean).map(path => path.replace(/^\.\//, '')).sort();
+assert.deepEqual(repositoryMp3, ['assets/i-remember-tomorrow.mp3'], 'a private MP3 was copied into the repository, even if untracked');
+assert.doesNotMatch(trackedMp3.join('\n'), /awaken[ _-]*the[ _-]*true[ _-]*war|\(2\)/i);
+assert.doesNotMatch(renderer, /\.mp3\b|scoreAudio|AudioContext|webkitAudioContext|createMediaElementSource|decodeAudioData/i, 'the visual renderer must be non-auditory');
+assert.match(index, /id="scoreControl"/);
+assert.match(index, /assets\/i-remember-tomorrow\.mp3/);
+for (const marker of ['__dreamUnityScore', 'createMediaElementSource', 'createAnalyser']) {
+  assert.ok(scoreRuntime.includes(marker), `existing public score control ${marker} missing`);
 }
-assert.match(pointerInput, /-0\.122, 0\.122/, 'pinch roll must share the renderer roll envelope');
-assert.match(inertialInput, /-0\.122, 0\.122/, 'inertial roll must share the renderer roll envelope');
+
+// The archived voice experiment stays unmounted and network-silent.
+assert.doesNotMatch(index, /data-voice-launcher|duVoice|du-voice|duEnhanced|du-enhanced|voice\.css|voice\.js/i, 'the homepage mounted the archived voice interface');
+assert.doesNotMatch(index, /dream-unity-voice-live\.vercel\.app|js\.puter\.com/i, 'the homepage preconnected to an inactive voice service');
+
+// Preserve all nine game identities and the editable-control keyboard guard.
+const games = [
+  ['machine:0', 'FIGHTER JET'],
+  ['machine:1', 'MODEL FORGE'],
+  ['machine:2', 'ORACLE GATES'],
+  ['maker:0', 'VECTOR VOW'],
+  ['maker:1', 'IMPULSE RUN'],
+  ['maker:2', 'BECOME'],
+  ['reality:0', 'GRAVITY FOUNDRY'],
+  ['reality:1', 'LATTICE LOCK'],
+  ['reality:2', 'GENESIS BLOOM'],
+];
+assert.equal((arcadeDefinitions.match(/key:\s*['"](?:machine|maker|reality):[0-2]['"]/g) || []).length, 9, 'the arcade must define exactly nine portal slots');
+for (const [key, name] of games) {
+  assert.ok(arcadeDefinitions.includes(`key: '${key}'`), `${key} game slot missing`);
+  if (key !== 'machine:0' && key !== 'maker:2') assert.ok(arcadeDefinitions.includes(`name: '${name}'`), `${name} game identity missing`);
+}
 assert.match(
   arcadeInput,
   /event\.target instanceof Element[\s\S]*?closest\([\s\S]*?input, textarea, select,[\s\S]*?if \(editable\) return/,
-  'global arcade shortcuts must yield to text-entry controls',
+  'global arcade shortcuts must yield to Become and other text-entry controls',
 );
 
-for (const marker of [
-  "WORLD.machine.css = '#00CFFF'",
-  "WORLD.maker.css = '#00D88A'",
-  "WORLD.reality.css = '#6633F5'",
-  'srReadForm',
-]) assert.ok(resonator.includes(marker), `resonator bridge marker ${marker} missing`);
-
-const tensions = resonator.match(/const SR_TENSIONS = \[([\s\S]*?)\n  \];/);
-assert.ok(tensions, 'the structural-tension array is missing');
-assert.equal((tensions[1].match(/\[/g) || []).length, 9, 'the resonator must carry exactly nine game tensions');
-const teeth = renderer.match(/const placements = \[([\s\S]*?)\n    \];/);
-assert.ok(teeth, 'the Bearing Mirror pressure teeth are missing');
-assert.equal((teeth[1].match(/\[/g) || []).length, 9, 'the Bearing Mirror must carry exactly nine pressure teeth');
-
-const scoreRuntime = read('unity-ui.js');
-for (const marker of ['__dreamUnityScore', 'createMediaElementSource', 'createAnalyser', 'awaken', 'bone', 'return']) {
-  assert.ok(scoreRuntime.includes(marker), `score bridge marker ${marker} missing`);
-}
-assert.match(scoreRuntime, /silentClockOrigin/);
-assert.match(scoreRuntime, /276\.80[^\n]+279\.25/);
-assert.doesNotMatch(scoreRuntime, /envelope\(time, 258\.0/);
-
-assert.doesNotMatch(renderer, /\.mp3|createRadialGradient|globalCompositeOperation = 'lighter'|trefoil|helix|waveform|equalizer|coralTexture|csDrawMirrorCage|csDrawSpine|#eee9dc|black architectural wound/i);
-
-const base = parts.map(read).join('');
-const close = base.lastIndexOf('})();');
-assert.ok(close > 0, 'visual closure missing');
-const complete = `${base.slice(0, close)}\n${resonator}\n${renderer}\n${base.slice(close)}`;
-const temporary = join(mkdtempSync(join(tmpdir(), 'du-bearing-mirror-')), 'visual-complete.js');
-writeFileSync(temporary, complete);
-execFileSync(process.execPath, ['--check', temporary], { stdio: 'inherit' });
+execFileSync(process.execPath, ['--check', new URL(`../${RENDERER_PATH}`, import.meta.url).pathname], { stdio: 'inherit' });
+execFileSync(process.execPath, ['--check', new URL('../main.js', import.meta.url).pathname], { stdio: 'inherit' });
 execFileSync(process.execPath, ['--check', new URL('../unity-ui.js', import.meta.url).pathname], { stdio: 'inherit' });
-assert.ok(statSync(new URL('../assets/i-remember-tomorrow.mp3', import.meta.url)).size > 1_000_000, 'homepage score is unexpectedly small');
 
-console.log('Awaken the True War validated: Bearing Mirror, passive Unity core, private-audio guard, and nine-world contracts preserved.');
+console.log('Sovereign Nocturne validated: WebGL/fallback, reduced motion, private-audio exclusion, three worlds, and nine games.');

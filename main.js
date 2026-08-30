@@ -1,40 +1,22 @@
 (() => {
   'use strict';
-  const VERSION = '20260830-bearing-mirror-1';
-  const baseParts = Array.from({ length: 6 }, (_, index) =>
-    `./visual-parts/part-${String(index + 1).padStart(2, '0')}.txt?v=${VERSION}`
-  );
-  const overridePaths = [
-    `./visual-parts/sovereign-resonator-11.txt?v=${VERSION}`,
-    `./visual-parts/bearing-mirror-12.txt?v=${VERSION}`,
-  ];
-  const parts = [...baseParts, ...overridePaths];
+
+  const VERSION = '20260830-sovereign-nocturne-1';
+  const source = `./visual-parts/sovereign-nocturne-13.js?v=${VERSION}`;
   const loader = document.getElementById('loading');
   const hint = document.getElementById('hint');
   const release = () => loader?.classList.add('hide');
 
-  async function fetchParts(cache) {
-    return Promise.all(parts.map(async (path) => {
-      const response = await fetch(path, { cache });
-      if (!response.ok) throw new Error(`Visual engine part failed: ${response.status} ${path}`);
-      return response.text();
-    }));
-  }
-
-  fetchParts('force-cache')
-    .catch(() => new Promise((resolve) => setTimeout(resolve, 180)).then(() => fetchParts('no-store')))
-    .then((source) => {
-      const baseSource = source.slice(0, baseParts.length).join('');
-      const overrideSource = source.slice(baseParts.length).join('\n');
-      const closeIndex = baseSource.lastIndexOf('})();');
-      if (closeIndex < 0) throw new Error('Visual engine terminator was not found.');
-      Function(`${baseSource.slice(0, closeIndex)}\n${overrideSource}\n${baseSource.slice(closeIndex)}`)();
-    })
-    .catch((error) => {
-      console.error(error);
-      release();
-      if (hint) hint.textContent = 'VISUAL FIELD COULD NOT INITIALISE';
-    });
+  const script = document.createElement('script');
+  script.src = source;
+  script.async = false;
+  script.dataset.dreamUnityRenderer = VERSION;
+  script.addEventListener('load', release, { once: true });
+  script.addEventListener('error', () => {
+    release();
+    if (hint) hint.textContent = 'VISUAL FIELD COULD NOT INITIALISE';
+  }, { once: true });
+  document.head.append(script);
 
   window.setTimeout(release, 1800);
 })();

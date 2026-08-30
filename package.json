@@ -3,7 +3,7 @@
   "version": "1.25.1",
   "private": true,
   "type": "module",
-  "description": "Dream Unity Bearing Mirror with a pressure-responsive 3D world cycle and nine compatible games.",
+  "description": "Dream Unity Sovereign Nocturne: a WebGL Stage Coral world-cycle with resilient fallback and nine compatible games.",
   "scripts": {
     "test": "node tests/remembered-tomorrow.test.mjs && node tests/role-drift.test.mjs && node tests/validate-imagine-17.mjs && node tests/voice-disabled.test.mjs && node tests/voice-runtime.test.mjs && node tests/backend-runtime.test.mjs",
     "test:browser": "node tests/browser-regression.mjs",

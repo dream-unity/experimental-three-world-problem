@@ -1,18 +1,20 @@
 # Dream Unity — Experimental Three-World Problem
 
-A visual-first, mobile-compatible 3D portal containing nine distinct arcade experiences across three coupled worlds. The homepage is **Awaken the True War**: a Stage Coral world-instrument in which systemic integration is retained but placed under singular, embodied authorship. Awareness, agency, imagination and matter operate as one commanded body rather than disconnected planets, a decorative emblem or a literal illustration of the essay.
+A visual-first, mobile-compatible 3D portal containing nine distinct arcade experiences across three coupled worlds. **Awaken the True War** is treated as a Stage Coral proposition: whole-system awareness returns from abstraction as concentrated authorship, embodied agency and responsible force. Awareness, imagination, primality and matter act as one commanded body without collapsing their differences.
 
 1. **Dream Machine** — Perceive, Model, Predict.
 2. **Dream Maker** — Intend, Act, Become.
 3. **Dream World** — Matter, Structure, Emerge.
 
-The overview can be orbited by mouse or touch. One compact 3D pressure instrument—the **Bearing Mirror**—moves through **Dream → Compress → Realise → Return**. Electric-cyan optical laminae, emerald compression clevises and an ultraviolet load cradle subject one nine-cut mirror membrane to the same sovereign act. The ghost remains full-scale when surface disappears; the realised billet returns to ether as memory-bearing fibres. Dream worlds are therefore compressed, synthesised and made physically load-bearing before returning changed to the field that can dream again.
+The homepage is the **Sovereign Nocturne**: one asymmetrical, continuous mineral membrane suspended in a near-black mirrored field. A torn front concavity exposes a warm coral-and-bone interior; the body broadens into a dense low anchor, while a delayed, desaturated reflection remains behind it and only sparse memory fibres escape during return. Cyan, emerald and violet survive as rare interference seams and embedded portal glints rather than three detached objects.
 
-The colourless offset double is the inherited predictive ghost. It first appears to anticipate the vivid body; disciplined interaction demotes it into a trailing scaffold. The mirror is not destroyed, worshipped or escaped—it becomes an instrument. A single silent material choreography moves through gathering, pressure, subtraction, isolated recovery, exact reconstitution, crown and fibre return. In the deepest subtraction the surfaces withdraw into a compact seed while the full-scale ghost remains. Reconstitution snaps the object into a more coherent body instead of blooming into decorative harmony. Ultraviolet armour and nine controlled amber serrations make **grace with teeth** load-bearing rather than rhetorical. Dream Machine is an asymmetric optical shutter; Dream Maker is an unforgiving three-jaw die; Dream World is an archive of nine irregular plates carrying one another under load. Selecting a world exposes its internal triad; selecting an internal force opens the corresponding game.
+A silent 40-second material choreography gathers the field, applies pressure, subtracts the outer image, inverts and reconstitutes the material, crowns the wound, then returns remembered fibres to possibility. The form never auto-spins. Pointer and touch orbit are restrained, while holding the field visibly compresses it. The inherited predictive ghost is neither obeyed nor destroyed: it is displaced behind the realised body and made useful as memory. This is the essay’s meeting ground between worlds—spirit converted to physical consequence, the body retained as an anchor, and physical experience returned to the next dream.
 
-The homepage retains **I Remember Tomorrow** as its published score and exposes a persistent score control. The sculpture and interface use one coherent dimensionless visual clock so crown, abyss and return can never contradict one another; the published audio remains independently controllable rather than declaring a second visible phase. Browsers that defer audible autoplay start the published score on the visitor's first interaction. An explicit off choice is remembered locally. No private reference media is named, required or delivered by the site.
+Selecting a world changes viewpoint and accent without breaking the connected body, then reveals its three capacity glints; the DOM labels remain accessible equivalents and open the corresponding games. WebGL2 renders a procedurally generated closed membrane, nested inner caustic, custom-shaded reflection and line fibres. If WebGL2 is unavailable, a deliberate Canvas2D mineral-wound composition preserves the same three-world navigation. Context loss is recoverable, and reduced-motion mode fixes one resolved pose while suppressing autonomous deformation and fibres.
 
-The visual language continues into all nine games and the Social Agency Lab: the former neon bunker is translated onto the same white ground, hard-edged panels and cyan–emerald–ultraviolet material spectrum. The interaction system remains intact, but it now reads as another state of the Bearing Mirror rather than a separate product skin.
+The homepage retains **I Remember Tomorrow** as its published, independently controlled score. The private reference recording is never copied into the repository, requested by the page, decoded by the renderer or required at runtime; its compositional essence is translated into non-auditory pressure, release, memory and return. The Nocturne adds no model, texture, font, CDN or other runtime dependency.
+
+The near-black material language continues into all nine games and the Social Agency Lab. Bone typography, living-coral heat and restrained cyan–emerald–violet signals make play another state of the same world rather than a separate product skin.
 
 The experimental Unity voice and text console is intentionally paused. It is not mounted on the homepage, no microphone, speech, Puter or assistant runtime is loaded by visitors, and its former public reply endpoint returns a disabled response. The dormant frontend source remains in the repository for later work.
 
@@ -172,10 +174,9 @@ The governing distinction remains controlled as-if conviction, not literal confu
 
 ### Dream Unity overview
 
-- **Mouse or touch drag:** orbit the complete temporal dream body; the predictive ghost leads before the musical awakening, then the living structure takes command and the ghost lags.
-- **Pinch or wheel:** zoom.
-- **Two-finger twist:** roll.
-- **Tap a world, then an internal title:** open its game.
+- **Mouse or touch drag:** use the sculpture's restrained orbit to inspect the continuous body and its delayed reflection.
+- **Press and hold the field:** compress the material wound; release it back into the cycle.
+- **Tap or focus a world, then one of its three capacities:** enter the detail state and open its game.
 - **Arrow keys:** move focus between the currently available worlds or capacities.
 - **Score control:** stop or resume *I Remember Tomorrow*.
 
@@ -194,11 +195,10 @@ The governing distinction remains controlled as-if conviction, not literal confu
 
 ## Key files
 
-- `main.js` — versioned three-world visual loader.
-- `visual-parts/sovereign-resonator-11.txt` — score-form and projection bridge retained behind the current visual system.
-- `visual-parts/bearing-mirror-12.txt` — compact Bearing Mirror sculpture, delayed ghost, three pressure forces, nine amber teeth, load-bearing seed, snap reconstitution, fibre return and three bounded world instruments.
-- `unity-cycle.css` — pure-white, low-interface visual presentation with crisp cyan, emerald, ultraviolet and amber phase identities.
-- `unity-ui.js` — homepage score control, guarded audio analyser, deterministic song anatomy, autoplay recovery and keyboard world navigation.
+- `main.js` — minimal, versioned Sovereign Nocturne loader.
+- `visual-parts/sovereign-nocturne-13.js` — self-contained WebGL2 sculpture, Canvas2D fallback, context recovery, reduced-motion behavior and three-world projection/navigation.
+- `unity-cycle.css` — near-black editorial presentation with bone, living coral and restrained three-world accents.
+- `unity-ui.js` — independently controlled public score and keyboard world navigation.
 - `voice.js` and `voice.css` — paused, unmounted experimental voice-console source retained for future work.
 - `api/realtime-session.js` — lightweight `410 VOICE_DISABLED` tombstone for the paused public reply endpoint.
 - `assets/i-remember-tomorrow.mp3` — homepage score.
@@ -229,5 +229,7 @@ npm run test:all
 ```
 
 GitHub Actions validates every push to `main` and every pull request targeting `main`, proves the voice interface and external loaders are absent, waits for GitHub Pages to match the tested source byte-for-byte, checks the disabled reply endpoint, verifies the lean game loader and active social-agency markers, and writes a machine-readable deployment receipt.
+
+The visual regression suite also exercises WebGL readiness, recoverable context loss, forced Canvas2D fallback, reduced-motion stillness, no-overflow layouts, detail navigation and all nine game factories without making the private reference recording public.
 
 This is experimental cognitive-training gameplay, not a validated clinical, neurological or psychometric intervention.
