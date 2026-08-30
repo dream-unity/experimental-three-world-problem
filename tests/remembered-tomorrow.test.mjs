@@ -3,8 +3,8 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync, statSync } from 'node:fs';
 
 const root = new URL('../', import.meta.url);
-const RELEASE = '20260830-sovereign-nocturne-17';
-const RENDERER_PATH = 'visual-parts/sovereign-nocturne-17.js';
+const RELEASE = '20260830-sovereign-nocturne-18';
+const RENDERER_PATH = 'visual-parts/sovereign-nocturne-18.js';
 const read = (path) => readFileSync(new URL(path, root), 'utf8');
 const exists = (path) => statSync(new URL(path, root)).isFile();
 
@@ -59,7 +59,7 @@ for (const asset of ['styles.css', 'become.css', 'unity-cycle.css', 'unity-ui.js
   assert.match(index, new RegExp(`${asset.replace('.', '\\.')}\\?v=${RELEASE}`), `${asset} does not use the Nocturne release`);
 }
 assert.match(loader, new RegExp(`VERSION\\s*=\\s*['"]${RELEASE}['"]`));
-assert.match(loader, /visual-parts\/sovereign-nocturne-17\.js/);
+assert.match(loader, /visual-parts\/sovereign-nocturne-18\.js/);
 assert.doesNotMatch(loader, /bearing-mirror|sovereign-resonator|visual-parts\/part-0[1-6]\.txt|\bFunction\s*\(|fetchParts/i, 'the loader must not concatenate a retired Canvas2D renderer');
 
 // Near-black material field with bone and concentrated Coral accents.
