@@ -445,13 +445,19 @@ await run('all nine games keep responsive frame scheduling without long tasks', 
         requestAnimationFrame(tick);
       });
     });
-    // Wait for the browser to prove that animation is scheduling instead of
-    // sampling an arbitrary fixed window. SwiftShader occasionally defers the
-    // first rAF while a newly opened game uploads its canvas state. Ignore that
-    // startup latency, then require three frames so two real scheduling gaps are
-    // measured. Long-task observation independently catches blocking startup.
+    // Separate one-time game construction from steady-state scheduling. The
+    // Long Task observer remains active throughout the warm-up, so blocking
+    // startup work still fails; only compositor/GPU readiness gaps are excluded
+    // from the running-frame measurement.
+    await page.waitForTimeout(700);
+    await page.evaluate(() => {
+      const probe = window.__dreamUnityPerformanceProbe;
+      probe.frames = 0;
+      probe.maxGap = 0;
+      probe.last = null;
+    });
     await page.waitForFunction(
-      () => window.__dreamUnityPerformanceProbe?.frames >= 3,
+      () => window.__dreamUnityPerformanceProbe?.frames >= 4,
       null,
       { timeout: 1500, polling: 40 },
     );
@@ -463,7 +469,7 @@ await run('all nine games keep responsive frame scheduling without long tasks', 
     });
     console.log(`PERF ${world}:${index} ${probe.frames} frames · ${probe.maxGap.toFixed(1)}ms max gap · ${probe.longTasks} long tasks`);
     assert.ok(probe.maxGap < 140, `${world}:${index} stalled for ${probe.maxGap.toFixed(1)}ms across ${probe.frames} frames`);
-    assert.ok(probe.frames >= 3, `${world}:${index} stopped scheduling frames; max gap ${probe.maxGap.toFixed(1)}ms`);
+    assert.ok(probe.frames >= 4, `${world}:${index} stopped scheduling frames; max gap ${probe.maxGap.toFixed(1)}ms`);
     assert.equal(probe.longTasks, 0, `${world}:${index} produced a long task`);
     await close(page);
   }
