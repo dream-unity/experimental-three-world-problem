@@ -37,35 +37,33 @@ jobs:
       - name: Validate source and browser behavior
         run: |
           npm test
-          DU_BROWSER_SCOPE=voice npm run test:browser
-      - name: Validate Awaken the True War and paused Unity voice
+          npm run test:browser
+      - name: Validate the Sovereign Resonator and paused Unity voice
         shell: bash
         run: |
           set -euo pipefail
-          grep -q "VERSION = '20260830-awaken-true-war-2'" main.js
-          grep -q 'remembered-tomorrow-10.txt' main.js
-          grep -q "ctx.fillStyle = '#ffffff'" visual-parts/remembered-tomorrow-10.txt
-          grep -q 'render = function rememberedTomorrowRender' visual-parts/remembered-tomorrow-10.txt
-          grep -q 'drawOverview = function rememberedTomorrowOverview' visual-parts/remembered-tomorrow-10.txt
-          grep -q 'drawDetail = function rememberedTomorrowDetail' visual-parts/remembered-tomorrow-10.txt
-          grep -q 'function rtDrawTemporalGhost' visual-parts/remembered-tomorrow-10.txt
-          grep -q 'function rtDrawSovereignShell' visual-parts/remembered-tomorrow-10.txt
-          grep -q 'function rtDrawLightAxis' visual-parts/remembered-tomorrow-10.txt
-          grep -q 'function rtDrawPossibleFutures' visual-parts/remembered-tomorrow-10.txt
-          grep -q 'function rtDrawLivingPath' visual-parts/remembered-tomorrow-10.txt
-          grep -q 'function rtDrawDreamMembrane' visual-parts/remembered-tomorrow-10.txt
-          grep -q 'function rtDrawCompressionBraid' visual-parts/remembered-tomorrow-10.txt
-          grep -q 'function rtDrawMatter' visual-parts/remembered-tomorrow-10.txt
-          grep -q 'function rtDrawUnity' visual-parts/remembered-tomorrow-10.txt
+          grep -q "VERSION = '20260830-sovereign-resonator-1'" main.js
+          grep -q 'sovereign-resonator-11.txt' main.js
+          grep -q "ctx.fillStyle = '#ffffff'" visual-parts/sovereign-resonator-11.txt
+          grep -q 'render = function srRender' visual-parts/sovereign-resonator-11.txt
+          grep -q 'drawOverview = function srOverview' visual-parts/sovereign-resonator-11.txt
+          grep -q 'drawDetail = function srDetail' visual-parts/sovereign-resonator-11.txt
+          grep -q 'function srDrawEcho' visual-parts/sovereign-resonator-11.txt
+          grep -q 'function srDrawTensions' visual-parts/sovereign-resonator-11.txt
+          grep -q 'function srDrawSheaths' visual-parts/sovereign-resonator-11.txt
+          grep -q 'function srDrawLoadRibs' visual-parts/sovereign-resonator-11.txt
+          grep -q 'function srDrawEther' visual-parts/sovereign-resonator-11.txt
+          grep -q 'function srDrawGravitySeed' visual-parts/sovereign-resonator-11.txt
+          grep -q 'function srDrawCrown' visual-parts/sovereign-resonator-11.txt
           grep -q 'AWAKEN THE TRUE WAR' index.html
           grep -q 'Somewhere out in the universe' index.html
           grep -q 'Light pierces through me' index.html
           grep -q 'THE GHOST IN THE MIRROR' index.html
           grep -q 'assets/i-remember-tomorrow.mp3' index.html
-          grep -q 'styles.css?v=20260830-awaken-true-war-2' index.html
-          grep -q 'unity-cycle.css?v=20260830-awaken-true-war-2' index.html
-          grep -q 'light-theme.js?v=20260830-awaken-true-war-3' index.html
-          grep -q 'main.js?v=20260830-awaken-true-war-2' index.html
+          grep -q 'styles.css?v=20260830-sovereign-resonator-1' index.html
+          grep -q 'unity-cycle.css?v=20260830-sovereign-resonator-1' index.html
+          grep -q 'light-theme.js?v=20260830-sovereign-resonator-1' index.html
+          grep -q 'main.js?v=20260830-sovereign-resonator-1' index.html
           grep -q '__dreamUnityScore' unity-ui.js
           grep -q 'createMediaElementSource' unity-ui.js
           grep -q "this.id === 'gameCanvas'" light-theme.js
@@ -79,12 +77,15 @@ jobs:
           test -s api/realtime-session.js
           grep -q "API_RELEASE = '20260829-unity-backend-paused-1'" api/realtime-session.js
           grep -q "code: 'VOICE_DISABLED'" api/realtime-session.js
-          grep -q "WORLD.machine.css = '#00BDE8'" visual-parts/remembered-tomorrow-10.txt
-          grep -q "WORLD.maker.css = '#00C983'" visual-parts/remembered-tomorrow-10.txt
-          grep -q "WORLD.reality.css = '#7448FF'" visual-parts/remembered-tomorrow-10.txt
+          grep -q "WORLD.machine.css = '#00CFFF'" visual-parts/sovereign-resonator-11.txt
+          grep -q "WORLD.maker.css = '#00D88A'" visual-parts/sovereign-resonator-11.txt
+          grep -q "WORLD.reality.css = '#6633F5'" visual-parts/sovereign-resonator-11.txt
           grep -q -- '--paper:#fff' unity-cycle.css
           test -s assets/i-remember-tomorrow.mp3
-          ! test -e assets/awaken-the-true-war.mp3
+          mapfile -t published_mp3 < <(git ls-files '*.mp3')
+          test "${#published_mp3[@]}" -eq 1
+          test "${published_mp3[0]}" = 'assets/i-remember-tomorrow.mp3'
+          grep -q "dreamunity:launch-game" visual-parts/part-05.txt
 
   verify-live:
     if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
@@ -107,7 +108,7 @@ jobs:
           PAGE_URL: https://dream-unity.github.io/experimental-three-world-problem
         run: |
           set -euo pipefail
-          files=(index.html styles.css become.css unity-cycle.css light-theme.js unity-ui.js main.js arcade.js assets/i-remember-tomorrow.mp3 visual-parts/part-01.txt visual-parts/part-02.txt visual-parts/part-03.txt visual-parts/part-04.txt visual-parts/part-05.txt visual-parts/part-06.txt visual-parts/remembered-tomorrow-10.txt arcade-parts/part-01.txt arcade-parts/part-02.txt arcade-parts/part-03.txt arcade-parts/part-04.txt arcade-parts/part-05.txt arcade-parts/perceive-role-logic.txt arcade-parts/perceive-aerial-01.txt arcade-parts/perceive-aerial-02.txt arcade-parts/perceive-aerial-03.txt arcade-parts/perceive-aerial-04.txt arcade-parts/perceive-aerial-05.txt arcade-parts/perceive-aerial-06.txt arcade-parts/perceive-aerial-07.txt arcade-parts/perceive-aerial-08.txt arcade-parts/become-lab-01.txt arcade-parts/become-diversity-09.txt arcade-parts/become-social-agency-10.txt arcade-parts/become-social-integration-11.txt arcade-parts/become-compressed-12.txt arcade-parts/become-rapid-entry-13.txt arcade-parts/become-activation-objectives-14.txt)
+          files=(index.html styles.css become.css unity-cycle.css light-theme.js unity-ui.js main.js arcade.js assets/i-remember-tomorrow.mp3 visual-parts/part-01.txt visual-parts/part-02.txt visual-parts/part-03.txt visual-parts/part-04.txt visual-parts/part-05.txt visual-parts/part-06.txt visual-parts/sovereign-resonator-11.txt arcade-parts/part-01.txt arcade-parts/part-02.txt arcade-parts/part-03.txt arcade-parts/part-04.txt arcade-parts/part-05.txt arcade-parts/perceive-role-logic.txt arcade-parts/perceive-aerial-01.txt arcade-parts/perceive-aerial-02.txt arcade-parts/perceive-aerial-03.txt arcade-parts/perceive-aerial-04.txt arcade-parts/perceive-aerial-05.txt arcade-parts/perceive-aerial-06.txt arcade-parts/perceive-aerial-07.txt arcade-parts/perceive-aerial-08.txt arcade-parts/become-lab-01.txt arcade-parts/become-diversity-09.txt arcade-parts/become-social-agency-10.txt arcade-parts/become-social-integration-11.txt arcade-parts/become-compressed-12.txt arcade-parts/become-rapid-entry-13.txt arcade-parts/become-activation-objectives-14.txt)
           live_dir=$(mktemp -d)
           trap 'rm -rf "$live_dir"' EXIT
           mkdir -p "$live_dir/arcade-parts" "$live_dir/visual-parts" "$live_dir/assets"
@@ -124,26 +125,27 @@ jobs:
           done
           test "$matched" = true
 
-          grep -q 'main.js?v=20260830-awaken-true-war-2' "$live_dir/index.html"
-          grep -q 'unity-cycle.css?v=20260830-awaken-true-war-2' "$live_dir/index.html"
-          grep -q 'styles.css?v=20260830-awaken-true-war-2' "$live_dir/index.html"
-          grep -q 'light-theme.js?v=20260830-awaken-true-war-3' "$live_dir/index.html"
+          grep -q 'main.js?v=20260830-sovereign-resonator-1' "$live_dir/index.html"
+          grep -q 'unity-cycle.css?v=20260830-sovereign-resonator-1' "$live_dir/index.html"
+          grep -q 'styles.css?v=20260830-sovereign-resonator-1' "$live_dir/index.html"
+          grep -q 'light-theme.js?v=20260830-sovereign-resonator-1' "$live_dir/index.html"
           grep -q '<div class="unity-label" id="unityLabel" aria-hidden="true">' "$live_dir/index.html"
           ! grep -Eqi 'data-voice|duVoice|du-voice|voice\.css|voice\.js|js\.puter\.com|dream-unity-voice-live\.vercel\.app' "$live_dir/index.html"
-          grep -q 'remembered-tomorrow-10.txt' "$live_dir/main.js"
-          grep -q "ctx.fillStyle = '#ffffff'" "$live_dir/visual-parts/remembered-tomorrow-10.txt"
-          grep -q 'function rtDrawTemporalGhost' "$live_dir/visual-parts/remembered-tomorrow-10.txt"
-          grep -q 'function rtDrawSovereignShell' "$live_dir/visual-parts/remembered-tomorrow-10.txt"
-          grep -q 'function rtDrawLightAxis' "$live_dir/visual-parts/remembered-tomorrow-10.txt"
-          grep -q 'function rtDrawPossibleFutures' "$live_dir/visual-parts/remembered-tomorrow-10.txt"
-          grep -q 'function rtDrawDreamMembrane' "$live_dir/visual-parts/remembered-tomorrow-10.txt"
+          grep -q 'sovereign-resonator-11.txt' "$live_dir/main.js"
+          grep -q "ctx.fillStyle = '#ffffff'" "$live_dir/visual-parts/sovereign-resonator-11.txt"
+          grep -q 'function srDrawEcho' "$live_dir/visual-parts/sovereign-resonator-11.txt"
+          grep -q 'function srDrawTensions' "$live_dir/visual-parts/sovereign-resonator-11.txt"
+          grep -q 'function srDrawSheaths' "$live_dir/visual-parts/sovereign-resonator-11.txt"
+          grep -q 'function srDrawLoadRibs' "$live_dir/visual-parts/sovereign-resonator-11.txt"
+          grep -q 'function srDrawGravitySeed' "$live_dir/visual-parts/sovereign-resonator-11.txt"
           grep -q 'AWAKEN THE TRUE WAR' "$live_dir/index.html"
           grep -q 'assets/i-remember-tomorrow.mp3' "$live_dir/index.html"
           grep -q '__dreamUnityScore' "$live_dir/unity-ui.js"
           grep -q "this.id === 'gameCanvas'" "$live_dir/light-theme.js"
-          grep -q "WORLD.machine.css = '#00BDE8'" "$live_dir/visual-parts/remembered-tomorrow-10.txt"
-          grep -q "WORLD.maker.css = '#00C983'" "$live_dir/visual-parts/remembered-tomorrow-10.txt"
-          grep -q "WORLD.reality.css = '#7448FF'" "$live_dir/visual-parts/remembered-tomorrow-10.txt"
+          grep -q "WORLD.machine.css = '#00CFFF'" "$live_dir/visual-parts/sovereign-resonator-11.txt"
+          grep -q "WORLD.maker.css = '#00D88A'" "$live_dir/visual-parts/sovereign-resonator-11.txt"
+          grep -q "WORLD.reality.css = '#6633F5'" "$live_dir/visual-parts/sovereign-resonator-11.txt"
+          grep -q 'dreamunity:launch-game' "$live_dir/visual-parts/part-05.txt"
           grep -q 'arcade.js?v=20260827-fighter-jet-performance-20' "$live_dir/index.html"
           grep -q 'become-activation-objectives-14.txt' "$live_dir/arcade.js"
           grep -q "S14_VERSION='20260826-activation-objectives-2'" "$live_dir/arcade-parts/become-activation-objectives-14.txt"
@@ -236,19 +238,21 @@ jobs:
             'page_url':os.environ['PAGE_URL'],
             'nine_portal_compatibility':'validated',
             'overview':{
-              'theme':'stage_coral_sovereign_resonance',
+              'theme':'stage_coral_sovereign_resonator',
               'canvas_background':'#FFFFFF',
               'legacy_render_vignette_active':False,
               'nebula_fog_active':False,
-              'world_palette':{'machine':'#00BDE8','maker':'#00C983','reality':'#7448FF','unity':'#E7A429'},
+              'world_palette':{'machine':'#00CFFF','maker':'#00D88A','reality':'#6633F5','unity':'#ECA71F'},
               'connected_instrument':True,
               'distinct_world_geometries':True,
               'temporal_ghost_field':True,
-              'causality_reversal_at_seconds':276.8,
-              'score_driven_material_states':True,
-              'sovereign_fold_shell':True,
-              'load_bearing_bone_interlude':True,
-              'plural_remembered_futures':True,
+              'dimensionless_score_choreography':True,
+              'resonator_sheath_count':3,
+              'structural_tension_count':9,
+              'compression_throat':True,
+              'gravity_seed_subtraction':True,
+              'prismatic_reconstitution':True,
+              'load_bearing_ribs':True,
               'ether_compression_matter_return_cycle':True,
               'generated_core_asset':None,
               'homepage_score':'assets/i-remember-tomorrow.mp3',
@@ -261,8 +265,8 @@ jobs:
                 'backend_status':'paused',
                 'backend_release':backend_release
               },
-              'renderer_override':'visual-parts/remembered-tomorrow-10.txt',
-              'main_cache_version':'20260830-awaken-true-war-2'
+              'renderer_override':'visual-parts/sovereign-resonator-11.txt',
+              'main_cache_version':'20260830-sovereign-resonator-1'
             },
             'become':{
               'scenario_source':'instant_objective_driven_social_agency_maximin_synthesis',
@@ -287,7 +291,7 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add DEPLOYMENT_STATUS.json
           git diff --cached --quiet && exit 0
-          git commit -m 'Record Awaken the True War deployment [skip ci]'
+          git commit -m 'Record Sovereign Resonator deployment [skip ci]'
           git config --local credential.helper '!f() { if [ "$1" = get ]; then echo "username=x-access-token"; echo "password=$GITHUB_TOKEN"; fi; }; f'
           trap 'git config --local --unset-all credential.helper >/dev/null 2>&1 || true' EXIT
           git push origin HEAD:main

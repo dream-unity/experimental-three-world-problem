@@ -1,10 +1,10 @@
 (() => {
   'use strict';
-  const VERSION = '20260830-awaken-true-war-2';
+  const VERSION = '20260830-sovereign-resonator-1';
   const baseParts = Array.from({ length: 6 }, (_, index) =>
     `./visual-parts/part-${String(index + 1).padStart(2, '0')}.txt?v=${VERSION}`
   );
-  const overridePath = `./visual-parts/remembered-tomorrow-10.txt?v=${VERSION}`;
+  const overridePath = `./visual-parts/sovereign-resonator-11.txt?v=${VERSION}`;
   const parts = [...baseParts, overridePath];
   const loader = document.getElementById('loading');
   const hint = document.getElementById('hint');

@@ -1,0 +1,858 @@
+
+  // Dream Unity — The Sovereign Resonator.
+  // One closed body carries ether, agency and matter through a compression
+  // throat and back into possibility. Its temporal double is cut from the field;
+  // its nine tensions are not decoration but the forces that keep unity articulate.
+
+  WORLD.machine.css = '#00CFFF';
+  WORLD.machine.rgb = [0, 207, 255];
+  WORLD.maker.css = '#00D88A';
+  WORLD.maker.rgb = [0, 216, 138];
+  WORLD.reality.css = '#6633F5';
+  WORLD.reality.rgb = [102, 51, 245];
+
+  const SR_WHITE = [255, 255, 255];
+  const SR_PAPER = [248, 249, 252];
+  const SR_INK = [13, 17, 31];
+  const SR_GREY = [139, 146, 162];
+  const SR_PALE = [219, 224, 233];
+  const SR_CYAN = WORLD.machine.rgb;
+  const SR_GREEN = WORLD.maker.rgb;
+  const SR_VIOLET = WORLD.reality.rgb;
+  const SR_GOLD = [236, 167, 31];
+  const SR_PHASE = { machine: 0.055, maker: 0.365, reality: 0.665 };
+  const SR_TENSIONS = [
+    [0.025, 0.390], [0.105, 0.586], [0.175, 0.735],
+    [0.255, 0.805], [0.325, 0.910], [0.425, 0.955],
+    [0.510, 0.075], [0.610, 0.155], [0.710, 0.285]
+  ];
+  let srLivingYaw = overviewYaw;
+  let srLivingPitch = overviewPitch;
+  let srLivingRoll = overviewRoll;
+  let srEchoYaw = overviewYaw - 0.22;
+  let srEchoPitch = overviewPitch + 0.10;
+  let srEchoRoll = overviewRoll - 0.055;
+  let srLastTime = 0;
+  let srForm = {
+    cycle: 0,
+    energy: 0.34,
+    low: 0.28,
+    mid: 0.28,
+    high: 0.22,
+    flux: 0,
+    beat: 0,
+    breath: 0.3,
+    convergence: 0,
+    subtraction: 0,
+    reconstitution: 0,
+    crown: 0,
+    release: 0
+  };
+
+  function srSeed(index, salt = 0) {
+    const srValue = Math.sin(index * 127.1 + salt * 311.7) * 43758.5453123;
+    return srValue - Math.floor(srValue);
+  }
+
+  function srMixColor(a, b, amount) {
+    const srAmount = clamp(amount, 0, 1);
+    return [
+      Math.round(lerp(a[0], b[0], srAmount)),
+      Math.round(lerp(a[1], b[1], srAmount)),
+      Math.round(lerp(a[2], b[2], srAmount))
+    ];
+  }
+
+  function srWindow(value, start, peak, end) {
+    if (value <= start || value >= end) return 0;
+    if (value < peak) return ease((value - start) / Math.max(0.0001, peak - start));
+    return 1 - ease((value - peak) / Math.max(0.0001, end - peak));
+  }
+
+  function srCyclicDistance(a, b) {
+    const srDelta = Math.abs(a - b) % 1;
+    return Math.min(srDelta, 1 - srDelta);
+  }
+
+  function srReadForm(t) {
+    let srSample = null;
+    try { srSample = window.__dreamUnityScore?.sample?.() || null; } catch {}
+    const srDuration = Number.isFinite(srSample?.duration) && srSample.duration > 0
+      ? srSample.duration : 72;
+    const srCurrent = Number.isFinite(srSample?.currentTime)
+      ? srSample.currentTime : t % srDuration;
+    const srCycle = ((srCurrent / srDuration) % 1 + 1) % 1;
+    const srFallbackPulse = reduced ? 0 : Math.pow(Math.max(0, Math.cos(t * 1.27)), 12);
+    const srMacroBreath = srWindow(srCycle, 0.00, 0.185, 0.42)
+      + srWindow(srCycle, 0.42, 0.49, 0.55) * 0.22;
+    const srMacroConvergence = srWindow(srCycle, 0.18, 0.47, 0.625);
+    const srMacroSubtraction = srWindow(srCycle, 0.545, 0.60, 0.665);
+    const srMacroReconstitution = ease(clamp((srCycle - 0.632) / 0.094, 0, 1))
+      * (1 - ease(clamp((srCycle - 0.91) / 0.09, 0, 1)));
+    const srMacroCrown = srWindow(srCycle, 0.705, 0.815, 0.925);
+    const srMacroRelease = ease(clamp((srCycle - 0.885) / 0.115, 0, 1));
+    // The form carries its own dimensionless musical arc, while the published
+    // score may deepen the same states in real time. Silence therefore removes
+    // material, re-entry rebuilds it and release sends it upstream without the
+    // private reference ever becoming a browser asset.
+    const srBoneSignal = clamp(Number.isFinite(srSample?.bone) ? srSample.bone : 0, 0, 1);
+    const srBloomSignal = clamp(Number.isFinite(srSample?.bloom) ? srSample.bloom : 0, 0, 1);
+    const srReleaseSignal = clamp(Number.isFinite(srSample?.release) ? srSample.release : 0, 0, 1);
+    const srPressureSignal = clamp(Number.isFinite(srSample?.pressure) ? srSample.pressure : 0, 0, 1);
+    const srBreath = clamp(Math.max(srMacroBreath, srBloomSignal * 0.48), 0, 1);
+    const srConvergence = clamp(Math.max(srMacroConvergence, srPressureSignal * 0.78), 0, 1);
+    const srSubtraction = clamp(Math.max(srMacroSubtraction, srBoneSignal), 0, 1);
+    const srReconstitution = clamp(Math.max(srMacroReconstitution, srBloomSignal * 0.88) * (1 - srBoneSignal), 0, 1);
+    const srCrown = clamp(Math.max(srMacroCrown, srBloomSignal) * (1 - srBoneSignal), 0, 1);
+    const srRelease = clamp(Math.max(srMacroRelease, srReleaseSignal), 0, 1);
+    srForm = {
+      cycle: srCycle,
+      energy: clamp(Number.isFinite(srSample?.energy) ? srSample.energy : 0.34 + srCrown * 0.5, 0, 1),
+      low: clamp(Number.isFinite(srSample?.low) ? srSample.low : 0.28 + srConvergence * 0.4, 0, 1),
+      mid: clamp(Number.isFinite(srSample?.mid) ? srSample.mid : 0.28 + srReconstitution * 0.42, 0, 1),
+      high: clamp(Number.isFinite(srSample?.high) ? srSample.high : 0.22 + srCrown * 0.55, 0, 1),
+      flux: clamp(Number.isFinite(srSample?.flux) ? srSample.flux : 0, 0, 1),
+      beat: clamp(Number.isFinite(srSample?.beat) ? srSample.beat : srFallbackPulse, 0, 1),
+      breath: clamp(srBreath, 0, 1),
+      convergence: clamp(srConvergence, 0, 1),
+      subtraction: clamp(srSubtraction, 0, 1),
+      reconstitution: clamp(srReconstitution, 0, 1),
+      crown: clamp(srCrown, 0, 1),
+      release: clamp(srRelease, 0, 1)
+    };
+    return srForm;
+  }
+
+  function srCenter() {
+    return {
+      x: width > 1120 ? width * 0.635 : width > 760 ? width * 0.555 : width * 0.5,
+      y: width > 760 ? height * 0.505 : height * 0.55
+    };
+  }
+
+  function srProject(point, scale = 1, cameraZ = 13.2, center = srCenter()) {
+    const srDepth = cameraZ - point.z;
+    const srPerspective = scale * cameraZ / Math.max(3.3, srDepth);
+    const srSpread = width > 1120 ? 0.132 : width > 760 ? 0.117 : 0.142;
+    return {
+      x: center.x + point.x * unit * srSpread * srPerspective,
+      y: center.y - point.y * unit * srSpread * srPerspective,
+      f: srPerspective,
+      z: point.z,
+      depth: srDepth
+    };
+  }
+
+  function srTrefoil(value) {
+    const srWrapped = ((value % 1) + 1) % 1;
+    const srAngle = srWrapped * TAU;
+    const srRing = 2.12 + 0.66 * Math.cos(srAngle * 3);
+    const srThroat = Math.exp(-Math.pow(srCyclicDistance(srWrapped, 0.405) / 0.072, 2));
+    const srShoulder = 1 - srThroat * (0.18 + srForm.convergence * 0.13);
+    return {
+      x: srRing * Math.cos(srAngle * 2) * 0.88 * srShoulder,
+      y: srRing * Math.sin(srAngle * 2) * 0.96,
+      z: Math.sin(srAngle * 3) * 1.19 * srShoulder
+    };
+  }
+
+  function srNormalize(vector) {
+    const srLength = Math.max(0.0001, Math.hypot(vector.x, vector.y, vector.z));
+    return { x: vector.x / srLength, y: vector.y / srLength, z: vector.z / srLength };
+  }
+
+  function srCross(a, b) {
+    return {
+      x: a.y * b.z - a.z * b.y,
+      y: a.z * b.x - a.x * b.z,
+      z: a.x * b.y - a.y * b.x
+    };
+  }
+
+  function srFrameAt(value) {
+    const srBefore = srTrefoil(value - 0.0014);
+    const srAfter = srTrefoil(value + 0.0014);
+    const srTangent = srNormalize({
+      x: srAfter.x - srBefore.x,
+      y: srAfter.y - srBefore.y,
+      z: srAfter.z - srBefore.z
+    });
+    let srSide = srCross(srTangent, { x: 0, y: 1, z: 0 });
+    if (Math.hypot(srSide.x, srSide.y, srSide.z) < 0.08) {
+      srSide = srCross(srTangent, { x: 1, y: 0, z: 0 });
+    }
+    srSide = srNormalize(srSide);
+    const srUp = srNormalize(srCross(srSide, srTangent));
+    return { tangent: srTangent, side: srSide, up: srUp };
+  }
+
+  function srSectionColor(value, strand = 0) {
+    const srS = ((value % 1) + 1) % 1;
+    let srColor;
+    if (srS < 0.19) srColor = srMixColor(SR_CYAN, SR_GREEN, ease(srS / 0.19) * 0.28);
+    else if (srS < 0.43) srColor = srMixColor(SR_GREEN, SR_VIOLET, ease((srS - 0.19) / 0.24) * 0.28);
+    else if (srS < 0.73) srColor = srMixColor(SR_VIOLET, SR_CYAN, ease((srS - 0.43) / 0.30) * 0.14);
+    else srColor = srMixColor(SR_VIOLET, SR_CYAN, ease((srS - 0.73) / 0.27));
+    if (strand === 1) return srMixColor(srColor, SR_WHITE, 0.12);
+    if (strand === 2) return srMixColor(srColor, SR_INK, 0.08);
+    return srColor;
+  }
+
+  function srWidthAt(value) {
+    const srS = ((value % 1) + 1) % 1;
+    const srThroat = Math.exp(-Math.pow(srCyclicDistance(srS, 0.405) / 0.060, 2));
+    const srMatter = srWindow(srS, 0.40, 0.57, 0.76);
+    const srDissolve = ease(clamp((srS - 0.74) / 0.26, 0, 1));
+    const srBreath = 1 + srForm.breath * 0.16 + srForm.beat * 0.045;
+    return (0.145 + srMatter * 0.105) * (1 - srThroat * 0.72) * srBreath * (1 - srDissolve * 0.42);
+  }
+
+  function srModelPoint(value, strand = 1, edge = 0) {
+    const srBase = srTrefoil(value);
+    const srFrame = srFrameAt(value);
+    const srS = ((value % 1) + 1) % 1;
+    const srThroat = Math.exp(-Math.pow(srCyclicDistance(srS, 0.405) / 0.066, 2));
+    const srDissolve = ease(clamp((srS - 0.74) / 0.26, 0, 1));
+    const srStrandAngle = strand * TAU / 3 + srS * TAU * 0.82;
+    const srSeparation = (0.17 + srForm.breath * 0.055)
+      * (1 - srThroat * (0.82 + srForm.convergence * 0.12))
+      * (1 - srDissolve * 0.30);
+    const srRibbonWidth = srWidthAt(srS) * edge;
+    const srSideAmount = Math.cos(srStrandAngle) * srSeparation + srRibbonWidth;
+    const srUpAmount = Math.sin(srStrandAngle) * srSeparation + srRibbonWidth * 0.16 * (strand - 1);
+    return {
+      x: srBase.x + srFrame.side.x * srSideAmount + srFrame.up.x * srUpAmount,
+      y: srBase.y + srFrame.side.y * srSideAmount + srFrame.up.y * srUpAmount,
+      z: srBase.z + srFrame.side.z * srSideAmount + srFrame.up.z * srUpAmount
+    };
+  }
+
+  function srRotateProject(point, yaw = srLivingYaw, pitch = srLivingPitch, roll = srLivingRoll, scale = overviewZoom) {
+    const srRotated = rotate3(point, yaw, pitch, roll);
+    const srProjected = srProject(srRotated, scale, 13.2);
+    srProjected.world = srRotated;
+    return srProjected;
+  }
+
+  function srLine(a, b, color, alpha, lineWidth = 1) {
+    if (alpha <= 0.002) return;
+    ctx.strokeStyle = rgba(color, alpha);
+    ctx.lineWidth = lineWidth;
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(b.x, b.y);
+    ctx.stroke();
+  }
+
+  overviewBasePositions = function srBasePositions() {
+    return {
+      machine: srTrefoil(SR_PHASE.machine),
+      maker: srTrefoil(SR_PHASE.maker),
+      reality: srTrefoil(SR_PHASE.reality)
+    };
+  };
+
+  overviewPositions = function srOverviewPositions(t) {
+    const srPositions = {};
+    worldKeys.forEach((srKey, srIndex) => {
+      const srPhase = SR_PHASE[srKey];
+      const srBreathe = reduced ? 0 : Math.sin(t * 0.31 + srIndex * 2.2) * 0.018;
+      const srModel = srModelPoint(srPhase + srBreathe * 0.012, srIndex, 0);
+      const srProjected = srRotateProject(srModel);
+      srPositions[srKey] = {
+        x: srProjected.x,
+        y: srProjected.y,
+        r: unit * (width < 760 ? 0.054 : 0.061) * srProjected.f,
+        f: srProjected.f,
+        z: srProjected.z,
+        world: srProjected.world
+      };
+    });
+    return srPositions;
+  };
+
+  drawBackground = function srBackground(t) {
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, width, height);
+
+    const srOrigin = srCenter();
+    const srRadius = unit * (width > 760 ? 0.365 : 0.32);
+    ctx.save();
+    ctx.translate(srOrigin.x, srOrigin.y);
+    ctx.rotate(-0.075 + overviewRoll * 0.03);
+    ctx.setLineDash([1, 10]);
+    ctx.strokeStyle = rgba(SR_PALE, 0.62);
+    ctx.lineWidth = 0.55;
+    for (let srRing = 0; srRing < 3; srRing++) {
+      ctx.beginPath();
+      ctx.ellipse(0, 0, srRadius * (0.63 + srRing * 0.18), srRadius * (0.15 + srRing * 0.028), 0, 0, TAU);
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+    ctx.strokeStyle = rgba(SR_INK, 0.065);
+    ctx.beginPath();
+    ctx.moveTo(-srRadius * 0.94, 0);
+    ctx.lineTo(srRadius * 0.94, 0);
+    ctx.stroke();
+    for (let srTick = -6; srTick <= 6; srTick++) {
+      const srX = srTick / 6 * srRadius * 0.90;
+      const srLength = srTick % 3 === 0 ? 5 : 2.5;
+      srLine({ x: srX, y: -srLength }, { x: srX, y: srLength }, SR_INK, 0.095, 0.6);
+    }
+    ctx.restore();
+  };
+
+  function srDrawEcho(alpha) {
+    const srCount = lowCPU || coarse ? 78 : 118;
+    const srPoints = [];
+    for (let srIndex = 0; srIndex <= srCount; srIndex++) {
+      const srS = srIndex / srCount;
+      const srModel = srTrefoil(srS);
+      const srRotated = rotate3(srModel, srEchoYaw, srEchoPitch, srEchoRoll);
+      const srProjected = srProject(srRotated, overviewZoom * 1.006, 13.2, {
+        x: srCenter().x - unit * 0.012,
+        y: srCenter().y + unit * 0.008
+      });
+      srPoints.push(srProjected);
+    }
+    const srEchoPresence = (0.45 - srForm.reconstitution * 0.16 + srForm.subtraction * 0.34)
+      * (1 - srForm.release * 0.36);
+    ctx.save();
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = Math.max(5, unit * 0.0105);
+    ctx.beginPath();
+    srPoints.forEach((srPoint, srIndex) => srIndex ? ctx.lineTo(srPoint.x, srPoint.y) : ctx.moveTo(srPoint.x, srPoint.y));
+    ctx.stroke();
+    ctx.strokeStyle = rgba(SR_GREY, alpha * srEchoPresence);
+    ctx.lineWidth = 0.75 + srForm.subtraction * 0.45;
+    ctx.setLineDash([1.25, 5.5]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    for (let srIndex = 0; srIndex < srCount; srIndex += 9) {
+      const srPoint = srPoints[srIndex];
+      const srNext = srPoints[Math.min(srCount, srIndex + 1)];
+      const srDx = srNext.x - srPoint.x;
+      const srDy = srNext.y - srPoint.y;
+      const srLength = Math.max(0.001, Math.hypot(srDx, srDy));
+      const srNx = -srDy / srLength;
+      const srNy = srDx / srLength;
+      srLine(
+        { x: srPoint.x - srNx * 4.5, y: srPoint.y - srNy * 4.5 },
+        { x: srPoint.x + srNx * 4.5, y: srPoint.y + srNy * 4.5 },
+        SR_GREY,
+        alpha * srEchoPresence * 0.72,
+        0.55
+      );
+    }
+    ctx.restore();
+  }
+
+  function srDrawTensions(t, alpha) {
+    const srFormState = srForm;
+    SR_TENSIONS.forEach((srPair, srIndex) => {
+      const srGroup = Math.floor(srIndex / 3);
+      const srColor = srGroup === 0 ? SR_CYAN : srGroup === 1 ? SR_GREEN : SR_VIOLET;
+      const srA = srRotateProject(srModelPoint(srPair[0], srGroup, 0));
+      const srB = srRotateProject(srModelPoint(srPair[1], (srGroup + 1) % 3, 0));
+      const srCenterPoint = srRotateProject({
+        x: (srTrefoil(srPair[0]).x + srTrefoil(srPair[1]).x) * 0.12,
+        y: (srTrefoil(srPair[0]).y + srTrefoil(srPair[1]).y) * 0.12,
+        z: (srTrefoil(srPair[0]).z + srTrefoil(srPair[1]).z) * 0.12
+      });
+      const srTension = 0.28 + srFormState.convergence * 0.44 + srFormState.crown * 0.24;
+      const srMidX = lerp((srA.x + srB.x) * 0.5, srCenterPoint.x, 0.28 + srFormState.convergence * 0.24);
+      const srMidY = lerp((srA.y + srB.y) * 0.5, srCenterPoint.y, 0.28 + srFormState.convergence * 0.24);
+      ctx.strokeStyle = rgba(srColor, alpha * (0.23 + srTension * 0.40) * (1 - srFormState.subtraction * 0.24));
+      ctx.lineWidth = 0.62 + srFormState.beat * 0.35 + (srIndex % 3 === 0 ? 0.25 : 0);
+      ctx.beginPath();
+      ctx.moveTo(srA.x, srA.y);
+      ctx.quadraticCurveTo(srMidX, srMidY, srB.x, srB.y);
+      ctx.stroke();
+      const srMark = 0.44 + (srIndex % 3) * 0.055;
+      const srOne = 1 - srMark;
+      const srX = srOne * srOne * srA.x + 2 * srOne * srMark * srMidX + srMark * srMark * srB.x;
+      const srY = srOne * srOne * srA.y + 2 * srOne * srMark * srMidY + srMark * srMark * srB.y;
+      const srSize = 2.2 + srFormState.crown * 1.6 + srFormState.beat * 0.8;
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(srX - srSize, srY - srSize, srSize * 2, srSize * 2);
+      ctx.strokeStyle = rgba(srIndex === 8 ? SR_GOLD : srColor, alpha * (0.72 + srFormState.crown * 0.22));
+      ctx.lineWidth = 0.75;
+      ctx.strokeRect(srX - srSize * 0.5, srY - srSize * 0.5, srSize, srSize);
+    });
+  }
+
+  function srDrawSheaths(t, alpha) {
+    const srCount = lowCPU || coarse ? 66 : 104;
+    const srFacets = [];
+    for (let srStrand = 0; srStrand < 3; srStrand++) {
+      for (let srIndex = 0; srIndex < srCount; srIndex++) {
+        const srA = srIndex / srCount;
+        const srB = (srIndex + 1) / srCount;
+        const srDissolve = ease(clamp((srA - 0.745) / 0.255, 0, 1));
+        const srKeep = 1 - srDissolve * (0.46 + (srIndex % 5) * 0.105);
+        if (srKeep < 0.28 && srIndex % 4 !== srStrand) continue;
+        const srModels = [
+          srModelPoint(srA, srStrand, -1),
+          srModelPoint(srA, srStrand, 1),
+          srModelPoint(srB, srStrand, 1),
+          srModelPoint(srB, srStrand, -1)
+        ];
+        const srPoints = srModels.map((srModel) => srRotateProject(srModel));
+        srFacets.push({
+          points: srPoints,
+          s: (srA + srB) * 0.5,
+          strand: srStrand,
+          index: srIndex,
+          dissolve: srDissolve,
+          z: srPoints.reduce((srSum, srPoint) => srSum + srPoint.z, 0) / srPoints.length
+        });
+      }
+    }
+    srFacets.sort((a, b) => a.z - b.z);
+    srFacets.forEach((srFacet) => {
+      const srMatter = srWindow(srFacet.s, 0.39, 0.57, 0.755);
+      const srColor = srSectionColor(srFacet.s, srFacet.strand);
+      const srDepth = clamp(0.66 + srFacet.z * 0.055, 0.38, 1);
+      const srFacePresence = (0.13 + srMatter * 0.17 + srForm.reconstitution * 0.08)
+        * (1 - srForm.subtraction * 0.78)
+        * (1 - srFacet.dissolve * 0.58);
+      ctx.beginPath();
+      ctx.moveTo(srFacet.points[0].x, srFacet.points[0].y);
+      for (let srPointIndex = 1; srPointIndex < srFacet.points.length; srPointIndex++) {
+        ctx.lineTo(srFacet.points[srPointIndex].x, srFacet.points[srPointIndex].y);
+      }
+      ctx.closePath();
+      ctx.fillStyle = rgba(srFacet.index % 3 === 0 ? srMixColor(srColor, SR_WHITE, 0.22) : srColor,
+        alpha * srFacePresence * srDepth);
+      ctx.fill();
+      ctx.strokeStyle = rgba(srColor, alpha * (0.52 + srMatter * 0.25 + srForm.crown * 0.16) * srDepth);
+      ctx.lineWidth = 0.65 + srMatter * 0.32 + srForm.beat * 0.28;
+      ctx.stroke();
+      if (srMatter > 0.12 && (srFacet.index + srFacet.strand) % 2 === 0) {
+        srLine(srFacet.points[0], srFacet.points[2],
+          srFacet.index % 7 === 0 ? SR_GOLD : SR_VIOLET,
+          alpha * (0.26 + srMatter * 0.34) * srDepth,
+          srFacet.index % 7 === 0 ? 0.92 : 0.52);
+      }
+    });
+  }
+
+  function srDrawLoadRibs(alpha) {
+    const srRibCount = lowCPU || coarse ? 10 : 16;
+    for (let srIndex = 0; srIndex < srRibCount; srIndex++) {
+      const srS = 0.425 + srIndex / Math.max(1, srRibCount - 1) * 0.305;
+      const srOuterA = srRotateProject(srModelPoint(srS, srIndex % 3, -1.45));
+      const srOuterB = srRotateProject(srModelPoint(srS, srIndex % 3, 1.45));
+      const srColor = srIndex % 5 === 0 ? SR_GOLD : SR_VIOLET;
+      const srDepth = clamp(0.68 + (srOuterA.z + srOuterB.z) * 0.03, 0.44, 1);
+      srLine(srOuterA, srOuterB, srColor,
+        alpha * srDepth * (0.54 + srForm.convergence * 0.17 + srForm.crown * 0.18),
+        srIndex % 5 === 0 ? 1.35 : 0.86);
+      const srDx = srOuterB.x - srOuterA.x;
+      const srDy = srOuterB.y - srOuterA.y;
+      const srLength = Math.max(0.001, Math.hypot(srDx, srDy));
+      const srNx = -srDy / srLength;
+      const srNy = srDx / srLength;
+      const srTooth = 3.4 + srForm.crown * 2 + srForm.beat * 0.9;
+      const srBaseX = srOuterB.x;
+      const srBaseY = srOuterB.y;
+      ctx.beginPath();
+      ctx.moveTo(srBaseX - srDx / srLength * 2.4, srBaseY - srDy / srLength * 2.4);
+      ctx.lineTo(srBaseX + srNx * srTooth, srBaseY + srNy * srTooth);
+      ctx.lineTo(srBaseX + srDx / srLength * 2.4, srBaseY + srDy / srLength * 2.4);
+      ctx.closePath();
+      ctx.fillStyle = rgba(srColor, alpha * srDepth * 0.68);
+      ctx.fill();
+    }
+  }
+
+  function srDrawEther(t, alpha) {
+    const srCount = lowCPU || coarse ? 36 : 68;
+    for (let srIndex = 0; srIndex < srCount; srIndex++) {
+      const srReturning = srIndex >= srCount * 0.54;
+      const srLocal = srReturning
+        ? (srIndex - Math.ceil(srCount * 0.54)) / Math.max(1, srCount - Math.ceil(srCount * 0.54) - 1)
+        : srIndex / Math.max(1, Math.floor(srCount * 0.54) - 1);
+      const srS = srReturning ? 0.755 + srLocal * 0.245 : srLocal * 0.18;
+      const srFrame = srFrameAt(srS);
+      const srBase = srTrefoil(srS);
+      const srDrift = (srSeed(srIndex, 43) - 0.5) * (0.30 + srLocal * 0.72 + srForm.release * 0.55);
+      const srLift = (srSeed(srIndex, 47) - 0.5) * (0.22 + srLocal * 0.58);
+      const srMotion = reduced ? 0 : Math.sin(t * 0.17 + srIndex * 1.9) * 0.045;
+      const srModel = {
+        x: srBase.x + srFrame.side.x * (srDrift + srMotion) + srFrame.up.x * srLift,
+        y: srBase.y + srFrame.side.y * (srDrift + srMotion) + srFrame.up.y * srLift,
+        z: srBase.z + srFrame.side.z * (srDrift + srMotion) + srFrame.up.z * srLift
+      };
+      const srPoint = srRotateProject(srModel);
+      const srColor = srReturning ? srMixColor(SR_VIOLET, SR_CYAN, srLocal) : srMixColor(SR_CYAN, SR_GREEN, srLocal * 0.35);
+      const srSize = 0.65 + srSeed(srIndex, 49) * 1.45 + srForm.high * 0.55;
+      const srPresence = (0.26 + srForm.high * 0.48 + srForm.release * (srReturning ? 0.34 : 0.08))
+        * (1 - srForm.subtraction * 0.66);
+      ctx.fillStyle = rgba(srColor, alpha * srPresence * (0.42 + srSeed(srIndex, 51) * 0.38));
+      if (srIndex % 6 === 0) {
+        ctx.strokeStyle = rgba(srColor, alpha * srPresence * 0.62);
+        ctx.lineWidth = 0.6;
+        ctx.strokeRect(srPoint.x - srSize, srPoint.y - srSize, srSize * 2, srSize * 2);
+      } else {
+        ctx.fillRect(srPoint.x - srSize * 0.5, srPoint.y - srSize * 0.5, srSize, srSize);
+      }
+    }
+  }
+
+  function srDrawGravitySeed(alpha) {
+    const srS = 0.405;
+    const srCenterPoint = srRotateProject(srTrefoil(srS));
+    const srRadius = Math.max(4.5, unit * 0.0105) * (1 + srForm.low * 0.14 + srForm.beat * 0.10);
+    const srVertices = [];
+    for (let srIndex = 0; srIndex < 6; srIndex++) {
+      const srAngle = -Math.PI * 0.5 + srIndex * TAU / 6;
+      srVertices.push({
+        x: srCenterPoint.x + Math.cos(srAngle) * srRadius * (srIndex % 2 ? 0.82 : 1),
+        y: srCenterPoint.y + Math.sin(srAngle) * srRadius * 0.82
+      });
+    }
+    for (let srIndex = 0; srIndex < 6; srIndex++) {
+      const srA = srVertices[srIndex];
+      const srB = srVertices[(srIndex + 1) % 6];
+      ctx.beginPath();
+      ctx.moveTo(srCenterPoint.x, srCenterPoint.y);
+      ctx.lineTo(srA.x, srA.y);
+      ctx.lineTo(srB.x, srB.y);
+      ctx.closePath();
+      const srColor = srIndex === 1 ? SR_GOLD : srIndex % 2 ? SR_INK : SR_VIOLET;
+      ctx.fillStyle = rgba(srColor, alpha * (srIndex === 1 ? 0.92 : 0.82));
+      ctx.fill();
+    }
+    ctx.strokeStyle = rgba(SR_INK, alpha * 0.94);
+    ctx.lineWidth = 1.15;
+    ctx.beginPath();
+    srVertices.forEach((srPoint, srIndex) => srIndex ? ctx.lineTo(srPoint.x, srPoint.y) : ctx.moveTo(srPoint.x, srPoint.y));
+    ctx.closePath();
+    ctx.stroke();
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(srCenterPoint.x - 1.2, srCenterPoint.y - 1.2, 2.4, 2.4);
+  }
+
+  function srDrawCrown(alpha) {
+    const srPresence = srForm.reconstitution * (0.28 + srForm.crown * 0.72) * (1 - srForm.release * 0.62);
+    if (srPresence <= 0.005) return;
+    const srAt = srRotateProject(srTrefoil(0.795));
+    const srRadius = unit * (0.028 + srForm.crown * 0.018);
+    for (let srIndex = 0; srIndex < 9; srIndex++) {
+      const srAngle = srIndex * TAU / 9 - Math.PI * 0.5 + overviewRoll * 0.15;
+      const srInner = srRadius * (0.50 + (srIndex % 3) * 0.06);
+      const srOuter = srRadius * (0.88 + srForm.beat * 0.10);
+      const srColor = srIndex % 3 === 0 ? SR_GOLD : srIndex % 3 === 1 ? SR_CYAN : SR_VIOLET;
+      srLine(
+        { x: srAt.x + Math.cos(srAngle) * srInner, y: srAt.y + Math.sin(srAngle) * srInner * 0.46 },
+        { x: srAt.x + Math.cos(srAngle) * srOuter, y: srAt.y + Math.sin(srAngle) * srOuter * 0.46 },
+        srColor,
+        alpha * srPresence * 0.88,
+        srIndex % 3 === 0 ? 1.2 : 0.72
+      );
+    }
+    ctx.strokeStyle = rgba(SR_GOLD, alpha * srPresence * 0.76);
+    ctx.lineWidth = 0.85;
+    ctx.beginPath();
+    ctx.ellipse(srAt.x, srAt.y, srRadius * 0.50, srRadius * 0.23, 0, 0, TAU);
+    ctx.stroke();
+  }
+
+  function srDrawNode(position, kind, t, alpha = 1, focus = 0) {
+    if (!position || alpha <= 0.002) return;
+    const srRadius = Math.max(7, position.r * (0.62 + focus * 0.055));
+    const srColor = WORLD[kind].rgb;
+    const srSides = kind === 'machine' ? 8 : kind === 'maker' ? 6 : 5;
+    const srRotation = (reduced ? 0 : t * 0.025) + (kind === 'reality' ? -0.35 : 0);
+    ctx.save();
+    ctx.translate(position.x, position.y);
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = 'rgba(255,255,255,.94)';
+    ctx.beginPath();
+    for (let srIndex = 0; srIndex < srSides; srIndex++) {
+      const srAngle = srRotation + srIndex * TAU / srSides;
+      const srX = Math.cos(srAngle) * srRadius;
+      const srY = Math.sin(srAngle) * srRadius * 0.78;
+      srIndex ? ctx.lineTo(srX, srY) : ctx.moveTo(srX, srY);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = rgba(srColor, 0.90);
+    ctx.lineWidth = focus ? 1.8 : 1.12;
+    ctx.stroke();
+    for (let srIndex = 0; srIndex < 3; srIndex++) {
+      const srAngle = srRotation + srIndex * TAU / 3;
+      srLine(
+        { x: 0, y: 0 },
+        { x: Math.cos(srAngle) * srRadius * 0.72, y: Math.sin(srAngle) * srRadius * 0.56 },
+        srIndex === 2 ? SR_GOLD : srColor,
+        0.62 + focus * 0.20,
+        srIndex === 2 ? 1.1 : 0.65
+      );
+    }
+    ctx.fillStyle = rgba(kind === 'reality' ? SR_INK : srColor, 0.88);
+    const srCore = 2 + focus * 0.7;
+    ctx.fillRect(-srCore, -srCore, srCore * 2, srCore * 2);
+    ctx.restore();
+  }
+
+  drawOrb = function srOrb(x, y, radius, config, kind, t, alpha = 1, focus = 0, depth = 0) {
+    srDrawNode({ x, y, r: radius, z: depth }, kind, t, alpha, focus);
+  };
+
+  drawOverview = function srOverview(t, alpha) {
+    if (alpha <= 0.002) return;
+    const srDt = Math.min(0.05, Math.max(0.003, t - srLastTime));
+    srLastTime = t;
+    const srDirect = reduced ? 1 : 1 - Math.exp(-srDt * 14.5);
+    const srMemory = reduced ? 1 : 1 - Math.exp(-srDt * (1.25 + srForm.reconstitution * 1.8));
+    srLivingYaw = lerp(srLivingYaw, overviewYaw, srDirect);
+    srLivingPitch = lerp(srLivingPitch, overviewPitch, srDirect);
+    srLivingRoll = lerp(srLivingRoll, overviewRoll, srDirect);
+    srEchoYaw = lerp(srEchoYaw, srLivingYaw, srMemory);
+    srEchoPitch = lerp(srEchoPitch, srLivingPitch, srMemory);
+    srEchoRoll = lerp(srEchoRoll, srLivingRoll, srMemory);
+
+    const srPositions = overviewPositions(t);
+    worldKeys.forEach((srKey) => Object.assign(worldScreen[srKey], srPositions[srKey]));
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    srDrawEcho(alpha);
+    srDrawTensions(t, alpha);
+    srDrawEther(t, alpha);
+    srDrawSheaths(t, alpha);
+    srDrawLoadRibs(alpha);
+    srDrawGravitySeed(alpha);
+    srDrawCrown(alpha);
+
+    const srDepthOrder = [...worldKeys].sort((a, b) => srPositions[a].z - srPositions[b].z);
+    srDepthOrder.forEach((srKey) => {
+      srDrawNode(srPositions[srKey], srKey, t, alpha, hoverWorld === srKey ? 1 : 0);
+    });
+    ctx.globalAlpha = 1;
+  };
+
+  detailPoints = function srDetailPoints() {
+    const srCenterPoint = { x: width * 0.5, y: height * 0.52 };
+    const srBase = height > width * 1.05
+      ? [{ x: 0, y: 2.25, z: 0.28 }, { x: -1.92, y: -1.30, z: 0.25 }, { x: 1.92, y: -1.30, z: -0.25 }]
+      : [{ x: 0, y: 2.38, z: 0.28 }, { x: -2.38, y: -1.22, z: 0.25 }, { x: 2.38, y: -1.22, z: -0.25 }];
+    return srBase.map((srPoint, srIndex) => {
+      const srRotated = rotate3(srPoint, detailYaw, detailPitch, detailRoll);
+      const srProjected = srProject(srRotated, detailZoom, 11.8, srCenterPoint);
+      return {
+        x: srProjected.x,
+        y: srProjected.y,
+        r: unit * 0.052 * srProjected.f,
+        index: srIndex,
+        z: srRotated.z,
+        f: srProjected.f
+      };
+    });
+  };
+
+  drawMachineField = function srMachineField(t, alpha) {
+    const srCenterPoint = { x: width * 0.5, y: height * 0.52 };
+    const srNodes = [];
+    for (let srIndex = 0; srIndex < 54; srIndex++) {
+      const srBand = srIndex % 3;
+      const srAngle = srIndex / 54 * TAU * 2 + srBand * 0.26 + t * 0.018;
+      const srRadius = 1.2 + srBand * 0.48 + 0.10 * Math.sin(srIndex * 1.7);
+      const srModel = {
+        x: Math.cos(srAngle) * srRadius,
+        y: Math.sin(srAngle * 1.5) * (0.55 + srBand * 0.18),
+        z: Math.sin(srAngle) * srRadius
+      };
+      const srRotated = rotate3(srModel, detailYaw, detailPitch, detailRoll);
+      srNodes.push(srProject(srRotated, detailZoom * 0.74, 11.8, srCenterPoint));
+    }
+    srNodes.forEach((srPoint, srIndex) => {
+      const srNext = srNodes[(srIndex + 9) % srNodes.length];
+      srLine(srPoint, srNext, srIndex % 9 === 0 ? SR_GOLD : SR_CYAN,
+        alpha * (srIndex % 9 === 0 ? 0.35 : 0.16),
+        srIndex % 9 === 0 ? 0.9 : 0.55);
+      const srSize = srIndex % 9 === 0 ? 2.6 : 1.1;
+      ctx.fillStyle = rgba(srIndex % 9 === 0 ? SR_GOLD : SR_CYAN, alpha * (srIndex % 9 === 0 ? 0.78 : 0.48));
+      ctx.fillRect(srPoint.x - srSize * 0.5, srPoint.y - srSize * 0.5, srSize, srSize);
+    });
+  };
+
+  drawMakerField = function srMakerField(t, alpha) {
+    const srCenterPoint = { x: width * 0.5, y: height * 0.52 };
+    for (let srStrand = 0; srStrand < 3; srStrand++) {
+      let srPrevious = null;
+      for (let srIndex = 0; srIndex <= 92; srIndex++) {
+        const srU = srIndex / 92;
+        const srThroat = Math.sin(srU * Math.PI);
+        const srRadius = (0.20 + Math.abs(srU - 0.5) * 3.8) * (0.82 + srStrand * 0.08);
+        const srAngle = srU * TAU * 3.1 + srStrand * TAU / 3 + (reduced ? 0 : t * 0.055);
+        const srModel = {
+          x: Math.cos(srAngle) * srRadius * 0.52,
+          y: (srU - 0.5) * 4.6,
+          z: Math.sin(srAngle) * srRadius * 0.52 + srThroat * 0.12
+        };
+        const srRotated = rotate3(srModel, detailYaw, detailPitch, detailRoll);
+        const srProjected = srProject(srRotated, detailZoom * 0.71, 11.8, srCenterPoint);
+        if (srPrevious) {
+          srLine(srPrevious, srProjected, srStrand === 2 ? SR_GOLD : SR_GREEN,
+            alpha * (srStrand === 2 ? 0.48 : 0.35),
+            srStrand === 2 ? 1.05 : 0.72);
+        }
+        srPrevious = srProjected;
+      }
+    }
+  };
+
+  function srDrawDetailFacet(model, size, color, alpha) {
+    const srCenterPoint = { x: width * 0.5, y: height * 0.52 };
+    const srVertices = [
+      { x: model.x, y: model.y + size, z: model.z },
+      { x: model.x - size * 0.88, y: model.y - size * 0.52, z: model.z + size * 0.55 },
+      { x: model.x + size * 0.88, y: model.y - size * 0.52, z: model.z + size * 0.55 },
+      { x: model.x, y: model.y - size * 0.30, z: model.z - size }
+    ].map((srPoint) => {
+      const srRotated = rotate3(srPoint, detailYaw, detailPitch, detailRoll);
+      return srProject(srRotated, detailZoom * 0.76, 11.8, srCenterPoint);
+    });
+    const srFaces = [[0,1,2], [0,3,1], [0,2,3], [1,3,2]]
+      .map((srIndices) => ({ srIndices, z: srIndices.reduce((srSum, srIndex) => srSum + srVertices[srIndex].z, 0) / 3 }))
+      .sort((a, b) => a.z - b.z);
+    srFaces.forEach((srFace, srFaceIndex) => {
+      const srPoints = srFace.srIndices.map((srIndex) => srVertices[srIndex]);
+      ctx.beginPath();
+      ctx.moveTo(srPoints[0].x, srPoints[0].y);
+      ctx.lineTo(srPoints[1].x, srPoints[1].y);
+      ctx.lineTo(srPoints[2].x, srPoints[2].y);
+      ctx.closePath();
+      ctx.fillStyle = rgba(srFaceIndex % 2 ? color : SR_WHITE, alpha * (srFaceIndex % 2 ? 0.22 : 0.72));
+      ctx.fill();
+      ctx.strokeStyle = rgba(color, alpha * 0.82);
+      ctx.lineWidth = 0.7;
+      ctx.stroke();
+    });
+  }
+
+  drawRealityField = function srRealityField(t, alpha) {
+    const srFacets = [];
+    for (let srIndex = 0; srIndex < 27; srIndex++) {
+      const srRing = Math.floor(srIndex / 9);
+      const srAngle = (srIndex % 9) / 9 * TAU + srRing * 0.31;
+      const srDistance = 0.48 + srRing * 0.70;
+      srFacets.push({
+        x: Math.cos(srAngle) * srDistance,
+        y: Math.sin(srAngle) * srDistance * 0.68,
+        z: (srSeed(srIndex, 88) - 0.5) * 1.45,
+        size: 0.12 + srRing * 0.035,
+        index: srIndex
+      });
+    }
+    srFacets.sort((a, b) => a.z - b.z).forEach((srFacet) => {
+      srDrawDetailFacet(srFacet, srFacet.size,
+        srFacet.index % 9 === 0 ? SR_GOLD : SR_VIOLET,
+        alpha * (0.58 + (srFacet.index % 9 === 0 ? 0.22 : 0)));
+    });
+  };
+
+  drawDetail = function srDetail(t, alpha) {
+    if (!activeWorld || alpha <= 0.002) return;
+    if (activeWorld === 'machine') drawMachineField(t, alpha);
+    else if (activeWorld === 'maker') drawMakerField(t, alpha);
+    else drawRealityField(t, alpha);
+
+    const srConfig = WORLD[activeWorld];
+    const srPoints = detailPoints();
+    srPoints.forEach((srPoint, srIndex) => Object.assign(subScreen[srIndex], srPoint));
+    for (let srIndex = 0; srIndex < srPoints.length; srIndex++) {
+      srLine(srPoints[srIndex], srPoints[(srIndex + 1) % srPoints.length], srConfig.rgb, alpha * 0.25, 0.72);
+    }
+    [...srPoints].sort((a, b) => a.z - b.z).forEach((srPoint) => {
+      srDrawNode(srPoint, activeWorld, t + srPoint.index * 0.6, alpha,
+        srPoint.index === activeSub || srPoint.index === hoverSub ? 1 : 0);
+    });
+    const srCore = { x: width * 0.5, y: height * 0.52 };
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(srCore.x, srCore.y, 5.2, 0, TAU);
+    ctx.fill();
+    ctx.strokeStyle = rgba(srConfig.rgb, alpha * 0.92);
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+    ctx.fillStyle = rgba(SR_GOLD, alpha * 0.92);
+    ctx.fillRect(srCore.x - 1.2, srCore.y - 1.2, 2.4, 2.4);
+    ctx.globalAlpha = 1;
+  };
+
+  updateLabels = function srLabels() {
+    if (++labelTick % 2) return;
+    const srMix = ease(viewMix);
+    const srPortrait = width < 760;
+    worldKeys.forEach((srKey) => {
+      const srElement = labels[srKey];
+      const srPoint = worldScreen[srKey];
+      if (!srElement) return;
+      let srLeft = srPoint.x;
+      let srTop = srPoint.y - srPoint.r * 1.30;
+      if (!srPortrait) {
+        const srOutward = srPoint.r + 76;
+        if (srKey === 'machine') srLeft -= srOutward;
+        else if (srKey === 'maker') srLeft += srOutward;
+        else { srLeft += srOutward * 0.88; srTop += srPoint.r * 0.62; }
+      } else {
+        if (srKey === 'machine') srLeft -= srPoint.r * 0.58;
+        if (srKey === 'maker') srLeft += srPoint.r * 0.68;
+        if (srKey === 'reality') { srLeft += srPoint.r * 0.82; srTop += srPoint.r * 0.68; }
+      }
+      srElement.style.left = `${clamp(srLeft, srPortrait ? 55 : 84, width - (srPortrait ? 55 : 84))}px`;
+      srElement.style.top = `${clamp(srTop, 72, height - 62)}px`;
+      srElement.style.opacity = String(clamp(1 - srMix * 2.1, 0, 1));
+      srElement.style.pointerEvents = srMix < 0.25 ? 'auto' : 'none';
+    });
+    if (unityLabel) {
+      const srCore = srRotateProject(srTrefoil(0.405));
+      unityLabel.style.left = `${srCore.x}px`;
+      unityLabel.style.top = `${srCore.y + unit * 0.049}px`;
+      unityLabel.style.opacity = String(clamp(1 - srMix * 2.2, 0, 1));
+    }
+    if (activeWorld && srMix > 0.22) {
+      subLabels.forEach((srElement, srIndex) => {
+        const srPoint = subScreen[srIndex];
+        srElement.style.left = `${srPoint.x}px`;
+        srElement.style.top = `${srPoint.y - srPoint.r * 1.52}px`;
+        srElement.style.opacity = String(ease((srMix - 0.22) / 0.5));
+        srElement.style.pointerEvents = srMix > 0.65 ? 'auto' : 'none';
+        srElement.classList.toggle('active', srIndex === activeSub);
+      });
+    } else {
+      subLabels.forEach((srElement) => {
+        srElement.style.opacity = '0';
+        srElement.style.pointerEvents = 'none';
+      });
+    }
+    app?.classList.toggle('detail', Boolean(activeWorld && srMix > 0.05));
+  };
+
+  setHint = function srHint() {
+    if (!hint || window.__dreamUnityGameActive) return;
+    hint.textContent = activeWorld
+      ? 'ORBIT THE WORLD · CHOOSE A TENSION'
+      : 'BEND THE RESONATOR · ENTER A WORLD';
+  };
+
+  render = function srRender(t) {
+    srReadForm(t);
+    drawBackground(t);
+    const srMix = ease(viewMix);
+    drawOverview(t, 1 - srMix);
+    drawDetail(t, srMix);
+    updateLabels();
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = 1;
+  };
+
+  setHint();
