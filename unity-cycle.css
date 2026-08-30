@@ -258,7 +258,7 @@ html,body{
 
 .manifesto>p{
   margin:0 0 12px;
-  color:var(--bone-dim);
+  color:rgba(233,227,214,.52);
   font:610 9px/1.45 Inter,"Helvetica Neue",Arial,sans-serif;
   letter-spacing:.12em;
 }
@@ -276,7 +276,7 @@ html,body{
 }
 
 .manifesto h1 span{
-  color:rgba(233,227,214,.68);
+  color:rgba(233,227,214,.78);
   font-weight:350;
 }
 
@@ -285,14 +285,14 @@ html,body{
   flex-direction:column;
   gap:2px;
   margin-top:12px;
-  color:rgba(233,227,214,.38);
+  color:rgba(233,227,214,.54);
   font:450 11px/1.38 Inter,"Helvetica Neue",Arial,sans-serif;
   letter-spacing:.035em;
 }
 
 .manifesto-rule{
   margin-top:11px;
-  color:rgba(255,118,95,.58);
+  color:rgba(255,118,95,.78);
   font:630 9px/1.2 Inter,"Helvetica Neue",Arial,sans-serif;
   letter-spacing:.14em;
 }
@@ -320,18 +320,18 @@ html,body{
 }
 
 .cycle-index i{
-  color:rgba(233,227,214,.22);
+  color:rgba(233,227,214,.34);
   font:540 8px/1 ui-monospace,SFMono-Regular,Menlo,monospace;
   font-style:normal;
 }
 
 .cycle-index b{
-  color:rgba(233,227,214,.42);
+  color:rgba(233,227,214,.56);
   font:620 9px/1 Inter,"Helvetica Neue",Arial,sans-serif;
   letter-spacing:.11em;
 }
 
-.cycle-index li:last-child b{color:rgba(255,118,95,.58)}
+.cycle-index li:last-child b{color:rgba(255,118,95,.76)}
 
 .world-label,.sub-label{
   border:0;
@@ -377,7 +377,7 @@ html,body{
 }
 
 .world-label>.world-copy strong{
-  color:rgba(233,227,214,.68)!important;
+  color:rgba(233,227,214,.84)!important;
   font-size:12px;
   font-weight:660;
   line-height:1;
@@ -388,7 +388,7 @@ html,body{
 
 .world-label>.world-copy small{
   overflow:hidden;
-  color:rgba(233,227,214,.28);
+  color:rgba(233,227,214,.46);
   font:520 8px/1 Inter,"Helvetica Neue",Arial,sans-serif;
   letter-spacing:.07em;
   text-overflow:ellipsis;
@@ -439,13 +439,13 @@ html,body{
 
 .unity-label b{
   margin-top:2px;
-  color:rgba(233,227,214,.62);
+  color:rgba(233,227,214,.76);
   font:650 9px/1 Inter,"Helvetica Neue",Arial,sans-serif;
   letter-spacing:.15em;
 }
 
 .unity-label small{
-  color:rgba(233,227,214,.26);
+  color:rgba(233,227,214,.40);
   font:520 7px/1 Inter,"Helvetica Neue",Arial,sans-serif;
   letter-spacing:.10em;
 }
@@ -559,7 +559,7 @@ html,body{
   padding:0;
   border:0;
   background:transparent;
-  color:rgba(233,227,214,.25);
+  color:rgba(233,227,214,.40);
   font:560 8px/1 Inter,"Helvetica Neue",Arial,sans-serif;
   letter-spacing:.11em;
   text-shadow:0 1px 12px rgba(0,0,0,.9);

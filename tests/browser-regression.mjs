@@ -58,11 +58,6 @@ async function openPage(context) {
   const page = await context.newPage();
   const errors = [];
   const requests = [];
-  // The browser suite validates the public score URL but never needs to decode
-  // several minutes of audio for a visual/interaction assertion. Aborting the
-  // transfer keeps every context deterministic and makes CI render evidence
-  // available without changing the production page.
-  await page.route(/\.mp3(?:[?#]|$)/i, route => route.abort('blockedbyclient'));
   await page.addInitScript(() => {
     window.__dreamUnityRendererEvents = [];
     for (const name of [
@@ -80,7 +75,10 @@ async function openPage(context) {
     if (message.type() === 'error') errors.push(`console: ${message.text()}`);
   });
   page.on('pageerror', error => errors.push(`pageerror: ${error.message}`));
-  await page.goto(baseUrl, { waitUntil: 'networkidle' });
+  // Renderer readiness below is the relevant load boundary. Waiting for
+  // network-idle would also wait for the intentionally looping public score,
+  // slowing every isolated visual context without strengthening an assertion.
+  await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => {
     const app = document.querySelector('#app');
     const renderer = window.__dreamUnityRenderer;

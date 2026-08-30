@@ -111,7 +111,7 @@
   let overviewYaw = -0.18;
   let overviewPitch = -0.055;
   let overviewRoll = -0.018;
-  let overviewZoom = 1;
+  let overviewZoom = 0.91;
   let overviewYawVelocity = 0;
   let overviewPitchVelocity = 0;
   let overviewRollVelocity = 0;
@@ -229,8 +229,9 @@
   function viewportShapeScale() {
     const aspect = Math.max(0.25, width / Math.max(1, height));
     const targetWidth = lerp(0.93, 0.65, smoothstep(0.75, 1.30, aspect));
+    const compactMantleCompensation = lerp(1.26, 1, smoothstep(0.75, 1.30, aspect));
     return {
-      x: clamp(targetWidth * aspect / 1.21, 0.34, 1),
+      x: clamp(targetWidth * aspect / 1.21 * compactMantleCompensation, 0.34, 1),
       y: clamp(0.38 + aspect * 0.38, 0.55, 1),
     };
   }
@@ -286,8 +287,8 @@
       + 0.030 * Math.sin(theta * 3 + phi * 1.8)
       + 0.015 * Math.sin(theta * 7 - phi * 2.4);
     const shoulder = 1 + 0.14 * Math.sin(phi * 1.35 - 0.55) * Math.sin(theta + 0.8);
-    let x = 4.35 * sinPhi * Math.cos(theta) * corrugation * shoulder;
-    let y = 2.72 * cosPhi
+    let x = 3.75 * sinPhi * Math.cos(theta) * corrugation * shoulder;
+    let y = 3.05 * cosPhi
       + 0.24 * Math.sin(theta * 1.7 + 0.5) * sinPhi * sinPhi
       - 0.12 * Math.sin(phi * 3.2);
     let z = 1.65 * sinPhi * Math.sin(theta)
@@ -305,10 +306,10 @@
 
     // One authored mantle warp: a high sheared crown, bitten right shoulder,
     // and a dense lower-left anchor. These affect silhouette, not surface noise.
-    const normalizedY = clamp(y / 2.72, -1, 1);
+    const normalizedY = clamp(y / 3.05, -1, 1);
     const upper = smoothstep(0.18, 0.90, normalizedY);
-    const right = smoothstep(0.02, 0.88, x / 4.35);
-    const left = smoothstep(0.02, 0.82, -x / 4.35);
+    const right = smoothstep(0.02, 0.88, x / 3.75);
+    const left = smoothstep(0.02, 0.82, -x / 3.75);
     x += normalizedY * 0.46;
     x -= upper * right * 0.38;
     y -= upper * right * 0.22;
@@ -619,6 +620,20 @@
       );
     }
 
+    float analyticalWound(vec3 point) {
+      float front = smoothstep(-0.15, 0.45, point.z);
+      float vertical = abs((point.y + 0.02) / 1.62);
+      float taper = pow(clamp(1.0 - vertical, 0.0, 1.0), 0.58);
+      float halfWidth = 0.34 + taper * 0.43;
+      float center = 0.12 + sin(point.y * 1.08 - 0.22) * 0.42
+        + sin(point.y * 3.35 + 0.65) * 0.055;
+      float lateral = abs(point.x - center) / halfWidth;
+      float torn = pow(lateral, 1.58) + pow(vertical, 3.15)
+        + sin(point.y * 4.25 - point.x * 1.4) * 0.026
+        + sin(point.y * 7.1 + 0.8) * 0.014;
+      return (1.0 - smoothstep(0.72, 1.04, torn)) * front;
+    }
+
     void main() {
       vec3 normal = normalize(vNormal);
       vec3 viewDirection = normalize(vec3(0.0, 0.0, 10.0) - vWorld);
@@ -634,13 +649,14 @@
       float strataPhase = vLocal.y * 3.35 + vLocal.x * 0.72 - vLocal.z * 1.45 + macroNoise * 4.2;
       float strata = pow(max(0.0, 1.0 - abs(sin(strataPhase))), 14.0);
       float crossStrata = pow(max(0.0, 1.0 - abs(sin(vLocal.y * 1.2 - vLocal.x * 2.8 + macroNoise * 3.1))), 24.0);
-      float woundSoftness = max(fwidth(vWound) * 1.45, 0.004);
-      float opening = smoothstep(0.595 - woundSoftness, 0.665 + woundSoftness, vWound);
-      float woundRim = smoothstep(0.20, 0.50, vWound) * (1.0 - smoothstep(0.54, 0.68, vWound));
+      float fragmentWound = uMaterial > 0.5 && uMaterial < 1.5 ? vWound : analyticalWound(vLocal);
+      float woundSoftness = max(fwidth(fragmentWound) * 1.25, 0.003);
+      float opening = smoothstep(0.595 - woundSoftness, 0.665 + woundSoftness, fragmentWound);
+      float woundRim = smoothstep(0.20, 0.50, fragmentWound) * (1.0 - smoothstep(0.54, 0.68, fragmentWound));
       float movingTime = mix(uTime, 0.0, uReduced);
       vec3 abyss = vec3(0.018, 0.016, 0.021);
-      vec3 mineral = vec3(0.125, 0.116, 0.121);
-      vec3 bone = vec3(0.760, 0.716, 0.650);
+      vec3 mineral = vec3(0.195, 0.182, 0.215);
+      vec3 bone = vec3(0.840, 0.790, 0.700);
       vec3 coral = vec3(1.0, 0.305, 0.335);
       vec3 furnace = vec3(1.0, 0.455, 0.37);
       vec3 cyan = vec3(0.0, 0.788, 0.910);
@@ -653,14 +669,15 @@
         alpha = 1.0 - opening;
         if (alpha < 0.012) discard;
         float boneDeposit = strata * (0.48 + mineralNoise * 0.34) + crossStrata * 0.16;
-        boneDeposit *= 0.46 + 0.54 * smoothstep(-2.72, 1.72, vLocal.y);
-        color = mix(abyss, mineral, 0.15 + diffuse * 0.19 + macroNoise * 0.045);
-        color += vec3(0.105, 0.092, 0.088) * specular * (0.18 + uReconstitution * 0.08);
-        color = mix(color, bone, boneDeposit * (0.065 + diffuse * 0.075 + uCrown * 0.025));
+        boneDeposit *= 0.46 + 0.54 * smoothstep(-3.05, 1.92, vLocal.y);
+        color = mix(abyss, mineral, 0.28 + diffuse * 0.32 + macroNoise * 0.060);
+        color += vec3(0.045, 0.055, 0.140) * (0.10 + fresnel * 0.20 + macroNoise * 0.035);
+        color += vec3(0.165, 0.145, 0.150) * specular * (0.26 + uReconstitution * 0.12);
+        color = mix(color, bone, boneDeposit * (0.095 + diffuse * 0.105 + uCrown * 0.030));
         float suture = pow(max(0.0, 1.0 - abs(sin(vLocal.y * 10.8 - vLocal.x * 3.2 + macroNoise))), 22.0);
-        color += coral * woundRim * (0.115 + uPressure * 0.16 + uCrown * 0.20);
-        color += bone * woundRim * suture * (0.16 + uReconstitution * 0.10);
-        color += bone * fresnel * (0.034 + uReconstitution * 0.026);
+        color += coral * woundRim * (0.185 + uPressure * 0.21 + uCrown * 0.28);
+        color += bone * woundRim * suture * (0.24 + uReconstitution * 0.14);
+        color += bone * fresnel * (0.052 + uReconstitution * 0.038);
 
         float machineMask = 1.0 - smoothstep(0.16, 0.42, abs(uActiveWorld - 1.0));
         float makerMask = 1.0 - smoothstep(0.16, 0.42, abs(uActiveWorld - 2.0));
@@ -679,7 +696,7 @@
         float subtractField = uSubtraction * (0.26 + 0.40 * smoothstep(-1.65, 2.35, vLocal.y));
         if (dissolve < subtractField) discard;
       } else if (uMaterial < 1.5) {
-        float throat = smoothstep(0.34, 0.88, vWound);
+        float throat = smoothstep(0.34, 0.88, fragmentWound);
         float caustic = pow(max(0.0, 1.0 - abs(sin(vLocal.y * 5.2 - vLocal.x * 3.6 + macroNoise * 3.2 + movingTime * 0.12))), 20.0);
         float fineCaustic = pow(max(0.0, 1.0 - abs(sin(vLocal.y * 9.4 + vLocal.x * 2.1 - macroNoise * 2.4))), 34.0);
         vec3 oxblood = vec3(0.095, 0.014, 0.022);
@@ -688,15 +705,19 @@
         color += coral * caustic * (1.0 - throat * 0.70) * (0.11 + uCrown * 0.10 + uPressure * 0.045);
         color += bone * fineCaustic * (1.0 - throat * 0.82) * (0.055 + uReconstitution * 0.065);
         color += furnace * innerLight * (0.028 + uReconstitution * 0.025);
+        float sovereignCurve = 0.08 + sin(vLocal.y * 1.48 - 0.24) * 0.24;
+        float sovereignRay = exp(-abs(vLocal.x - sovereignCurve) * 58.0)
+          * smoothstep(-1.24, -0.92, vLocal.y) * (1.0 - smoothstep(0.92, 1.24, vLocal.y));
+        color += mix(coral, bone, 0.72) * sovereignRay * (0.54 + uCrown * 0.20 + uReconstitution * 0.10);
         color *= 0.78 + diffuse * 0.10 + fresnel * 0.09;
       } else {
         if (vLocal.y < -2.54) discard;
         float ghostGrain = valueNoise(vLocal * 4.2 + vec3(0.0, movingTime * 0.018, 0.0));
         color = mix(vec3(0.040, 0.037, 0.045), vec3(0.25, 0.23, 0.24), fresnel * 0.34 + ghostGrain * 0.07);
-        color += coral * woundRim * (0.065 + uCrown * 0.075);
-        color += bone * woundRim * strata * 0.045;
+        color += coral * woundRim * (0.095 + uCrown * 0.095);
+        color += bone * woundRim * strata * 0.065;
         float reflectionFade = smoothstep(-5.6, -2.42, vWorld.y);
-        alpha = (0.038 + fresnel * 0.090 + uSubtraction * 0.045)
+        alpha = (0.052 + fresnel * 0.110 + uSubtraction * 0.045)
           * (0.84 + ghostGrain * 0.16) * reflectionFade * (1.0 - opening);
       }
 
@@ -790,7 +811,7 @@
       vec3 cyan=vec3(0.0,0.788,0.910),green=vec3(0.078,0.788,0.545),violet=vec3(0.408,0.251,1.0),bone=vec3(0.914,0.890,0.835);
       vColor=aColorIndex<0.5?cyan:(aColorIndex<1.5?green:(aColorIndex<2.5?violet:bone));
       float returnAlpha=stagger*(aEndPoint>0.5?0.34:0.10)*(1.0-uReturn*0.28);
-      float memoryAlpha=crownMemory*(aEndPoint>0.5?0.070:0.018);
+      float memoryAlpha=crownMemory*(aEndPoint>0.5?0.110:0.028);
       vAlpha=max(returnAlpha,memoryAlpha);
     }
   `;
@@ -1115,7 +1136,7 @@
   function fallbackLayout(detail = false, state = cycleState(elapsed)) {
     const shift = screenShift(detail);
     const compact = isCompactLayout();
-    const artifactWidth = width * (compact ? 0.89 : 0.61);
+    const artifactWidth = width * (compact ? 0.97 : 0.61);
     const artifactHeight = height * (compact ? 0.64 : 0.79);
     const orientation = currentOrientation(detail);
     const scale = Math.min(artifactWidth / 7.4, artifactHeight / 6.55) * orientation.zoom;
@@ -1184,10 +1205,10 @@
 
     const mineralGradient = context.createLinearGradient(-scale * 2.8, -scale * 3.1, scale * 2.5, scale * 2.8);
     mineralGradient.addColorStop(0, '#08070a');
-    mineralGradient.addColorStop(0.36, '#171519');
-    mineralGradient.addColorStop(0.58, '#302b2b');
-    mineralGradient.addColorStop(0.66, '#4a433f');
-    mineralGradient.addColorStop(0.74, '#211d20');
+    mineralGradient.addColorStop(0.36, '#201e27');
+    mineralGradient.addColorStop(0.58, '#403a45');
+    mineralGradient.addColorStop(0.66, '#70665d');
+    mineralGradient.addColorStop(0.74, '#2d2935');
     mineralGradient.addColorStop(1, '#070609');
     context.globalAlpha = 1 - state.subtraction * 0.28;
     context.fillStyle = mineralGradient;
@@ -1250,10 +1271,10 @@
     if ((state.return > 0.01 || state.crown > 0.025) && !reducedMotion) {
       context.lineWidth = 0.75;
       for (let index = 0; index < 18; index++) {
-        const crownMemory = index < 7 ? state.crown * 0.18 : 0;
+        const crownMemory = index < 7 ? state.crown * 0.28 : 0;
         const reveal = Math.max(state.return, crownMemory);
         if (reveal <= 0.006) continue;
-        context.globalAlpha = state.return > crownMemory ? state.return * 0.34 : crownMemory * 0.32;
+        context.globalAlpha = state.return > crownMemory ? state.return * 0.34 : crownMemory * 0.45;
         const side = index % 2 ? -1 : 1;
         const startX = side * scale * (0.15 + hash(index + 4) * 0.5);
         const startY = -scale * (0.68 + hash(index + 8) * 0.78);
@@ -1677,7 +1698,7 @@
         overviewYaw = -0.18;
         overviewPitch = -0.055;
         overviewRoll = -0.018;
-        overviewZoom = 1;
+        overviewZoom = 0.91;
       }
     }
     lastTapAt = now;
