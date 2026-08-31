@@ -98,8 +98,6 @@ async function readState(page) {
         borderRadius: style.borderRadius,
         pointerEvents: style.pointerEvents,
         titleFontSize: Number.parseFloat(titleStyle.fontSize),
-        titleScrollWidth: title.scrollWidth,
-        titleClientWidth: title.clientWidth,
         titleRect: { x: titleRect.x, y: titleRect.y, width: titleRect.width, height: titleRect.height },
         subtitleRect: { x: subtitleRect.x, y: subtitleRect.y, width: subtitleRect.width, height: subtitleRect.height },
       }];
@@ -132,7 +130,7 @@ function assertEmblems(state, { mobile = false } = {}) {
     assert.equal(label.borderLeftWidth, '0px', `${key} still has the obsolete external title rail`);
     assert.notEqual(label.pointerEvents, 'none', `${key} emblem cannot receive input`);
     assert.ok(label.titleFontSize >= (mobile ? 5.7 : 7.1), `${key} title is too small (${label.titleFontSize}px)`);
-    assert.ok(label.titleScrollWidth <= label.titleClientWidth + 3, `${key} title overflows its symbol`);
+    assert.ok(label.titleRect.width <= metric.radius * 1.40, `${key} rendered title band escapes the symbol (${label.titleRect.width.toFixed(1)}px for a ${metric.radius.toFixed(1)}px radius)`);
     const titleCenter = {
       x: label.titleRect.x + label.titleRect.width * 0.5,
       y: label.titleRect.y + label.titleRect.height * 0.5,
