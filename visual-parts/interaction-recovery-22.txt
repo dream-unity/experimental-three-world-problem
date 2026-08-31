@@ -51,6 +51,18 @@
     });
   };
 
+  function irScreenSnapshot() {
+    return Object.fromEntries(worldKeys.map((key) => {
+      const point = worldScreen[key];
+      return [key, {
+        x: Number(point?.x) || 0,
+        y: Number(point?.y) || 0,
+        r: Number(point?.r) || 0,
+        z: Number(point?.z) || 0,
+      }];
+    }));
+  }
+
   function irWorldAt(clientX, clientY) {
     if (activeWorld || viewMix > 0.28 || window.__dreamUnityGameActive) return null;
     const ordered = [...worldKeys].sort((a, b) => worldScreen[b].z - worldScreen[a].z);
@@ -82,6 +94,11 @@
     return true;
   }
 
+  function irRedrawNow() {
+    if (window.__dreamUnityGameActive) return;
+    render(time);
+  }
+
   function irMove(event) {
     if (irDrag.pointerId === null || event.pointerId !== irDrag.pointerId || !irDrag.key) return;
     const dx = event.clientX - irDrag.lastX;
@@ -94,7 +111,12 @@
     offset.x = clamp(offset.x + dx / scale, -0.56, 0.56);
     offset.y = clamp(offset.y + dy / scale, -0.46, 0.46);
     overviewLastInput = time;
+    app.dataset.worldDragDistance = Math.hypot(
+      event.clientX - irDrag.startX,
+      event.clientY - irDrag.startY,
+    ).toFixed(2);
     if (hint) hint.textContent = `${WORLD[irDrag.key].name} · RELEASE TO PLACE`;
+    irRedrawNow();
     event.preventDefault();
     event.stopImmediatePropagation();
   }
@@ -118,6 +140,7 @@
       irSuppressClickKey = key;
       irSuppressClickUntil = performance.now() + 520;
     }
+    irRedrawNow();
     if (hint && !activeWorld) hint.textContent = coarse
       ? 'DRAG A WORLD · PINCH EMPTY SPACE · TAP TO ENTER'
       : 'DRAG A WORLD · DRAG EMPTY SPACE TO ORBIT · TAP TO ENTER';
@@ -138,17 +161,23 @@
     event.stopImmediatePropagation();
   }, { capture: true, passive: false });
 
-  addEventListener('pointermove', irMove, { capture: true, passive: false });
-  addEventListener('pointerup', (event) => irFinish(event, false), { capture: true, passive: false });
-  addEventListener('pointercancel', (event) => irFinish(event, true), { capture: true, passive: false });
+  document.addEventListener('pointerdown', (event) => {
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    const label = event.target instanceof Element
+      ? event.target.closest('.world-label[data-world]')
+      : null;
+    const key = label?.dataset.world;
+    if (!key || irDrag.pointerId !== null) return;
+    irBegin(event, key, 'label', label);
+  }, { capture: true, passive: true });
+
+  window.addEventListener('pointermove', irMove, { capture: true, passive: false });
+  window.addEventListener('pointerup', (event) => irFinish(event, false), { capture: true, passive: false });
+  window.addEventListener('pointercancel', (event) => irFinish(event, true), { capture: true, passive: false });
 
   Object.entries(labels).forEach(([key, element]) => {
     if (!element) return;
     element.style.touchAction = 'none';
-    element.addEventListener('pointerdown', (event) => {
-      if (event.pointerType === 'mouse' && event.button !== 0) return;
-      irBegin(event, key, 'label', element);
-    }, { capture: true, passive: true });
     element.addEventListener('click', (event) => {
       if (irSuppressClickKey !== key || performance.now() > irSuppressClickUntil) return;
       irSuppressClickKey = null;
@@ -170,6 +199,7 @@
     version: IR_RELEASE,
     ready: true,
     offsets: () => Object.fromEntries(worldKeys.map((key) => [key, { ...irOffsets[key] }])),
+    screen: irScreenSnapshot,
     reset(world) {
       if (world && irOffsets[world]) {
         irOffsets[world].x = 0;
@@ -180,6 +210,7 @@
           irOffsets[key].y = 0;
         });
       }
+      irRedrawNow();
     },
   });
   app.dataset.independentWorlds = 'true';
