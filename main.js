@@ -4,7 +4,7 @@
   const BASE_INTERACTION_VERSION = '20260831-fluid-base-interaction-25c';
   const SOVEREIGN_RETURN_VERSION = '20260831-sovereign-return-21';
   const INTERACTION_RECOVERY_VERSION = '20260831-fluid-whole-field-orbit-25';
-  const FLUID_RESPONSE_VERSION = '20260831-stable-rotation-29';
+  const FLUID_RESPONSE_VERSION = '20260831-stable-rotation-29b';
   const WORLD_EMBLEM_VERSION = '20260831-world-emblems-26';
   const WORLD_EMBLEM_POLISH_VERSION = '20260831-world-emblems-polish-26b';
   const WORLD_TITLE_VERSION = '20260831-world-title-hierarchy-27b';
