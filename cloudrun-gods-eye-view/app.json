@@ -1,0 +1,12 @@
+{
+  "name": "gods-eye-view-live",
+  "options": {
+    "allow-unauthenticated": true,
+    "memory": "1Gi",
+    "cpu": "1",
+    "port": 8080,
+    "http2": false,
+    "concurrency": 20,
+    "max-instances": 1
+  }
+}
