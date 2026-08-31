@@ -8,6 +8,7 @@
   const WORLD_EMBLEM_VERSION = '20260831-world-emblems-26';
   const WORLD_EMBLEM_POLISH_VERSION = '20260831-world-emblems-polish-26b';
   const WORLD_TITLE_VERSION = '20260831-world-title-hierarchy-27b';
+  const MINIMAL_STAGE_VERSION = '20260831-minimal-stage-28';
   const baseParts = Array.from({ length: 6 }, (_, index) => {
     const part = String(index + 1).padStart(2, '0');
     const cacheVersion = index >= 4 ? BASE_INTERACTION_VERSION : VERSION;
@@ -21,6 +22,7 @@
     `./visual-parts/world-emblems-26.txt?v=${WORLD_EMBLEM_VERSION}`,
     `./visual-parts/world-emblems-polish-26b.txt?v=${WORLD_EMBLEM_POLISH_VERSION}`,
     `./visual-parts/world-title-hierarchy-27.txt?v=${WORLD_TITLE_VERSION}`,
+    `./visual-parts/minimal-stage-28.txt?v=${MINIMAL_STAGE_VERSION}`,
   ];
   const parts = [...baseParts, ...overridePaths];
   const loader = document.getElementById('loading');
