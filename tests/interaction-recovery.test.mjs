@@ -57,6 +57,7 @@ await page.goto(`http://127.0.0.1:${port}`, { waitUntil: 'domcontentloaded' });
 await page.waitForFunction(() => window.__dreamUnityInteractions?.ready === true);
 await page.waitForFunction(() => window.__interactionArcadeReady === true);
 await page.waitForFunction(() => document.querySelector('#label-machine')?.offsetWidth > 0);
+await page.waitForFunction(() => window.__dreamUnityInteractions.screen().machine.r > 20);
 
 const readLabels = () => page.evaluate(() => Object.fromEntries(
   ['machine', 'maker', 'reality'].map(key => {
@@ -64,20 +65,31 @@ const readLabels = () => page.evaluate(() => Object.fromEntries(
     return [key, { x: rect.x, y: rect.y, width: rect.width, height: rect.height }];
   })
 ));
+const readWorlds = () => page.evaluate(() => window.__dreamUnityInteractions.screen());
 
-const before = await readLabels();
-const machine = before.machine;
-await page.mouse.move(machine.x + machine.width / 2, machine.y + machine.height / 2);
+const beforeLabels = await readLabels();
+const beforeWorlds = await readWorlds();
+const machine = beforeWorlds.machine;
+const topElement = await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.id || '', machine);
+assert.equal(topElement, 'world', `Dream Machine body was obstructed by ${topElement || 'an unknown element'}`);
+
+await page.mouse.move(machine.x, machine.y);
 await page.mouse.down();
-await page.mouse.move(machine.x + machine.width / 2 + 132, machine.y + machine.height / 2 + 74, { steps: 8 });
+await page.mouse.move(machine.x + 132, machine.y + 74, { steps: 8 });
 await page.mouse.up();
-await page.waitForTimeout(120);
-const after = await readLabels();
+await page.waitForFunction(() => Math.abs(window.__dreamUnityInteractions.offsets().machine.x) > 0.08);
+await page.waitForTimeout(100);
 
-const moved = Math.hypot(after.machine.x - before.machine.x, after.machine.y - before.machine.y);
-const makerDrift = Math.hypot(after.maker.x - before.maker.x, after.maker.y - before.maker.y);
-const realityDrift = Math.hypot(after.reality.x - before.reality.x, after.reality.y - before.reality.y);
-assert.ok(moved > 70, `Dream Machine did not move independently (${moved.toFixed(1)}px)`);
+const afterLabels = await readLabels();
+const afterWorlds = await readWorlds();
+const offsets = await page.evaluate(() => window.__dreamUnityInteractions.offsets());
+const moved = Math.hypot(afterWorlds.machine.x - beforeWorlds.machine.x, afterWorlds.machine.y - beforeWorlds.machine.y);
+const makerDrift = Math.hypot(afterWorlds.maker.x - beforeWorlds.maker.x, afterWorlds.maker.y - beforeWorlds.maker.y);
+const realityDrift = Math.hypot(afterWorlds.reality.x - beforeWorlds.reality.x, afterWorlds.reality.y - beforeWorlds.reality.y);
+const labelMoved = Math.hypot(afterLabels.machine.x - beforeLabels.machine.x, afterLabels.machine.y - beforeLabels.machine.y);
+assert.ok(offsets.machine.x > 0.08 && offsets.machine.y > 0.04, 'Dream Machine offset did not record the drag');
+assert.ok(moved > 70, `Dream Machine body did not move independently (${moved.toFixed(1)}px)`);
+assert.ok(labelMoved > 55, `Dream Machine label did not follow its body (${labelMoved.toFixed(1)}px)`);
 assert.ok(makerDrift < 18, `Dream Maker drifted with Dream Machine (${makerDrift.toFixed(1)}px)`);
 assert.ok(realityDrift < 18, `Dream World drifted with Dream Machine (${realityDrift.toFixed(1)}px)`);
 assert.equal(await page.locator('#app').getAttribute('data-independent-worlds'), 'true');
