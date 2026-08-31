@@ -6,6 +6,8 @@
   const SR_CORAL = [237, 113, 103];
   const SR_GOLD = [223, 160, 43];
   const SR_BONE = [238, 234, 224];
+  const srFinite = (value, fallback = 0) => Number.isFinite(value) ? value : fallback;
+  const srPointFinite = (point) => Boolean(point && Number.isFinite(point.x) && Number.isFinite(point.y));
   const SR_SHELL_VERTICES = [
     { x: 0, y: -1, z: -1.618 }, { x: 0, y: -1, z: 1.618 },
     { x: 0, y: 1, z: -1.618 }, { x: 0, y: 1, z: 1.618 },
@@ -27,12 +29,14 @@
   }
 
   function srHighResolutionResize() {
-    width = Math.max(1, innerWidth);
-    height = Math.max(1, innerHeight);
-    unit = Math.min(width, height);
-    const desired = Math.min(devicePixelRatio || 1, coarse || lowCPU ? 1.9 : 2.45);
+    width = Math.max(1, srFinite(innerWidth, width || 1));
+    height = Math.max(1, srFinite(innerHeight, height || 1));
+    unit = Math.max(1, Math.min(width, height));
+    const nativeRatio = Math.max(1, srFinite(devicePixelRatio, 1));
+    const desired = Math.min(nativeRatio, coarse || lowCPU ? 1.9 : 2.45);
     const budget = coarse || lowCPU ? 5_800_000 : 8_900_000;
     dpr = Math.max(1, Math.min(desired, Math.sqrt(budget / Math.max(1, width * height))));
+    if (!Number.isFinite(dpr)) dpr = 1;
     canvas.width = Math.round(width * dpr);
     canvas.height = Math.round(height * dpr);
     canvas.style.width = `${width}px`;
@@ -60,21 +64,42 @@
   };
 
   rtProject = function sovereignReturnProject(point, scale = 1, cameraZ = 12.9, center = rtCenter()) {
-    const depth = cameraZ - point.z;
-    const perspective = scale * cameraZ / Math.max(3.35, depth);
+    const model = {
+      x: srFinite(point?.x, 0),
+      y: srFinite(point?.y, 0),
+      z: srFinite(point?.z, 0),
+    };
+    const safeCenter = {
+      x: srFinite(center?.x, width * 0.5),
+      y: srFinite(center?.y, height * 0.5),
+    };
+    const safeCameraZ = Math.max(3.36, srFinite(cameraZ, 12.9));
+    const safeScale = Math.max(0.01, srFinite(scale, 1));
+    const depth = safeCameraZ - model.z;
+    const perspective = safeScale * safeCameraZ / Math.max(3.35, srFinite(depth, safeCameraZ));
     const spread = width > 1180 ? 0.126 : width > 760 ? 0.116 : 0.122;
     return {
-      x: center.x + point.x * unit * spread * perspective,
-      y: center.y - point.y * unit * spread * perspective,
-      f: perspective,
-      z: point.z,
-      depth,
+      x: srFinite(safeCenter.x + model.x * unit * spread * perspective, safeCenter.x),
+      y: srFinite(safeCenter.y - model.y * unit * spread * perspective, safeCenter.y),
+      f: srFinite(perspective, 1),
+      z: model.z,
+      depth: srFinite(depth, safeCameraZ),
     };
   };
 
   function srProjectAt(point, yawValue, pitchValue, rollValue, scaleValue = overviewZoom) {
-    const rotated = rotate3(point, yawValue, pitchValue, rollValue);
-    const projected = rtProject(rotated, scaleValue, 12.9);
+    const safePoint = {
+      x: srFinite(point?.x, 0),
+      y: srFinite(point?.y, 0),
+      z: srFinite(point?.z, 0),
+    };
+    const rotated = rotate3(
+      safePoint,
+      srFinite(yawValue, 0),
+      srFinite(pitchValue, 0),
+      srFinite(rollValue, 0),
+    );
+    const projected = rtProject(rotated, srFinite(scaleValue, 1), 12.9);
     projected.world = rotated;
     return projected;
   }
