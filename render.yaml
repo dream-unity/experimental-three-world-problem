@@ -13,5 +13,9 @@ services:
     envVars:
       - key: OPENSKY_AUTH_MODE
         value: anon
+      - key: GEV_LOW_MEMORY
+        value: "1"
+      - key: NODE_OPTIONS
+        value: --max-old-space-size=224
       - key: NODE_ENV
         value: development
