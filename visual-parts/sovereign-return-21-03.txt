@@ -9,17 +9,19 @@
       ctx.stroke();
     }
 
-    const coreRadius = unit * 0.0095 * (1 + pressure * 0.18 + beat * 0.22);
-    srGlow(origin.x, origin.y, coreRadius * (7.5 + bloom * 2.5), SR_CORAL, alpha * (0.032 + bloom * 0.055));
-    const coreGradient = ctx.createRadialGradient(origin.x - coreRadius * 0.28, origin.y - coreRadius * 0.34, 0, origin.x, origin.y, coreRadius * 1.9);
-    coreGradient.addColorStop(0, rgba(RT_WHITE, alpha * 0.98));
-    coreGradient.addColorStop(0.28, rgba(SR_GOLD, alpha * 0.86));
-    coreGradient.addColorStop(0.68, rgba(SR_CORAL, alpha * 0.62));
-    coreGradient.addColorStop(1, rgba(SR_CORAL, 0));
-    ctx.fillStyle = coreGradient;
-    ctx.beginPath();
-    ctx.arc(origin.x, origin.y, coreRadius * 1.9, 0, TAU);
-    ctx.fill();
+    const coreRadius = srFinite(unit, 1) * 0.0095 * (1 + pressure * 0.18 + beat * 0.22);
+    if (srPointFinite(origin) && Number.isFinite(coreRadius) && coreRadius > 0) {
+      srGlow(origin.x, origin.y, coreRadius * (7.5 + bloom * 2.5), SR_CORAL, alpha * (0.032 + bloom * 0.055));
+      const coreGradient = ctx.createRadialGradient(origin.x - coreRadius * 0.28, origin.y - coreRadius * 0.34, 0, origin.x, origin.y, coreRadius * 1.9);
+      coreGradient.addColorStop(0, rgba(RT_WHITE, alpha * 0.98));
+      coreGradient.addColorStop(0.28, rgba(SR_GOLD, alpha * 0.86));
+      coreGradient.addColorStop(0.68, rgba(SR_CORAL, alpha * 0.62));
+      coreGradient.addColorStop(1, rgba(SR_CORAL, 0));
+      ctx.fillStyle = coreGradient;
+      ctx.beginPath();
+      ctx.arc(origin.x, origin.y, coreRadius * 1.9, 0, TAU);
+      ctx.fill();
+    }
 
     // Return leaves matter with memory: the final filament becomes quieter,
     // not blank, as it moves back toward possibility.
@@ -71,7 +73,7 @@
   setHint();
   app.dataset.renderer = 'sovereign-return';
   app.dataset.rendererVersion = SR_RELEASE;
-  app.dataset.renderScale = dpr.toFixed(3);
+  app.dataset.renderScale = Number.isFinite(dpr) ? dpr.toFixed(3) : '1.000';
   window.__dreamUnityRenderer = Object.freeze({
     id: 'sovereign-return',
     version: SR_RELEASE,
