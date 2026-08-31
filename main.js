@@ -2,7 +2,7 @@
   'use strict';
   const VERSION = '20260830-awaken-true-war-2';
   const SOVEREIGN_RETURN_VERSION = '20260831-sovereign-return-21';
-  const INTERACTION_RECOVERY_VERSION = '20260831-interaction-recovery-22';
+  const INTERACTION_RECOVERY_VERSION = '20260831-connected-world-rig-23';
   const baseParts = Array.from({ length: 6 }, (_, index) =>
     `./visual-parts/part-${String(index + 1).padStart(2, '0')}.txt?v=${VERSION}`
   );

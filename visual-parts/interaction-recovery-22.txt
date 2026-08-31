@@ -1,10 +1,16 @@
-  // Interaction Recovery 22 — each world is again a directly movable body.
-  // Empty-space gestures continue to orbit the complete Dream Unity instrument.
-  const IR_RELEASE = '20260831-interaction-recovery-22';
-  const irOffsets = {
-    machine: { x: 0, y: 0 },
-    maker: { x: 0, y: 0 },
-    reality: { x: 0, y: 0 },
+  // Connected World Rig 23 — the three worlds remain anchor organs of one
+  // continuous 3D body. Dragging a world deforms its coloured path in model
+  // space; it never becomes a detached screen-space sprite.
+  const IR_RELEASE = '20260831-connected-world-rig-23';
+  const irDeformations = {
+    machine: { x: 0, y: 0, z: 0 },
+    maker: { x: 0, y: 0, z: 0 },
+    reality: { x: 0, y: 0, z: 0 },
+  };
+  const irInfluenceRadius = {
+    machine: 0.14,
+    maker: 0.16,
+    reality: 0.15,
   };
   const irDrag = {
     pointerId: null,
@@ -20,32 +26,69 @@
   let irSuppressClickKey = null;
   let irSuppressClickUntil = 0;
 
-  const irOriginalOverviewPositions = overviewPositions;
-  overviewPositions = function interactionRecoveryPositions(t) {
-    const positions = irOriginalOverviewPositions(t);
+  const irBaseCatmull = rtCatmull;
+  const irBaseOverviewPositions = overviewPositions;
+  const irBaseUpdateLabels = updateLabels;
+
+  function irCycleDistance(value, phase) {
+    const delta = ((value - phase + 0.5) % 1 + 1) % 1 - 0.5;
+    return Math.abs(delta);
+  }
+
+  function irInfluence(value, key) {
+    const distance = irCycleDistance(value, RT_PHASE[key]);
+    const radius = irInfluenceRadius[key];
+    if (distance >= radius) return 0;
+    const amount = clamp(1 - distance / radius, 0, 1);
+    return amount * amount * amount * (amount * (amount * 6 - 15) + 10);
+  }
+
+  rtCatmull = function connectedWorldCatmull(value) {
+    const point = irBaseCatmull(value);
+    const deformed = { x: point.x, y: point.y, z: point.z };
     worldKeys.forEach((key) => {
-      const point = positions[key];
-      const offset = irOffsets[key];
-      if (!point || !offset) return;
-      const marginX = Math.max(26, point.r * 0.78);
-      const marginTop = Math.max(72, point.r * 0.74);
-      const marginBottom = Math.max(58, point.r * 0.72);
-      point.x = clamp(point.x + offset.x * unit, marginX, width - marginX);
-      point.y = clamp(point.y + offset.y * unit, marginTop, height - marginBottom);
+      const weight = irInfluence(value, key);
+      if (weight <= 0) return;
+      const displacement = irDeformations[key];
+      deformed.x += displacement.x * weight;
+      deformed.y += displacement.y * weight;
+      deformed.z += displacement.z * weight;
+    });
+    return deformed;
+  };
+
+  // Eliminate the old independent node breathing offset. The centre of every
+  // world is now mathematically the same point as its path anchor every frame.
+  overviewPositions = function connectedWorldPositions(t) {
+    const positions = irBaseOverviewPositions(t);
+    worldKeys.forEach((key) => {
+      const projected = rtRotateProject(rtCatmull(RT_PHASE[key]));
+      positions[key].x = projected.x;
+      positions[key].y = projected.y;
+      positions[key].r = unit * (width < 760 ? 0.064 : 0.075) * projected.f;
+      positions[key].f = projected.f;
+      positions[key].z = projected.z;
+      positions[key].world = projected.world;
     });
     return positions;
   };
 
-  const irOriginalUpdateLabels = updateLabels;
-  updateLabels = function interactionRecoveryLabels() {
-    irOriginalUpdateLabels();
-    if (!activeWorld || viewMix <= 0.18 || window.__dreamUnityGameActive) return;
-    subLabels.forEach((element) => {
-      if (!element) return;
+  updateLabels = function connectedWorldLabels() {
+    irBaseUpdateLabels();
+    const clampControl = (element, horizontalPadding, topPadding, bottomPadding) => {
+      if (!element || element.style.visibility === 'hidden') return;
       const left = Number.parseFloat(element.style.left);
       const top = Number.parseFloat(element.style.top);
-      if (Number.isFinite(left)) element.style.left = `${clamp(left, 64, width - 64)}px`;
-      if (Number.isFinite(top)) element.style.top = `${clamp(top, 82, height - 54)}px`;
+      const halfWidth = Math.max(0, element.offsetWidth * 0.5);
+      const halfHeight = Math.max(0, element.offsetHeight * 0.5);
+      if (Number.isFinite(left)) element.style.left = `${clamp(left, horizontalPadding + halfWidth, width - horizontalPadding - halfWidth)}px`;
+      if (Number.isFinite(top)) element.style.top = `${clamp(top, topPadding + halfHeight, height - bottomPadding - halfHeight)}px`;
+    };
+    worldKeys.forEach((key) => clampControl(labels[key], 10, 56, 44));
+    if (!activeWorld || viewMix <= 0.18 || window.__dreamUnityGameActive) return;
+    subLabels.forEach((element) => {
+      clampControl(element, 10, 66, 18);
+      if (!element) return;
       element.style.visibility = 'visible';
       element.style.zIndex = '14';
     });
@@ -63,6 +106,52 @@
     }));
   }
 
+  function irAnchorSnapshot() {
+    const positions = overviewPositions(time);
+    return Object.fromEntries(worldKeys.map((key) => {
+      const phase = RT_PHASE[key];
+      const thread = rtRotateProject(rtCatmull(phase));
+      const before = rtRotateProject(rtCatmull(phase - 0.03));
+      const after = rtRotateProject(rtCatmull(phase + 0.03));
+      const node = positions[key];
+      return [key, {
+        node: { x: node.x, y: node.y },
+        thread: { x: thread.x, y: thread.y },
+        before: { x: before.x, y: before.y },
+        after: { x: after.x, y: after.y },
+        distance: Math.hypot(node.x - thread.x, node.y - thread.y),
+      }];
+    }));
+  }
+
+  function irThreadSamples(count = 320) {
+    const total = clamp(Math.floor(Number(count) || 320), 48, 720);
+    return Array.from({ length: total + 1 }, (_, index) => {
+      const phase = index / total;
+      const point = rtRotateProject(rtCatmull(phase));
+      return { phase, x: point.x, y: point.y, z: point.z };
+    });
+  }
+
+  function irIntegritySnapshot() {
+    const anchors = irAnchorSnapshot();
+    const samples = irThreadSamples(360);
+    let maxSegmentGap = 0;
+    let allFinite = true;
+    for (let index = 1; index < samples.length; index += 1) {
+      const a = samples[index - 1];
+      const b = samples[index];
+      if (![a.x, a.y, a.z, b.x, b.y, b.z].every(Number.isFinite)) allFinite = false;
+      maxSegmentGap = Math.max(maxSegmentGap, Math.hypot(b.x - a.x, b.y - a.y));
+    }
+    return {
+      connected: worldKeys.every((key) => anchors[key].distance < 1),
+      allFinite,
+      maxSegmentGap,
+      anchors,
+    };
+  }
+
   function irWorldAt(clientX, clientY) {
     if (activeWorld || viewMix > 0.28 || window.__dreamUnityGameActive) return null;
     const ordered = [...worldKeys].sort((a, b) => worldScreen[b].z - worldScreen[a].z);
@@ -76,7 +165,7 @@
   }
 
   function irBegin(event, key, source, target) {
-    if (!irOffsets[key] || activeWorld || viewMix > 0.28 || window.__dreamUnityGameActive) return false;
+    if (!irDeformations[key] || activeWorld || viewMix > 0.28 || window.__dreamUnityGameActive) return false;
     irDrag.pointerId = event.pointerId;
     irDrag.key = key;
     irDrag.source = source;
@@ -94,6 +183,97 @@
     return true;
   }
 
+  function irScreenDeltaToModel(key, screenX, screenY) {
+    const model = rtCatmull(RT_PHASE[key]);
+    const origin = rtRotateProject(model);
+    const epsilon = 0.035;
+    const basis = ['x', 'y', 'z'].map((axis) => {
+      const next = { ...model, [axis]: model[axis] + epsilon };
+      const projected = rtRotateProject(next);
+      return {
+        x: (projected.x - origin.x) / epsilon,
+        y: (projected.y - origin.y) / epsilon,
+      };
+    });
+    const rowX = basis.map((entry) => entry.x);
+    const rowY = basis.map((entry) => entry.y);
+    const a00 = rowX.reduce((sum, value) => sum + value * value, 0) + 0.0001;
+    const a01 = rowX.reduce((sum, value, index) => sum + value * rowY[index], 0);
+    const a11 = rowY.reduce((sum, value) => sum + value * value, 0) + 0.0001;
+    const determinant = a00 * a11 - a01 * a01;
+    if (!Number.isFinite(determinant) || Math.abs(determinant) < 0.000001) return { x: 0, y: 0, z: 0 };
+    const lambdaX = (a11 * screenX - a01 * screenY) / determinant;
+    const lambdaY = (-a01 * screenX + a00 * screenY) / determinant;
+    const delta = {
+      x: rowX[0] * lambdaX + rowY[0] * lambdaY,
+      y: rowX[1] * lambdaX + rowY[1] * lambdaY,
+      z: rowX[2] * lambdaX + rowY[2] * lambdaY,
+    };
+    const magnitude = Math.hypot(delta.x, delta.y, delta.z);
+    if (!Number.isFinite(magnitude) || magnitude === 0) return { x: 0, y: 0, z: 0 };
+    const maximumStep = 0.34;
+    const scale = magnitude > maximumStep ? maximumStep / magnitude : 1;
+    return { x: delta.x * scale, y: delta.y * scale, z: delta.z * scale };
+  }
+
+  function irLimitedDisplacement(value) {
+    const limited = {
+      x: clamp(value.x, -1.95, 1.95),
+      y: clamp(value.y, -1.62, 1.62),
+      z: clamp(value.z, -1.35, 1.35),
+    };
+    const maximum = width < 760 ? 1.72 : 2.28;
+    const magnitude = Math.hypot(limited.x, limited.y, limited.z);
+    if (magnitude > maximum) {
+      const scale = maximum / magnitude;
+      limited.x *= scale;
+      limited.y *= scale;
+      limited.z *= scale;
+    }
+    return limited;
+  }
+
+  function irPlacementFits(key) {
+    const point = overviewPositions(time)[key];
+    if (!point || ![point.x, point.y, point.r].every(Number.isFinite)) return false;
+    const marginX = Math.max(36, point.r * 0.88);
+    const marginTop = Math.max(80, point.r * 0.82);
+    const marginBottom = Math.max(64, point.r * 0.78);
+    return point.x >= marginX && point.x <= width - marginX
+      && point.y >= marginTop && point.y <= height - marginBottom;
+  }
+
+  function irApplyDelta(key, delta) {
+    const displacement = irDeformations[key];
+    const before = { ...displacement };
+    const target = irLimitedDisplacement({
+      x: displacement.x + delta.x,
+      y: displacement.y + delta.y,
+      z: displacement.z + delta.z,
+    });
+    Object.assign(displacement, target);
+    if (irPlacementFits(key)) return;
+    let low = 0;
+    let high = 1;
+    let accepted = before;
+    for (let iteration = 0; iteration < 9; iteration += 1) {
+      const amount = (low + high) * 0.5;
+      const candidate = {
+        x: lerp(before.x, target.x, amount),
+        y: lerp(before.y, target.y, amount),
+        z: lerp(before.z, target.z, amount),
+      };
+      Object.assign(displacement, candidate);
+      if (irPlacementFits(key)) {
+        accepted = candidate;
+        low = amount;
+      } else {
+        high = amount;
+      }
+    }
+    Object.assign(displacement, accepted);
+  }
+
   function irRedrawNow() {
     if (window.__dreamUnityGameActive) return;
     render(time);
@@ -106,16 +286,13 @@
     irDrag.lastX = event.clientX;
     irDrag.lastY = event.clientY;
     if (Math.hypot(event.clientX - irDrag.startX, event.clientY - irDrag.startY) > 6) irDrag.moved = true;
-    const scale = Math.max(320, unit);
-    const offset = irOffsets[irDrag.key];
-    offset.x = clamp(offset.x + dx / scale, -0.56, 0.56);
-    offset.y = clamp(offset.y + dy / scale, -0.46, 0.46);
+    irApplyDelta(irDrag.key, irScreenDeltaToModel(irDrag.key, dx, dy));
     overviewLastInput = time;
     app.dataset.worldDragDistance = Math.hypot(
       event.clientX - irDrag.startX,
       event.clientY - irDrag.startY,
     ).toFixed(2);
-    if (hint) hint.textContent = `${WORLD[irDrag.key].name} · RELEASE TO PLACE`;
+    if (hint) hint.textContent = `${WORLD[irDrag.key].name} · PATH BENDING WITH WORLD`;
     irRedrawNow();
     event.preventDefault();
     event.stopImmediatePropagation();
@@ -142,10 +319,10 @@
     }
     irRedrawNow();
     if (hint && !activeWorld) hint.textContent = coarse
-      ? 'DRAG A WORLD · PINCH EMPTY SPACE · TAP TO ENTER'
-      : 'DRAG A WORLD · DRAG EMPTY SPACE TO ORBIT · TAP TO ENTER';
+      ? 'DRAG A WORLD WITH ITS THREAD · PINCH EMPTY SPACE · TAP TO ENTER'
+      : 'DRAG A WORLD WITH ITS THREAD · DRAG EMPTY SPACE TO ORBIT · TAP TO ENTER';
     window.dispatchEvent(new CustomEvent('dreamunity:world-positioned', {
-      detail: { world: key, offset: { ...irOffsets[key] }, moved: !cancelled && moved },
+      detail: { world: key, deformation: { ...irDeformations[key] }, moved: !cancelled && moved, connected: true },
     }));
     if (source === 'canvas' || moved) {
       event.preventDefault();
@@ -186,32 +363,40 @@
     }, { capture: true });
   });
 
-  const irOriginalSetHint = setHint;
-  setHint = function interactionRecoveryHint() {
-    irOriginalSetHint();
+  const irBaseSetHint = setHint;
+  setHint = function connectedWorldHint() {
+    irBaseSetHint();
     if (!activeWorld && hint && irDrag.pointerId === null) hint.textContent = coarse
-      ? 'DRAG A WORLD · PINCH EMPTY SPACE · TAP TO ENTER'
-      : 'DRAG A WORLD · DRAG EMPTY SPACE TO ORBIT · TAP TO ENTER';
+      ? 'DRAG A WORLD WITH ITS THREAD · PINCH EMPTY SPACE · TAP TO ENTER'
+      : 'DRAG A WORLD WITH ITS THREAD · DRAG EMPTY SPACE TO ORBIT · TAP TO ENTER';
   };
 
   window.__dreamUnityInteractions = Object.freeze({
-    id: 'independent-world-drag',
+    id: 'connected-world-rig',
     version: IR_RELEASE,
     ready: true,
-    offsets: () => Object.fromEntries(worldKeys.map((key) => [key, { ...irOffsets[key] }])),
+    connected: true,
+    offsets: () => Object.fromEntries(worldKeys.map((key) => [key, { ...irDeformations[key] }])),
+    deformations: () => Object.fromEntries(worldKeys.map((key) => [key, { ...irDeformations[key] }])),
     screen: irScreenSnapshot,
+    anchors: irAnchorSnapshot,
+    threadSamples: irThreadSamples,
+    integrity: irIntegritySnapshot,
     reset(world) {
-      if (world && irOffsets[world]) {
-        irOffsets[world].x = 0;
-        irOffsets[world].y = 0;
+      if (world && irDeformations[world]) {
+        irDeformations[world].x = 0;
+        irDeformations[world].y = 0;
+        irDeformations[world].z = 0;
       } else {
         worldKeys.forEach((key) => {
-          irOffsets[key].x = 0;
-          irOffsets[key].y = 0;
+          irDeformations[key].x = 0;
+          irDeformations[key].y = 0;
+          irDeformations[key].z = 0;
         });
       }
       irRedrawNow();
     },
   });
   app.dataset.independentWorlds = 'true';
+  app.dataset.connectedWorldRig = 'true';
   setHint();
