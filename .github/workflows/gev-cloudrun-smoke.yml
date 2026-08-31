@@ -6,6 +6,7 @@ on:
       - cloudrun-gods-eye-view
     paths:
       - 'cloudrun-gods-eye-view/**'
+      - 'render.yaml'
       - '.github/workflows/gev-cloudrun-smoke.yml'
   workflow_dispatch:
 
@@ -20,12 +21,14 @@ jobs:
       - name: Check out deployment wrapper
         uses: actions/checkout@v4
 
-      - name: Build the Cloud Run image
+      - name: Build the container
         run: docker build --pull --tag gev-cloudrun ./cloudrun-gods-eye-view
 
-      - name: Start the container
+      - name: Start within Render Free memory limit
         run: |
           docker run --detach --name gev-cloudrun-test \
+            --memory=512m \
+            --memory-swap=512m \
             --publish 8080:8080 \
             --env PORT=8080 \
             gev-cloudrun
