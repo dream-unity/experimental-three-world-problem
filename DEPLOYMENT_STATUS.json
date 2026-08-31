@@ -1,7 +1,7 @@
 {
   "project": "Dream Unity \u2014 Experimental Three-World Problem",
   "deployment": "verified-live",
-  "source_sha": "da5939c2d46ebe009d75fd605d4cb381777679fb",
+  "source_sha": "4fa819c1115697717fa0a62ff9f27150bcd34a1f",
   "page_url": "https://dream-unity.github.io/experimental-three-world-problem/",
   "nine_portal_compatibility": "validated",
   "overview": {
@@ -56,12 +56,12 @@
     "original_scenario_bank_used_as_fallback": false
   },
   "source_sha256": [
-    "3340381a7e5f8f2d9e03cf9f9365958bac11218df722481ac2c67f7a05703d43  index.html",
+    "c865f16b172c808226f30b6d43e90a9b1454d4b330ea6d3980f9f2ff20c19572  index.html",
     "6850f499f7f393c52d1f2b50b8fe862c30172ca93b37c1bed6ce689acd76ab37  styles.css",
     "ad8dc6788a87c34201b132b88d8e5eb3ed439a0644f54a9610d2398d1b877536  become.css",
     "f65aaeffd785cf3df93b324e25a4e5ac766535dcaf8288115639e4789ef58f56  unity-cycle.css",
     "68b4429c362a7b246ccab75d841db0dc760594a45f34522e21005f515c08c841  unity-ui.js",
-    "d9b228f3597dda731c7fae5038d49090068fe11df2d8f244b9b46ecbf2f370ae  main.js",
+    "1728e3695996250f6adec377861e1c4506e8e22d3fcca766bf0dac7c304e7196  main.js",
     "ae3962f60d36963b7b308b360caf8945b83788e117c7af89066b5ab3464ca2ff  arcade.js",
     "4c65c2590ea3840da26767b561b5f49b698e0a63c6f28419a8854c3122a7e610  voice.css",
     "8b2b8864217845789a3ca094622bebd94a6e156ec020ae58a968c7c578b5cfc2  voice.js",
@@ -92,6 +92,7 @@
     "f8c22d6e19065439e3e76f7de141f8e4105cd50f87c4735b998226b09f9ede1e  visual-parts/sovereign-return-21-03.txt",
     "3d89ac984becb6da513681cbcef21bb6dc04b25295e448bed6203f85f557e322  visual-parts/world-emblems-26.txt",
     "b5b8e15eb9f5437966ce3027fec9604bd5ace2a51667de267d3410442b0056ae  visual-parts/world-emblems-polish-26b.txt",
+    "977dd14344e6b5bf99d58a05d66694b17ae7b2191ccfd7046736cad0b8e02164  visual-parts/world-title-hierarchy-27.txt",
     "ad5bb93ac121c585cfec3db4e1e3c2914e2ed8b8a0459d98781bcd8e8a462df1  arcade-parts/become-activation-objectives-14.txt",
     "53b6481086fa2be2aba90a9570c78162e8e3b0bfa856632d3cbfb62b9f317c7a  arcade-parts/become-compressed-12.txt",
     "ddc1eae5b9d4b4d92c6b2548be18a77a9ae944a84890c1c4bf6a9d788f054848  arcade-parts/become-diversity-09.txt",
@@ -116,5 +117,5 @@
     "c5a8ea262274f0a64821aae3c304e7410293b66ac1c1665c38ca44eae0ed7488  arcade-parts/perceive-aerial-08.txt",
     "6545873de0d833976a46ffa52666c6629e94e6fdda4f30c3a1720f738cb3b892  arcade-parts/perceive-role-logic.txt"
   ],
-  "verified_at": "2026-08-31T10:24:19.631532+00:00"
+  "verified_at": "2026-08-31T10:40:53.743935+00:00"
 }
