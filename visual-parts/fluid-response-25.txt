@@ -31,7 +31,8 @@
     }
 
     if (wasActive && !irGesture.active) {
-      // Preserve a short visual alignment window without injecting energy.
+      // Preserve a short render-alignment window without injecting energy or
+      // treating the released gesture as if the hand were still down.
       irDirectUntil = Math.max(irDirectUntil, performance.now() + 320);
       overviewYawVelocity = clamp(overviewYawVelocity, -IR_MAX_YAW_VELOCITY, IR_MAX_YAW_VELOCITY);
       overviewPitchVelocity = clamp(overviewPitchVelocity, -IR_MAX_PITCH_VELOCITY, IR_MAX_PITCH_VELOCITY);
@@ -42,7 +43,7 @@
 
   updateMotion = function stableFluidMotion(dt) {
     const safeDt = Math.max(0, Math.min(Number(dt) || 0, 1 / 30));
-    const direct = irGesture.active || irPointers.size > 0 || pointers.size > 0 || performance.now() < irDirectUntil;
+    const direct = irGesture.active || irPointers.size > 0 || pointers.size > 0;
 
     if (direct) {
       overviewYawVelocity = 0;
