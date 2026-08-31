@@ -1,0 +1,47 @@
+/* Unity portal — the existing central UNITY label becomes an intentional gateway. */
+.unity-label.unity-portal{
+  z-index:10;
+  pointer-events:auto;
+  cursor:pointer;
+  text-decoration:none;
+  touch-action:manipulation;
+  user-select:none;
+  -webkit-tap-highlight-color:transparent;
+  outline:none;
+}
+.unity-label.unity-portal::after{
+  content:"";
+  position:absolute;
+  inset:-15px -22px;
+  border:1px solid transparent;
+  background:rgba(255,255,255,0);
+  pointer-events:auto;
+  transition:border-color .18s ease,background .18s ease,transform .18s ease;
+}
+.unity-label.unity-portal:hover::after,
+.unity-label.unity-portal:focus-visible::after{
+  border-color:rgba(11,16,32,.2);
+  background:rgba(255,255,255,.72);
+  transform:scale(1.035);
+}
+.unity-label.unity-portal:hover span,
+.unity-label.unity-portal:focus-visible span{
+  width:31px;
+}
+.unity-label.unity-portal:hover b,
+.unity-label.unity-portal:focus-visible b{
+  color:#0b1020;
+}
+.unity-label.unity-portal span,
+.unity-label.unity-portal b,
+.unity-label.unity-portal small{
+  position:relative;
+  z-index:1;
+}
+#app.detail .unity-label.unity-portal,
+#app.game-open .unity-label.unity-portal{
+  pointer-events:none!important;
+}
+@media(prefers-reduced-motion:reduce){
+  .unity-label.unity-portal::after{transition:none}
+}
