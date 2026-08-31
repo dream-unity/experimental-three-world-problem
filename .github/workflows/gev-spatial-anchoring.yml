@@ -33,7 +33,7 @@ jobs:
         run: npm ci
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
-      - name: Wait for earth-fixed page deployment
+      - name: Wait for spatial deployment
         shell: bash
         env:
           PAGE_URL: https://dream-unity.github.io/experimental-three-world-problem/gods-eye-view/
@@ -41,8 +41,10 @@ jobs:
           set -euo pipefail
           ready=false
           for attempt in $(seq 1 48); do
-            if curl --fail --location --silent --show-error --connect-timeout 8 --max-time 20 \
-              "$PAGE_URL?spatial=${GITHUB_SHA}" | grep -q '20260831-earth-fixed-1'; then
+            html=$(curl --fail --location --silent --show-error --connect-timeout 8 --max-time 20 \
+              "$PAGE_URL?spatial=${GITHUB_SHA}" || true)
+            if grep -q '20260831-earth-fixed-1' <<<"$html" \
+              && grep -q 'data-adapter.js?v=20260831-earth-fixed-2' <<<"$html"; then
               ready=true
               break
             fi
@@ -50,7 +52,7 @@ jobs:
             sleep 5
           done
           test "$ready" = true
-      - name: Verify live radio markers use Earth occlusion
+      - name: Verify live radio remains Earth-fixed
         shell: bash
         env:
           PAGE_URL: https://dream-unity.github.io/experimental-three-world-problem/gods-eye-view/
@@ -61,65 +63,46 @@ jobs:
             const browser = await chromium.launch({ headless: true });
             const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
             const errors = [];
-            const trace = [];
             page.on('pageerror', error => errors.push(String(error)));
-            page.on('console', message => trace.push(`console:${message.type()}:${message.text()}`));
-            page.on('requestfailed', request => {
-              if (/gods-eye-view-live|cesium|satellite/i.test(request.url())) trace.push(`failed:${request.url()}:${request.failure()?.errorText || ''}`);
-            });
-            page.on('response', response => {
-              if (/gods-eye-view-live\.vercel\.app\/(app\.js|api\/radio|api\/aircraft)/.test(response.url())) {
-                trace.push(`response:${response.status()}:${response.url()}`);
-              }
-            });
             await page.goto(`${process.env.PAGE_URL}?spatial=${process.env.GITHUB_SHA}`, {
               waitUntil: 'domcontentloaded',
               timeout: 90000,
             });
-            await page.waitForFunction(() => window.__dreamUnityGeoAnchoring?.version === '20260831-earth-fixed-1', null, { timeout: 30000 });
-            if (await page.locator('iframe').count()) throw new Error('Gods Eye View must be native, not an iframe');
+            await page.waitForFunction(() => (
+              window.__dreamUnityGeoAnchoring?.version === '20260831-earth-fixed-1'
+              && window.__dreamUnityDataAdapter?.version === '20260831-earth-fixed-2'
+            ), null, { timeout: 30000 });
 
-            const directRadio = await page.evaluate(async () => {
-              try {
-                const response = await fetch('https://gods-eye-view-live.vercel.app/api/radio', { cache: 'no-store' });
-                const data = await response.json();
-                return { ok: response.ok, status: response.status, count: data.stations?.length || 0 };
-              } catch (error) {
-                return { ok: false, error: String(error) };
-              }
-            });
-            console.log('DIRECT_RADIO', JSON.stringify(directRadio));
-
-            await page.locator('[data-layer="radio"]').click();
-            try {
-              await page.waitForFunction(() => {
-                const count = Number(document.getElementById('count-radio')?.textContent || 0);
-                return count > 0 && window.__dreamUnityGeoAnchoring?.patchedRadio > 0;
-              }, null, { timeout: 45000 });
-            } catch (error) {
-              const diagnostic = await page.evaluate(() => ({
-                report: window.__dreamUnityGeoAnchoring,
-                count: document.getElementById('count-radio')?.textContent || '',
-                status: document.getElementById('statusText')?.textContent || '',
-                radioActive: document.querySelector('[data-layer="radio"]')?.classList.contains('active') || false,
-                aircraftCount: document.getElementById('count-aircraft')?.textContent || '',
-                scripts: [...document.scripts].map(script => script.src || '[inline]'),
-              }));
-              console.log('DIAGNOSTIC', JSON.stringify(diagnostic, null, 2));
-              console.log('TRACE', trace.slice(-80).join('\n'));
-              console.log('PAGE_ERRORS', errors.join(' | '));
-              throw error;
+            if (await page.locator('iframe').count()) {
+              throw new Error('God’s Eye View must remain native, not iframe-hosted');
             }
 
+            const adapter = await page.evaluate(() => window.__dreamUnityDataAdapter);
+            if (adapter.radio !== 'direct-radio-browser') {
+              throw new Error(`Radio must use direct Radio Browser coordinates; got ${adapter.radio}`);
+            }
+
+            await page.locator('[data-layer="radio"]').click();
+            await page.waitForFunction(() => {
+              const count = Number(document.getElementById('count-radio')?.textContent || 0);
+              return count >= 100 && window.__dreamUnityGeoAnchoring?.patchedRadio === count;
+            }, null, { timeout: 60000 });
+
             const result = await page.evaluate(() => ({
-              report: window.__dreamUnityGeoAnchoring,
+              adapter: window.__dreamUnityDataAdapter,
+              anchoring: window.__dreamUnityGeoAnchoring,
               count: Number(document.getElementById('count-radio')?.textContent || 0),
               status: document.getElementById('statusText')?.textContent || '',
             }));
-            if (result.report.patchedRadio !== result.count) {
-              throw new Error(`Expected every radio marker depth-tested; patched=${result.report.patchedRadio}, count=${result.count}`);
+
+            if (result.anchoring.patchedRadio !== result.count) {
+              throw new Error(`Not every radio marker was depth-tested: ${result.anchoring.patchedRadio}/${result.count}`);
+            }
+            if (result.anchoring.patchedPoints < result.anchoring.patchedRadio) {
+              throw new Error('Spatial instrumentation count is internally inconsistent');
             }
             if (errors.length) throw new Error(`Page errors: ${errors.join(' | ')}`);
+
             console.log(JSON.stringify(result, null, 2));
             await browser.close();
           })().catch(error => { console.error(error); process.exit(1); });
