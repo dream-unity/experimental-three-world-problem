@@ -7,6 +7,7 @@ on:
       - index.html
       - main.js
       - visual-parts/world-emblems-26.txt
+      - visual-parts/world-emblems-polish-26b.txt
       - tests/world-emblems.test.mjs
       - package.json
       - .github/workflows/world-emblems.yml
@@ -16,6 +17,7 @@ on:
       - index.html
       - main.js
       - visual-parts/world-emblems-26.txt
+      - visual-parts/world-emblems-polish-26b.txt
       - tests/world-emblems.test.mjs
       - package.json
       - .github/workflows/world-emblems.yml
@@ -94,7 +96,12 @@ jobs:
           PAGE_URL: https://dream-unity.github.io/experimental-three-world-problem
         run: |
           set -euo pipefail
-          files=(index.html main.js visual-parts/world-emblems-26.txt)
+          files=(
+            index.html
+            main.js
+            visual-parts/world-emblems-26.txt
+            visual-parts/world-emblems-polish-26b.txt
+          )
           live_dir=$(mktemp -d)
           trap 'rm -rf "$live_dir"' EXIT
           mkdir -p "$live_dir/visual-parts"
@@ -118,11 +125,14 @@ jobs:
             sleep 5
           done
           test "$matched" = true
-          grep -q 'em=26' "$live_dir/index.html"
+          grep -q 'em=26b' "$live_dir/index.html"
           grep -q "WORLD_EMBLEM_VERSION = '20260831-world-emblems-26'" "$live_dir/main.js"
+          grep -q "WORLD_EMBLEM_POLISH_VERSION = '20260831-world-emblems-polish-26b'" "$live_dir/main.js"
           grep -q "WE_RELEASE = '20260831-world-emblems-26'" "$live_dir/visual-parts/world-emblems-26.txt"
           grep -q 'titlesInside: true' "$live_dir/visual-parts/world-emblems-26.txt"
           grep -q 'largerSymbols: true' "$live_dir/visual-parts/world-emblems-26.txt"
+          grep -q "WEP_RELEASE = '20260831-world-emblems-polish-26b'" "$live_dir/visual-parts/world-emblems-polish-26b.txt"
+          grep -q 'mobileTriadsWrapInside: true' "$live_dir/visual-parts/world-emblems-polish-26b.txt"
 
       - name: Exercise enlarged emblems on live GitHub Pages
         env:

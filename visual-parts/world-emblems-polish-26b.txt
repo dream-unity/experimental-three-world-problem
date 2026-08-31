@@ -1,0 +1,47 @@
+  // World Emblem Polish 26b — preserve the complete triad wording inside the
+  // compact mobile emblems rather than clipping the last capacity name.
+  const WEP_RELEASE = '20260831-world-emblems-polish-26b';
+  if (!document.querySelector('style[data-world-emblem-polish]')) {
+    const wepStyle = document.createElement('style');
+    wepStyle.dataset.worldEmblemPolish = WEP_RELEASE;
+    wepStyle.textContent = `
+      @media(max-width:760px){
+        .world-label.world-emblem-label>.world-copy{
+          width:91%!important;
+          top:55.5%!important;
+          gap:2.2px!important;
+        }
+        .world-label.world-emblem-label>.world-copy strong{
+          letter-spacing:.085em!important;
+          text-indent:.085em!important;
+        }
+        .world-label.world-emblem-label>.world-copy small{
+          width:100%!important;
+          max-width:100%!important;
+          overflow:visible!important;
+          white-space:normal!important;
+          text-overflow:clip!important;
+          text-wrap:balance;
+          font-size:3.55px!important;
+          line-height:1.28!important;
+          letter-spacing:.018em!important;
+          text-indent:0!important;
+        }
+      }
+      @media(max-width:430px){
+        .world-label.world-emblem-label>.world-copy{width:93%!important}
+        .world-label.world-emblem-label>.world-copy small{
+          font-size:3.35px!important;
+          letter-spacing:.005em!important;
+        }
+      }
+    `;
+    document.head.append(wepStyle);
+  }
+  app.dataset.worldEmblemPolish = 'true';
+  window.__dreamUnityWorldEmblemPolish = Object.freeze({
+    version: WEP_RELEASE,
+    ready: true,
+    mobileTriadsWrapInside: true,
+  });
+  updateLabels();

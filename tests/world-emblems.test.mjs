@@ -64,8 +64,10 @@ async function openContext(options) {
   target.searchParams.set('emblem-check', `${Date.now()}-${Math.random()}`);
   await page.goto(target.href, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => window.__dreamUnityWorldEmblems?.ready === true);
+  await page.waitForFunction(() => window.__dreamUnityWorldEmblemPolish?.ready === true);
   await page.waitForFunction(() => window.__dreamUnityInteractions?.ready === true);
   await page.waitForFunction(() => document.querySelector('#app')?.dataset.worldEmblems === 'true');
+  await page.waitForFunction(() => document.querySelector('#app')?.dataset.worldEmblemPolish === 'true');
   await page.waitForFunction(() => Object.values(window.__dreamUnityWorldEmblems.metrics()).every(value => value.radius > 20 && value.label?.width > 20));
   await page.waitForFunction(() => {
     const loader = document.querySelector('#loading');
@@ -89,10 +91,12 @@ async function readState(page) {
       const subtitle = element.querySelector('small');
       const style = getComputedStyle(element);
       const titleStyle = getComputedStyle(title);
+      const subtitleStyle = getComputedStyle(subtitle);
       const titleRect = title.getBoundingClientRect();
       const subtitleRect = subtitle.getBoundingClientRect();
       return [key, {
         text: title.textContent.trim(),
+        subtitleText: subtitle.textContent.trim(),
         className: element.className,
         borderLeftWidth: style.borderLeftWidth,
         borderRadius: style.borderRadius,
@@ -100,6 +104,12 @@ async function readState(page) {
         titleFontSize: Number.parseFloat(titleStyle.fontSize),
         titleRect: { x: titleRect.x, y: titleRect.y, width: titleRect.width, height: titleRect.height },
         subtitleRect: { x: subtitleRect.x, y: subtitleRect.y, width: subtitleRect.width, height: subtitleRect.height },
+        subtitleWhiteSpace: subtitleStyle.whiteSpace,
+        subtitleOverflow: subtitleStyle.overflow,
+        subtitleScrollWidth: subtitle.scrollWidth,
+        subtitleClientWidth: subtitle.clientWidth,
+        subtitleScrollHeight: subtitle.scrollHeight,
+        subtitleClientHeight: subtitle.clientHeight,
       }];
     })),
   }));
@@ -140,7 +150,13 @@ function assertEmblems(state, { mobile = false } = {}) {
       y: label.subtitleRect.y + label.subtitleRect.height * 0.5,
     };
     assert.ok(distance(metric.world, titleCenter) < metric.radius * 0.22, `${key} title band is outside the emblem`);
-    assert.ok(distance(metric.world, subtitleCenter) < metric.radius * 0.44, `${key} subtitle is outside the emblem`);
+    assert.ok(distance(metric.world, subtitleCenter) < metric.radius * 0.48, `${key} subtitle is outside the emblem`);
+    if (mobile) {
+      assert.notEqual(label.subtitleWhiteSpace, 'nowrap', `${key} mobile triad is still forced into one clipped line`);
+      assert.notEqual(label.subtitleOverflow, 'hidden', `${key} mobile triad is still visually clipped`);
+      assert.ok(label.subtitleScrollWidth <= label.subtitleClientWidth + 2, `${key} mobile triad overflows horizontally`);
+      assert.ok(label.subtitleScrollHeight <= label.subtitleClientHeight + 2, `${key} mobile triad overflows vertically`);
+    }
   }
   assert.equal(state.integrity.connected, true);
   assert.equal(state.integrity.rigid, true);
@@ -151,6 +167,7 @@ const desktop = await openContext({ viewport: { width: 1536, height: 864 }, devi
 let state = await readState(desktop.page);
 assertEmblems(state);
 assert.equal(await desktop.page.locator('#app').getAttribute('data-world-emblem-version'), '20260831-world-emblems-26');
+assert.equal(await desktop.page.locator('#app').getAttribute('data-world-emblem-polish'), 'true');
 
 // The internal title itself remains a handle on the single rigid instrument.
 const before = state;
@@ -193,4 +210,4 @@ await mobile.context.close();
 assert.deepEqual(errors, []);
 await browser.close();
 if (server) await new Promise(resolve => server.close(resolve));
-console.log(`World Emblems validated${process.env.DU_EMBLEM_BASE_URL ? ' live' : ''}: enlarged symbols, embedded titles, rigid whole-field drag and responsive layout.`);
+console.log(`World Emblems validated${process.env.DU_EMBLEM_BASE_URL ? ' live' : ''}: enlarged symbols, embedded titles, unclipped mobile triads, rigid whole-field drag and responsive layout.`);
