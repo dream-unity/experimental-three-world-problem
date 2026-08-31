@@ -135,5 +135,23 @@ if opensky_anchor not in vite_source:
     )
 
 vite_source = vite_source.replace(opensky_anchor, regional_block, 1)
+
+# CelesTrak is sometimes unreachable from shared cloud-host egress. Orbicentral
+# intentionally exposes a CelesTrak-compatible GP API (same GROUP/FORMAT query
+# contract) using public Space-Track orbital elements, so the existing GEV TLE
+# parser can continue unchanged. Only low-memory/cloud mode swaps the upstream;
+# normal installations keep using CelesTrak exactly as upstream intended.
+celestrak_url_anchor = "const url = new URL('https://celestrak.org/NORAD/elements/gp.php');"
+cloud_satellite_url = """const url = new URL(
+      process.env.GEV_LOW_MEMORY === '1'
+        ? 'https://www.orbicentral.net/gp.php'
+        : 'https://celestrak.org/NORAD/elements/gp.php'
+    );"""
+if celestrak_url_anchor not in vite_source:
+    raise RuntimeError(
+        "Upstream vite.config.js changed: CelesTrak URL anchor missing."
+    )
+vite_source = vite_source.replace(celestrak_url_anchor, cloud_satellite_url, 1)
+
 vite_file.write_text(vite_source, encoding="utf-8")
-print("Applied paced low-memory regional adsb.lol flight mode to vite.config.js")
+print("Applied paced regional flights and Orbicentral cloud satellite source")
