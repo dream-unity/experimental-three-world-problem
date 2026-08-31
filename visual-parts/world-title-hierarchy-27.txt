@@ -1,0 +1,133 @@
+  // World Title Hierarchy 27 — the portal name is now the unmistakable visual
+  // identity of each emblem. It remains inside the projected symbol, scales
+  // proportionally with it, and stays a handle on the single rigid 3D form.
+  const WTH_RELEASE = '20260831-world-title-hierarchy-27';
+  const wthBaseUpdateLabels = updateLabels;
+
+  if (!document.querySelector('style[data-world-title-hierarchy]')) {
+    const wthStyle = document.createElement('style');
+    wthStyle.dataset.worldTitleHierarchy = WTH_RELEASE;
+    wthStyle.textContent = `
+      .world-label.world-emblem-label>.world-copy{
+        width:91%!important;
+        top:54.5%!important;
+        gap:var(--wth-gap)!important;
+      }
+      .world-label.world-emblem-label>.world-copy strong{
+        width:100%!important;
+        padding:var(--wth-title-pad) 1px!important;
+        overflow:visible!important;
+        color:#060914!important;
+        background:
+          linear-gradient(90deg,
+            rgba(var(--we-rgb),0) 0%,
+            rgba(var(--we-rgb),.055) 7%,
+            rgba(255,255,255,.985) 18%,
+            rgba(255,255,255,.995) 50%,
+            rgba(255,255,255,.985) 82%,
+            rgba(var(--we-rgb),.055) 93%,
+            rgba(var(--we-rgb),0) 100%)!important;
+        border-top:1.35px solid rgba(var(--we-rgb),.38)!important;
+        border-bottom:1.35px solid rgba(var(--we-rgb),.38)!important;
+        box-shadow:
+          inset 10px 0 0 -9px rgba(var(--we-rgb),.72),
+          inset -10px 0 0 -9px rgba(var(--we-rgb),.72),
+          0 5px 18px rgba(11,16,32,.045)!important;
+        font-family:"Arial Narrow","Aptos Narrow","Roboto Condensed",Inter,"Helvetica Neue",Arial,sans-serif!important;
+        font-size:var(--wth-title-size)!important;
+        font-weight:900!important;
+        font-stretch:condensed;
+        line-height:1.02!important;
+        letter-spacing:.085em!important;
+        text-indent:.085em!important;
+        white-space:nowrap!important;
+        text-shadow:0 1px 0 #fff,0 0 10px rgba(255,255,255,.92)!important;
+      }
+      .world-label.world-emblem-label>.world-copy small{
+        max-width:96%!important;
+        color:rgba(11,16,32,.64)!important;
+        font-size:var(--wth-subtitle-size)!important;
+        font-weight:700!important;
+        letter-spacing:.075em!important;
+        text-indent:.075em!important;
+      }
+      .world-label.world-emblem-label>.world-index{
+        top:18.5%!important;
+        font-size:var(--wth-index-size)!important;
+        color:rgba(11,16,32,.58)!important;
+      }
+      .world-label.world-emblem-label:hover>.world-copy strong,
+      .world-label.world-emblem-label:focus-visible>.world-copy strong,
+      .world-label.world-emblem-label.dragging>.world-copy strong{
+        color:#02040b!important;
+        border-color:rgba(var(--we-rgb),.72)!important;
+        box-shadow:
+          inset 11px 0 0 -9px rgba(var(--we-rgb),.92),
+          inset -11px 0 0 -9px rgba(var(--we-rgb),.92),
+          0 6px 20px rgba(var(--we-rgb),.085)!important;
+      }
+      @media(max-width:760px){
+        .world-label.world-emblem-label>.world-copy{
+          width:94%!important;
+          top:55%!important;
+          gap:var(--wth-gap)!important;
+        }
+        .world-label.world-emblem-label>.world-copy strong{
+          font-size:var(--wth-title-size)!important;
+          letter-spacing:.045em!important;
+          text-indent:.045em!important;
+          padding:var(--wth-title-pad) 0!important;
+          border-top-width:1px!important;
+          border-bottom-width:1px!important;
+        }
+        .world-label.world-emblem-label>.world-copy small{
+          width:96%!important;
+          max-width:96%!important;
+          font-size:var(--wth-subtitle-size)!important;
+          line-height:1.22!important;
+          letter-spacing:.006em!important;
+          text-indent:0!important;
+        }
+        .world-label.world-emblem-label>.world-index{top:17%!important}
+      }
+    `;
+    document.head.append(wthStyle);
+  }
+
+  function wthTitleSize(key, diameter) {
+    if (width < 760) {
+      const factor = key === 'machine' ? 0.090 : key === 'maker' ? 0.096 : 0.097;
+      const minimum = key === 'machine' ? 6.7 : 6.9;
+      return clamp(diameter * factor, minimum, 9.2);
+    }
+    const factor = key === 'machine' ? 0.092 : key === 'maker' ? 0.098 : 0.099;
+    const minimum = key === 'machine' ? 10.2 : 10.5;
+    const maximum = key === 'machine' ? 14.8 : 15.5;
+    return clamp(diameter * factor, minimum, maximum);
+  }
+
+  updateLabels = function worldTitleHierarchyLabels() {
+    wthBaseUpdateLabels();
+    worldKeys.forEach((key) => {
+      const element = labels[key];
+      if (!element) return;
+      const diameter = Number.parseFloat(element.style.getPropertyValue('--we-diameter')) || element.offsetWidth || 0;
+      if (!Number.isFinite(diameter) || diameter <= 0) return;
+      element.style.setProperty('--wth-title-size', `${wthTitleSize(key, diameter)}px`);
+      element.style.setProperty('--wth-subtitle-size', `${clamp(diameter * (width < 760 ? 0.046 : 0.0345), width < 760 ? 3.5 : 4.25, width < 760 ? 4.35 : 5.9)}px`);
+      element.style.setProperty('--wth-index-size', `${clamp(diameter * 0.035, width < 760 ? 3.9 : 4.4, 6.2)}px`);
+      element.style.setProperty('--wth-gap', `${clamp(diameter * (width < 760 ? 0.035 : 0.041), 2.2, 6.2)}px`);
+      element.style.setProperty('--wth-title-pad', `${clamp(diameter * (width < 760 ? 0.018 : 0.024), 1.2, 4.1)}px`);
+    });
+  };
+
+  app.dataset.worldTitleHierarchy = 'true';
+  app.dataset.worldTitleHierarchyVersion = WTH_RELEASE;
+  window.__dreamUnityWorldTitleHierarchy = Object.freeze({
+    version: WTH_RELEASE,
+    ready: true,
+    distinctiveTitleHierarchy: true,
+    proportionalScaling: true,
+    remainsInsideEmblem: true,
+  });
+  updateLabels();
