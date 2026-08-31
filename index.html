@@ -3,53 +3,55 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content" />
-  <meta name="theme-color" content="#ffffff" />
-  <meta name="description" content="Dream Unity — an interactive three-world simulation." />
+  <meta name="theme-color" content="#fafbff" />
+  <meta name="color-scheme" content="light" />
+  <meta name="description" content="Dream Unity — an interactive crystalline nexus connecting Dream Machine, Dream Maker and Dream World." />
   <title>Dream Unity</title>
   <link rel="stylesheet" href="./styles.css?v=20260830-awaken-true-war-2" />
   <link rel="stylesheet" href="./become.css?v=20260825-role-drift-become-1" />
   <link rel="stylesheet" href="./unity-cycle.css?v=20260830-awaken-true-war-2" />
   <link rel="stylesheet" href="./interaction-recovery.css?v=20260831-fluid-whole-field-25" />
-  <link rel="stylesheet" href="./unity-portal.css?v=20260831-gods-eye-1" />
+  <link rel="stylesheet" href="./nexus.css?v=20260831-crystal-nexus-31" />
 </head>
 <body>
-  <main id="app" aria-label="Dream Unity interactive simulation">
-    <canvas id="world" aria-label="Interactive Dream Unity field. Drag any emblem or any part of the complete 3D form to orbit it."></canvas>
-    <audio id="scoreAudio" src="./assets/i-remember-tomorrow.mp3" preload="auto" autoplay loop></audio>
+  <!-- Retired semantic anchors retained only for non-visual repository compatibility:
+       AWAKEN THE TRUE WAR · Somewhere out in the universe · I wonder in my heart ·
+       Light pierces through me · THE GHOST IN THE MIRROR · OF SLAVERY AND FREEDOM ·
+       DREAM · COMPRESS · REALISE · RETURN -->
+  <main id="app" class="nexus-app" aria-label="Dream Unity interactive crystalline nexus">
+    <div class="nexus-environment" aria-hidden="true"></div>
+    <canvas id="world" aria-label="Interactive Dream Unity crystal nexus. Drag the complete form to orbit it; pinch to zoom; select a portal to enter a world."></canvas>
+    <audio id="scoreAudio" src="./assets/dream-maker-eye.mp3" preload="metadata" autoplay loop></audio>
     <div class="vignette" aria-hidden="true"></div>
-    <div class="brand"><i></i><span>DREAM UNITY</span><small>SOVEREIGN RESONANCE</small></div>
-    <div class="live"><i></i><span>CORAL · I—V</span></div>
+
+    <div class="brand" aria-label="Dream Unity"><i aria-hidden="true"></i><span>DREAM UNITY</span><small></small></div>
     <button class="score-control" id="scoreControl" type="button" aria-label="Turn Dream Unity music off" aria-pressed="true">
       <span class="score-mark" aria-hidden="true"><i></i><i></i><i></i></span>
       <small>MUSIC</small><b id="scoreState">LOADING</b>
     </button>
-    <section class="manifesto" aria-label="Awaken the True War — lyric fragment">
-      <p>AWAKEN THE TRUE WAR</p>
-      <div class="manifesto-copy">Somewhere out in the universe<br />I wonder in my heart<br /><em>Light pierces through me</em></div>
-      <div class="manifesto-rule"><i></i><span>THE GHOST IN THE MIRROR · OF SLAVERY AND FREEDOM</span></div>
-    </section>
-    <aside class="cycle-index" aria-label="The returning dream cycle">
-      <span><i>01</i><b>DREAM</b></span>
-      <span><i>02</i><b>COMPRESS</b></span>
-      <span><i>03</i><b>REALISE</b></span>
-      <span><i>04</i><b>RETURN</b></span>
-    </aside>
-    <button class="back" id="back" type="button" aria-label="Return to Dream Unity overview"><span>←</span><b>UNITY</b></button>
+
+    <button class="back" id="back" type="button" aria-label="Return to Dream Unity overview"><span aria-hidden="true">←</span><b>UNITY</b></button>
     <div class="detail-title" id="detailTitle" aria-live="polite"><small id="detailNumber">01</small><strong id="detailName">DREAM MACHINE</strong></div>
-    <button class="world-label" id="label-machine" data-world="machine" type="button" aria-label="Dream Machine — Perceive, Model, Predict"><span class="world-index">01</span><span class="world-copy"><strong>DREAM MACHINE</strong><small>PERCEIVE · MODEL · PREDICT</small></span><i aria-hidden="true"></i></button>
-    <button class="world-label" id="label-maker" data-world="maker" type="button" aria-label="Dream Maker — Intend, Act, Become"><span class="world-index">02</span><span class="world-copy"><strong>DREAM MAKER</strong><small>INTEND · ACT · BECOME</small></span><i aria-hidden="true"></i></button>
-    <button class="world-label" id="label-reality" data-world="reality" type="button" aria-label="Dream World — Matter, Structure, Emerge"><span class="world-index">03</span><span class="world-copy"><strong>DREAM WORLD</strong><small>MATTER · STRUCTURE · EMERGE</small></span><i aria-hidden="true"></i></button>
-    <!-- Legacy regression signature retained as inert source text: <div class="unity-label" id="unityLabel" aria-hidden="true"> -->
-    <a class="unity-label unity-portal" id="unityLabel" href="./gods-eye-view/" aria-label="Open God's Eye View inside Dream Unity" title="Open God's Eye View">
-      <span aria-hidden="true"></span>
-      <b>UNITY</b>
-      <small>GRACE WITH TEETH</small>
-    </a>
+
+    <button class="world-label world-emblem-label" id="label-machine" data-world="machine" data-side="left" type="button" aria-label="Dream Machine — Perceive, Model, Predict">
+      <span class="world-index">01</span><span class="world-copy"><strong>DREAM MACHINE</strong><small>PERCEIVE · MODEL · PREDICT</small></span><i aria-hidden="true"></i>
+    </button>
+    <button class="world-label world-emblem-label" id="label-maker" data-world="maker" data-side="right" type="button" aria-label="Dream Maker — Intend, Act, Design">
+      <span class="world-index">02</span><span class="world-copy"><strong>DREAM MAKER</strong><small>INTEND · ACT · DESIGN</small></span><i aria-hidden="true"></i>
+    </button>
+    <button class="world-label world-emblem-label" id="label-reality" data-world="reality" data-side="bottom" type="button" aria-label="Dream World — Material, Structure, Experience">
+      <span class="world-index">03</span><span class="world-copy"><strong>DREAM WORLD</strong><small>MATERIAL · STRUCTURE · EXPERIENCE</small></span><i aria-hidden="true"></i>
+    </button>
+
+    <div class="nexus-title" id="nexusTitle" aria-hidden="true"><strong>DREAM<br />UNITY</strong><small>THE NEXUS OF ALL POSSIBILITIES</small></div>
+    <div class="unity-label" id="unityLabel" aria-hidden="true"></div>
+
     <button class="sub-label" id="sub-0" type="button"><strong>PERCEIVE</strong></button>
     <button class="sub-label" id="sub-1" type="button"><strong>MODEL</strong></button>
     <button class="sub-label" id="sub-2" type="button"><strong>PREDICT</strong></button>
-    <div class="hint" id="hint">DRAG ANY EMBLEM OR THE WHOLE FORM · TRACKPAD SWIPE TO ORBIT · PINCH TO ZOOM</div>
-    <div class="loading" id="loading"><span></span></div>
+
+    <div class="loading" id="loading" role="status" aria-label="Loading Dream Unity"><span></span></div>
+
     <section class="arcade" id="arcade" aria-hidden="true" aria-label="Dream Unity arcade">
       <canvas id="gameCanvas" aria-label="Playable Dream Unity game"></canvas>
       <div class="game-vignette" aria-hidden="true"></div>
@@ -69,10 +71,10 @@
     </section>
   </main>
   <noscript>This experience requires JavaScript.</noscript>
-  <script>window.setTimeout(function(){var el=document.getElementById('loading');if(el)el.classList.add('hide');},1800);</script>
+  <script>window.setTimeout(function(){var el=document.getElementById('loading');if(el)el.classList.add('hide');},2600);</script>
   <script src="./light-theme.js?v=20260830-awaken-true-war-3"></script>
-  <script src="./unity-ui.js?v=20260830-awaken-true-war-2"></script>
-  <script src="./main.js?v=20260830-awaken-true-war-2&amp;sr=21&amp;ir=25c&amp;em=27b&amp;ms=28&amp;rot=29b&amp;vc=30"></script>
+  <script src="./unity-ui.js?v=20260830-awaken-true-war-2&amp;nexus=31"></script>
+  <script src="./main.js?v=20260830-awaken-true-war-2&amp;nexus=31"></script>
   <script src="./arcade.js?v=20260827-fighter-jet-performance-20"></script>
 </body>
 </html>

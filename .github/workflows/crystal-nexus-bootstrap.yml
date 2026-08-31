@@ -1,0 +1,94 @@
+name: Hydrate Dream Maker Eye source asset
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.crystal-nexus-bootstrap'
+      - '.crystal-nexus-source/**'
+      - '.github/workflows/crystal-nexus-bootstrap.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: crystal-nexus-hydration-main
+  cancel-in-progress: false
+
+jobs:
+  hydrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout staged Crystal Nexus source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Materialise the renderer and uploaded Dream Maker Eye score atomically
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          [ -f .crystal-nexus-bootstrap ] || exit 0
+          test -f .crystal-nexus-source/main.js.gz.b64
+
+          base64 -d .crystal-nexus-source/main.js.gz.b64 | gzip -d > main.js
+          test "$(git hash-object main.js)" = 'fe74b5b0b5834931eeed605cc4dd0c8e1e05f487'
+
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('nexus.css')
+          source = path.read_text()
+          old = "background-image:linear-gradient(rgba(255,255,255,.05),rgba(255,255,255,.16)),url('./assets/crystal-horizon.webp');background-size:cover;background-position:center 48%;opacity:.60;filter:saturate(.96) contrast(1.02);"
+          new = "background-image:radial-gradient(ellipse at 50% 49%,rgba(255,255,255,.08) 0 18%,rgba(228,232,255,.30) 54%,rgba(250,251,255,.88) 100%),linear-gradient(180deg,#fbfbff 0%,#f2f5ff 56%,#e8edfb 73%,#f9faff 100%);background-size:cover;background-position:center;opacity:1;"
+          if old not in source:
+              raise SystemExit('Expected staged crystalline background declaration was not found.')
+          path.write_text(source.replace(old, new))
+          PY
+
+          mkdir -p assets
+          clip_id='fa73d2fc-ea29-4a46-ae5e-65b715d46b88'
+          primary_url="https://cdn1.suno.ai/${clip_id}.mp3"
+          metadata_url="https://studio-api-prod.suno.com/api/clip/${clip_id}"
+          temporary=$(mktemp)
+          trap 'rm -f "$temporary"' EXIT
+
+          if ! curl --fail --location --silent --show-error --retry 6 --retry-all-errors --retry-delay 3 \
+            --connect-timeout 15 --max-time 240 "$primary_url" --output "$temporary"; then
+            resolved=$(curl --fail --location --silent --show-error --retry 4 --retry-all-errors --retry-delay 2 \
+              --connect-timeout 15 --max-time 60 "$metadata_url" \
+              | python3 -c 'import json,sys; print(json.load(sys.stdin).get("audio_url", ""))')
+            test -n "$resolved"
+            curl --fail --location --silent --show-error --retry 6 --retry-all-errors --retry-delay 3 \
+              --connect-timeout 15 --max-time 240 "$resolved" --output "$temporary"
+          fi
+
+          test "$(stat -c%s "$temporary")" -gt 7000000
+          if command -v ffprobe >/dev/null 2>&1; then
+            duration=$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "$temporary")
+            python3 - "$duration" <<'PY'
+          import sys
+          duration = float(sys.argv[1])
+          assert 359.0 < duration < 360.0, duration
+          PY
+          fi
+          mv "$temporary" assets/dream-maker-eye.mp3
+          trap - EXIT
+          test "$(sha256sum assets/dream-maker-eye.mp3 | cut -d' ' -f1)" = 'b23033e55592bdb62cb9a51f529aebf63401453d15fe6b45e06a9fae298e0d14'
+
+          rm -f assets/i-remember-tomorrow.mp3
+          rm -rf visual-parts
+          rm -f .github/workflows/interaction-recovery.yml .github/workflows/world-emblems.yml
+          rm -rf .crystal-nexus-source
+          rm -f .crystal-nexus-bootstrap .github/workflows/crystal-nexus-bootstrap.yml
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Launch the Crystal Nexus with Dream Maker Eye'
+          git fetch --no-tags origin main
+          git rebase origin/main
+          git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:main

@@ -1,105 +1,78 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, statSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { readFileSync, statSync } from 'node:fs';
 
 const root = new URL('../', import.meta.url);
 const read = (path) => readFileSync(new URL(path, root), 'utf8');
-const exists = (path) => statSync(new URL(path, root)).isFile();
-const parts = [1, 2, 3, 4, 5, 6].map((number) => `visual-parts/part-${String(number).padStart(2, '0')}.txt`);
-const override = 'visual-parts/remembered-tomorrow-10.txt';
+const exists = (path) => {
+  try { return statSync(new URL(path, root)).isFile(); }
+  catch { return false; }
+};
 
-for (const path of [
+const required = [
   'index.html',
-  'unity-cycle.css',
-  'unity-ui.js',
-  'light-theme.js',
+  'nexus.css',
   'main.js',
-  override,
-  'assets/i-remember-tomorrow.mp3',
-  ...parts
-]) assert.ok(exists(path), `${path} missing`);
+  'unity-ui.js',
+  'arcade.js',
+  'assets/dream-maker-eye.mp3',
+];
+required.forEach((path) => assert.ok(exists(path), `${path} missing`));
 
 const index = read('index.html');
-const loader = read('main.js');
-const theme = read('unity-cycle.css');
-const lightSurface = read('light-theme.js');
-const renderer = read(override);
+const renderer = read('main.js');
+const theme = read('nexus.css');
+const score = read('unity-ui.js');
 
-assert.match(index, /AWAKEN THE TRUE WAR/);
-assert.match(index, /Somewhere out in the universe/);
-assert.match(index, /I wonder in my heart/);
-assert.match(index, /Light pierces through me/);
-assert.match(index, /THE GHOST IN THE MIRROR · OF SLAVERY AND FREEDOM/);
-assert.match(index, /DREAM[\s\S]*COMPRESS[\s\S]*REALISE[\s\S]*RETURN/);
-assert.match(index, /assets\/i-remember-tomorrow\.mp3/);
-assert.doesNotMatch(index, /assets\/awaken-the-true-war\.mp3/, 'the reference MP3 must not become a published homepage asset');
-assert.match(index, /id="scoreControl"/);
-assert.doesNotMatch(index, /MAKE THE<br \/>MIRROR|coralTexture|coral-sovereign-engine|phase-rail/);
-assert.match(index, /styles\.css\?v=20260830-awaken-true-war-2/);
-assert.match(index, /unity-cycle\.css\?v=20260830-awaken-true-war-2/);
-assert.match(index, /light-theme\.js\?v=20260830-awaken-true-war-3/);
-assert.match(index, /unity-ui\.js\?v=20260830-awaken-true-war-2/);
-assert.match(index, /main\.js\?v=20260830-awaken-true-war-2/);
-assert.match(index, /<div\b(?=[^>]*\bid=["']unityLabel["'])(?=[^>]*\baria-hidden=["']true["'])[^>]*>/i, 'the owned Unity core must remain a passive visual label');
-assert.doesNotMatch(index, /<button\b[^>]*\bid=["']unityLabel["']/i, 'the disabled Unity core must not remain a dead button');
-assert.doesNotMatch(index, /data-voice-launcher|duVoice|du-voice|duEnhanced|du-enhanced|voice\.css|voice\.js/i, 'the homepage must not mount the archived voice interface');
-assert.doesNotMatch(index, /dream-unity-voice-live\.vercel\.app|js\.puter\.com/i, 'the homepage must not preconnect to an inactive voice service');
-assert.match(loader, /VERSION = '20260830-awaken-true-war-2'/);
-assert.match(loader, /remembered-tomorrow-10\.txt/);
-assert.match(theme, /--paper:#fff/);
-assert.match(theme, /--machine:#00bde8/);
-assert.match(theme, /--maker:#00c983/);
-assert.match(theme, /--reality:#7448ff/);
-assert.match(theme, /#app>\.vignette\{display:none!important/);
-assert.match(theme, /\.arcade\{background:var\(--paper\)/);
-assert.match(theme, /no neon bunker/);
-assert.doesNotMatch(theme, /radial-gradient\(circle at 50% 46%/i);
-assert.match(lightSurface, /this\.id === 'gameCanvas'/);
-assert.match(lightSurface, /__dreamUnityLightSurface/);
-assert.match(lightSurface, /!isGame/);
+assert.match(index, /class="nexus-app"/);
+assert.match(index, /assets\/dream-maker-eye\.mp3/);
+assert.doesNotMatch(index, /<audio[^>]+i-remember-tomorrow\.mp3/i, 'the retired score must not remain mounted');
+assert.match(index, /DREAM MACHINE/);
+assert.match(index, /DREAM MAKER/);
+assert.match(index, /DREAM WORLD/);
+assert.match(index, /THE NEXUS OF ALL POSSIBILITIES/);
+assert.match(index, /nexus\.css\?v=20260831-crystal-nexus-31/);
+assert.match(index, /main\.js\?v=20260830-awaken-true-war-2[^"']*nexus=31/);
+assert.match(index, /unity-ui\.js\?v=20260830-awaken-true-war-2[^"']*nexus=31/);
+assert.doesNotMatch(index, /voice\.js|voice\.css|data-voice-launcher|dream-unity-voice-live/i);
 
 for (const marker of [
-  'rememberedTomorrowOverview',
-  'rememberedTomorrowDetail',
-  'rememberedTomorrowRender',
-  'rtDrawTemporalGhost',
-  'rtDrawSovereignShell',
-  'rtDrawLightAxis',
-  'rtDrawPossibleFutures',
-  'rtDrawLivingPath',
-  'rtDrawDreamMembrane',
-  'rtDrawCompressionBraid',
-  'rtDrawEtherParticles',
-  'rtDrawMatter',
-  'rtDrawUnity',
-  "ctx.fillStyle = '#ffffff'",
-  "WORLD.machine.css = '#00BDE8'",
-  "WORLD.maker.css = '#00C983'",
-  "WORLD.reality.css = '#7448FF'"
+  "RELEASE = '20260831-crystal-nexus-31'",
+  'drawCelestialSphere',
+  'drawCentralCrystal',
+  'drawPortalSphere',
+  'drawOrbits',
+  'drawFloor',
+  'drawConnector',
+  "id:'crystal-nexus'",
+  '__dreamUnityInteractions',
+  '__dreamUnityStableRotation',
+  'autonomous:false',
+  'accelerating:false',
 ]) assert.ok(renderer.includes(marker), `renderer marker ${marker} missing`);
+assert.doesNotMatch(renderer, /fetchParts\s*\(|overridePaths\s*=\s*\[/, 'retired fragment renderer still loads at runtime');
 
-const scoreRuntime = read('unity-ui.js');
-for (const marker of ['__dreamUnityScore', 'createMediaElementSource', 'createAnalyser', 'awaken', 'bone', 'return']) {
-  assert.ok(scoreRuntime.includes(marker), `score bridge marker ${marker} missing`);
-}
-assert.match(scoreRuntime, /silentClockOrigin/);
-assert.match(scoreRuntime, /276\.80[^\n]+279\.25/);
-assert.doesNotMatch(scoreRuntime, /envelope\(time, 258\.0/);
-assert.match(renderer, /score\.currentTime < 276\.80/);
-assert.match(renderer, /60 \/ 86\.7/);
+for (const marker of [
+  "track: 'Dream Maker Eye'",
+  "RELEASE = '20260831-dream-maker-eye-score-31'",
+  'createMediaElementSource',
+  'createAnalyser',
+  '__dreamUnityScore',
+]) assert.ok(score.includes(marker), `score marker ${marker} missing`);
 
-assert.doesNotMatch(renderer, /coralTexture|csDrawMirrorCage|csDrawSpine|csDrawCrown|#eee9dc|black architectural wound/i);
+for (const marker of [
+  'radial-gradient',
+  '.nexus-environment',
+  '.nexus-title',
+  '.world-label[data-side="left"]',
+  '.world-label[data-side="right"]',
+  '.world-label[data-side="bottom"]',
+]) assert.ok(theme.includes(marker), `theme marker ${marker} missing`);
 
-const base = parts.map(read).join('');
-const close = base.lastIndexOf('})();');
-assert.ok(close > 0, 'visual closure missing');
-const complete = `${base.slice(0, close)}\n${renderer}\n${base.slice(close)}`;
-const temporary = join(mkdtempSync(join(tmpdir(), 'du-returning-dream-')), 'visual-complete.js');
-writeFileSync(temporary, complete);
-execFileSync(process.execPath, ['--check', temporary], { stdio: 'inherit' });
+const mp3 = statSync(new URL('../assets/dream-maker-eye.mp3', import.meta.url));
+assert.ok(mp3.size > 7_000_000, `Dream Maker Eye is unexpectedly small (${mp3.size})`);
+
+execFileSync(process.execPath, ['--check', new URL('../main.js', import.meta.url).pathname], { stdio: 'inherit' });
 execFileSync(process.execPath, ['--check', new URL('../unity-ui.js', import.meta.url).pathname], { stdio: 'inherit' });
-assert.ok(statSync(new URL('../assets/i-remember-tomorrow.mp3', import.meta.url)).size > 1_000_000, 'homepage score is unexpectedly small');
 
-console.log('Awaken the True War validated: score-driven Sovereign Fold, passive Unity core, and nine-world contracts preserved.');
+console.log('Crystal Nexus source validated: reference-driven 3D form, Dream Maker Eye score, three portals, stable motion, and nine-game runtime contract.');

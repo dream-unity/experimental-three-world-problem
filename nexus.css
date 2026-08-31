@@ -1,0 +1,122 @@
+:root{
+  --nexus-ink:#2b2f48;
+  --nexus-muted:#7c8197;
+  --nexus-line:rgba(79,84,118,.22);
+  --nexus-glass:rgba(255,255,255,.54);
+}
+
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#fafbff;color:var(--nexus-ink)}
+#app.nexus-app{position:relative;width:100vw;height:100dvh;overflow:hidden;isolation:isolate;background:#fafbff}
+#app.nexus-app>.nexus-environment{position:absolute;z-index:0;inset:0;background-image:linear-gradient(rgba(255,255,255,.05),rgba(255,255,255,.16)),url('./assets/crystal-horizon.webp');background-size:cover;background-position:center 48%;opacity:.60;filter:saturate(.96) contrast(1.02);pointer-events:none;transform:scale(1.015)}
+#app.nexus-app>.nexus-environment::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 46%,rgba(255,255,255,.05) 0%,rgba(255,255,255,.10) 42%,rgba(255,255,255,.38) 100%)}
+#app.nexus-app>#world{position:absolute;z-index:2;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab;background:transparent!important;image-rendering:auto}
+#app.nexus-app[data-dragging-whole-field="true"]>#world,#app.nexus-app[data-dragging-whole-field="true"] .world-label{cursor:grabbing!important}
+#app.nexus-app>.vignette{display:none!important}
+
+/* Only the requested top-left identity. */
+#app.nexus-app>.brand{position:absolute!important;z-index:90!important;top:clamp(20px,3.3vh,36px)!important;left:clamp(20px,3vw,52px)!important;display:flex!important;align-items:center!important;gap:13px!important;color:var(--nexus-ink)!important;pointer-events:none!important;font-family:Inter,"Helvetica Neue",Arial,sans-serif!important}
+#app.nexus-app>.brand::before{content:"";width:17px;height:17px;display:block;transform:rotate(45deg);border:1px solid rgba(89,94,132,.62);background:linear-gradient(135deg,rgba(255,255,255,.94),rgba(151,112,255,.13));box-shadow:inset 0 0 0 4px rgba(255,255,255,.68),0 0 18px rgba(151,112,255,.12)}
+#app.nexus-app>.brand>i{width:30px!important;height:2px!important;background:linear-gradient(90deg,#56abff 0 33%,#62dcc4 33% 66%,#9770ff 66%)!important}
+#app.nexus-app>.brand>span{font-size:12px!important;line-height:1!important;font-weight:850!important;letter-spacing:.235em!important;white-space:nowrap!important}
+#app.nexus-app>.brand>small{display:none!important}
+
+/* Music toggle intentionally quiet and architectural. */
+#app.nexus-app>.score-control{position:absolute!important;z-index:92!important;top:clamp(18px,2.8vh,30px)!important;right:clamp(16px,2.7vw,46px)!important;width:118px!important;height:40px!important;padding:0 14px!important;display:grid!important;grid-template-columns:1fr auto!important;align-items:center!important;gap:12px!important;border:1px solid rgba(67,72,105,.20)!important;border-radius:999px!important;background:rgba(255,255,255,.64)!important;backdrop-filter:blur(18px) saturate(115%)!important;-webkit-backdrop-filter:blur(18px) saturate(115%)!important;box-shadow:0 10px 38px rgba(55,60,94,.055)!important;color:var(--nexus-ink)!important;cursor:pointer!important;transition:transform .18s ease,border-color .18s ease,background .18s ease!important}
+#app.nexus-app>.score-control:hover,#app.nexus-app>.score-control:focus-visible{transform:translateY(-1px);border-color:rgba(91,96,137,.42)!important;background:rgba(255,255,255,.82)!important;outline:none!important}
+#app.nexus-app>.score-control .score-mark{display:none!important}
+#app.nexus-app>.score-control small,#app.nexus-app>.score-control b{grid-row:1!important;align-self:center!important;margin:0!important;line-height:1!important;font-family:ui-monospace,SFMono-Regular,Menlo,monospace!important}
+#app.nexus-app>.score-control small{grid-column:1!important;font-size:6.5px!important;font-weight:650!important;letter-spacing:.22em!important;color:#777d94!important;text-align:left!important}
+#app.nexus-app>.score-control b{grid-column:2!important;font-size:7.5px!important;font-weight:850!important;letter-spacing:.15em!important;color:#262b43!important;text-align:right!important}
+
+/* Retired visible copy remains hidden even if older stylesheets define it. */
+#app.nexus-app>.live,#app.nexus-app>.manifesto,#app.nexus-app>.cycle-index,#app.nexus-app>.hint,#app.nexus-app>.unity-label{display:none!important}
+
+.nexus-title{position:absolute;z-index:72;transform:translate(-50%,-50%);text-align:center;pointer-events:none;color:#393e5b;transition:opacity .3s ease,visibility .3s ease;text-shadow:0 1px 0 #fff,0 0 20px rgba(255,255,255,.96)}
+.nexus-title strong{display:block;font-family:Inter,"Helvetica Neue",Arial,sans-serif;font-size:clamp(16px,1.5vw,25px);font-weight:420;line-height:.88;letter-spacing:.31em;text-indent:.31em}
+.nexus-title small{display:block;margin-top:9px;font:650 clamp(5px,.42vw,7px)/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.27em;text-indent:.27em;color:rgba(56,61,91,.58);white-space:nowrap}
+
+/* Portal glass panels are physically attached to their projected crystal nodes. */
+#app.nexus-app .world-label{--world-rgb:86,171,255;--portal-radius:64px;position:absolute!important;z-index:65;box-sizing:border-box!important;width:clamp(180px,16vw,240px)!important;min-width:0!important;min-height:0!important;height:84px!important;padding:17px 26px!important;display:flex!important;align-items:center!important;justify-content:center!important;border:1px solid rgba(var(--world-rgb),.27)!important;border-left:1px solid rgba(var(--world-rgb),.27)!important;border-radius:14px!important;background:linear-gradient(100deg,rgba(255,255,255,.32),rgba(255,255,255,.68) 42%,rgba(255,255,255,.34))!important;backdrop-filter:blur(14px) saturate(115%)!important;-webkit-backdrop-filter:blur(14px) saturate(115%)!important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.58),0 14px 42px rgba(52,58,92,.045),0 0 30px rgba(var(--world-rgb),.045)!important;color:var(--nexus-ink)!important;overflow:visible!important;cursor:grab!important;touch-action:none!important;user-select:none!important;transition:opacity .24s ease,transform .2s ease,border-color .2s ease,background .2s ease,visibility .24s ease!important;clip-path:polygon(13px 0,calc(100% - 13px) 0,100% 13px,100% calc(100% - 13px),calc(100% - 13px) 100%,13px 100%,0 calc(100% - 13px),0 13px)!important}
+#app.nexus-app .world-label::before{content:"";position:absolute;top:50%;width:calc(var(--portal-radius) * .78);height:1px;background:linear-gradient(90deg,rgba(var(--world-rgb),.04),rgba(var(--world-rgb),.56));pointer-events:none}
+#app.nexus-app .world-label::after{content:""!important;position:absolute!important;inset:8px!important;border:1px solid rgba(var(--world-rgb),.10)!important;border-radius:9px!important;pointer-events:none!important}
+#app.nexus-app .world-label[data-side="left"]{transform:translate(calc(-100% - var(--portal-radius) * .58),-50%)!important}
+#app.nexus-app .world-label[data-side="left"]::before{left:100%}
+#app.nexus-app .world-label[data-side="right"]{transform:translate(calc(var(--portal-radius) * .58),-50%)!important}
+#app.nexus-app .world-label[data-side="right"]::before{right:100%;transform:scaleX(-1)}
+#app.nexus-app .world-label[data-side="bottom"]{width:clamp(180px,15vw,230px)!important;height:74px!important;transform:translate(-50%,calc(var(--portal-radius) * 1.22))!important}
+#app.nexus-app .world-label[data-side="bottom"]::before{display:none}
+#app.nexus-app .world-label:hover,#app.nexus-app .world-label:focus-visible{border-color:rgba(var(--world-rgb),.56)!important;background:linear-gradient(100deg,rgba(255,255,255,.48),rgba(255,255,255,.83) 42%,rgba(255,255,255,.48))!important;outline:none!important}
+#app.nexus-app .world-label[data-side="left"]:hover,#app.nexus-app .world-label[data-side="left"]:focus-visible{transform:translate(calc(-100% - var(--portal-radius) * .58),-50%) scale(1.018)!important}
+#app.nexus-app .world-label[data-side="right"]:hover,#app.nexus-app .world-label[data-side="right"]:focus-visible{transform:translate(calc(var(--portal-radius) * .58),-50%) scale(1.018)!important}
+#app.nexus-app .world-label[data-side="bottom"]:hover,#app.nexus-app .world-label[data-side="bottom"]:focus-visible{transform:translate(-50%,calc(var(--portal-radius) * 1.22)) scale(1.018)!important}
+#app.nexus-app .world-label>.world-index{position:absolute!important;top:12px!important;left:50%!important;width:auto!important;transform:translateX(-50%)!important;color:rgba(48,53,82,.58)!important;font:700 5.5px/1 ui-monospace,SFMono-Regular,Menlo,monospace!important;letter-spacing:.22em!important;text-indent:.22em!important;white-space:nowrap!important}
+#app.nexus-app .world-label>.world-index::after{content:" · PORTAL";color:rgba(var(--world-rgb),.84);font-weight:850}
+#app.nexus-app .world-label>.world-copy{position:relative!important;top:5px!important;left:auto!important;width:100%!important;display:flex!important;flex-direction:column!important;align-items:center!important;gap:7px!important;transform:none!important}
+#app.nexus-app .world-label>.world-copy strong{display:block!important;width:100%!important;padding:0!important;border:0!important;background:transparent!important;color:#272c45!important;font-family:Inter,"Helvetica Neue",Arial,sans-serif!important;font-size:clamp(10px,.85vw,13px)!important;font-weight:780!important;line-height:1!important;letter-spacing:.135em!important;text-indent:.135em!important;white-space:nowrap!important;text-align:center!important;text-shadow:0 1px 0 #fff!important}
+#app.nexus-app .world-label>.world-copy small{display:block!important;max-width:100%!important;color:rgba(54,59,89,.59)!important;font:650 clamp(4.5px,.36vw,6px)/1.15 ui-monospace,SFMono-Regular,Menlo,monospace!important;letter-spacing:.12em!important;text-indent:.12em!important;white-space:nowrap!important;overflow:visible!important;text-align:center!important;text-shadow:0 1px 0 #fff!important}
+#app.nexus-app .world-label>i{display:none!important}
+
+/* Focused-world interface. */
+#app.nexus-app>.back{position:absolute!important;z-index:96!important;left:clamp(18px,2.8vw,46px)!important;top:clamp(78px,10vh,104px)!important;height:38px!important;padding:0 14px!important;display:flex!important;align-items:center!important;gap:9px!important;border:1px solid rgba(67,72,105,.20)!important;border-radius:999px!important;background:rgba(255,255,255,.68)!important;backdrop-filter:blur(16px)!important;color:var(--nexus-ink)!important;opacity:0!important;visibility:hidden!important;pointer-events:none!important;transform:translateY(-6px)!important;transition:opacity .25s ease,visibility .25s ease,transform .25s ease!important;cursor:pointer!important}
+#app.nexus-app.detail>.back{opacity:1!important;visibility:visible!important;pointer-events:auto!important;transform:translateY(0)!important}
+#app.nexus-app>.back span{font-size:16px!important}#app.nexus-app>.back b{font-size:7px!important;letter-spacing:.17em!important}
+#app.nexus-app>.detail-title{position:absolute!important;z-index:94!important;left:50%!important;top:clamp(24px,3.5vh,38px)!important;display:flex!important;align-items:center!important;gap:9px!important;transform:translateX(-50%)!important;opacity:0!important;visibility:hidden!important;pointer-events:none!important;color:var(--nexus-ink)!important;transition:opacity .25s ease,visibility .25s ease!important}
+#app.nexus-app.detail>.detail-title{opacity:1!important;visibility:visible!important}
+#app.nexus-app>.detail-title small{font:700 6px/1 ui-monospace,SFMono-Regular,Menlo,monospace!important;color:#8b90a5!important}#app.nexus-app>.detail-title strong{font-size:9px!important;letter-spacing:.19em!important}
+#app.nexus-app.detail .world-label{opacity:0!important;visibility:hidden!important;pointer-events:none!important}
+
+#app.nexus-app .sub-label{--world-rgb:151,112,255;position:absolute!important;z-index:88!important;transform:translate(-50%,-50%)!important;width:clamp(106px,10vw,150px)!important;height:44px!important;padding:0 14px!important;display:grid!important;place-items:center!important;border:1px solid rgba(var(--world-rgb),.31)!important;border-radius:999px!important;background:rgba(255,255,255,.70)!important;backdrop-filter:blur(16px) saturate(115%)!important;-webkit-backdrop-filter:blur(16px) saturate(115%)!important;box-shadow:0 12px 34px rgba(52,58,92,.05),0 0 24px rgba(var(--world-rgb),.045)!important;color:var(--nexus-ink)!important;opacity:0;visibility:hidden;pointer-events:none;cursor:pointer!important;transition:opacity .25s ease,visibility .25s ease,transform .18s ease,border-color .18s ease!important}
+#app.nexus-app .sub-label strong{font-size:7px!important;font-weight:820!important;letter-spacing:.15em!important;color:#30354f!important;white-space:nowrap!important}
+#app.nexus-app .sub-label:hover,#app.nexus-app .sub-label:focus-visible{transform:translate(-50%,-50%) scale(1.045)!important;border-color:rgba(var(--world-rgb),.72)!important;outline:none!important;background:rgba(255,255,255,.88)!important}
+
+#app.nexus-app>.loading{position:absolute!important;z-index:500!important;inset:0!important;display:grid!important;place-items:center!important;background:#fafbff!important;transition:opacity .45s ease,visibility .45s ease!important}
+#app.nexus-app>.loading.hide{opacity:0!important;visibility:hidden!important;pointer-events:none!important}
+#app.nexus-app>.loading span{width:36px!important;height:36px!important;border:1px solid rgba(71,76,108,.13)!important;border-top-color:#56abff!important;border-right-color:#62dcc4!important;border-bottom-color:#9770ff!important;border-radius:50%!important;animation:nexus-spin .85s linear infinite!important}
+@keyframes nexus-spin{to{transform:rotate(360deg)}}
+
+/* The arcade is a separate full-screen product surface; preserve its controls. */
+#app.nexus-app.game-open>.nexus-environment,#app.nexus-app.game-open>#world,#app.nexus-app.game-open>.brand,#app.nexus-app.game-open>.score-control,#app.nexus-app.game-open>.nexus-title,#app.nexus-app.game-open>.world-label,#app.nexus-app.game-open>.sub-label,#app.nexus-app.game-open>.back,#app.nexus-app.game-open>.detail-title{visibility:hidden!important;pointer-events:none!important}
+#app.nexus-app>.arcade{z-index:1000!important}
+
+@media(max-width:980px){
+  #app.nexus-app .world-label{width:190px!important;height:70px!important;padding:13px 18px!important}
+  #app.nexus-app .world-label[data-side="left"]{transform:translate(calc(-100% - var(--portal-radius) * .82),-50%)!important}
+  #app.nexus-app .world-label[data-side="right"]{transform:translate(calc(var(--portal-radius) * .82),-50%)!important}
+  #app.nexus-app .world-label[data-side="bottom"]{transform:translate(-50%,calc(var(--portal-radius) * 1.05))!important}
+  #app.nexus-app .world-label>.world-index{top:9px!important}
+}
+
+@media(max-width:760px){
+  #app.nexus-app>.nexus-environment{background-position:center 50%;opacity:.68}
+  #app.nexus-app>.brand{left:14px!important;top:max(14px,env(safe-area-inset-top))!important;gap:8px!important}
+  #app.nexus-app>.brand::before{width:13px;height:13px}
+  #app.nexus-app>.brand>i{width:21px!important}
+  #app.nexus-app>.brand>span{font-size:8px!important;letter-spacing:.18em!important}
+  #app.nexus-app>.score-control{right:10px!important;top:max(8px,env(safe-area-inset-top))!important;width:91px!important;height:36px!important;padding:0 11px!important}
+  #app.nexus-app>.score-control small{font-size:5.5px!important}#app.nexus-app>.score-control b{font-size:6.5px!important}
+  .nexus-title strong{font-size:13px;letter-spacing:.22em;text-indent:.22em}.nexus-title small{font-size:4px;letter-spacing:.17em;text-indent:.17em}
+  #app.nexus-app .world-label{width:128px!important;height:55px!important;padding:9px 10px!important;border-radius:10px!important}
+  #app.nexus-app .world-label[data-side="left"],#app.nexus-app .world-label[data-side="right"],#app.nexus-app .world-label[data-side="bottom"]{transform:translate(-50%,calc(var(--portal-radius) * 1.10))!important}
+  #app.nexus-app .world-label::before{display:none!important}
+  #app.nexus-app .world-label>.world-index{top:6px!important;font-size:4px!important}
+  #app.nexus-app .world-label>.world-index::after{content:""}
+  #app.nexus-app .world-label>.world-copy{top:4px!important;gap:4px!important}
+  #app.nexus-app .world-label>.world-copy strong{font-size:7px!important;letter-spacing:.07em!important;text-indent:.07em!important}
+  #app.nexus-app .world-label>.world-copy small{font-size:3.6px!important;letter-spacing:.02em!important;text-indent:0!important;white-space:normal!important;line-height:1.1!important}
+  #app.nexus-app>.back{left:10px!important;top:max(54px,calc(env(safe-area-inset-top) + 44px))!important;height:34px!important}
+  #app.nexus-app>.detail-title{top:max(16px,env(safe-area-inset-top))!important}
+  #app.nexus-app .sub-label{width:100px!important;height:38px!important}.sub-label strong{font-size:6px!important}
+}
+
+@media(max-width:430px){
+  #app.nexus-app>.brand>i{display:none!important}
+  #app.nexus-app .world-label{width:112px!important;height:51px!important}
+  #app.nexus-app .world-label>.world-copy small{display:none!important}
+}
+
+@media(prefers-reduced-motion:reduce){
+  #app.nexus-app *{scroll-behavior:auto!important}
+  #app.nexus-app>.loading span{animation:none!important}
+}
+
+#app.nexus-app>.arcade:not(.open){opacity:0!important;visibility:hidden!important;pointer-events:none!important}
