@@ -1,21 +1,25 @@
-  // Fluid Response Hold 25c — keep the score-driven temporal double aligned
-  // with the hand for a short release window while inertia continues to move
-  // the rigid instrument. Also reconcile the original canvas pointer registry
-  // when the newer capture controller completes a gesture.
-  const IR_FLUID_RESPONSE_RELEASE = '20260831-fluid-response-hold-25c';
+  // Stable Fluid Response 29 — direct manipulation stays fast, but released
+  // angular velocity can only decay. There is no autonomous idle rotation and
+  // no compensation multiplier capable of turning damping into acceleration.
+  const IR_FLUID_RESPONSE_RELEASE = '20260831-stable-rotation-29';
+  const IR_INERTIA_DECAY = 3.25;
+  const IR_MAX_YAW_VELOCITY = 4.5;
+  const IR_MAX_PITCH_VELOCITY = 4.0;
+  const IR_MAX_ROLL_VELOCITY = 2.8;
+  const IR_STOP_EPSILON = 0.003;
+
   const irResponseBaseMarkDirect = irMarkDirect;
-  irMarkDirect = function fluidResponseMarkDirect(duration = 120) {
+  irMarkDirect = function stableResponseMarkDirect(duration = 120) {
     return irResponseBaseMarkDirect(Math.max(220, Number(duration) || 120));
   };
 
   const irResponseBaseFinishPointer = irFinishPointer;
-  irFinishPointer = function fluidResponseFinishPointer(event, cancelled = false) {
+  irFinishPointer = function stableResponseFinishPointer(event, cancelled = false) {
     const wasActive = irGesture.active && irPointers.has(event.pointerId);
     irResponseBaseFinishPointer(event, cancelled);
 
-    // The legacy canvas listener is registered before this override and sees
-    // pointerdown first. Our window-capture pointerup intentionally prevents
-    // its second handler from running, so explicitly clear that registry here.
+    // Reconcile the original pointer registry because the capture controller
+    // intentionally owns the release event.
     pointers.delete(event.pointerId);
     if (pointers.size >= 2) beginPinch();
     else pinchState = null;
@@ -27,39 +31,76 @@
     }
 
     if (wasActive && !irGesture.active) {
-      irDirectUntil = Math.max(irDirectUntil, performance.now() + 520);
+      // Preserve a short visual alignment window without injecting energy.
+      irDirectUntil = Math.max(irDirectUntil, performance.now() + 320);
+      overviewYawVelocity = clamp(overviewYawVelocity, -IR_MAX_YAW_VELOCITY, IR_MAX_YAW_VELOCITY);
+      overviewPitchVelocity = clamp(overviewPitchVelocity, -IR_MAX_PITCH_VELOCITY, IR_MAX_PITCH_VELOCITY);
+      overviewRollVelocity = clamp(overviewRollVelocity, -IR_MAX_ROLL_VELOCITY, IR_MAX_ROLL_VELOCITY);
       irSyncVisualTransform();
     }
   };
 
-  updateMotion = function fluidResponseMotion(dt) {
-    const direct = irGesture.active || irPointers.size > 0;
-    if (direct) {
-      overviewYawVelocity = 0;
-      overviewPitchVelocity = 0;
-      overviewRollVelocity = 0;
-    }
-    irBaseUpdateMotion(dt);
+  updateMotion = function stableFluidMotion(dt) {
+    const safeDt = Math.max(0, Math.min(Number(dt) || 0, 1 / 30));
+    const direct = irGesture.active || irPointers.size > 0 || pointers.size > 0 || performance.now() < irDirectUntil;
+
     if (direct) {
       overviewYawVelocity = 0;
       overviewPitchVelocity = 0;
       overviewRollVelocity = 0;
       irSyncVisualTransform();
-      return;
+    } else if (activeWorld && viewMix > 0.55) {
+      detailYaw += detailYawVelocity * safeDt;
+      detailPitch = clamp(detailPitch + detailPitchVelocity * safeDt, -0.314, 0.314);
+      detailRoll = clamp(detailRoll + detailRollVelocity * safeDt, -0.122, 0.122);
+      const detailDecay = Math.exp(-safeDt * 5.4);
+      detailYawVelocity *= detailDecay;
+      detailPitchVelocity *= detailDecay;
+      detailRollVelocity *= detailDecay;
+    } else if (viewMix < 0.45) {
+      // Cap release momentum independently from direct gesture sensitivity.
+      // The object can be moved quickly by the hand, but can never accelerate
+      // after the hand lets go.
+      overviewYawVelocity = clamp(overviewYawVelocity, -IR_MAX_YAW_VELOCITY, IR_MAX_YAW_VELOCITY);
+      overviewPitchVelocity = clamp(overviewPitchVelocity, -IR_MAX_PITCH_VELOCITY, IR_MAX_PITCH_VELOCITY);
+      overviewRollVelocity = clamp(overviewRollVelocity, -IR_MAX_ROLL_VELOCITY, IR_MAX_ROLL_VELOCITY);
+
+      overviewYaw += overviewYawVelocity * safeDt;
+      overviewPitch = clamp(overviewPitch + overviewPitchVelocity * safeDt, -IR_PITCH_LIMIT, IR_PITCH_LIMIT);
+      overviewRoll = clamp(overviewRoll + overviewRollVelocity * safeDt, -IR_ROLL_LIMIT, IR_ROLL_LIMIT);
+
+      const decay = Math.exp(-safeDt * IR_INERTIA_DECAY);
+      overviewYawVelocity *= decay;
+      overviewPitchVelocity *= decay;
+      overviewRollVelocity *= decay;
+
+      if (Math.abs(overviewYawVelocity) < IR_STOP_EPSILON) overviewYawVelocity = 0;
+      if (Math.abs(overviewPitchVelocity) < IR_STOP_EPSILON) overviewPitchVelocity = 0;
+      if (Math.abs(overviewRollVelocity) < IR_STOP_EPSILON) overviewRollVelocity = 0;
+
+      // Deliberately no autonomous yaw drift. Rotation is user-controlled only.
     }
-    if (!reduced && !activeWorld && viewMix < 0.45) {
-      const compensation = Math.exp(dt * 2.95);
-      overviewYawVelocity *= compensation;
-      overviewPitchVelocity *= compensation;
-      overviewRollVelocity *= compensation;
-    }
+
+    if (Math.abs(overviewYaw) > TAU * 50) overviewYaw %= TAU;
+    if (Math.abs(detailYaw) > TAU * 50) detailYaw %= TAU;
+    if (Math.abs(overviewRoll) > TAU * 50) overviewRoll %= TAU;
+    if (Math.abs(detailRoll) > TAU * 50) detailRoll %= TAU;
   };
 
   window.__dreamUnityFluidResponse = Object.freeze({
     version: IR_FLUID_RESPONSE_RELEASE,
-    visualHoldMs: 520,
+    visualHoldMs: 320,
     minimumDirectSyncMs: 220,
     clearsLegacyPointerRegistry: true,
     inertiaWhileAligned: true,
+    inertiaDecay: IR_INERTIA_DECAY,
+    maximumReleaseVelocity: Object.freeze({
+      yaw: IR_MAX_YAW_VELOCITY,
+      pitch: IR_MAX_PITCH_VELOCITY,
+      roll: IR_MAX_ROLL_VELOCITY,
+    }),
+    acceleratesAfterRelease: false,
+    autonomousRotation: false,
   });
   app.dataset.fluidResponseHold = 'true';
+  app.dataset.rotationStability = 'strict-decay';
