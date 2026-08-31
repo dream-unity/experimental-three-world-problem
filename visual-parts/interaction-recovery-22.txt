@@ -1,31 +1,50 @@
-  // Whole Field Orbit 24 — Dream Machine, Dream Maker and Dream World are
-  // handles on one rigid 3D instrument. Dragging any body or name rotates the
-  // entire simulation exactly as dragging empty space does; no world, thread,
-  // membrane or label is translated independently.
-  const IR_RELEASE = '20260831-whole-field-orbit-24';
-  const irLabelDrag = {
-    pointerId: null,
+  // Fluid Whole-Field Orbit 25 — every visible world, label and empty region
+  // is a handle on one rigid 3D instrument. Direct manipulation synchronises
+  // the living and reflected transforms so the complete form follows the hand
+  // immediately; precision-trackpad swipes orbit and trackpad pinches zoom.
+  const IR_RELEASE = '20260831-fluid-whole-field-orbit-25';
+  const IR_PITCH_LIMIT = 1.46;
+  const IR_ROLL_LIMIT = 1.18;
+  const IR_ZOOM_MIN = 0.68;
+  const IR_ZOOM_MAX = 1.52;
+  const irPointers = new Map();
+  const irGesture = {
+    active: false,
+    source: null,
     key: null,
     target: null,
-    lastX: 0,
-    lastY: 0,
+    primaryId: null,
     startX: 0,
     startY: 0,
+    lastX: 0,
+    lastY: 0,
     lastTime: 0,
+    travel: 0,
     moved: false,
+    hadMulti: false,
     yawVelocity: 0,
     pitchVelocity: 0,
+    rollVelocity: 0,
   };
+  let irPinch = null;
+  let irDirectUntil = 0;
   let irSuppressClickKey = null;
   let irSuppressClickUntil = 0;
+  let irLastEmptyTap = 0;
+  let irTrackpadUntil = 0;
+  let irWheelLastTime = 0;
+  let irWheelYawVelocity = 0;
+  let irWheelPitchVelocity = 0;
+  let irWheelReleaseTimer = 0;
 
   const irBaseOverviewPositions = overviewPositions;
   const irBaseUpdateLabels = updateLabels;
+  const irBaseDrawOverview = drawOverview;
+  const irBaseUpdateMotion = updateMotion;
 
-  // Keep each world centre mathematically on its coloured thread. The complete
-  // path remains the original undeformed Catmull–Rom body and is transformed
-  // only by the shared overview yaw, pitch, roll and zoom.
-  overviewPositions = function wholeFieldPositions(t) {
+  // World centres are always the original model-space anchors. Nothing in the
+  // complete simulation is translated, bent or detached independently.
+  overviewPositions = function fluidWholeFieldPositions(t) {
     const positions = irBaseOverviewPositions(t);
     worldKeys.forEach((key) => {
       const projected = rtRotateProject(rtCatmull(RT_PHASE[key]));
@@ -39,7 +58,7 @@
     return positions;
   };
 
-  updateLabels = function wholeFieldLabels() {
+  updateLabels = function fluidWholeFieldLabels() {
     irBaseUpdateLabels();
     const clampControl = (element, horizontalPadding, topPadding, bottomPadding) => {
       if (!element || element.style.visibility === 'hidden') return;
@@ -150,110 +169,202 @@
     };
   }
 
-  function irRedrawNow() {
-    if (window.__dreamUnityGameActive) return;
-    render(time);
-  }
-
-  function irApplyWholeFieldOrbit(dx, dy, dt = 1 / 60) {
-    const safeDt = Math.max(0.008, Number(dt) || 1 / 60);
-    overviewYaw -= dx * 0.0065;
-    overviewPitch = clamp(overviewPitch - dy * 0.0055, -1.18, 1.18);
-    overviewLastInput = time;
+  function irVisualAlignment() {
     return {
-      yawVelocity: clamp(-dx * 0.0065 / safeDt, -9, 9),
-      pitchVelocity: clamp(-dy * 0.0055 / safeDt, -8, 8),
+      livingYaw: Math.abs(rtLivingYaw - overviewYaw),
+      livingPitch: Math.abs(rtLivingPitch - overviewPitch),
+      livingRoll: Math.abs(rtLivingRoll - overviewRoll),
+      ghostYaw: Math.abs(rtGhostYaw - overviewYaw),
+      ghostPitch: Math.abs(rtGhostPitch - overviewPitch),
+      ghostRoll: Math.abs(rtGhostRoll - overviewRoll),
     };
   }
 
-  function irBeginLabelDrag(event, key, element) {
-    if (!WORLD[key] || activeWorld || viewMix > 0.28 || window.__dreamUnityGameActive) return;
-    if (event.pointerType === 'mouse' && event.button !== 0) return;
-    irLabelDrag.pointerId = event.pointerId;
-    irLabelDrag.key = key;
-    irLabelDrag.target = element;
-    irLabelDrag.lastX = irLabelDrag.startX = event.clientX;
-    irLabelDrag.lastY = irLabelDrag.startY = event.clientY;
-    irLabelDrag.lastTime = performance.now();
-    irLabelDrag.moved = false;
-    irLabelDrag.yawVelocity = 0;
-    irLabelDrag.pitchVelocity = 0;
-    overviewYawVelocity = 0;
-    overviewPitchVelocity = 0;
-    overviewRollVelocity = 0;
-    overviewLastInput = time;
-    app.dataset.draggingWholeField = 'true';
-    app.dataset.wholeFieldHandle = key;
-    element.classList.add('dragging');
-    try { element.setPointerCapture?.(event.pointerId); } catch {}
-    if (hint) hint.textContent = `${WORLD[key].name} · ORBITING THE WHOLE FORM`;
-    event.stopPropagation();
+  function irCanControlOverview() {
+    return !window.__dreamUnityGameActive && !activeWorld && viewMix < 0.38;
   }
 
-  function irMoveLabelDrag(event) {
-    if (irLabelDrag.pointerId === null || event.pointerId !== irLabelDrag.pointerId || !irLabelDrag.key) return;
-    const now = performance.now();
-    const dx = event.clientX - irLabelDrag.lastX;
-    const dy = event.clientY - irLabelDrag.lastY;
-    const dt = Math.max(0.008, (now - irLabelDrag.lastTime) / 1000);
-    irLabelDrag.lastX = event.clientX;
-    irLabelDrag.lastY = event.clientY;
-    irLabelDrag.lastTime = now;
-    if (Math.hypot(event.clientX - irLabelDrag.startX, event.clientY - irLabelDrag.startY) > 6) irLabelDrag.moved = true;
-    const velocity = irApplyWholeFieldOrbit(dx, dy, dt);
-    irLabelDrag.yawVelocity = velocity.yawVelocity;
-    irLabelDrag.pitchVelocity = velocity.pitchVelocity;
-    // The normal inertia integrator sees no canvas pointer during a label drag,
-    // so hold global velocity at zero until release to avoid double motion.
-    overviewYawVelocity = 0;
-    overviewPitchVelocity = 0;
-    overviewRollVelocity = 0;
-    irRedrawNow();
+  function irWorldAt(clientX, clientY) {
+    if (!irCanControlOverview()) return null;
+    const ordered = [...worldKeys].sort((a, b) => worldScreen[b].z - worldScreen[a].z);
+    for (const key of ordered) {
+      const point = worldScreen[key];
+      if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) continue;
+      const radius = Math.max(32, point.r * 1.48);
+      if (Math.hypot(clientX - point.x, clientY - point.y) <= radius) return key;
+    }
+    return null;
+  }
+
+  function irSyncVisualTransform() {
+    rtLivingYaw = overviewYaw;
+    rtLivingPitch = overviewPitch;
+    rtLivingRoll = overviewRoll;
+    rtGhostYaw = overviewYaw;
+    rtGhostPitch = overviewPitch;
+    rtGhostRoll = overviewRoll;
+  }
+
+  function irMarkDirect(duration = 120) {
+    irDirectUntil = Math.max(irDirectUntil, performance.now() + duration);
+    overviewLastInput = time;
+    irSyncVisualTransform();
+  }
+
+  function irRedrawNow() {
+    if (window.__dreamUnityGameActive) return;
+    irSyncVisualTransform();
+    render(time);
+  }
+
+  function irPointerGains(pointerType, distance, dt) {
+    const touch = pointerType === 'touch';
+    const pen = pointerType === 'pen';
+    const baseYaw = touch ? 0.0098 : pen ? 0.0108 : 0.0128;
+    const basePitch = touch ? 0.0088 : pen ? 0.0097 : 0.0112;
+    const speed = distance / Math.max(0.008, dt);
+    const speedBoost = 1 + clamp((speed - 90) / 1400, 0, 0.38);
+    const microBoost = distance > 0 && distance < 3.2 ? 1.28 : 1;
+    return {
+      yaw: baseYaw * speedBoost * microBoost,
+      pitch: basePitch * speedBoost * microBoost,
+    };
+  }
+
+  function irApplyWholeFieldOrbit(dx, dy, dt = 1 / 60, pointerType = 'mouse', directDuration = 120) {
+    const safeDt = Math.max(0.008, Number(dt) || 1 / 60);
+    const distance = Math.hypot(dx, dy);
+    const gain = irPointerGains(pointerType, distance, safeDt);
+    const yawDelta = -dx * gain.yaw;
+    const pitchDelta = -dy * gain.pitch;
+    overviewYaw += yawDelta;
+    overviewPitch = clamp(overviewPitch + pitchDelta, -IR_PITCH_LIMIT, IR_PITCH_LIMIT);
+    irMarkDirect(directDuration);
+    return {
+      yawDelta,
+      pitchDelta,
+      yawVelocity: clamp(yawDelta / safeDt, -16, 16),
+      pitchVelocity: clamp(pitchDelta / safeDt, -14, 14),
+    };
+  }
+
+  // While the visitor is holding the field, bypass the score-driven temporal
+  // lag. The living form, its mirror, all worlds and all labels therefore answer
+  // the gesture on the same animation frame.
+  drawOverview = function fluidWholeFieldOverview(t, alpha) {
+    if (irGesture.active || irPointers.size > 0 || performance.now() < irDirectUntil) {
+      irSyncVisualTransform();
+      rtLastTime = t;
+    }
+    irBaseDrawOverview(t, alpha);
+  };
+
+  // Preserve the existing motion system while lengthening the release glide.
+  // The original e^-5.1 decay is compensated to approximately e^-2.15.
+  updateMotion = function fluidWholeFieldMotion(dt) {
+    const direct = irGesture.active || irPointers.size > 0 || performance.now() < irDirectUntil;
+    if (direct) {
+      overviewYawVelocity = 0;
+      overviewPitchVelocity = 0;
+      overviewRollVelocity = 0;
+    }
+    irBaseUpdateMotion(dt);
+    if (direct) {
+      overviewYawVelocity = 0;
+      overviewPitchVelocity = 0;
+      overviewRollVelocity = 0;
+      irSyncVisualTransform();
+      return;
+    }
+    if (!reduced && !activeWorld && viewMix < 0.45) {
+      const compensation = Math.exp(dt * 2.95);
+      overviewYawVelocity *= compensation;
+      overviewPitchVelocity *= compensation;
+      overviewRollVelocity *= compensation;
+    }
+  };
+
+  function irPointerRecord(event) {
+    return {
+      x: event.clientX,
+      y: event.clientY,
+      lastX: event.clientX,
+      lastY: event.clientY,
+      lastTime: performance.now(),
+      type: event.pointerType || 'mouse',
+    };
+  }
+
+  function irBeginPinch() {
+    const list = [...irPointers.entries()];
+    if (list.length < 2) {
+      irPinch = null;
+      return;
+    }
+    const [idA, a] = list[0];
+    const [idB, b] = list[1];
+    irPinch = {
+      idA,
+      idB,
+      distance: Math.max(1, Math.hypot(b.x - a.x, b.y - a.y)),
+      angle: Math.atan2(b.y - a.y, b.x - a.x),
+      midpoint: { x: (a.x + b.x) * 0.5, y: (a.y + b.y) * 0.5 },
+      yaw: overviewYaw,
+      pitch: overviewPitch,
+      roll: overviewRoll,
+      zoom: overviewZoom,
+    };
+    irGesture.hadMulti = true;
+    irGesture.moved = true;
+  }
+
+  function irBeginPointer(event, source, key, target) {
+    if (!irCanControlOverview()) return false;
+    if (event.pointerType === 'mouse' && event.button !== 0) return false;
+    const record = irPointerRecord(event);
+    irPointers.set(event.pointerId, record);
+
+    if (!irGesture.active) {
+      irGesture.active = true;
+      irGesture.source = source;
+      irGesture.key = key || null;
+      irGesture.target = target;
+      irGesture.primaryId = event.pointerId;
+      irGesture.startX = irGesture.lastX = event.clientX;
+      irGesture.startY = irGesture.lastY = event.clientY;
+      irGesture.lastTime = performance.now();
+      irGesture.travel = 0;
+      irGesture.moved = false;
+      irGesture.hadMulti = false;
+      irGesture.yawVelocity = 0;
+      irGesture.pitchVelocity = 0;
+      irGesture.rollVelocity = 0;
+      overviewYawVelocity = 0;
+      overviewPitchVelocity = 0;
+      overviewRollVelocity = 0;
+      app.dataset.draggingWholeField = 'true';
+      if (key) app.dataset.wholeFieldHandle = key;
+      try { target?.setPointerCapture?.(event.pointerId); } catch {}
+      if (hint) hint.textContent = 'WHOLE 3D FORM · DIRECT CONTROL';
+    }
+    if (irPointers.size >= 2) irBeginPinch();
+    irMarkDirect(180);
     event.preventDefault();
     event.stopImmediatePropagation();
+    return true;
   }
 
-  function irFinishLabelDrag(event, cancelled = false) {
-    if (irLabelDrag.pointerId === null || event.pointerId !== irLabelDrag.pointerId || !irLabelDrag.key) return;
-    const key = irLabelDrag.key;
-    const element = irLabelDrag.target;
-    const moved = irLabelDrag.moved || cancelled;
-    const yawVelocity = irLabelDrag.yawVelocity;
-    const pitchVelocity = irLabelDrag.pitchVelocity;
-    try { element?.releasePointerCapture?.(event.pointerId); } catch {}
-    element?.classList.remove('dragging');
-    delete app.dataset.draggingWholeField;
-    delete app.dataset.wholeFieldHandle;
-    irLabelDrag.pointerId = null;
-    irLabelDrag.key = null;
-    irLabelDrag.target = null;
-    irLabelDrag.moved = false;
-    irLabelDrag.yawVelocity = 0;
-    irLabelDrag.pitchVelocity = 0;
-
-    if (moved) {
-      overviewYawVelocity = cancelled || reduced ? 0 : yawVelocity;
-      overviewPitchVelocity = cancelled || reduced ? 0 : pitchVelocity;
-      overviewRollVelocity = 0;
-      irSuppressClickKey = key;
-      irSuppressClickUntil = performance.now() + 520;
-      window.dispatchEvent(new CustomEvent('dreamunity:whole-field-orbited', {
-        detail: { handle: key, orientation: irOrientationSnapshot(), connected: true, rigid: true },
-      }));
-      event.preventDefault();
-      event.stopImmediatePropagation();
-    }
-    irRedrawNow();
-    if (hint && !activeWorld) hint.textContent = coarse
-      ? 'DRAG ANY WORLD OR EMPTY SPACE TO ORBIT · PINCH TO ZOOM · TAP TO ENTER'
-      : 'DRAG ANY WORLD, NAME OR EMPTY SPACE TO ORBIT THE WHOLE FORM · TAP TO ENTER';
-  }
+  canvas.addEventListener('pointerdown', (event) => {
+    irBeginPointer(event, 'canvas', irWorldAt(event.clientX, event.clientY), canvas);
+  }, { capture: true, passive: false });
 
   Object.entries(labels).forEach(([key, element]) => {
     if (!element) return;
     element.style.touchAction = 'none';
     element.style.userSelect = 'none';
-    element.addEventListener('pointerdown', (event) => irBeginLabelDrag(event, key, element), { passive: false });
+    element.addEventListener('pointerdown', (event) => {
+      irBeginPointer(event, 'label', key, element);
+    }, { capture: true, passive: false });
     element.addEventListener('click', (event) => {
       if (irSuppressClickKey !== key || performance.now() > irSuppressClickUntil) return;
       irSuppressClickKey = null;
@@ -262,37 +373,248 @@
     }, { capture: true });
   });
 
-  window.addEventListener('pointermove', irMoveLabelDrag, { capture: true, passive: false });
-  window.addEventListener('pointerup', (event) => irFinishLabelDrag(event, false), { capture: true, passive: false });
-  window.addEventListener('pointercancel', (event) => irFinishLabelDrag(event, true), { capture: true, passive: false });
+  window.addEventListener('pointermove', (event) => {
+    if (!irGesture.active || !irPointers.has(event.pointerId)) return;
+    const pointer = irPointers.get(event.pointerId);
+    const now = performance.now();
+    const dx = event.clientX - pointer.lastX;
+    const dy = event.clientY - pointer.lastY;
+    const dt = Math.max(0.008, (now - pointer.lastTime) / 1000);
+    pointer.x = event.clientX;
+    pointer.y = event.clientY;
+    pointer.lastX = event.clientX;
+    pointer.lastY = event.clientY;
+    pointer.lastTime = now;
+    irGesture.travel += Math.hypot(dx, dy);
+    if (irGesture.travel > 2.2) irGesture.moved = true;
+
+    if (irPointers.size >= 2) {
+      const a = irPointers.get(irPinch?.idA);
+      const b = irPointers.get(irPinch?.idB);
+      if (!a || !b || !irPinch) irBeginPinch();
+      const first = irPointers.get(irPinch?.idA);
+      const second = irPointers.get(irPinch?.idB);
+      if (first && second && irPinch) {
+        const distance = Math.max(1, Math.hypot(second.x - first.x, second.y - first.y));
+        const angle = Math.atan2(second.y - first.y, second.x - first.x);
+        const midpoint = { x: (first.x + second.x) * 0.5, y: (first.y + second.y) * 0.5 };
+        let rotationDelta = angle - irPinch.angle;
+        while (rotationDelta > Math.PI) rotationDelta -= TAU;
+        while (rotationDelta < -Math.PI) rotationDelta += TAU;
+        overviewZoom = clamp(irPinch.zoom * (distance / irPinch.distance), IR_ZOOM_MIN, IR_ZOOM_MAX);
+        overviewRoll = clamp(irPinch.roll + rotationDelta * 0.82, -IR_ROLL_LIMIT, IR_ROLL_LIMIT);
+        overviewYaw = irPinch.yaw - (midpoint.x - irPinch.midpoint.x) * 0.0098;
+        overviewPitch = clamp(irPinch.pitch - (midpoint.y - irPinch.midpoint.y) * 0.0088, -IR_PITCH_LIMIT, IR_PITCH_LIMIT);
+        irGesture.yawVelocity = 0;
+        irGesture.pitchVelocity = 0;
+        irGesture.rollVelocity = 0;
+        irMarkDirect(180);
+        irRedrawNow();
+      }
+    } else {
+      const velocity = irApplyWholeFieldOrbit(dx, dy, dt, pointer.type, 180);
+      irGesture.yawVelocity = lerp(irGesture.yawVelocity, velocity.yawVelocity, 0.46);
+      irGesture.pitchVelocity = lerp(irGesture.pitchVelocity, velocity.pitchVelocity, 0.46);
+      irGesture.lastX = event.clientX;
+      irGesture.lastY = event.clientY;
+      irGesture.lastTime = now;
+      overviewYawVelocity = 0;
+      overviewPitchVelocity = 0;
+      overviewRollVelocity = 0;
+      irRedrawNow();
+    }
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  }, { capture: true, passive: false });
+
+  function irFinishPointer(event, cancelled = false) {
+    if (!irGesture.active || !irPointers.has(event.pointerId)) return;
+    const target = irGesture.target;
+    try { target?.releasePointerCapture?.(event.pointerId); } catch {}
+    irPointers.delete(event.pointerId);
+
+    if (irPointers.size > 0) {
+      irBeginPinch();
+      const remaining = [...irPointers.values()][0];
+      remaining.lastX = remaining.x;
+      remaining.lastY = remaining.y;
+      remaining.lastTime = performance.now();
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      return;
+    }
+
+    const key = irGesture.key;
+    const source = irGesture.source;
+    const moved = cancelled || irGesture.moved || irGesture.hadMulti;
+    const yawVelocity = irGesture.yawVelocity;
+    const pitchVelocity = irGesture.pitchVelocity;
+    irGesture.active = false;
+    irGesture.source = null;
+    irGesture.key = null;
+    irGesture.target = null;
+    irGesture.primaryId = null;
+    irGesture.travel = 0;
+    irGesture.moved = false;
+    irGesture.hadMulti = false;
+    irPinch = null;
+    delete app.dataset.draggingWholeField;
+    delete app.dataset.wholeFieldHandle;
+
+    irDirectUntil = performance.now();
+    if (moved) {
+      overviewYawVelocity = cancelled || reduced ? 0 : yawVelocity * 0.72;
+      overviewPitchVelocity = cancelled || reduced ? 0 : pitchVelocity * 0.72;
+      overviewRollVelocity = 0;
+      if (key) {
+        irSuppressClickKey = key;
+        irSuppressClickUntil = performance.now() + 560;
+      }
+      window.dispatchEvent(new CustomEvent('dreamunity:whole-field-orbited', {
+        detail: { handle: key || source, orientation: irOrientationSnapshot(), connected: true, rigid: true, fluid: true },
+      }));
+    } else if (!cancelled && key) {
+      irSuppressClickKey = key;
+      irSuppressClickUntil = performance.now() + 420;
+      enterWorld(key);
+    } else if (!cancelled) {
+      const now = performance.now();
+      if (now - irLastEmptyTap < 330) {
+        overviewYaw = 0.18;
+        overviewPitch = -0.06;
+        overviewRoll = 0;
+        overviewZoom = 1;
+        overviewYawVelocity = 0;
+        overviewPitchVelocity = 0;
+        overviewRollVelocity = 0;
+        irMarkDirect(80);
+      }
+      irLastEmptyTap = now;
+    }
+
+    irRedrawNow();
+    if (hint && !activeWorld) hint.textContent = coarse
+      ? 'DRAG ANY PART OF THE WHOLE FORM · PINCH TO ZOOM · TAP A WORLD'
+      : 'DRAG ANY PART OF THE WHOLE FORM · TRACKPAD SWIPE TO ORBIT · PINCH TO ZOOM';
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  }
+
+  window.addEventListener('pointerup', (event) => irFinishPointer(event, false), { capture: true, passive: false });
+  window.addEventListener('pointercancel', (event) => irFinishPointer(event, true), { capture: true, passive: false });
+
+  function irWheelPixels(event) {
+    const multiplier = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? Math.max(width, height) : 1;
+    return { x: event.deltaX * multiplier, y: event.deltaY * multiplier };
+  }
+
+  app.addEventListener('wheel', (event) => {
+    if (!irCanControlOverview()) return;
+    const target = event.target instanceof Element ? event.target : null;
+    if (target?.closest('.score-control,.back,.arcade')) return;
+    const delta = irWheelPixels(event);
+    const now = performance.now();
+    const pinch = event.ctrlKey || event.metaKey;
+
+    if (pinch) {
+      overviewZoom = clamp(overviewZoom * Math.exp(-delta.y * 0.006), IR_ZOOM_MIN, IR_ZOOM_MAX);
+      irWheelYawVelocity = 0;
+      irWheelPitchVelocity = 0;
+      irMarkDirect(70);
+      irRedrawNow();
+    } else {
+      const fractional = Math.abs(delta.x % 1) > 0.001 || Math.abs(delta.y % 1) > 0.001;
+      const precision = event.deltaMode === 0 && (
+        Math.abs(delta.x) > 0.01 ||
+        Math.abs(delta.y) < 70 ||
+        fractional ||
+        now < irTrackpadUntil
+      );
+      if (precision) {
+        irTrackpadUntil = now + 650;
+        const dt = Math.max(0.008, Math.min(0.05, (now - irWheelLastTime) / 1000 || 1 / 60));
+        const yawDelta = -delta.x * 0.0072;
+        const pitchDelta = -delta.y * 0.0065;
+        overviewYaw += yawDelta;
+        overviewPitch = clamp(overviewPitch + pitchDelta, -IR_PITCH_LIMIT, IR_PITCH_LIMIT);
+        irWheelYawVelocity = lerp(irWheelYawVelocity, clamp(yawDelta / dt, -12, 12), 0.32);
+        irWheelPitchVelocity = lerp(irWheelPitchVelocity, clamp(pitchDelta / dt, -11, 11), 0.32);
+        irWheelLastTime = now;
+        overviewYawVelocity = 0;
+        overviewPitchVelocity = 0;
+        overviewRollVelocity = 0;
+        irMarkDirect(58);
+        irRedrawNow();
+        clearTimeout(irWheelReleaseTimer);
+        irWheelReleaseTimer = window.setTimeout(() => {
+          irDirectUntil = performance.now();
+          if (!reduced) {
+            overviewYawVelocity = irWheelYawVelocity * 0.58;
+            overviewPitchVelocity = irWheelPitchVelocity * 0.58;
+          }
+          irWheelYawVelocity = 0;
+          irWheelPitchVelocity = 0;
+        }, 74);
+      } else {
+        overviewZoom = clamp(overviewZoom * Math.exp(-delta.y * 0.00135), IR_ZOOM_MIN, IR_ZOOM_MAX);
+        irMarkDirect(70);
+        irRedrawNow();
+      }
+    }
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  }, { capture: true, passive: false });
 
   const irBaseSetHint = setHint;
-  setHint = function wholeFieldHint() {
+  setHint = function fluidWholeFieldHint() {
     irBaseSetHint();
-    if (!activeWorld && hint && irLabelDrag.pointerId === null) hint.textContent = coarse
-      ? 'DRAG ANY WORLD OR EMPTY SPACE TO ORBIT · PINCH TO ZOOM · TAP TO ENTER'
-      : 'DRAG ANY WORLD, NAME OR EMPTY SPACE TO ORBIT THE WHOLE FORM · TAP TO ENTER';
+    if (!activeWorld && hint && !irGesture.active) hint.textContent = coarse
+      ? 'DRAG ANY PART OF THE WHOLE FORM · PINCH TO ZOOM · TAP A WORLD'
+      : 'DRAG ANY PART OF THE WHOLE FORM · TRACKPAD SWIPE TO ORBIT · PINCH TO ZOOM';
   };
 
   window.__dreamUnityInteractions = Object.freeze({
-    id: 'whole-field-orbit',
+    id: 'fluid-whole-field-orbit',
     version: IR_RELEASE,
     ready: true,
     connected: true,
     wholeField: true,
     independent: false,
+    fluid: true,
+    sensitivity: Object.freeze({
+      mouseYaw: 0.0128,
+      mousePitch: 0.0112,
+      touchYaw: 0.0098,
+      touchPitch: 0.0088,
+      trackpadYaw: 0.0072,
+      trackpadPitch: 0.0065,
+      pitchLimit: IR_PITCH_LIMIT,
+      inertiaDecay: 2.15,
+    }),
     screen: irScreenSnapshot,
     model: irModelSnapshot,
     shape: irShapeSignature,
     orientation: irOrientationSnapshot,
+    visualAlignment: irVisualAlignment,
     anchors: irAnchorSnapshot,
     threadSamples: irThreadSamples,
     integrity: irIntegritySnapshot,
-    orbitBy(dx, dy) {
+    orbitBy(dx, dy, pointerType = 'mouse') {
       overviewYawVelocity = 0;
       overviewPitchVelocity = 0;
       overviewRollVelocity = 0;
-      irApplyWholeFieldOrbit(Number(dx) || 0, Number(dy) || 0, 1 / 60);
+      irApplyWholeFieldOrbit(Number(dx) || 0, Number(dy) || 0, 1 / 60, pointerType, 120);
+      irRedrawNow();
+      return irOrientationSnapshot();
+    },
+    trackpadBy(dx, dy) {
+      const yawDelta = -(Number(dx) || 0) * 0.0072;
+      const pitchDelta = -(Number(dy) || 0) * 0.0065;
+      overviewYaw += yawDelta;
+      overviewPitch = clamp(overviewPitch + pitchDelta, -IR_PITCH_LIMIT, IR_PITCH_LIMIT);
+      irMarkDirect(80);
       irRedrawNow();
       return irOrientationSnapshot();
     },
@@ -305,6 +627,7 @@
       overviewPitchVelocity = 0;
       overviewRollVelocity = 0;
       overviewLastInput = time;
+      irMarkDirect(80);
       irRedrawNow();
       return irOrientationSnapshot();
     },
@@ -312,4 +635,5 @@
   app.dataset.independentWorlds = 'false';
   app.dataset.connectedWorldRig = 'true';
   app.dataset.wholeFieldOrbit = 'true';
+  app.dataset.fluidWholeField = 'true';
   setHint();

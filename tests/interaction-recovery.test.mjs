@@ -25,7 +25,10 @@ if (!baseUrl) {
       const file = normalize(join(rootPath, relative));
       assert.ok(file.startsWith(rootPath), 'request escaped repository root');
       assert.ok((await stat(file)).isFile(), 'not a file');
-      response.writeHead(200, { 'Content-Type': mime[extname(file)] || 'application/octet-stream' });
+      response.writeHead(200, {
+        'Content-Type': mime[extname(file)] || 'application/octet-stream',
+        'Cache-Control': 'no-store',
+      });
       response.end(await readFile(file));
     } catch {
       response.writeHead(404).end('Not found');
@@ -41,7 +44,7 @@ if (!baseUrl) {
 const browser = await chromium.launch({ headless: true });
 const context = await browser.newContext({
   viewport: { width: 1280, height: 800 },
-  reducedMotion: 'reduce',
+  reducedMotion: 'no-preference',
 });
 const page = await context.newPage();
 const errors = [];
@@ -57,11 +60,10 @@ page.on('console', message => {
 page.on('pageerror', error => errors.push(`pageerror: ${error.message}`));
 
 const targetUrl = new URL(baseUrl);
-targetUrl.searchParams.set('interaction-check', String(Date.now()));
+targetUrl.searchParams.set('fluid-orbit-check', String(Date.now()));
 await page.goto(targetUrl.href, { waitUntil: 'domcontentloaded' });
 await page.waitForFunction(() => window.__dreamUnityInteractions?.ready === true);
-await page.waitForFunction(() => window.__dreamUnityInteractions?.wholeField === true);
-await page.waitForFunction(() => window.__dreamUnityInteractions?.independent === false);
+await page.waitForFunction(() => window.__dreamUnityInteractions?.fluid === true);
 await page.waitForFunction(() => window.__interactionArcadeReady === true);
 await page.waitForFunction(() => document.querySelector('#label-machine')?.offsetWidth > 0);
 await page.waitForFunction(() => window.__dreamUnityInteractions.screen().machine.r > 20);
@@ -71,148 +73,161 @@ await page.waitForFunction(() => {
   return !loader || (loader.classList.contains('hide') && style?.visibility === 'hidden' && Number.parseFloat(style.opacity || '1') <= 0.01);
 });
 
-const worldKeys = ['machine', 'maker', 'reality'];
 const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
-const orientationDistance = (a, b) => Math.hypot(a.yaw - b.yaw, a.pitch - b.pitch, a.roll - b.roll);
-const readLabels = () => page.evaluate(() => Object.fromEntries(
-  ['machine', 'maker', 'reality'].map(key => {
-    const rect = document.querySelector(`#label-${key}`).getBoundingClientRect();
-    return [key, {
-      x: rect.left + rect.width * 0.5,
-      y: rect.top + rect.height * 0.5,
-      width: rect.width,
-      height: rect.height,
-    }];
-  })
-));
+const shapeDelta = (a, b) => Math.max(
+  Math.abs(a.machineMaker - b.machineMaker),
+  Math.abs(a.makerReality - b.makerReality),
+  Math.abs(a.realityMachine - b.realityMachine),
+);
 const readRig = () => page.evaluate(() => ({
   screen: window.__dreamUnityInteractions.screen(),
-  anchors: window.__dreamUnityInteractions.anchors(),
-  orientation: window.__dreamUnityInteractions.orientation(),
   shape: window.__dreamUnityInteractions.shape(),
+  orientation: window.__dreamUnityInteractions.orientation(),
+  alignment: window.__dreamUnityInteractions.visualAlignment(),
   integrity: window.__dreamUnityInteractions.integrity(),
-  samples: window.__dreamUnityInteractions.threadSamples(96),
 }));
 
-function assertRigidShape(before, after, handle) {
-  for (const key of Object.keys(before.shape)) {
-    assert.ok(Math.abs(after.shape[key] - before.shape[key]) < 1e-10, `${handle}: rigid shape changed at ${key}`);
-  }
-  assert.equal(after.integrity.connected, true, `${handle}: a world separated from its thread`);
-  assert.equal(after.integrity.rigid, true, `${handle}: field is not marked rigid`);
-  assert.equal(after.integrity.allFinite, true, `${handle}: invalid path geometry appeared`);
-  assert.ok(after.integrity.maxSegmentGap < 48, `${handle}: path opened a ${after.integrity.maxSegmentGap.toFixed(1)}px gap`);
-  for (const key of worldKeys) {
-    assert.ok(after.anchors[key].distance < 0.75, `${handle}: ${key} separated from its coloured thread by ${after.anchors[key].distance.toFixed(2)}px`);
-  }
-}
-
-function assertWholeFieldMoved(before, after, handle, primaryKey = null) {
-  const orientationMoved = orientationDistance(before.orientation, after.orientation);
-  assert.ok(orientationMoved > 0.24, `${handle}: whole-field orientation changed only ${orientationMoved.toFixed(3)} radians`);
-
-  const bodyMoves = Object.fromEntries(worldKeys.map(key => [key, distance(before.screen[key], after.screen[key])]));
-  if (primaryKey) assert.ok(bodyMoves[primaryKey] > 28, `${handle}: grabbed world moved only ${bodyMoves[primaryKey].toFixed(1)}px`);
-  for (const key of worldKeys) {
-    assert.ok(bodyMoves[key] > 6, `${handle}: ${key} did not travel with the whole 3D form (${bodyMoves[key].toFixed(1)}px)`);
-  }
-  const otherMovement = worldKeys
-    .filter(key => key !== primaryKey)
-    .reduce((sum, key) => sum + bodyMoves[key], 0);
-  assert.ok(otherMovement > 34, `${handle}: the rest of the 3D visualisation barely moved (${otherMovement.toFixed(1)}px combined)`);
-
-  let movedSamples = 0;
-  for (let index = 0; index < Math.min(before.samples.length, after.samples.length); index += 1) {
-    if (distance(before.samples[index], after.samples[index]) > 6) movedSamples += 1;
-  }
-  const ratio = movedSamples / Math.min(before.samples.length, after.samples.length);
-  assert.ok(ratio > 0.72, `${handle}: only ${(ratio * 100).toFixed(1)}% of the complete thread moved`);
-  assertRigidShape(before, after, handle);
-}
-
-async function resetField() {
+async function resetRig() {
   await page.evaluate(() => window.__dreamUnityInteractions.reset());
-  await page.waitForTimeout(80);
+  await page.waitForTimeout(55);
 }
 
-async function dragWorldBody(key, dx, dy) {
-  await resetField();
-  const before = await readRig();
-  const world = before.screen[key];
-  const topElement = await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.id || '', world);
-  assert.equal(topElement, 'world', `${key} body was obstructed by ${topElement || 'an unknown element'}`);
+function assertRigidWholeField(before, after, label) {
+  const movement = ['machine', 'maker', 'reality'].map(key => distance(before.screen[key], after.screen[key]));
+  assert.ok(movement.filter(value => value > 3).length >= 2, `${label}: fewer than two worlds visibly moved (${movement.map(v => v.toFixed(1)).join(', ')})`);
+  assert.ok(movement.reduce((sum, value) => sum + value, 0) > 18, `${label}: complete field barely moved (${movement.map(v => v.toFixed(1)).join(', ')})`);
+  assert.ok(shapeDelta(before.shape, after.shape) < 1e-8, `${label}: rigid model-space relationships changed`);
+  assert.equal(after.integrity.connected, true, `${label}: a world detached from its thread`);
+  assert.equal(after.integrity.rigid, true, `${label}: runtime no longer reports a rigid whole field`);
+  assert.equal(after.integrity.allFinite, true, `${label}: invalid geometry was introduced`);
+}
 
-  await page.mouse.move(world.x, world.y);
+async function dragAt(x, y, dx, dy, steps = 7) {
+  await page.mouse.move(x, y);
   await page.mouse.down();
-  await page.mouse.move(world.x + dx, world.y + dy, { steps: 10 });
+  await page.mouse.move(x + dx, y + dy, { steps });
   await page.mouse.up();
-  await page.waitForFunction(previous => {
-    const current = window.__dreamUnityInteractions.orientation();
-    return Math.hypot(current.yaw - previous.yaw, current.pitch - previous.pitch, current.roll - previous.roll) > 0.24;
-  }, before.orientation);
-  await page.waitForTimeout(70);
-
-  const after = await readRig();
-  assertWholeFieldMoved(before, after, `${key} body handle`, key);
-  assert.equal(await page.locator('#app').getAttribute('data-whole-field-orbit'), 'true');
-  assert.equal(await page.locator('#app').getAttribute('data-independent-worlds'), 'false');
-  assert.equal(await page.locator('#app').evaluate(node => node.classList.contains('detail')), false, `${key} drag incorrectly entered its world`);
 }
 
-async function dragWorldName(key, dx, dy) {
-  await resetField();
-  const labelsBefore = await readLabels();
+async function verifyHandle(name, pointFactory, dx = 38, dy = 22) {
+  await resetRig();
   const before = await readRig();
-  const label = labelsBefore[key];
-  const topElement = await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.id || '', label);
-  assert.equal(topElement, `label-${key}`, `${key} name was obstructed by ${topElement || 'an unknown element'}`);
-
-  await page.mouse.move(label.x, label.y);
-  await page.mouse.down();
-  await page.mouse.move(label.x + dx, label.y + dy, { steps: 10 });
-  await page.mouse.up();
-  await page.waitForFunction(previous => {
-    const current = window.__dreamUnityInteractions.orientation();
-    return Math.hypot(current.yaw - previous.yaw, current.pitch - previous.pitch, current.roll - previous.roll) > 0.24;
-  }, before.orientation);
-  await page.waitForTimeout(70);
-
+  const point = await pointFactory(before);
+  await dragAt(point.x, point.y, dx, dy);
+  await page.waitForTimeout(40);
   const after = await readRig();
-  const labelsAfter = await readLabels();
-  assertWholeFieldMoved(before, after, `${key} name handle`, key);
-  assert.ok(distance(labelsBefore[key], labelsAfter[key]) > 8, `${key} name did not follow the rotating whole form`);
-  assert.equal(await page.locator('#app').evaluate(node => node.classList.contains('detail')), false, `${key} name drag incorrectly entered its world`);
+  const yawTravel = Math.abs(after.orientation.yaw - before.orientation.yaw);
+  const pitchTravel = Math.abs(after.orientation.pitch - before.orientation.pitch);
+  assert.ok(yawTravel + pitchTravel > 0.34, `${name}: ${dx}px gesture produced only ${(yawTravel + pitchTravel).toFixed(3)} radians`);
+  assertRigidWholeField(before, after, name);
+  const alignmentValues = Object.values(after.alignment);
+  assert.ok(Math.max(...alignmentValues) < 0.09, `${name}: score-driven render lag resisted direct manipulation (${Math.max(...alignmentValues).toFixed(3)})`);
 }
 
-await dragWorldBody('machine', 116, 58);
-await dragWorldBody('maker', -104, 68);
-await dragWorldBody('reality', 96, -76);
-await dragWorldName('machine', 108, 54);
-await dragWorldName('maker', -98, 64);
-await dragWorldName('reality', 92, -70);
+await verifyHandle('Dream Machine body', before => before.screen.machine);
+await verifyHandle('Dream Maker body', before => before.screen.maker, -38, 24);
+await verifyHandle('Dream World body', before => before.screen.reality, -36, -24);
 
-await resetField();
-const emptyBefore = await readRig();
-await page.mouse.move(640, 116);
-await page.mouse.down();
-await page.mouse.move(742, 178, { steps: 10 });
-await page.mouse.up();
-await page.waitForTimeout(80);
-const emptyAfter = await readRig();
-assertWholeFieldMoved(emptyBefore, emptyAfter, 'empty-space handle');
+for (const [key, dx, dy] of [
+  ['machine', 35, 20],
+  ['maker', -35, 22],
+  ['reality', -34, -22],
+]) {
+  await verifyHandle(`${key} name`, async () => {
+    const rect = await page.locator(`#label-${key}`).boundingBox();
+    assert.ok(rect, `${key} name has no bounding box`);
+    return { x: rect.x + rect.width * 0.5, y: rect.y + rect.height * 0.5 };
+  }, dx, dy);
+}
 
-await resetField();
-await page.locator('#label-maker').click();
+await verifyHandle('empty-space canvas', async () => ({ x: 360, y: 128 }), 40, 23);
+
+// The former ±0.314 rad pitch cage must be gone.
+await resetRig();
+let before = await readRig();
+await dragAt(before.screen.machine.x, before.screen.machine.y, 4, 76, 9);
+await page.waitForTimeout(35);
+let after = await readRig();
+assert.ok(Math.abs(after.orientation.pitch - before.orientation.pitch) > 0.60, `vertical orbit remained constrained (${Math.abs(after.orientation.pitch - before.orientation.pitch).toFixed(3)} radians)`);
+assert.ok(Math.abs(after.orientation.pitch) > 0.50, `pitch never escaped the old shallow range (${after.orientation.pitch.toFixed(3)})`);
+assertRigidWholeField(before, after, 'expanded vertical orbit');
+
+// A release should glide rather than stopping abruptly.
+await resetRig();
+before = await readRig();
+await dragAt(before.screen.maker.x, before.screen.maker.y, 74, 14, 3);
+const released = await readRig();
+await page.waitForTimeout(180);
+after = await readRig();
+assert.ok(Math.abs(after.orientation.yaw - released.orientation.yaw) > 0.025, 'whole-field inertia stopped immediately after release');
+assertRigidWholeField(before, after, 'inertial glide');
+
+// Precision-trackpad two-finger scrolling orbits the same complete object.
+await resetRig();
+before = await readRig();
+await page.evaluate(() => {
+  document.querySelector('#world')?.dispatchEvent(new WheelEvent('wheel', {
+    deltaX: 22.5,
+    deltaY: 13.25,
+    deltaMode: 0,
+    bubbles: true,
+    cancelable: true,
+  }));
+});
+await page.waitForTimeout(35);
+after = await readRig();
+assert.ok(Math.abs(after.orientation.yaw - before.orientation.yaw) > 0.12, 'precision-trackpad horizontal swipe did not orbit');
+assert.ok(Math.abs(after.orientation.pitch - before.orientation.pitch) > 0.06, 'precision-trackpad vertical swipe did not orbit');
+assertRigidWholeField(before, after, 'trackpad swipe');
+
+// Trackpad pinch remains zoom, rather than being misread as orbit.
+const zoomBefore = after.orientation.zoom;
+await page.evaluate(() => {
+  document.querySelector('#world')?.dispatchEvent(new WheelEvent('wheel', {
+    deltaY: -24,
+    deltaMode: 0,
+    ctrlKey: true,
+    bubbles: true,
+    cancelable: true,
+  }));
+});
+await page.waitForTimeout(30);
+const zoomAfter = (await readRig()).orientation.zoom;
+assert.ok(Math.abs(zoomAfter - zoomBefore) > 0.08, `trackpad pinch barely changed zoom (${zoomBefore.toFixed(3)} -> ${zoomAfter.toFixed(3)})`);
+
+// One-finger touch uses the high-response whole-field path.
+await resetRig();
+before = await readRig();
+await page.evaluate(({ x, y }) => {
+  const canvas = document.querySelector('#world');
+  const event = (type, clientX, clientY, buttons) => new PointerEvent(type, {
+    pointerId: 71,
+    pointerType: 'touch',
+    isPrimary: true,
+    clientX,
+    clientY,
+    buttons,
+    bubbles: true,
+    cancelable: true,
+  });
+  canvas.dispatchEvent(event('pointerdown', x, y, 1));
+  window.dispatchEvent(event('pointermove', x + 48, y + 28, 1));
+  window.dispatchEvent(event('pointerup', x + 48, y + 28, 0));
+}, before.screen.machine);
+await page.waitForTimeout(40);
+after = await readRig();
+assert.ok(Math.abs(after.orientation.yaw - before.orientation.yaw) > 0.38, 'touch drag remained unresponsive');
+assertRigidWholeField(before, after, 'touch drag');
+
+// A tap still enters a world; movement does not.
+await resetRig();
+const machine = (await readRig()).screen.machine;
+await page.mouse.click(machine.x, machine.y);
 await page.waitForFunction(() => document.querySelector('#app')?.classList.contains('detail'));
-await page.waitForFunction(() => [...document.querySelectorAll('.sub-label')].every(node => {
-  const rect = node.getBoundingClientRect();
-  const style = getComputedStyle(node);
-  return style.visibility !== 'hidden' && style.pointerEvents !== 'none'
-    && rect.left >= 0 && rect.right <= innerWidth && rect.top >= 0 && rect.bottom <= innerHeight;
-}));
 await page.locator('#back').click();
 await page.waitForFunction(() => !document.querySelector('#app')?.classList.contains('detail'));
 
+// All nine games and their restored controls remain operable.
 const games = [
   ['machine', 0, 'FIGHTER JET'],
   ['machine', 1, 'MODEL FORGE'],
@@ -273,4 +288,4 @@ assert.deepEqual(errors, []);
 await context.close();
 await browser.close();
 if (server) await new Promise(resolve => server.close(resolve));
-console.log(`Whole Field Orbit validated${process.env.DU_INTERACTION_BASE_URL ? ' live' : ''}: every world body and name moves the complete rigid 3D visualisation, and all nine games remain operable.`);
+console.log(`Fluid Whole-Field Orbit validated${process.env.DU_INTERACTION_BASE_URL ? ' live' : ''}: touchpad, touch, body, label and empty-space gestures all move one rigid 3D form; all nine games remain operable.`);

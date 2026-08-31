@@ -1,4 +1,4 @@
-name: Validate whole-field orbit and verify live controls
+name: Validate fluid whole-field orbit and verify live controls
 
 on:
   pull_request:
@@ -10,6 +10,7 @@ on:
       - visual-parts/interaction-recovery-22.txt
       - tests/interaction-recovery.test.mjs
       - package.json
+      - package-lock.json
       - .github/workflows/interaction-recovery.yml
   push:
     branches: [main]
@@ -20,6 +21,7 @@ on:
       - visual-parts/interaction-recovery-22.txt
       - tests/interaction-recovery.test.mjs
       - package.json
+      - package-lock.json
       - .github/workflows/interaction-recovery.yml
   workflow_dispatch:
 
@@ -27,7 +29,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: whole-field-orbit-${{ github.event.pull_request.number || github.ref }}
+  group: fluid-whole-field-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -48,7 +50,7 @@ jobs:
         run: npm ci
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
-      - name: Validate whole-field orbit from every world body and name plus all game controls
+      - name: Validate fluid touchpad, touch and pointer orbit plus all game controls
         run: npm run test:interactions
 
   verify-live:
@@ -71,7 +73,7 @@ jobs:
         run: npm ci
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
-      - name: Wait for GitHub Pages whole-field source
+      - name: Wait for GitHub Pages fluid whole-field source
         shell: bash
         env:
           PAGE_URL: https://dream-unity.github.io/experimental-three-world-problem
@@ -99,20 +101,20 @@ jobs:
               if [ "$matched" = false ]; then break; fi
             done
             if [ "$matched" = true ]; then break; fi
-            echo "Whole Field Orbit has not propagated yet: attempt $attempt of 60"
+            echo "Fluid Whole-Field Orbit has not propagated yet: attempt $attempt of 60"
             sleep 5
           done
           test "$matched" = true
-          grep -q 'main.js?v=20260830-awaken-true-war-2&amp;sr=21&amp;ir=24' "$live_dir/index.html"
-          grep -q "INTERACTION_RECOVERY_VERSION = '20260831-whole-field-orbit-24'" "$live_dir/main.js"
-          grep -q "id: 'whole-field-orbit'" "$live_dir/visual-parts/interaction-recovery-22.txt"
-          grep -q 'wholeField: true' "$live_dir/visual-parts/interaction-recovery-22.txt"
-          grep -q 'independent: false' "$live_dir/visual-parts/interaction-recovery-22.txt"
-          grep -q 'ORBITING THE WHOLE FORM' "$live_dir/visual-parts/interaction-recovery-22.txt"
-          ! grep -q 'rtCatmull = function connectedWorldCatmull' "$live_dir/visual-parts/interaction-recovery-22.txt"
-          ! grep -q 'PATH BENDING WITH WORLD' "$live_dir/visual-parts/interaction-recovery-22.txt"
+          grep -q 'main.js?v=20260830-awaken-true-war-2&amp;sr=21&amp;ir=25' "$live_dir/index.html"
+          grep -q "INTERACTION_RECOVERY_VERSION = '20260831-fluid-whole-field-orbit-25'" "$live_dir/main.js"
+          grep -q "IR_RELEASE = '20260831-fluid-whole-field-orbit-25'" "$live_dir/visual-parts/interaction-recovery-22.txt"
+          grep -q "id: 'fluid-whole-field-orbit'" "$live_dir/visual-parts/interaction-recovery-22.txt"
+          grep -q 'trackpadYaw: 0.0072' "$live_dir/visual-parts/interaction-recovery-22.txt"
+          grep -q 'IR_PITCH_LIMIT = 1.46' "$live_dir/visual-parts/interaction-recovery-22.txt"
+          grep -q 'rtLivingYaw = overviewYaw' "$live_dir/visual-parts/interaction-recovery-22.txt"
+          ! grep -Eq 'irDeformations|connectedWorldCatmull|PATH BENDING WITH WORLD' "$live_dir/visual-parts/interaction-recovery-22.txt"
           grep -q 'z-index:10000!important' "$live_dir/interaction-recovery.css"
-      - name: Exercise every whole-field handle and all nine games on live Pages
+      - name: Exercise touchpad, touch, every whole-field handle and all nine games on live Pages
         env:
           DU_INTERACTION_BASE_URL: https://dream-unity.github.io/experimental-three-world-problem/?source=${{ github.sha }}
         run: npm run test:interactions
