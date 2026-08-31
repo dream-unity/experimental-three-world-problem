@@ -1,6 +1,6 @@
 # Free-host wrapper for the official open-source God's Eye View.
-# The official app's live feeds are Vite server middleware, so this deliberately
-# runs that real server instead of replacing it with a static imitation.
+# The frontend is compiled at image-build time; the runtime Vite process remains
+# only because the official live-data proxy stack is implemented there.
 
 FROM node:24-bookworm-slim
 
@@ -9,7 +9,6 @@ ENV DEBIAN_FRONTEND=noninteractive \
     NODE_ENV=development \
     OPENSKY_AUTH_MODE=anon \
     GEV_LOW_MEMORY=1 \
-    NODE_OPTIONS=--max-old-space-size=352 \
     PORT=8080
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -32,10 +31,16 @@ WORKDIR /app
 COPY patch-keyless.py /tmp/patch-keyless.py
 RUN python3 /tmp/patch-keyless.py && rm /tmp/patch-keyless.py
 
-# Hosted Vite settings: no HMR, no filesystem watcher, public hosts allowed.
+RUN npm ci --no-audit --no-fund
+
+# Compile the browser app while build resources are available. At runtime we
+# serve dist/ directly, so the 512 MB free instance never transforms Cesium.
+RUN npm run build
+
 COPY vite.hosted.config.mjs ./vite.hosted.config.mjs
 
-RUN npm ci --no-audit --no-fund
+# Runtime Node now needs memory only for live proxies/caches, not bundling.
+ENV NODE_OPTIONS=--max-old-space-size=256
 
 EXPOSE 8080
 
