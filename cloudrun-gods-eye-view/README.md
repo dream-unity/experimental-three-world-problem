@@ -1,26 +1,35 @@
-# God's Eye View — hosted launcher
+# God's Eye View — free browser deployment
 
-This isolated deployment wrapper builds the official open-source
+This isolated branch deploys the real open-source
 [`bilawalsidhu/gods-eye-view`](https://github.com/bilawalsidhu/gods-eye-view)
-revision `314a0e1c2ef668cb110674b737e19a44ff6fc1ef` and runs its real Vite live-data
-server.
+revision `314a0e1c2ef668cb110674b737e19a44ff6fc1ef`. It does not replace the project
+with a mock interface.
 
-It changes only one startup rule: a Google Maps billing key is no longer
-mandatory. Without one, the application uses its existing keyless OpenStreetMap
-imagery and Re:Earth terrain path. The free/public aircraft, military ADS-B,
-satellites, earthquakes, radio, weather and supported CCTV paths remain in the
-actual upstream application. Optional paid/keyed layers remain optional.
-
-## No-card option — Render Free
+## Deploy free — no supported payment card required
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/dream-unity/experimental-three-world-problem/tree/cloudrun-gods-eye-view)
 
-The branch contains a `render.yaml` Blueprint selecting Render's Free Docker
-web-service plan. No payment method is required to create the free service.
+The root `render.yaml` selects Render's Free Docker web-service plan.
 
-## Google Cloud Run
+## What was adapted for free hosting
 
-[![Run on Google Cloud](https://deploy.cloud.run/button.svg)](https://deploy.cloud.run?git_repo=https://github.com/dream-unity/experimental-three-world-problem&revision=cloudrun-gods-eye-view&dir=cloudrun-gods-eye-view)
+The upstream application normally requires a Google Maps key before startup.
+This branch instead boots with the project's existing keyless OpenStreetMap +
+Re:Earth terrain stack when Google credentials are absent.
 
-The branch is isolated from `main`; it does not alter Dream Unity's deployed
-application.
+The original browser application is compiled once while the container image is
+built. At runtime the server serves that prebuilt frontend directly while the
+upstream Vite middleware remains active for the real live-data proxy routes.
+This avoids runtime Cesium/esbuild compilation on a 512 MB free instance.
+
+The upstream civilian-flight client already sends the current camera latitude
+and longitude. In `GEV_LOW_MEMORY=1` mode the server uses the upstream project's
+existing adsb.lol 250-nautical-mile regional live feed around that camera point
+instead of holding a worldwide OpenSky snapshot in Node memory. Moving the globe
+therefore moves the live aircraft window with it.
+
+No API secrets are committed. Optional keyed features can be added later without
+being required to boot the public application.
+
+This branch is isolated from `main`; Dream Unity's deployed application is not
+modified.
