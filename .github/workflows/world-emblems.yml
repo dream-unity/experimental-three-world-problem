@@ -8,6 +8,7 @@ on:
       - main.js
       - visual-parts/world-emblems-26.txt
       - visual-parts/world-emblems-polish-26b.txt
+      - visual-parts/world-title-hierarchy-27.txt
       - tests/world-emblems.test.mjs
       - package.json
       - .github/workflows/world-emblems.yml
@@ -18,6 +19,7 @@ on:
       - main.js
       - visual-parts/world-emblems-26.txt
       - visual-parts/world-emblems-polish-26b.txt
+      - visual-parts/world-title-hierarchy-27.txt
       - tests/world-emblems.test.mjs
       - package.json
       - .github/workflows/world-emblems.yml
@@ -52,7 +54,7 @@ jobs:
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
 
-      - name: Validate enlarged symbols, embedded titles and rigid whole-field drag
+      - name: Validate enlarged symbols, stronger title hierarchy and rigid whole-field drag
         env:
           DU_EMBLEM_SCREENSHOT_DIR: emblem-artifacts
         run: npm run test:emblems
@@ -101,6 +103,7 @@ jobs:
             main.js
             visual-parts/world-emblems-26.txt
             visual-parts/world-emblems-polish-26b.txt
+            visual-parts/world-title-hierarchy-27.txt
           )
           live_dir=$(mktemp -d)
           trap 'rm -rf "$live_dir"' EXIT
@@ -125,14 +128,18 @@ jobs:
             sleep 5
           done
           test "$matched" = true
-          grep -q 'em=26b' "$live_dir/index.html"
+          grep -q 'em=27b' "$live_dir/index.html"
           grep -q "WORLD_EMBLEM_VERSION = '20260831-world-emblems-26'" "$live_dir/main.js"
           grep -q "WORLD_EMBLEM_POLISH_VERSION = '20260831-world-emblems-polish-26b'" "$live_dir/main.js"
+          grep -q "WORLD_TITLE_VERSION = '20260831-world-title-hierarchy-27b'" "$live_dir/main.js"
           grep -q "WE_RELEASE = '20260831-world-emblems-26'" "$live_dir/visual-parts/world-emblems-26.txt"
           grep -q 'titlesInside: true' "$live_dir/visual-parts/world-emblems-26.txt"
           grep -q 'largerSymbols: true' "$live_dir/visual-parts/world-emblems-26.txt"
           grep -q "WEP_RELEASE = '20260831-world-emblems-polish-26b'" "$live_dir/visual-parts/world-emblems-polish-26b.txt"
           grep -q 'mobileTriadsWrapInside: true' "$live_dir/visual-parts/world-emblems-polish-26b.txt"
+          grep -q "WTH_RELEASE = '20260831-world-title-hierarchy-27'" "$live_dir/visual-parts/world-title-hierarchy-27.txt"
+          grep -q 'distinctiveTitleHierarchy: true' "$live_dir/visual-parts/world-title-hierarchy-27.txt"
+          grep -q 'remainsInsideEmblem: true' "$live_dir/visual-parts/world-title-hierarchy-27.txt"
 
       - name: Exercise enlarged emblems on live GitHub Pages
         env:
