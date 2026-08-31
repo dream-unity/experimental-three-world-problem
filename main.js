@@ -1,64 +1,41 @@
 (() => {
   'use strict';
-
-  const VERSION = '20260830-sovereign-nocturne-20';
-  const source = `./visual-parts/sovereign-nocturne-20.js?v=${VERSION}`;
-  const app = document.getElementById('app');
+  const VERSION = '20260830-awaken-true-war-2';
+  const SOVEREIGN_RETURN_VERSION = '20260831-sovereign-return-21';
+  const baseParts = Array.from({ length: 6 }, (_, index) =>
+    `./visual-parts/part-${String(index + 1).padStart(2, '0')}.txt?v=${VERSION}`
+  );
+  const overridePaths = [
+    `./visual-parts/remembered-tomorrow-10.txt?v=${VERSION}`,
+    ...[1, 2, 3].map((part) => `./visual-parts/sovereign-return-21-${String(part).padStart(2, '0')}.txt?v=${SOVEREIGN_RETURN_VERSION}`),
+  ];
+  const parts = [...baseParts, ...overridePaths];
   const loader = document.getElementById('loading');
   const hint = document.getElementById('hint');
-  const plate = document.querySelector('#materialPlate img');
+  const release = () => loader?.classList.add('hide');
 
-  let rendererSettled = false;
-  let plateSettled = !plate;
-  let released = false;
-
-  const maybeRelease = () => {
-    if (released || !rendererSettled || !plateSettled) return;
-    released = true;
-    loader?.classList.add('hide');
-  };
-  const settleRenderer = () => {
-    rendererSettled = true;
-    maybeRelease();
-  };
-  const settlePlate = (status) => {
-    if (plateSettled) return;
-    plateSettled = true;
-    if (status === true) app?.setAttribute('data-plate-ready', 'true');
-    if (status === false) app?.classList.add('plate-error');
-    maybeRelease();
-  };
-
-  window.__dreamUnityRelease = settleRenderer;
-
-  if (plate) {
-    const ready = async () => {
-      if (typeof plate.decode === 'function') {
-        try { await plate.decode(); } catch {}
-      }
-      settlePlate(plate.naturalWidth > 0);
-    };
-    if (plate.complete) ready();
-    else {
-      plate.addEventListener('load', ready, { once: true });
-      plate.addEventListener('error', () => settlePlate(false), { once: true });
-    }
+  async function fetchParts(cache) {
+    return Promise.all(parts.map(async (path) => {
+      const response = await fetch(path, { cache });
+      if (!response.ok) throw new Error(`Visual engine part failed: ${response.status} ${path}`);
+      return response.text();
+    }));
   }
 
-  const script = document.createElement('script');
-  script.src = source;
-  script.async = false;
-  script.dataset.dreamUnityRenderer = VERSION;
-  script.addEventListener('load', settleRenderer, { once: true });
-  script.addEventListener('error', () => {
-    settleRenderer();
-    if (hint) hint.textContent = 'VISUAL FIELD COULD NOT INITIALISE';
-  }, { once: true });
-  document.head.append(script);
+  fetchParts('force-cache')
+    .catch(() => new Promise((resolve) => setTimeout(resolve, 180)).then(() => fetchParts('no-store')))
+    .then((source) => {
+      const baseSource = source.slice(0, baseParts.length).join('');
+      const overrides = source.slice(baseParts.length).join('\n');
+      const closeIndex = baseSource.lastIndexOf('})();');
+      if (closeIndex < 0) throw new Error('Visual engine terminator was not found.');
+      Function(`${baseSource.slice(0, closeIndex)}\n${overrides}\n${baseSource.slice(closeIndex)}`)();
+    })
+    .catch((error) => {
+      console.error(error);
+      release();
+      if (hint) hint.textContent = 'VISUAL FIELD COULD NOT INITIALISE';
+    });
 
-  // Bound the opening curtain without treating a merely slow image as broken.
-  window.setTimeout(() => {
-    settleRenderer();
-    if (!plateSettled) settlePlate(null);
-  }, 2200);
+  window.setTimeout(release, 2100);
 })();

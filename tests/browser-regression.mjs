@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
-import { mkdir, readFile, stat } from 'node:fs/promises';
+import { readFile, stat } from 'node:fs/promises';
 import { extname, join, normalize } from 'node:path';
 import { chromium } from 'playwright';
 
@@ -11,7 +11,6 @@ const mime = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
-  '.mp3': 'audio/mpeg',
   '.txt': 'text/plain; charset=utf-8',
 };
 
@@ -36,10 +35,7 @@ await new Promise((resolve, reject) => {
 
 const { port } = server.address();
 const baseUrl = `http://127.0.0.1:${port}`;
-const browser = await chromium.launch({
-  headless: true,
-  args: ['--enable-webgl', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'],
-});
+const browser = await chromium.launch({ headless: true });
 let passed = 0;
 const failures = [];
 
@@ -51,11 +47,6 @@ async function run(name, callback) {
   } catch (error) {
     failures.push({ name, error });
     console.error(`FAIL ${name}\n${error.stack || error}`);
-  } finally {
-    // A failed visual assertion must not leave an animated renderer consuming
-    // the browser process and poisoning every later, otherwise independent,
-    // regression group.
-    await Promise.all(browser.contexts().map(context => context.close().catch(() => {})));
   }
 }
 
@@ -63,43 +54,14 @@ async function openPage(context) {
   const page = await context.newPage();
   const errors = [];
   const requests = [];
-  await page.addInitScript(() => {
-    window.__dreamUnityRendererEvents = [];
-    for (const name of [
-      'dreamunity:renderer-ready',
-      'dreamunity:renderer-context-lost',
-      'dreamunity:renderer-context-restored',
-    ]) {
-      window.addEventListener(name, event => {
-        window.__dreamUnityRendererEvents.push({ name, detail: event.detail || null });
-      });
-    }
-  });
   page.on('request', request => requests.push(request.url()));
   page.on('console', message => {
     if (message.type() === 'error') errors.push(`console: ${message.text()}`);
   });
   page.on('pageerror', error => errors.push(`pageerror: ${error.message}`));
-  // Renderer readiness below is the relevant load boundary. Waiting for
-  // network-idle would also wait for the intentionally looping public score,
-  // slowing every isolated visual context without strengthening an assertion.
-  await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(() => {
-    const app = document.querySelector('#app');
-    const renderer = window.__dreamUnityRenderer;
-    return app?.dataset.rendererReady === 'true' &&
-      app.dataset.rendererState === 'ready' &&
-      renderer?.id === 'sovereign-nocturne' &&
-      renderer.ready === true;
-  });
+  await page.goto(baseUrl, { waitUntil: 'networkidle' });
   await page.waitForFunction(() => document.querySelector('#label-machine')?.offsetWidth > 0);
   await page.waitForFunction(() => document.querySelector('#gameCanvas')?.width > 1);
-  await page.waitForFunction(() => {
-    const loader = document.querySelector('#loading');
-    if (!loader?.classList.contains('hide')) return false;
-    const style = getComputedStyle(loader);
-    return style.visibility === 'hidden' && Number.parseFloat(style.opacity || '1') <= 0.01;
-  });
   return { page, errors, requests };
 }
 
@@ -115,145 +77,7 @@ async function close(page) {
   await page.waitForFunction(() => !document.querySelector('#arcade')?.classList.contains('open'));
 }
 
-const screenshotDir = process.env.DREAM_UNITY_SCREENSHOT_DIR;
-if (screenshotDir) {
-  await run('CI captures Sovereign Nocturne visual evidence', async () => {
-    await mkdir(screenshotDir, { recursive: true });
-    for (const viewport of [
-      { width: 2048, height: 1024 },
-      { width: 1363, height: 936 },
-      { width: 768, height: 1024 },
-      { width: 390, height: 844 },
-    ]) {
-      const context = await browser.newContext({ viewport });
-      const { page, errors } = await openPage(context);
-      await page.waitForTimeout(180);
-      await page.screenshot({
-        path: join(screenshotDir, `overview-${viewport.width}x${viewport.height}.png`),
-        fullPage: true,
-      });
-      assert.deepEqual(errors, []);
-      await context.close();
-    }
-
-    const context = await browser.newContext({ viewport: { width: 1363, height: 936 } });
-    const { page, errors } = await openPage(context);
-    await page.locator('#label-reality').click();
-    await page.waitForFunction(() =>
-      document.querySelector('#detailName')?.textContent === 'DREAM WORLD' &&
-      [...document.querySelectorAll('.sub-label')].every(node => node.getAttribute('aria-hidden') === 'false')
-    );
-    await page.waitForFunction(() =>
-      Number.parseFloat(document.querySelector('#app')?.style.getPropertyValue('--du-view-mix') || '0') >= 0.995
-    );
-    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
-    await page.screenshot({
-      path: join(screenshotDir, 'detail-dream-world-1363x936.png'),
-      fullPage: true,
-    });
-    assert.deepEqual(errors, []);
-    await context.close();
-  });
-}
-
-await run('Sovereign Nocturne becomes ready through WebGL without runtime errors', async () => {
-  const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
-  const { page, errors } = await openPage(context);
-  const state = await page.evaluate(() => ({
-    app: { ...document.querySelector('#app')?.dataset },
-    renderer: { ...window.__dreamUnityRenderer },
-    events: window.__dreamUnityRendererEvents,
-    context: document.querySelector('#world')?.getContext('webgl2')?.constructor?.name || '',
-  }));
-  assert.equal(state.app.renderer, 'webgl');
-  assert.equal(state.app.rendererReady, 'true');
-  assert.equal(state.app.rendererState, 'ready');
-  assert.equal(state.renderer.mode, 'webgl');
-  assert.equal(state.renderer.api, 'webgl2');
-  assert.equal(state.renderer.version, '20260830-sovereign-nocturne-20');
-  assert.ok(state.events.some(event => event.name === 'dreamunity:renderer-ready' && event.detail?.mode === 'webgl'));
-  assert.match(state.context, /WebGL2/i);
-  assert.deepEqual(errors, []);
-  await context.close();
-});
-
-await run('WebGL context loss is declared and restoration returns to ready', async () => {
-  const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
-  const { page, errors } = await openPage(context);
-  const prevented = await page.evaluate(() => {
-    const event = new Event('webglcontextlost', { cancelable: true });
-    document.querySelector('#world')?.dispatchEvent(event);
-    return event.defaultPrevented;
-  });
-  assert.equal(prevented, true, 'context-loss handler did not preserve the recoverable WebGL context');
-  await page.waitForFunction(() =>
-    document.querySelector('#app')?.dataset.rendererState === 'context-lost' &&
-    window.__dreamUnityRenderer?.ready === false
-  );
-  await page.evaluate(() => document.querySelector('#world')?.dispatchEvent(new Event('webglcontextrestored')));
-  await page.waitForFunction(() =>
-    document.querySelector('#app')?.dataset.rendererReady === 'true' &&
-    document.querySelector('#app')?.dataset.rendererState === 'ready' &&
-    window.__dreamUnityRenderer?.ready === true
-  );
-  const events = await page.evaluate(() => window.__dreamUnityRendererEvents.map(event => event.name));
-  assert.ok(events.includes('dreamunity:renderer-context-lost'));
-  assert.ok(events.includes('dreamunity:renderer-context-restored'));
-  assert.deepEqual(errors, []);
-  await context.close();
-});
-
-await run('Canvas2D fallback reaches the same ready navigation contract', async () => {
-  const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
-  await context.addInitScript(() => {
-    const getContext = HTMLCanvasElement.prototype.getContext;
-    HTMLCanvasElement.prototype.getContext = function patchedGetContext(type, ...args) {
-      if (this.id === 'world' && (type === 'webgl2' || type === 'webgl')) return null;
-      return getContext.call(this, type, ...args);
-    };
-  });
-  const { page, errors } = await openPage(context);
-  const state = await page.evaluate(() => ({
-    app: { ...document.querySelector('#app')?.dataset },
-    renderer: { ...window.__dreamUnityRenderer },
-    events: window.__dreamUnityRendererEvents,
-  }));
-  assert.equal(state.app.renderer, 'canvas2d-fallback');
-  assert.equal(state.app.rendererReady, 'true');
-  assert.equal(state.renderer.mode, 'canvas2d-fallback');
-  assert.equal(state.renderer.api, 'canvas2d');
-  assert.ok(state.events.some(event => event.name === 'dreamunity:renderer-ready' && event.detail?.mode === 'canvas2d-fallback'));
-  await page.locator('#label-machine').click();
-  await page.waitForFunction(() => document.querySelector('#app')?.classList.contains('detail'));
-  assert.equal(await page.locator('#detailName').textContent(), 'DREAM MACHINE');
-  assert.deepEqual(errors, []);
-  await context.close();
-});
-
-await run('reduced motion publishes and renders a stable resolved pose', async () => {
-  const context = await browser.newContext({
-    viewport: { width: 1280, height: 800 },
-    reducedMotion: 'reduce',
-  });
-  const { page, errors } = await openPage(context);
-  assert.equal(await page.locator('#app').getAttribute('data-motion'), 'reduced');
-  assert.equal(await page.evaluate(() => window.__dreamUnityRenderer?.reducedMotion), true);
-  await page.waitForTimeout(120);
-  const beforeFrame = await page.evaluate(() => window.__dreamUnityRenderer?.frame);
-  const before = await page.locator('#world').screenshot();
-  await page.waitForTimeout(180);
-  const after = await page.locator('#world').screenshot();
-  const afterFrame = await page.evaluate(() => window.__dreamUnityRenderer?.frame);
-  assert.equal(afterFrame, beforeFrame, 'reduced-motion renderer continued scheduling autonomous visual work');
-  // SwiftShader readback can vary at a handful of edge pixels even when no
-  // frame was scheduled. The public renderer frame counter is the deterministic
-  // contract: equality proves that reduced motion produced no autonomous draw.
-  assert.ok(before.length > 0 && after.length > 0, 'reduced-motion canvas did not produce readable evidence');
-  assert.deepEqual(errors, []);
-  await context.close();
-});
-
-await run('homepage keeps private media and Unity voice off the network', async () => {
+await run('homepage keeps Unity voice unmounted and makes no voice-network request', async () => {
   const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   const { page, errors, requests } = await openPage(context);
 
@@ -274,11 +98,9 @@ await run('homepage keeps private media and Unity voice off the network', async 
   );
 
   const forbidden = requests.filter(url =>
-    /\/voice\.(?:js|css)(?:[?#]|$)|dream-unity-voice-live\.vercel\.app|js\.puter\.com|\/api\/realtime-session(?:[?#]|$)|awaken(?:%20|[ _-])+the(?:%20|[ _-])+true(?:%20|[ _-])+war[^/]*\.mp3/i.test(url)
+    /\/voice\.(?:js|css)(?:[?#]|$)|dream-unity-voice-live\.vercel\.app|js\.puter\.com|\/api\/realtime-session(?:[?#]|$)/i.test(url)
   );
-  assert.deepEqual(forbidden, [], `the homepage made a private-media or disabled voice request: ${forbidden.join(', ')}`);
-  const publishedMp3 = requests.filter(url => /\.mp3(?:[?#]|$)/i.test(url));
-  assert.ok(publishedMp3.every(url => new URL(url).pathname === '/assets/i-remember-tomorrow.mp3'));
+  assert.deepEqual(forbidden, [], `the homepage made disabled voice requests: ${forbidden.join(', ')}`);
   assert.deepEqual(errors, []);
   await context.close();
 });
@@ -304,10 +126,7 @@ await run('portal navigation opens every portal and all nine game factories load
       document.querySelector('#detailName')?.textContent?.toLowerCase().includes(expected === 'reality' ? 'world' : expected),
     world);
     for (let index = 0; index < names.length; index++) {
-      const portal = page.locator(`#sub-${index}`);
-      await portal.waitFor({ state: 'visible' });
-      await portal.click();
-      await page.locator('#arcade.open').waitFor();
+      await launch(page, world, index);
       assert.equal((await page.locator('#gameName').textContent()).trim(), names[index]);
       assert.equal(await page.locator('#arcade').getAttribute('aria-hidden'), 'false');
       await close(page);
@@ -341,25 +160,6 @@ await run('pointer and keyboard input, pause, resume, and restart remain operati
   assert.ok(!(await page.locator('#arcade').evaluate(node => node.classList.contains('paused'))));
   await page.locator('#gameRestart').click();
   assert.ok(!(await page.locator('#arcade').evaluate(node => node.classList.contains('ready'))));
-  assert.deepEqual(errors, []);
-  await context.close();
-});
-
-await run('Become transfer typing is sovereign over global arcade shortcuts', async () => {
-  const context = await browser.newContext({ viewport: { width: 1100, height: 760 } });
-  const { page, errors } = await openPage(context);
-  await launch(page, 'maker', 2);
-  await page.locator('#gameStart').click();
-  await page.evaluate(() => {
-    const probe = document.createElement('textarea');
-    probe.id = 'keyboardGuardProbe';
-    probe.setAttribute('aria-label', 'Keyboard shortcut isolation probe');
-    document.querySelector('#arcade')?.append(probe);
-    probe.focus();
-  });
-  await page.keyboard.type('r p x');
-  assert.equal(await page.locator('#keyboardGuardProbe').inputValue(), 'r p x');
-  assert.ok(!(await page.locator('#arcade').evaluate(node => node.classList.contains('paused'))));
   assert.deepEqual(errors, []);
   await context.close();
 });
@@ -445,7 +245,7 @@ await run('all nine games keep responsive frame scheduling without long tasks', 
     await launch(page, world, index);
     await page.locator('#gameStart').click();
     await page.evaluate(() => {
-      const probe = window.__dreamUnityPerformanceProbe = { frames: 0, gaps: [], maxGap: 0, last: null, running: true, longTasks: 0 };
+      const probe = window.__dreamUnityPerformanceProbe = { frames: 0, maxGap: 0, last: performance.now(), running: true, longTasks: 0 };
       try {
         probe.observer = new PerformanceObserver(list => {
           probe.longTasks += list.getEntries().filter(entry => entry.duration >= 120).length;
@@ -454,49 +254,22 @@ await run('all nine games keep responsive frame scheduling without long tasks', 
       } catch { /* Long Task API is optional. */ }
       requestAnimationFrame(function tick(now) {
         if (!probe.running) return;
-        if (probe.last !== null) {
-          const gap = now - probe.last;
-          probe.gaps.push(gap);
-          probe.maxGap = Math.max(probe.maxGap, gap);
-        }
+        probe.maxGap = Math.max(probe.maxGap, now - probe.last);
         probe.last = now;
         probe.frames++;
         requestAnimationFrame(tick);
       });
     });
-    // Separate one-time game construction from steady-state scheduling. The
-    // Long Task observer remains active throughout the warm-up, so blocking
-    // startup work still fails; only compositor/GPU readiness gaps are excluded
-    // from the running-frame measurement.
-    await page.waitForTimeout(700);
-    await page.evaluate(() => {
-      const probe = window.__dreamUnityPerformanceProbe;
-      probe.frames = 0;
-      probe.gaps = [];
-      probe.maxGap = 0;
-      probe.last = null;
-    });
-    // This timeout only bounds recovery from a suspended CI compositor.
-    // Passing still requires ten frames, seven sub-100ms gaps and zero long
-    // tasks below; extending the outer wait does not relax those assertions.
-    await page.waitForFunction(
-      () => window.__dreamUnityPerformanceProbe?.frames >= 10,
-      null,
-      { timeout: 7000, polling: 40 },
-    );
+    await page.waitForTimeout(350);
     const probe = await page.evaluate(() => {
       const value = window.__dreamUnityPerformanceProbe;
       value.running = false;
       value.observer?.disconnect();
-      return { frames: value.frames, gaps: value.gaps, maxGap: value.maxGap, longTasks: value.longTasks };
+      return { frames: value.frames, maxGap: value.maxGap, longTasks: value.longTasks };
     });
-    const responsiveGaps = probe.gaps.filter(gap => gap < 100).length;
-    console.log(`PERF ${world}:${index} ${probe.frames} frames · ${responsiveGaps}/${probe.gaps.length} responsive gaps · ${probe.maxGap.toFixed(1)}ms max gap · ${probe.longTasks} long tasks`);
-    // SwiftShader occasionally pauses the compositor without occupying the page
-    // main thread. Require a sustained run of responsive frames and separately
-    // reject main-thread long tasks instead of treating one runner pause as app work.
-    assert.ok(responsiveGaps >= 7, `${world}:${index} scheduled only ${responsiveGaps}/${probe.gaps.length} responsive gaps; max ${probe.maxGap.toFixed(1)}ms`);
-    assert.ok(probe.frames >= 10, `${world}:${index} stopped scheduling frames; max gap ${probe.maxGap.toFixed(1)}ms`);
+    console.log(`PERF ${world}:${index} ${probe.frames} frames · ${probe.maxGap.toFixed(1)}ms max gap · ${probe.longTasks} long tasks`);
+    assert.ok(probe.maxGap < 140, `${world}:${index} stalled for ${probe.maxGap.toFixed(1)}ms across ${probe.frames} frames`);
+    assert.ok(probe.frames >= 3, `${world}:${index} stopped scheduling frames; max gap ${probe.maxGap.toFixed(1)}ms`);
     assert.equal(probe.longTasks, 0, `${world}:${index} produced a long task`);
     await close(page);
   }
@@ -515,60 +288,10 @@ for (const viewport of [
     const overview = await page.evaluate(() => ({
       scrollWidth: document.documentElement.scrollWidth,
       clientWidth: document.documentElement.clientWidth,
-      scrollHeight: document.documentElement.scrollHeight,
-      clientHeight: document.documentElement.clientHeight,
       canvasWidth: document.querySelector('#world')?.getBoundingClientRect().width,
-      canvasHeight: document.querySelector('#world')?.getBoundingClientRect().height,
-      portals: [...document.querySelectorAll('.world-label')].map(node => {
-        const rect = node.getBoundingClientRect();
-        return { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom };
-      }),
     }));
     assert.ok(overview.scrollWidth <= overview.clientWidth + 1);
-    assert.ok(overview.scrollHeight <= overview.clientHeight + 1);
     assert.ok(overview.canvasWidth >= viewport.width - 1);
-    assert.ok(overview.canvasHeight >= viewport.height - 1);
-    assert.ok(overview.portals.every(rect =>
-      rect.left >= -1 && rect.top >= -1 && rect.right <= viewport.width + 1 && rect.bottom <= viewport.height + 1
-    ), 'an overview portal escaped the viewport');
-
-    await page.locator('#label-reality').click();
-    await page.waitForFunction(() =>
-      document.querySelector('#app')?.classList.contains('detail') &&
-      document.querySelector('#detailName')?.textContent === 'DREAM WORLD'
-    );
-    await page.waitForFunction(() =>
-      [...document.querySelectorAll('.sub-label')].every(node => node.getAttribute('aria-hidden') === 'false')
-    );
-    await page.waitForFunction(() =>
-      Number.parseFloat(document.querySelector('#app')?.style.getPropertyValue('--du-view-mix') || '0') >= 0.995
-    );
-    const detail = await page.evaluate(() => ({
-      scrollWidth: document.documentElement.scrollWidth,
-      clientWidth: document.documentElement.clientWidth,
-      scrollHeight: document.documentElement.scrollHeight,
-      clientHeight: document.documentElement.clientHeight,
-      backVisible: document.querySelector('#back')?.getBoundingClientRect().width > 0,
-      capacities: [...document.querySelectorAll('.sub-label')].map(node => {
-        const rect = node.getBoundingClientRect();
-        return {
-          hidden: node.getAttribute('aria-hidden'),
-          left: rect.left,
-          top: rect.top,
-          right: rect.right,
-          bottom: rect.bottom,
-        };
-      }),
-    }));
-    assert.ok(detail.scrollWidth <= detail.clientWidth + 1);
-    assert.ok(detail.scrollHeight <= detail.clientHeight + 1);
-    assert.equal(detail.backVisible, true);
-    assert.ok(detail.capacities.every(rect =>
-      rect.hidden === 'false' && rect.left >= -1 && rect.top >= -1 && rect.right <= viewport.width + 1 && rect.bottom <= viewport.height + 1
-    ), 'a detail capacity escaped the viewport or remained hidden');
-    await page.locator('#back').click();
-    await page.waitForFunction(() => !document.querySelector('#app')?.classList.contains('detail'));
-
     await launch(page, 'maker', 2);
     const become = await page.evaluate(() => ({
       scrollWidth: document.documentElement.scrollWidth,

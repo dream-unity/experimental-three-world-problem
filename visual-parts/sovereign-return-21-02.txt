@@ -1,0 +1,70 @@
+  function srGlow(x, y, radius, color, alpha) {
+    if (alpha <= 0.001 || radius <= 0) return;
+    const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+    gradient.addColorStop(0, rgba(color, alpha));
+    gradient.addColorStop(0.28, rgba(color, alpha * 0.34));
+    gradient.addColorStop(1, rgba(color, 0));
+    ctx.fillStyle = gradient;
+    ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+  }
+
+  function srLine(a, b, color, alpha, lineWidth = 1) {
+    if (!a || !b || alpha <= 0.001) return;
+    ctx.strokeStyle = rgba(color, alpha);
+    ctx.lineWidth = lineWidth;
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(b.x, b.y);
+    ctx.stroke();
+  }
+
+  function srDrawAuthorityGeometry(score, alpha) {
+    if (alpha <= 0.002) return;
+    const pressure = clamp(score.pressure || 0);
+    const bloom = clamp(score.bloom || 0);
+    const release = clamp(score.release || 0);
+    const beat = clamp(score.beat || 0);
+    const strain = clamp((
+      Math.abs(rtLivingYaw - rtGhostYaw) +
+      Math.abs(rtLivingPitch - rtGhostPitch) +
+      Math.abs(rtLivingRoll - rtGhostRoll)
+    ) * 0.72);
+
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    // The countermirror is not another object. It is a delayed coordinate body:
+    // more visible while the living form is being moved, then made obedient.
+    const shell = SR_SHELL_VERTICES.map((vertex) => srProjectAt(
+      { x: vertex.x * 4.06, y: vertex.y * 4.36, z: vertex.z * 3.34 },
+      rtGhostYaw,
+      rtGhostPitch,
+      rtGhostRoll,
+      overviewZoom,
+    ));
+    SR_SHELL_EDGES.forEach(([from, to], index) => {
+      const edgeAlpha = alpha * (0.022 + strain * 0.085) * (index % 7 === 0 ? 1.45 : 1);
+      srLine(shell[from], shell[to], index % 11 === 0 ? SR_CORAL : RT_INK, edgeAlpha, 0.62 + strain * 0.32);
+    });
+
+    const positions = overviewBasePositions();
+    const origin = srProjectAt({ x: 0, y: 0, z: 0 }, rtLivingYaw, rtLivingPitch, rtLivingRoll);
+    worldKeys.forEach((key, index) => {
+      const living = srProjectAt(positions[key], rtLivingYaw, rtLivingPitch, rtLivingRoll);
+      const ghost = srProjectAt(positions[key], rtGhostYaw, rtGhostPitch, rtGhostRoll);
+      const color = WORLD[key].rgb;
+      srLine(ghost, living, color, alpha * (0.025 + strain * 0.16), 0.72 + strain * 0.45);
+      srLine(living, origin, color, alpha * (0.046 + pressure * 0.04), index === 1 ? 1.05 : 0.82);
+    });
+
+    // Six load-bearing facets give Unity teeth without turning it into a logo.
+    const facets = 6;
+    for (let index = 0; index < facets; index += 1) {
+      const angle = index / facets * TAU + time * 0.035;
+      const next = angle + TAU / facets;
+      const lift = index % 2 === 0 ? 0.28 : -0.22;
+      const a = srProjectAt({ x: Math.cos(angle) * 0.94, y: lift, z: Math.sin(angle) * 0.94 }, rtLivingYaw, rtLivingPitch, rtLivingRoll);
+      const b = srProjectAt({ x: Math.cos(next) * 0.94, y: -lift, z: Math.sin(next) * 0.94 }, rtLivingYaw, rtLivingPitch, rtLivingRoll);
+      const tip = srProjectAt({ x: Math.cos(angle + Math.PI / 6) * 1.46, y: lift * 1.7, z: Math.sin(angle + Math.PI / 6) * 1.46 }, rtLivingYaw, rtLivingPitch, rtLivingRoll);
+      ctx.fillStyle = rgba(index % 2 ? SR_GOLD : SR_CORAL, alpha * (0.012 + bloom * 0.026));

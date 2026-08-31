@@ -1,0 +1,81 @@
+      ctx.strokeStyle = rgba(index % 2 ? SR_GOLD : SR_CORAL, alpha * (0.10 + pressure * 0.065 + beat * 0.055));
+      ctx.lineWidth = 0.72 + pressure * 0.5;
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(tip.x, tip.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    const coreRadius = unit * 0.0095 * (1 + pressure * 0.18 + beat * 0.22);
+    srGlow(origin.x, origin.y, coreRadius * (7.5 + bloom * 2.5), SR_CORAL, alpha * (0.032 + bloom * 0.055));
+    const coreGradient = ctx.createRadialGradient(origin.x - coreRadius * 0.28, origin.y - coreRadius * 0.34, 0, origin.x, origin.y, coreRadius * 1.9);
+    coreGradient.addColorStop(0, rgba(RT_WHITE, alpha * 0.98));
+    coreGradient.addColorStop(0.28, rgba(SR_GOLD, alpha * 0.86));
+    coreGradient.addColorStop(0.68, rgba(SR_CORAL, alpha * 0.62));
+    coreGradient.addColorStop(1, rgba(SR_CORAL, 0));
+    ctx.fillStyle = coreGradient;
+    ctx.beginPath();
+    ctx.arc(origin.x, origin.y, coreRadius * 1.9, 0, TAU);
+    ctx.fill();
+
+    // Return leaves matter with memory: the final filament becomes quieter,
+    // not blank, as it moves back toward possibility.
+    if (release > 0.002) {
+      let previous = origin;
+      for (let index = 1; index <= 34; index += 1) {
+        const u = index / 34;
+        const radius = 0.36 + u * 3.25;
+        const angle = u * TAU * 1.35 - 0.55 + time * 0.018;
+        const point = srProjectAt({
+          x: Math.cos(angle) * radius,
+          y: 0.30 + Math.sin(u * Math.PI) * 1.35 + u * 0.92,
+          z: Math.sin(angle) * radius * 0.55,
+        }, rtLivingYaw, rtLivingPitch, rtLivingRoll);
+        srLine(previous, point, u < 0.44 ? SR_GOLD : RT_INK, alpha * release * (1 - u * 0.74) * 0.16, 1.0 - u * 0.45);
+        previous = point;
+      }
+    }
+
+    ctx.restore();
+  }
+
+  const srOriginalOverview = drawOverview;
+  drawOverview = function sovereignReturnOverview(t, alpha) {
+    srOriginalOverview(t, alpha);
+    srDrawAuthorityGeometry(rtReadScore(t), alpha);
+  };
+
+  const srOriginalSetHint = setHint;
+  setHint = function sovereignReturnHint() {
+    srOriginalSetHint();
+    if (!activeWorld && hint) hint.textContent = coarse ? 'MOVE THE LIVING FORM · TAP A WORLD' : 'MOVE THE LIVING FORM · ENTER A WORLD';
+  };
+
+  const srStyle = document.createElement('style');
+  srStyle.dataset.sovereignReturn = SR_RELEASE;
+  srStyle.textContent = `
+    #world{image-rendering:auto}
+    .world-label{min-width:154px;transform-origin:50% 50%}
+    .world-label>.world-copy strong{letter-spacing:.17em}
+    .unity-label small{letter-spacing:.18em}
+    @media (min-width:1180px){.world-label{min-width:162px}.manifesto{width:min(282px,25vw)}}
+    @media (max-width:760px){.world-label{min-width:126px}.manifesto{bottom:55px}.hint{bottom:146px}}
+  `;
+  document.head.append(srStyle);
+
+  addEventListener('resize', () => requestAnimationFrame(srHighResolutionResize), { passive: true });
+  srHighResolutionResize();
+  setHint();
+  app.dataset.renderer = 'sovereign-return';
+  app.dataset.rendererVersion = SR_RELEASE;
+  app.dataset.renderScale = dpr.toFixed(3);
+  window.__dreamUnityRenderer = Object.freeze({
+    id: 'sovereign-return',
+    version: SR_RELEASE,
+    mode: 'high-dpi-canvas2d',
+    highDpi: true,
+    people: false,
+  });

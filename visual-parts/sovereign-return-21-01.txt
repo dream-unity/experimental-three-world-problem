@@ -1,0 +1,81 @@
+
+  // Sovereign Return 21 — the earlier white Dream Unity instrument, rebuilt
+  // with higher-resolution projection, firmer proportions and a visible
+  // distinction between the living form and the delayed mirror it commands.
+  const SR_RELEASE = '20260831-sovereign-return-21';
+  const SR_CORAL = [237, 113, 103];
+  const SR_GOLD = [223, 160, 43];
+  const SR_BONE = [238, 234, 224];
+  const SR_SHELL_VERTICES = [
+    { x: 0, y: -1, z: -1.618 }, { x: 0, y: -1, z: 1.618 },
+    { x: 0, y: 1, z: -1.618 }, { x: 0, y: 1, z: 1.618 },
+    { x: -1, y: -1.618, z: 0 }, { x: -1, y: 1.618, z: 0 },
+    { x: 1, y: -1.618, z: 0 }, { x: 1, y: 1.618, z: 0 },
+    { x: -1.618, y: 0, z: -1 }, { x: 1.618, y: 0, z: -1 },
+    { x: -1.618, y: 0, z: 1 }, { x: 1.618, y: 0, z: 1 },
+  ].map((point) => {
+    const magnitude = Math.max(0.0001, Math.hypot(point.x, point.y, point.z));
+    return { x: point.x / magnitude, y: point.y / magnitude, z: point.z / magnitude };
+  });
+  const SR_SHELL_EDGES = [];
+  for (let from = 0; from < SR_SHELL_VERTICES.length; from += 1) {
+    for (let to = from + 1; to < SR_SHELL_VERTICES.length; to += 1) {
+      const a = SR_SHELL_VERTICES[from];
+      const b = SR_SHELL_VERTICES[to];
+      if (Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z) < 1.08) SR_SHELL_EDGES.push([from, to]);
+    }
+  }
+
+  function srHighResolutionResize() {
+    width = Math.max(1, innerWidth);
+    height = Math.max(1, innerHeight);
+    unit = Math.min(width, height);
+    const desired = Math.min(devicePixelRatio || 1, coarse || lowCPU ? 1.9 : 2.45);
+    const budget = coarse || lowCPU ? 5_800_000 : 8_900_000;
+    dpr = Math.max(1, Math.min(desired, Math.sqrt(budget / Math.max(1, width * height))));
+    canvas.width = Math.round(width * dpr);
+    canvas.height = Math.round(height * dpr);
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+  }
+
+  // Preserve the asymmetric path, but remove the stretched, top-heavy feel.
+  RT_PATH.forEach((point, index) => {
+    point.x *= index === 6 || index === 11 ? 0.82 : 0.91;
+    point.y *= point.y < -2 ? 0.84 : 0.91;
+    point.z *= 0.86;
+  });
+  RT_PHASE.machine = 0.008;
+  RT_PHASE.maker = 0.242;
+  RT_PHASE.reality = 0.586;
+
+  rtCenter = function sovereignReturnCenter() {
+    return {
+      x: width > 1180 ? width * 0.615 : width > 760 ? width * 0.575 : width * 0.50,
+      y: width > 760 ? height * 0.495 : height * 0.43,
+    };
+  };
+
+  rtProject = function sovereignReturnProject(point, scale = 1, cameraZ = 12.9, center = rtCenter()) {
+    const depth = cameraZ - point.z;
+    const perspective = scale * cameraZ / Math.max(3.35, depth);
+    const spread = width > 1180 ? 0.126 : width > 760 ? 0.116 : 0.122;
+    return {
+      x: center.x + point.x * unit * spread * perspective,
+      y: center.y - point.y * unit * spread * perspective,
+      f: perspective,
+      z: point.z,
+      depth,
+    };
+  };
+
+  function srProjectAt(point, yawValue, pitchValue, rollValue, scaleValue = overviewZoom) {
+    const rotated = rotate3(point, yawValue, pitchValue, rollValue);
+    const projected = rtProject(rotated, scaleValue, 12.9);
+    projected.world = rotated;
+    return projected;
+  }
+
