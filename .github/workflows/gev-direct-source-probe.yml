@@ -36,12 +36,19 @@ jobs:
             await page.goto(process.env.PAGE_URL, { waitUntil: 'domcontentloaded', timeout: 90000 });
             const sources = {
               radio: 'https://de1.api.radio-browser.info/json/stations/search?hidebroken=true&limit=20&order=clickcount&reverse=true&has_geo_info=true',
-              aircraft: 'https://api.adsb.lol/v2/lat/-37.8136/lon/144.9631/dist/250',
+              aircraft_adsblol: 'https://api.adsb.lol/v2/lat/-37.8136/lon/144.9631/dist/250',
+              aircraft_opensky: 'https://opensky-network.org/api/states/all?lamin=-40&lomin=142&lamax=-35&lomax=147',
+              aircraft_airplaneslive: 'https://api.airplanes.live/v2/point/-37.8136/144.9631/250',
+              aircraft_adsbone: 'https://api.adsb.one/v2/point/-37.8136/144.9631/250',
+              aircraft_adsbfi: 'https://opendata.adsb.fi/api/v2/lat/-37.8136/lon/144.9631/dist/250',
               earthquakes: 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson',
               weather: 'https://api.open-meteo.com/v1/forecast?latitude=-37.8136&longitude=144.9631&current=temperature_2m,wind_speed_10m',
               geocode: 'https://nominatim.openstreetmap.org/search?q=Melbourne&format=json&limit=3',
               launches: 'https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=5',
-              satellites: 'https://www.orbicentral.net/gp.php?GROUP=STATIONS&FORMAT=TLE',
+              satellites_orbicentral: 'https://www.orbicentral.net/gp.php?GROUP=STATIONS&FORMAT=TLE',
+              satellites_celestrak: 'https://celestrak.org/NORAD/elements/gp.php?GROUP=STATIONS&FORMAT=TLE',
+              satellites_celestrak_www: 'https://www.celestrak.org/NORAD/elements/gp.php?GROUP=STATIONS&FORMAT=TLE',
+              satellites_tleapi: 'https://tle.ivanstanojevic.me/api/tle?search=ISS&limit=5',
             };
             for (const [name, url] of Object.entries(sources)) {
               const result = await page.evaluate(async ({ name, url }) => {
