@@ -1,7 +1,7 @@
 {
   "project": "Dream Unity \u2014 Experimental Three-World Problem",
   "deployment": "verified-live",
-  "source_sha": "ee19d73748da56eb855f13ca2e9a5c616c6da8ba",
+  "source_sha": "86d8f54109429fff467ddca07d92a91718895174",
   "page_url": "https://dream-unity.github.io/experimental-three-world-problem/",
   "nine_portal_compatibility": "validated",
   "overview": {
@@ -56,12 +56,12 @@
     "original_scenario_bank_used_as_fallback": false
   },
   "source_sha256": [
-    "febefa89b6041def0511d6685a9adb79f9faaa7aa2269495be2377bfca866ab3  index.html",
+    "abbdb3cf14b3d8b9c8a88165a01c45d3c7956c141b62f90863f5e07f99a2a54d  index.html",
     "6850f499f7f393c52d1f2b50b8fe862c30172ca93b37c1bed6ce689acd76ab37  styles.css",
     "ad8dc6788a87c34201b132b88d8e5eb3ed439a0644f54a9610d2398d1b877536  become.css",
     "f65aaeffd785cf3df93b324e25a4e5ac766535dcaf8288115639e4789ef58f56  unity-cycle.css",
     "68b4429c362a7b246ccab75d841db0dc760594a45f34522e21005f515c08c841  unity-ui.js",
-    "94a0d3e6c5e59aa8de4f5e20124112c118890bfaa7de77c86d6e4add1c632707  main.js",
+    "62f6eba49fd5080cce6a4a23526aef2bca004004b36d6a55027039d25b34649d  main.js",
     "ae3962f60d36963b7b308b360caf8945b83788e117c7af89066b5ab3464ca2ff  arcade.js",
     "4c65c2590ea3840da26767b561b5f49b698e0a63c6f28419a8854c3122a7e610  voice.css",
     "8b2b8864217845789a3ca094622bebd94a6e156ec020ae58a968c7c578b5cfc2  voice.js",
@@ -74,7 +74,7 @@
     "91e82bccfa261a7486b40cd54712eff72065cd46ef39ffe8af3f98cc60998ccf  assets/sovereign-countermirror-mobile.webp",
     "91e82bccfa261a7486b40cd54712eff72065cd46ef39ffe8af3f98cc60998ccf  assets/sovereign-countermirror.webp",
     "57d8e4137ee7c59464b1fd5c4d289f0c36a2cdef997dcefc73ff633b8bf07869  visual-parts/bearing-mirror-12.txt",
-    "652130524f7242aaf1785b0ac7d339ad7472cad4490767788089aa33977d948a  visual-parts/fluid-response-25.txt",
+    "0b0bf033116db3eaa8a3e9b4f5923d791b55afbdd7c08f3e081eec52188f7434  visual-parts/fluid-response-25.txt",
     "1eea8aa42b93230f71b7bb11cf58878f0c26782c8546d48e631e02c204f8ee6c  visual-parts/interaction-recovery-22.txt",
     "a65931a912def7af8e6d79dd1d642f871e5727b7623dee19d7f725bb69c2d433  visual-parts/light-overview-07.txt",
     "8ca363f1b9c5cf33946aa01b9273b7cfd724795757dcaad7af9d0dec21f66162  visual-parts/mirror-forge-08.txt",
@@ -82,8 +82,8 @@
     "cf1092cd154f27e634fed6eaee0a59b49a6784a6e0dcbc07e503a652be964f65  visual-parts/part-02.txt",
     "96e934b79b31db20b58453e4246101b98246c981c86032259d390df51c9bfb50  visual-parts/part-03.txt",
     "f91050909c1d1273adb79287ab72a97c3edb7be7aba8cfb5f32fedbfd57ec48b  visual-parts/part-04.txt",
-    "9832d518fefe2731c4aa22c9e8d0bafc46128afc28e9225d3f4cd187c420d342  visual-parts/part-05.txt",
-    "c436aec9acb62da413e3f69d251258f923ecdbd40881ce939c87080f9e03db29  visual-parts/part-06.txt",
+    "a27bd191e95c4eaf5b29ad35b314dbb77de524189bfe6c910aac3313bc3bddd8  visual-parts/part-05.txt",
+    "b21dc09a36d3174d1af4883d43363982ae4e1969476413b4533510a6b329a352  visual-parts/part-06.txt",
     "08d9506349225c613a11fc53bd3e3c3b37a250f7cdefd09dbdc07664bf11ee8c  visual-parts/remembered-tomorrow-10.txt",
     "3f36cd3a11671bdc77a770405f8bcf4623c1f6766219d4483fbddfbc4a72ccc9  visual-parts/sovereign-coral-09.txt",
     "c5435d29e826c3bc7799ab41abc17829674e5c53716a32437922b0da6a1f1271  visual-parts/sovereign-resonator-11.txt",
@@ -114,5 +114,5 @@
     "c5a8ea262274f0a64821aae3c304e7410293b66ac1c1665c38ca44eae0ed7488  arcade-parts/perceive-aerial-08.txt",
     "6545873de0d833976a46ffa52666c6629e94e6fdda4f30c3a1720f738cb3b892  arcade-parts/perceive-role-logic.txt"
   ],
-  "verified_at": "2026-08-31T09:47:43.051893+00:00"
+  "verified_at": "2026-08-31T09:54:10.439484+00:00"
 }
