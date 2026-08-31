@@ -51,6 +51,52 @@ print("Applied verified keyless-start patch to src/main.js")
 # directly instead of materializing the whole planet in Node memory.
 vite_file = Path("/app/vite.config.js")
 vite_source = vite_file.read_text(encoding="utf-8")
+
+# Protect the free upstream when users jump rapidly between distant locations.
+# Same-anchor calls already coalesce/cache upstream; this tiny global start-rate
+# gate additionally prevents distinct anchors from becoming an accidental burst.
+adsb_constant_anchor = "const ADSBLOL_POINT_MAX_RESPONSE_BYTES = 8 * 1024 * 1024;"
+adsb_paced_constants = """const ADSBLOL_POINT_MAX_RESPONSE_BYTES = 8 * 1024 * 1024;
+const ADSBLOL_MIN_REQUEST_GAP_MS = 4000;
+let _adsbLolPaceTail = Promise.resolve();
+let _adsbLolNextAllowedAt = 0;
+
+async function waitForAdsbLolRequestSlot() {
+  const previous = _adsbLolPaceTail;
+  let release;
+  _adsbLolPaceTail = new Promise((resolve) => { release = resolve; });
+  await previous;
+  try {
+    const delayMs = Math.max(0, _adsbLolNextAllowedAt - Date.now());
+    if (delayMs > 0) {
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+    _adsbLolNextAllowedAt = Date.now() + ADSBLOL_MIN_REQUEST_GAP_MS;
+  } finally {
+    release();
+  }
+}"""
+
+if adsb_constant_anchor not in vite_source:
+    raise RuntimeError(
+        "Upstream vite.config.js changed: ADS-B fallback constant anchor missing."
+    )
+vite_source = vite_source.replace(adsb_constant_anchor, adsb_paced_constants, 1)
+
+fallback_request_anchor = """  const request = coalesceProxyRequest(_adsbLolPointInFlight, cacheKey, async () => {
+    const controller = new AbortController();
+"""
+fallback_request_paced = """  const request = coalesceProxyRequest(_adsbLolPointInFlight, cacheKey, async () => {
+    await waitForAdsbLolRequestSlot();
+    const controller = new AbortController();
+"""
+
+if fallback_request_anchor not in vite_source:
+    raise RuntimeError(
+        "Upstream vite.config.js changed: ADS-B request anchor missing."
+    )
+vite_source = vite_source.replace(fallback_request_anchor, fallback_request_paced, 1)
+
 opensky_anchor = """          const requestedMode = normalizeOpenSkyAuthMode(process.env.OPENSKY_AUTH_MODE);
           const now = Date.now();
 """
@@ -64,12 +110,18 @@ regional_block = """          const requestedMode = normalizeOpenSkyAuthMode(pro
             )) {
               return;
             }
-            res.writeHead(503, buildOpenSkyHeaders({
-              cacheStatus: 'MISS',
-              requestedMode,
-              usedMode: 'none',
-              reason: 'regional_anchor_unavailable',
-            }));
+            // Keep the UI alive through transient upstream throttling. The next
+            // normal client poll can recover automatically without a red error.
+            res.writeHead(200, {
+              ...buildOpenSkyHeaders({
+                cacheStatus: 'MISS',
+                requestedMode,
+                usedMode: 'none',
+                reason: 'regional_source_temporarily_unavailable',
+              }),
+              'Retry-After': '10',
+              'X-Flight-Source': 'temporarily-unavailable',
+            });
             res.end(JSON.stringify({ time: Math.floor(Date.now() / 1000), states: [] }));
             return;
           }
@@ -84,4 +136,4 @@ if opensky_anchor not in vite_source:
 
 vite_source = vite_source.replace(opensky_anchor, regional_block, 1)
 vite_file.write_text(vite_source, encoding="utf-8")
-print("Applied low-memory regional adsb.lol flight mode to vite.config.js")
+print("Applied paced low-memory regional adsb.lol flight mode to vite.config.js")
