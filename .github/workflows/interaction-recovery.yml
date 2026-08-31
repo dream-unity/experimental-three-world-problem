@@ -8,6 +8,7 @@ on:
       - main.js
       - interaction-recovery.css
       - visual-parts/interaction-recovery-22.txt
+      - visual-parts/fluid-response-25.txt
       - tests/interaction-recovery.test.mjs
       - package.json
       - package-lock.json
@@ -19,6 +20,7 @@ on:
       - main.js
       - interaction-recovery.css
       - visual-parts/interaction-recovery-22.txt
+      - visual-parts/fluid-response-25.txt
       - tests/interaction-recovery.test.mjs
       - package.json
       - package-lock.json
@@ -84,6 +86,7 @@ jobs:
             main.js
             interaction-recovery.css
             visual-parts/interaction-recovery-22.txt
+            visual-parts/fluid-response-25.txt
           )
           live_dir=$(mktemp -d)
           trap 'rm -rf "$live_dir"' EXIT
@@ -105,10 +108,12 @@ jobs:
             sleep 5
           done
           test "$matched" = true
-          grep -q 'main.js?v=20260830-awaken-true-war-2&amp;sr=21&amp;ir=25' "$live_dir/index.html"
+          grep -q 'main.js?v=20260830-awaken-true-war-2&amp;sr=21&amp;ir=25b' "$live_dir/index.html"
           grep -q "INTERACTION_RECOVERY_VERSION = '20260831-fluid-whole-field-orbit-25'" "$live_dir/main.js"
           grep -q "IR_RELEASE = '20260831-fluid-whole-field-orbit-25'" "$live_dir/visual-parts/interaction-recovery-22.txt"
           grep -q "id: 'fluid-whole-field-orbit'" "$live_dir/visual-parts/interaction-recovery-22.txt"
+          grep -q "IR_FLUID_RESPONSE_RELEASE = '20260831-fluid-response-hold-25b'" "$live_dir/visual-parts/fluid-response-25.txt"
+          grep -q 'visualHoldMs: 520' "$live_dir/visual-parts/fluid-response-25.txt"
           grep -q 'trackpadYaw: 0.0072' "$live_dir/visual-parts/interaction-recovery-22.txt"
           grep -q 'IR_PITCH_LIMIT = 1.46' "$live_dir/visual-parts/interaction-recovery-22.txt"
           grep -q 'rtLivingYaw = overviewYaw' "$live_dir/visual-parts/interaction-recovery-22.txt"
