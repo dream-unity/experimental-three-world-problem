@@ -1,0 +1,260 @@
+name: Finalize Crystal Nexus v31
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/finalize-crystal-nexus-v31.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: finalize-crystal-nexus-v31
+  cancel-in-progress: false
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout latest main
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Use Node
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.19.0'
+          cache: npm
+
+      - name: Assert the replacement was actually installed
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s index.html
+          test -s nexus.css
+          test -s main.js
+          test -s unity-ui.js
+          test -s assets/dream-maker-eye.mp3
+          test -s assets/crystal-horizon.webp
+          grep -q '20260901-crystal-nexus-31' index.html
+          grep -q 'assets/dream-maker-eye.mp3' index.html
+          grep -q '__dreamUnityNexus' main.js
+          grep -q 'Dream Maker Eye' unity-ui.js
+          test "$(file --brief --mime-type assets/dream-maker-eye.mp3)" = 'audio/mpeg'
+          test "$(file --brief --mime-type assets/crystal-horizon.webp)" = 'image/webp'
+          test "$(stat -c%s assets/dream-maker-eye.mp3)" -gt 1000000
+          test "$(stat -c%s assets/crystal-horizon.webp)" -gt 50000
+
+      - name: Harden repeated portal entry and leave a maintainable verifier
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          path=Path('main.js')
+          text=path.read_text()
+          old="function exit(){active=null;app.classList.remove('detail');subs.forEach(el=>{el.style.opacity=0;el.style.visibility='hidden';el.style.pointerEvents='none'});render()}"
+          new="function exit(){active=null;app.classList.remove('detail');subs.forEach(el=>{el.style.removeProperty('opacity');el.style.removeProperty('visibility');el.style.removeProperty('pointer-events')});render()}"
+          if old in text:
+              text=text.replace(old,new)
+          path.write_text(text)
+          PY
+
+          cat > .github/workflows/validate-and-verify.yml <<'EOF'
+          name: Validate Crystal Nexus and verify live Pages
+          on:
+            push:
+              branches: [main]
+              paths-ignore: ['DEPLOYMENT_STATUS.json', 'CRYSTAL_NEXUS_VERIFIED.json']
+            pull_request:
+              branches: [main]
+            workflow_dispatch:
+          permissions:
+            contents: read
+          concurrency:
+            group: crystal-nexus-main
+            cancel-in-progress: true
+          jobs:
+            validate:
+              runs-on: ubuntu-latest
+              timeout-minutes: 25
+              steps:
+                - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+                  with:
+                    persist-credentials: false
+                - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+                  with:
+                    node-version: '24.19.0'
+                    cache: npm
+                - run: npm ci
+                - run: npx playwright install --with-deps chromium
+                - name: Validate Crystal Nexus, Dream Maker Eye and all nine games
+                  env:
+                    DU_NEXUS_SCREENSHOT_DIR: nexus-artifacts
+                  run: npm run test:all
+                - name: Publish visual verification
+                  if: always()
+                  uses: actions/upload-artifact@v4
+                  with:
+                    name: crystal-nexus-visual-proof
+                    path: nexus-artifacts
+                    if-no-files-found: warn
+                    overwrite: true
+                    retention-days: 14
+            verify-live:
+              if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+              needs: validate
+              runs-on: ubuntu-latest
+              timeout-minutes: 18
+              steps:
+                - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+                  with:
+                    persist-credentials: false
+                - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+                  with:
+                    node-version: '24.19.0'
+                    cache: npm
+                - run: npm ci
+                - run: npx playwright install --with-deps chromium
+                - name: Wait for an exact GitHub Pages deployment
+                  shell: bash
+                  env:
+                    PAGE_URL: https://dream-unity.github.io/experimental-three-world-problem
+                  run: |
+                    set -euo pipefail
+                    files=(index.html nexus.css main.js unity-ui.js arcade.js become.css light-theme.js assets/dream-maker-eye.mp3 assets/crystal-horizon.webp)
+                    dir=$(mktemp -d)
+                    trap 'rm -rf "$dir"' EXIT
+                    mkdir -p "$dir/assets"
+                    ready=false
+                    for attempt in $(seq 1 72); do
+                      ready=true
+                      for path in "${files[@]}"; do
+                        curl --fail --location --silent --show-error --connect-timeout 10 --max-time 30 "$PAGE_URL/$path?source=$GITHUB_SHA&attempt=$attempt" -o "$dir/$path" || { ready=false; break; }
+                        cmp --silent "$path" "$dir/$path" || { ready=false; break; }
+                      done
+                      if [ "$ready" = true ]; then break; fi
+                      echo "Crystal Nexus has not propagated yet ($attempt/72)."
+                      sleep 5
+                    done
+                    test "$ready" = true
+                - name: Exercise the deployed Nexus and all nine games
+                  env:
+                    DU_NEXUS_BASE_URL: https://dream-unity.github.io/experimental-three-world-problem/
+                  run: npm run test:browser
+          EOF
+
+          cat > README.md <<'EOF'
+          # Dream Unity — Crystal Nexus
+
+          The homepage is an interactive three-dimensional nexus joining **Dream Machine**, **Dream Maker**, and **Dream World** around one crystalline Unity core.
+
+          - Drag anywhere on the structure to orbit the complete nexus.
+          - Use a precision trackpad to orbit; pinch to zoom.
+          - Select any portal to enter its three playable domains.
+          - The nine existing games remain available through the three portals.
+          - The homepage score is **Dream Maker Eye** and drives light, crystal and orbital response through live audio analysis.
+
+          Run `npm run test:all` to validate the renderer, interaction, responsive layouts and nine-game compatibility.
+          EOF
+
+          rm -f .github/workflows/install-crystal-nexus-v31.yml
+          rm -f .github/workflows/finalize-crystal-nexus-v31.yml
+          rm -f CRYSTAL_NEXUS_VERIFY_TRIGGER.txt
+
+      - name: Install dependencies and Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Validate before publishing
+        shell: bash
+        env:
+          DU_NEXUS_SCREENSHOT_DIR: nexus-artifacts
+        run: npm run test:all
+
+      - name: Commit and publish the finalized replacement
+        id: publish
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Finalize Crystal Nexus interaction and deployment verification'
+          source_sha=$(git rev-parse HEAD)
+          git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:main
+          echo "source_sha=$source_sha" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for exact live propagation
+        shell: bash
+        env:
+          PAGE_URL: https://dream-unity.github.io/experimental-three-world-problem
+          SOURCE_SHA: ${{ steps.publish.outputs.source_sha }}
+        run: |
+          set -euo pipefail
+          files=(index.html nexus.css main.js unity-ui.js arcade.js become.css light-theme.js assets/dream-maker-eye.mp3 assets/crystal-horizon.webp)
+          dir=$(mktemp -d)
+          trap 'rm -rf "$dir"' EXIT
+          mkdir -p "$dir/assets"
+          ready=false
+          for attempt in $(seq 1 84); do
+            ready=true
+            for path in "${files[@]}"; do
+              curl --fail --location --silent --show-error --connect-timeout 10 --max-time 30 "$PAGE_URL/$path?source=$SOURCE_SHA&attempt=$attempt" -o "$dir/$path" || { ready=false; break; }
+              cmp --silent "$path" "$dir/$path" || { ready=false; break; }
+            done
+            if [ "$ready" = true ]; then break; fi
+            echo "Waiting for Crystal Nexus deployment ($attempt/84)."
+            sleep 5
+          done
+          test "$ready" = true
+
+      - name: Exercise the actual deployed site
+        shell: bash
+        env:
+          DU_NEXUS_BASE_URL: https://dream-unity.github.io/experimental-three-world-problem/
+        run: npm run test:browser
+
+      - name: Record independently verified deployment
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SOURCE_SHA: ${{ steps.publish.outputs.source_sha }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os
+          from datetime import datetime, timezone
+          from pathlib import Path
+          Path('CRYSTAL_NEXUS_VERIFIED.json').write_text(json.dumps({
+            'project':'Dream Unity — Experimental Three-World Problem',
+            'deployment':'verified-live',
+            'source_sha':os.environ['SOURCE_SHA'],
+            'verified_at':datetime.now(timezone.utc).isoformat(),
+            'page_url':'https://dream-unity.github.io/experimental-three-world-problem/',
+            'renderer':'crystal-nexus',
+            'renderer_version':'20260901-crystal-nexus-31',
+            'homepage_score':'assets/dream-maker-eye.mp3',
+            'homepage_score_title':'Dream Maker Eye',
+            'crystalline_horizon':'assets/crystal-horizon.webp',
+            'portal_count':3,
+            'game_count':9,
+            'whole_nexus_orbit':'validated',
+            'strictly_decaying_inertia':'validated',
+            'desktop_and_mobile':'validated'
+          },indent=2)+'\n')
+          PY
+          git add CRYSTAL_NEXUS_VERIFIED.json
+          git commit -m 'Record verified Crystal Nexus deployment [skip ci]'
+          git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:main
