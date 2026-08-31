@@ -1,0 +1,46 @@
+name: GEV CelesTrak route diagnostic
+
+on:
+  push:
+    branches:
+      - cloudrun-gods-eye-view
+    paths:
+      - '.github/workflows/gev-celestrak-diagnostic.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Probe official CelesTrak routes
+        shell: bash
+        run: |
+          set +e
+          urls=(
+            'https://celestrak.org/NORAD/elements/gp.php?GROUP=STATIONS&FORMAT=TLE'
+            'https://www.celestrak.org/NORAD/elements/gp.php?GROUP=STATIONS&FORMAT=TLE'
+            'https://celestrak.com/NORAD/elements/gp.php?GROUP=STATIONS&FORMAT=TLE'
+            'https://www.celestrak.com/NORAD/elements/gp.php?GROUP=STATIONS&FORMAT=TLE'
+            'https://celestrak.org/NORAD/elements/stations.txt'
+            'https://www.celestrak.org/NORAD/elements/stations.txt'
+          )
+          success=0
+          for url in "${urls[@]}"; do
+            echo "PROBE $url"
+            code=$(curl -L --connect-timeout 8 --max-time 20 \
+              -A 'gods-eye-view-host-diagnostic/1.0 (+https://github.com/dream-unity/experimental-three-world-problem)' \
+              -o /tmp/tle -sS -w '%{http_code}' "$url")
+            rc=$?
+            bytes=$(wc -c < /tmp/tle 2>/dev/null || echo 0)
+            iss=no
+            grep -qi 'ISS' /tmp/tle 2>/dev/null && iss=yes
+            echo "RESULT rc=$rc http=$code bytes=$bytes iss=$iss"
+            if [ "$rc" -eq 0 ] && [ "$code" = 200 ] && [ "$iss" = yes ]; then
+              success=1
+            fi
+          done
+          test "$success" -eq 1
