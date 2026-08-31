@@ -1,0 +1,212 @@
+
+  // Visual Clarity 30 — restore the actual 3D body as the dominant object.
+  // The white stage remains restrained, but the hull, depth ribs and Unity
+  // chamber now carry enough graphite/chromatic weight to read at a glance.
+  const VC_RELEASE = '20260831-visual-clarity-30';
+  const vcBaseDrawOverview = drawOverview;
+  const VC_GRAPHITE = [53, 62, 82];
+  const VC_SOFT_INK = [91, 101, 124];
+
+  function vcHullPoint(latitude, longitude) {
+    const vertical = Math.sin(latitude);
+    const radial = Math.cos(latitude);
+    const asymmetry = 1 + vertical * 0.085;
+    return {
+      x: Math.cos(longitude) * radial * 2.24 * asymmetry + Math.sin(latitude * 2) * 0.12,
+      y: vertical * 3.24,
+      z: Math.sin(longitude) * radial * 1.74 * asymmetry,
+    };
+  }
+
+  function vcDepthAlpha(z, minimum = 0.07, maximum = 0.19) {
+    return lerp(minimum, maximum, clamp((z + 2.2) / 4.4, 0, 1));
+  }
+
+  function vcPushSegment(segments, aModel, bModel, color, weight = 1, emphasis = 1) {
+    const a = rtRotateProject(aModel);
+    const b = rtRotateProject(bModel);
+    if (![a.x, a.y, b.x, b.y, a.z, b.z].every(Number.isFinite)) return;
+    segments.push({ a, b, color, weight, emphasis, z: (a.z + b.z) * 0.5 });
+  }
+
+  function vcDrawStructuralEnvelope(alpha) {
+    if (alpha <= 0.002) return;
+    const segments = [];
+    const latitudeBands = [-1.16, -0.82, -0.48, -0.16, 0.16, 0.48, 0.82, 1.16];
+    const ringSteps = lowCPU || coarse ? 36 : 58;
+    latitudeBands.forEach((latitude, bandIndex) => {
+      for (let index = 0; index < ringSteps; index += 1) {
+        const a = index / ringSteps * TAU;
+        const b = (index + 1) / ringSteps * TAU;
+        const equatorial = bandIndex === 3 || bandIndex === 4;
+        vcPushSegment(
+          segments,
+          vcHullPoint(latitude, a),
+          vcHullPoint(latitude, b),
+          equatorial ? VC_GRAPHITE : VC_SOFT_INK,
+          equatorial ? 1.05 : 0.72,
+          equatorial ? 1.18 : 0.82,
+        );
+      }
+    });
+
+    const meridians = lowCPU || coarse ? 9 : 12;
+    const meridianSteps = lowCPU || coarse ? 34 : 52;
+    for (let meridian = 0; meridian < meridians; meridian += 1) {
+      const longitude = meridian / meridians * TAU;
+      const accent = meridian % 4 === 0;
+      const accentColor = meridian % 3 === 0 ? WORLD.machine.rgb
+        : meridian % 3 === 1 ? WORLD.maker.rgb
+        : WORLD.reality.rgb;
+      for (let index = 0; index < meridianSteps; index += 1) {
+        const aLat = -Math.PI * 0.5 + index / meridianSteps * Math.PI;
+        const bLat = -Math.PI * 0.5 + (index + 1) / meridianSteps * Math.PI;
+        vcPushSegment(
+          segments,
+          vcHullPoint(aLat, longitude),
+          vcHullPoint(bLat, longitude),
+          accent ? accentColor : VC_SOFT_INK,
+          accent ? 1.05 : 0.68,
+          accent ? 1.22 : 0.76,
+        );
+      }
+    }
+
+    segments.sort((left, right) => left.z - right.z);
+    ctx.save();
+    ctx.lineCap = 'round';
+    segments.forEach((segment) => {
+      const depth = vcDepthAlpha(segment.z);
+      const outer = segment.weight * clamp(segment.a.f, 0.72, 1.34);
+      // A broad, barely-there shoulder keeps depth legible on bright displays.
+      rtLine(segment.a, segment.b, segment.color, alpha * depth * 0.22, outer * 3.2);
+      rtLine(segment.a, segment.b, segment.color, alpha * depth * segment.emphasis, outer);
+    });
+    ctx.restore();
+  }
+
+  function vcDrawTriadicLoadPaths(alpha) {
+    if (alpha <= 0.002) return;
+    const core = rtRotateProject({ x: 0, y: 0, z: 0 });
+    worldKeys.forEach((key, worldIndex) => {
+      const anchor = rtCatmull(RT_PHASE[key]);
+      const frameAt = rtFrameAt(RT_PHASE[key]);
+      let previous = core;
+      const steps = 32;
+      for (let index = 1; index <= steps; index += 1) {
+        const u = index / steps;
+        const bow = Math.sin(u * Math.PI) * (0.16 + worldIndex * 0.035);
+        const model = {
+          x: lerp(0, anchor.x, u) + frameAt.side.x * bow,
+          y: lerp(0, anchor.y, u) + frameAt.side.y * bow,
+          z: lerp(0, anchor.z, u) + frameAt.side.z * bow,
+        };
+        const point = rtRotateProject(model);
+        const depth = vcDepthAlpha(point.z, 0.11, 0.30);
+        const widthValue = (1.05 + (1 - u) * 0.55) * clamp(point.f, 0.76, 1.30);
+        rtLine(previous, point, WORLD[key].rgb, alpha * depth * 0.72, widthValue * 2.7);
+        rtLine(previous, point, WORLD[key].rgb, alpha * depth, widthValue);
+        previous = point;
+      }
+    });
+  }
+
+  function vcDrawUnityChamber(t, alpha) {
+    if (alpha <= 0.002) return;
+    const pulse = reduced ? 0 : Math.sin(t * 0.72) * 0.035;
+    const vertices = [
+      { x: 0, y: 0.78 + pulse, z: 0 },
+      { x: 0, y: -0.78 - pulse, z: 0 },
+      { x: 0.68, y: 0, z: 0 },
+      { x: -0.68, y: 0, z: 0 },
+      { x: 0, y: 0, z: 0.68 },
+      { x: 0, y: 0, z: -0.68 },
+    ].map((model) => rtRotateProject(model));
+    const edges = [
+      [0,2],[0,3],[0,4],[0,5],
+      [1,2],[1,3],[1,4],[1,5],
+      [2,4],[4,3],[3,5],[5,2],
+    ];
+    const faces = [
+      [0,2,4],[0,4,3],[0,3,5],[0,5,2],
+      [1,4,2],[1,3,4],[1,5,3],[1,2,5],
+    ];
+
+    ctx.save();
+    ctx.lineJoin = 'round';
+    faces.forEach((face, index) => {
+      const points = face.map((vertex) => vertices[vertex]);
+      const averageZ = points.reduce((sum, point) => sum + point.z, 0) / points.length;
+      const color = index % 3 === 0 ? WORLD.reality.rgb : index % 3 === 1 ? RT_GOLD : WORLD.machine.rgb;
+      ctx.beginPath();
+      ctx.moveTo(points[0].x, points[0].y);
+      ctx.lineTo(points[1].x, points[1].y);
+      ctx.lineTo(points[2].x, points[2].y);
+      ctx.closePath();
+      ctx.fillStyle = rgba(color, alpha * vcDepthAlpha(averageZ, 0.018, 0.045));
+      ctx.fill();
+    });
+    edges.forEach(([from, to], index) => {
+      const a = vertices[from];
+      const b = vertices[to];
+      const z = (a.z + b.z) * 0.5;
+      const color = index % 4 === 0 ? RT_GOLD : index % 4 === 1 ? WORLD.reality.rgb : VC_GRAPHITE;
+      rtLine(a, b, color, alpha * vcDepthAlpha(z, 0.22, 0.48), 1.05 + (index % 4 === 0 ? 0.28 : 0));
+    });
+
+    const core = rtRotateProject({ x: 0, y: 0, z: 0 });
+    const radius = Math.max(8, unit * 0.0125);
+    const glow = ctx.createRadialGradient(core.x, core.y, 0, core.x, core.y, radius * 3.8);
+    glow.addColorStop(0, rgba(RT_GOLD, alpha * 0.24));
+    glow.addColorStop(0.28, rgba(WORLD.reality.rgb, alpha * 0.085));
+    glow.addColorStop(1, rgba(RT_WHITE, 0));
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(core.x, core.y, radius * 3.8, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = rgba(RT_GOLD, alpha * 0.92);
+    ctx.beginPath();
+    ctx.arc(core.x, core.y, 2.05, 0, TAU);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  drawOverview = function visualClarityOverview(t, alpha) {
+    vcBaseDrawOverview(t, alpha);
+    // The base renderer already establishes the correct score-driven geometry.
+    // These are architectural clarity passes, not a second simulation.
+    vcDrawStructuralEnvelope(alpha * 0.96);
+    vcDrawTriadicLoadPaths(alpha * 0.92);
+    vcDrawUnityChamber(t, alpha);
+  };
+
+  function vcMetrics() {
+    const samples = Array.from({ length: 180 }, (_, index) => rtRotateProject(vcHullPoint(
+      -Math.PI * 0.5 + (index % 18) / 17 * Math.PI,
+      Math.floor(index / 18) / 10 * TAU,
+    )));
+    const xs = samples.map((point) => point.x).filter(Number.isFinite);
+    const ys = samples.map((point) => point.y).filter(Number.isFinite);
+    return {
+      shellSegments: (lowCPU || coarse ? 8 * 36 + 9 * 34 : 8 * 58 + 12 * 52),
+      triadicLoadPaths: 3,
+      unityChamberEdges: 12,
+      bounds: {
+        left: Math.min(...xs), right: Math.max(...xs),
+        top: Math.min(...ys), bottom: Math.max(...ys),
+      },
+      graphiteAlpha: { rear: 0.07, front: 0.19 },
+    };
+  }
+
+  app.dataset.visualClarity = 'true';
+  app.dataset.visualClarityVersion = VC_RELEASE;
+  window.__dreamUnityVisualClarity = Object.freeze({
+    version: VC_RELEASE,
+    ready: true,
+    architecturalHull: true,
+    depthWeighted: true,
+    triadicLoadPaths: true,
+    unityChamber: true,
+    metrics: vcMetrics,
+  });
