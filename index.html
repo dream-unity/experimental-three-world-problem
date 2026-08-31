@@ -3,56 +3,115 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content" />
-  <meta name="theme-color" content="#050505" />
+  <meta name="theme-color" content="#050608" />
   <meta name="color-scheme" content="dark" />
-  <meta name="description" content="Dream Unity — the Countermirror where ether is compressed into matter, made sovereign, and returned as a new dream." />
-  <title>Dream Unity — The Countermirror</title>
-  <link rel="stylesheet" href="./styles.css?v=20260830-sovereign-nocturne-20" />
-  <link rel="stylesheet" href="./become.css?v=20260830-sovereign-nocturne-20" />
-  <link rel="stylesheet" href="./unity-cycle.css?v=20260830-sovereign-nocturne-20" />
+  <meta name="description" content="Dream Unity — a sovereign countermirror where dream, will and matter compress into one living force, then return to the ether changed." />
+  <title>Dream Unity — The Sovereign Countermirror</title>
+  <link rel="preload" as="image" href="./assets/sovereign-countermirror.webp" media="(min-width:761px)" />
+  <link rel="preload" as="image" href="./assets/sovereign-countermirror-mobile.webp" media="(max-width:760px)" />
+  <link rel="stylesheet" href="./styles.css?v=20260831-countermirror-03" />
+  <link rel="stylesheet" href="./become.css?v=20260831-countermirror-03" />
+  <link rel="stylesheet" href="./countermirror.css?v=20260831-countermirror-03" />
 </head>
 <body>
-  <main id="app" aria-label="Dream Unity interactive simulation">
-    <picture class="material-plate" id="materialPlate" aria-hidden="true">
-      <source media="(max-aspect-ratio:3/4)" srcset="./assets/pressure-becomes-weather-portrait-v20.png?v=20260830-sovereign-nocturne-20" />
-      <img src="./assets/pressure-becomes-weather-landscape-v20.png?v=20260830-sovereign-nocturne-20" alt="" draggable="false" decoding="async" fetchpriority="high" />
-    </picture>
-    <canvas id="world" aria-label="Interactive Dream Unity field"></canvas>
-    <audio id="scoreAudio" src="./assets/i-remember-tomorrow.mp3" preload="auto" autoplay loop aria-hidden="true"></audio>
-    <div class="vignette" aria-hidden="true"></div>
-    <div class="brand"><i></i><span>DREAM UNITY</span><small>THE COUNTERMIRROR</small></div>
-    <div class="live"><i></i><span>DREAM · MATTER · ETHER</span></div>
-    <button class="score-control" id="scoreControl" type="button" aria-label="Turn the Dream Unity score off" aria-pressed="true">
-      <span class="score-mark" aria-hidden="true"><i></i><i></i><i></i></span>
-      <small>SOUND</small><b id="scoreState">LOADING</b>
-    </button>
-    <section class="manifesto" aria-label="Awaken the True War — lyric fragment">
-      <p>THE GHOST IN THE MIRROR · OF SLAVERY AND FREEDOM</p>
-      <h1>Light pierces<br /><span>through me.</span></h1>
-      <div class="manifesto-copy"><span>Somewhere out in the universe.</span><span>I wonder in my heart.</span></div>
-      <div class="manifesto-rule">AWAKEN THE TRUE WAR</div>
-    </section>
-    <ol class="cycle-index" aria-label="The returning dream cycle">
-      <li><i aria-hidden="true">01</i><b>DREAM</b></li>
-      <li><i aria-hidden="true">02</i><b>COMPRESS</b></li>
-      <li><i aria-hidden="true">03</i><b>REALISE</b></li>
-      <li><i aria-hidden="true">04</i><b>RETURN</b></li>
-    </ol>
-    <button class="back" id="back" type="button" aria-label="Return to Dream Unity overview" tabindex="-1" aria-hidden="true"><span>←</span><b>UNITY</b></button>
-    <div class="detail-title" id="detailTitle" aria-live="polite"><small id="detailNumber">01</small><strong id="detailName">DREAM MACHINE</strong></div>
-    <button class="world-label" id="label-machine" data-world="machine" type="button" aria-label="Enter Dream Machine: perceive, model, predict"><span class="world-index">01</span><span class="world-copy"><strong>DREAM MACHINE</strong><small>PERCEIVE · MODEL · PREDICT</small></span><i aria-hidden="true"></i></button>
-    <button class="world-label" id="label-maker" data-world="maker" type="button" aria-label="Enter Dream Maker: intend, act, become"><span class="world-index">02</span><span class="world-copy"><strong>DREAM MAKER</strong><small>INTEND · ACT · BECOME</small></span><i aria-hidden="true"></i></button>
-    <button class="world-label" id="label-reality" data-world="reality" type="button" aria-label="Enter Dream World: matter, structure, emerge"><span class="world-index">03</span><span class="world-copy"><strong>DREAM WORLD</strong><small>MATTER · STRUCTURE · EMERGE</small></span><i aria-hidden="true"></i></button>
-    <div class="unity-label" id="unityLabel" aria-hidden="true">
-      <span></span>
-      <b>UNITY</b>
-      <small>DREAM · MATTER · RETURN</small>
+  <main id="app" data-world="" aria-label="Dream Unity interactive countermirror">
+    <div class="countermirror-field" id="countermirrorField" aria-hidden="true">
+      <picture class="countermirror-plate">
+        <source media="(max-width:760px)" srcset="./assets/sovereign-countermirror-mobile.webp" />
+        <img id="countermirrorImage" src="./assets/sovereign-countermirror.webp" alt="" width="1280" height="640" decoding="async" fetchpriority="high" draggable="false" />
+      </picture>
+
+      <div class="petal petal-machine"><span></span></div>
+      <div class="petal petal-maker"><span></span></div>
+      <div class="petal petal-reality"><span></span></div>
+      <div class="sovereign-axis"></div>
+      <div class="return-thread return-thread-a"></div>
+      <div class="return-thread return-thread-b"></div>
+      <div class="pressure-halo"></div>
     </div>
-    <button class="sub-label" id="sub-0" type="button" tabindex="-1" aria-hidden="true"><strong>PERCEIVE</strong></button>
-    <button class="sub-label" id="sub-1" type="button" tabindex="-1" aria-hidden="true"><strong>MODEL</strong></button>
-    <button class="sub-label" id="sub-2" type="button" tabindex="-1" aria-hidden="true"><strong>PREDICT</strong></button>
-    <div class="hint" id="hint">TOUCH THE FIELD · ENTER A WORLD</div>
-    <div class="loading" id="loading" role="status" aria-label="Loading Dream Unity"><span aria-hidden="true"></span></div>
+
+    <canvas id="world" aria-hidden="true"></canvas>
+    <div class="vignette" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+
+    <header class="brand" aria-label="Dream Unity">
+      <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+      <strong>DREAM UNITY</strong>
+      <small>THE SOVEREIGN COUNTERMIRROR</small>
+    </header>
+
+    <div class="coral-state" aria-label="Stage Coral — sovereign integration">
+      <i aria-hidden="true"></i><span>CORAL · SOVEREIGN · RETURNING</span>
+    </div>
+
+    <section class="manifesto" aria-label="The Ghost in the Mirror">
+      <p>THE GHOST IN THE MIRROR · OF SLAVERY AND FREEDOM</p>
+      <h1>Light pierces<br /><em>through me.</em></h1>
+      <div class="manifesto-copy">
+        <span>Somewhere out in the universe.</span>
+        <span>I wonder in my heart.</span>
+      </div>
+      <div class="manifesto-rule"><b></b>AWAKEN THE TRUE WAR</div>
+    </section>
+
+    <section class="detail-copy" id="detailCopy" aria-live="polite">
+      <p id="detailKicker">01 · DREAM MACHINE</p>
+      <h2 id="detailStatement">Attention bears weight.</h2>
+      <span id="detailBody">Perceive the field. Model its hidden law. Predict before the mirror decides for you.</span>
+    </section>
+
+    <ol class="cycle-index" aria-label="The returning dream cycle">
+      <li class="active"><i>01</i><b>DREAM</b></li>
+      <li><i>02</i><b>COMPRESS</b></li>
+      <li><i>03</i><b>REALISE</b></li>
+      <li><i>04</i><b>RETURN</b></li>
+    </ol>
+
+    <nav class="world-nav" aria-label="Dream Unity worlds">
+      <button class="world-label" id="label-machine" data-world="machine" type="button" aria-label="Enter Dream Machine: perceive, model, predict">
+        <span class="world-index">01</span>
+        <span class="world-copy"><strong>DREAM MACHINE</strong><small>PERCEIVE · MODEL · PREDICT</small></span>
+        <i aria-hidden="true"></i>
+      </button>
+      <button class="world-label" id="label-maker" data-world="maker" type="button" aria-label="Enter Dream Maker: intend, act, become">
+        <span class="world-index">02</span>
+        <span class="world-copy"><strong>DREAM MAKER</strong><small>INTEND · ACT · BECOME</small></span>
+        <i aria-hidden="true"></i>
+      </button>
+      <button class="world-label" id="label-reality" data-world="reality" type="button" aria-label="Enter Dream World: matter, structure, emerge">
+        <span class="world-index">03</span>
+        <span class="world-copy"><strong>DREAM WORLD</strong><small>MATTER · STRUCTURE · EMERGE</small></span>
+        <i aria-hidden="true"></i>
+      </button>
+    </nav>
+
+    <div class="portal-hotspots" aria-label="World portals">
+      <button class="portal-hotspot hotspot-machine" data-world="machine" type="button" aria-label="Enter Dream Machine"></button>
+      <button class="portal-hotspot hotspot-maker" data-world="maker" type="button" aria-label="Enter Dream Maker"></button>
+      <button class="portal-hotspot hotspot-reality" data-world="reality" type="button" aria-label="Enter Dream World"></button>
+    </div>
+
+    <div class="unity-label" id="unityLabel" aria-hidden="true">
+      <span></span><b>UNITY</b><small>GRACE WITH TEETH</small>
+    </div>
+
+    <button class="back" id="back" type="button" aria-label="Return to Dream Unity overview" tabindex="-1" aria-hidden="true">
+      <span aria-hidden="true">←</span><b>UNITY</b>
+    </button>
+
+    <div class="detail-title" id="detailTitle" aria-live="polite">
+      <small id="detailNumber">01</small><strong id="detailName">DREAM MACHINE</strong>
+    </div>
+
+    <div class="sub-nav" aria-label="World disciplines">
+      <button class="sub-label" id="sub-0" type="button" tabindex="-1" aria-hidden="true"><span>01</span><strong>PERCEIVE</strong><small>ENTER</small></button>
+      <button class="sub-label" id="sub-1" type="button" tabindex="-1" aria-hidden="true"><span>02</span><strong>MODEL</strong><small>ENTER</small></button>
+      <button class="sub-label" id="sub-2" type="button" tabindex="-1" aria-hidden="true"><span>03</span><strong>PREDICT</strong><small>ENTER</small></button>
+    </div>
+
+    <div class="hint" id="hint">BEND THE COUNTERMIRROR · ENTER A WORLD</div>
+    <div class="loading" id="loading" role="status" aria-label="Loading Dream Unity"><span>COUNTERMIRROR</span><i></i></div>
+
     <section class="arcade" id="arcade" aria-hidden="true" aria-label="Dream Unity arcade">
       <canvas id="gameCanvas" aria-label="Playable Dream Unity game"></canvas>
       <div class="game-vignette" aria-hidden="true"></div>
@@ -72,9 +131,6 @@
     </section>
   </main>
   <noscript>This experience requires JavaScript.</noscript>
-  <script>window.setTimeout(function(){var el=document.getElementById('loading');if(el)el.classList.add('hide');},1800);</script>
-  <script src="./unity-ui.js?v=20260830-sovereign-nocturne-20"></script>
-  <script src="./main.js?v=20260830-sovereign-nocturne-20"></script>
-  <script src="./arcade.js?v=20260830-sovereign-nocturne-20"></script>
+  <script src="./countermirror.js?v=20260831-countermirror-03"></script>
 </body>
 </html>

@@ -1,0 +1,119 @@
+:root{
+  color-scheme:dark;
+  --void:#050608;
+  --ink:#090b0f;
+  --bone:#eee8dc;
+  --bone-soft:rgba(238,232,220,.70);
+  --bone-dim:rgba(238,232,220,.46);
+  --hair:rgba(238,232,220,.16);
+  --coral:#ff665c;
+  --coral-hot:#ff3e4d;
+  --gold:#ffd9a3;
+  --machine:#75cbd4;
+  --maker:#f06c5f;
+  --reality:#9d8ac9;
+  --mx:0;
+  --my:0;
+  --drag-x:0;
+  --drag-y:0;
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--void);color:var(--bone)}
+body{font-family:Inter,"Helvetica Neue",Arial,ui-sans-serif,system-ui,sans-serif}
+button{font:inherit;color:inherit;-webkit-tap-highlight-color:transparent}
+button:focus-visible{outline:1px solid rgba(255,102,92,.78);outline-offset:4px}
+
+#app{
+  position:relative;
+  width:100vw;
+  height:100dvh;
+  min-height:500px;
+  overflow:hidden;
+  isolation:isolate;
+  background:var(--void);
+  --world-accent:var(--coral);
+}
+#app[data-world="machine"]{--world-accent:var(--machine)}
+#app[data-world="maker"]{--world-accent:var(--maker)}
+#app[data-world="reality"]{--world-accent:var(--reality)}
+
+.countermirror-field,.countermirror-plate,.countermirror-plate img,.petal,.petal span{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+}
+.countermirror-field{
+  z-index:0;
+  overflow:hidden;
+  perspective:1400px;
+  transform-style:preserve-3d;
+  background:#050608;
+  touch-action:none;
+}
+.countermirror-plate{display:block;overflow:hidden;pointer-events:none}
+.countermirror-plate img{
+  display:block;
+  object-fit:cover;
+  object-position:center;
+  transform:translate3d(calc(var(--mx) * -3px),calc(var(--my) * -2px),0) scale(1.018);
+  transform-origin:64% 48%;
+  filter:brightness(.94) saturate(.86) contrast(1.06);
+  transition:filter .65s ease,transform .22s ease-out;
+  user-select:none;
+}
+
+#world{position:absolute;inset:0;z-index:1;width:100%;height:100%;pointer-events:none;opacity:0}
+.vignette{position:absolute;inset:0;z-index:2;pointer-events:none;background:
+  linear-gradient(90deg,rgba(2,4,7,.52) 0%,rgba(2,4,7,.17) 36%,transparent 55%),
+  radial-gradient(ellipse at 64% 48%,transparent 18%,rgba(0,0,0,.04) 50%,rgba(0,0,0,.64) 122%)}
+.grain{position:absolute;inset:-50%;z-index:3;pointer-events:none;opacity:.035;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.84' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.72'/%3E%3C/svg%3E");transform:translate3d(calc(var(--mx) * 2px),calc(var(--my) * 2px),0)}
+
+/* The attached obsidian form remains the visual truth. These three restrained
+   optical layers create depth without replacing it with procedural geometry. */
+.petal{z-index:1;pointer-events:none;transform-style:preserve-3d;mix-blend-mode:screen;opacity:.018;transition:opacity .45s ease,filter .45s ease}
+.petal span{display:block;background-image:url("./assets/sovereign-countermirror.webp");background-size:cover;background-position:center;transform:translate3d(calc(var(--mx) * 1px),calc(var(--my) * 1px),0) scale(1.018);transform-origin:64% 48%;transition:transform .52s cubic-bezier(.2,.8,.2,1),filter .45s ease}
+.petal-machine{clip-path:polygon(49% 8%,61.7% 8%,64.8% 25%,64.1% 78%,48.8% 78%);-webkit-mask-image:radial-gradient(ellipse 12% 36% at 57% 44%,#000 0%,rgba(0,0,0,.95) 54%,transparent 100%);mask-image:radial-gradient(ellipse 12% 36% at 57% 44%,#000 0%,rgba(0,0,0,.95) 54%,transparent 100%)}
+.petal-maker{clip-path:polygon(57.5% 0,68.5% 0,68% 79%,58.4% 79%);-webkit-mask-image:radial-gradient(ellipse 7% 40% at 63.4% 42%,#000 0%,rgba(0,0,0,.94) 52%,transparent 100%);mask-image:radial-gradient(ellipse 7% 40% at 63.4% 42%,#000 0%,rgba(0,0,0,.94) 52%,transparent 100%)}
+.petal-reality{clip-path:polygon(62% 10%,74.6% 10%,75% 79%,62.4% 79%);-webkit-mask-image:radial-gradient(ellipse 11% 35% at 68% 45%,#000 0%,rgba(0,0,0,.95) 54%,transparent 100%);mask-image:radial-gradient(ellipse 11% 35% at 68% 45%,#000 0%,rgba(0,0,0,.95) 54%,transparent 100%)}
+.petal-machine span{filter:brightness(1.12) saturate(1.18) hue-rotate(-8deg)}
+.petal-maker span{filter:brightness(1.13) saturate(.82) sepia(.18)}
+.petal-reality span{filter:brightness(1.08) saturate(1.04) hue-rotate(28deg)}
+
+#app[data-hover="machine"] .petal-machine,
+#app.detail[data-world="machine"] .petal-machine{opacity:.18}
+#app[data-hover="maker"] .petal-maker,
+#app.detail[data-world="maker"] .petal-maker{opacity:.22}
+#app[data-hover="reality"] .petal-reality,
+#app.detail[data-world="reality"] .petal-reality{opacity:.18}
+#app.detail .countermirror-plate img{filter:brightness(.72) saturate(.72) contrast(1.12)}
+#app.detail[data-world="machine"] .petal-machine span{transform:translate3d(calc(-15px + var(--mx) * 3px),calc(-3px + var(--my) * 2px),54px) rotateY(-4deg) scale(1.022)}
+#app.detail[data-world="maker"] .petal-maker span{transform:translate3d(calc(var(--mx) * 2px),calc(-9px + var(--my) * 2px),70px) scale(1.025);filter:brightness(1.36) saturate(.9) sepia(.25)}
+#app.detail[data-world="reality"] .petal-reality span{transform:translate3d(calc(16px + var(--mx) * 3px),calc(1px + var(--my) * 2px),52px) rotateY(4deg) scale(1.022)}
+
+.sovereign-axis{
+  position:absolute;z-index:2;left:63.65%;top:18%;width:1px;height:54%;pointer-events:none;
+  background:linear-gradient(to bottom,transparent 0%,rgba(255,235,203,.20) 10%,rgba(255,223,177,.82) 42%,rgba(255,102,92,.68) 63%,rgba(255,236,208,.72) 82%,transparent 100%);
+  box-shadow:0 0 7px rgba(255,218,164,.42),0 0 32px rgba(255,102,92,.14);
+  opacity:.36;transform:translate3d(calc(var(--mx) * 2px),calc(var(--my) * 1px),18px) rotate(-.8deg);transform-origin:50% 50%;transition:opacity .45s ease,box-shadow .45s ease
+}
+#app[data-hover] .sovereign-axis,#app.detail .sovereign-axis{opacity:.72;box-shadow:0 0 9px rgba(255,225,181,.66),0 0 48px rgba(255,102,92,.22)}
+.pressure-halo{position:absolute;z-index:0;left:52.5%;top:12%;width:23%;height:69%;border:1px solid rgba(255,226,184,.07);border-radius:49% 51% 52% 48%/43% 44% 56% 57%;filter:blur(.2px);opacity:.28;transform:perspective(900px) rotateY(calc(var(--mx) * 2deg)) rotateX(calc(var(--my) * -1deg)) scale(calc(1 + var(--drag-y) * .002));transition:opacity .45s ease,border-color .45s ease}
+#app.detail .pressure-halo{opacity:.62;border-color:rgba(255,102,92,.13)}
+.return-thread{position:absolute;z-index:1;left:64%;top:4%;height:22%;width:1px;pointer-events:none;background:linear-gradient(to top,rgba(255,222,176,.22),transparent);transform-origin:bottom;opacity:.26}
+.return-thread-a{transform:rotate(7deg) translateX(calc(var(--mx) * 5px))}
+.return-thread-b{transform:rotate(-5deg) translateX(calc(var(--mx) * -4px));left:62.8%;height:18%;opacity:.16}
+
+.brand,.coral-state,.manifesto,.detail-copy,.cycle-index,.world-nav,.portal-hotspots,.unity-label,.back,.detail-title,.sub-nav,.hint{position:absolute;z-index:8}
+.brand{top:max(18px,calc(env(safe-area-inset-top) + 10px));left:max(24px,calc(env(safe-area-inset-left) + 22px));display:flex;align-items:center;min-height:38px;gap:12px;color:var(--bone);pointer-events:none;text-shadow:0 2px 20px rgba(0,0,0,.8)}
+.brand-mark{width:40px;height:2px;display:grid;grid-template-columns:1.2fr .7fr .9fr .45fr;gap:3px}
+.brand-mark i:nth-child(1){background:var(--machine)}
+.brand-mark i:nth-child(2){background:var(--maker)}
+.brand-mark i:nth-child(3){background:var(--reality)}
+.brand-mark i:nth-child(4){background:var(--gold)}
+.brand strong{font-size:11px;letter-spacing:.25em;font-weight:790;white-space:nowrap}
+.brand small{margin-left:4px;padding-left:16px;border-left:1px solid var(--hair);color:var(--bone-dim);font-size:8.5px;letter-spacing:.20em;font-weight:560;white-space:nowrap}
+
+.coral-state{top:max(19px,calc(env(safe-area-inset-top) + 11px));right:max(25px,calc(env(safe-area-inset-right) + 22px));display:flex;align-items:center;gap:9px;min-height:36px;color:var(--bone-dim);font-size:8px;letter-spacing:.22em;font-weight:600;pointer-events:none;text-shadow:0 2px 18px rgba(0,0,0,.9)}
+.coral-state i{width:7px;height:7px;border:1px solid rgba(255,102,92,.74);transform:rotate(45deg);box-shadow:0 0 14px rgba(255,102,92,.16)}

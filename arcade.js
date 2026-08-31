@@ -27,13 +27,13 @@
     const closeIndex = baseSource.lastIndexOf('})();');
     if (closeIndex < 0) throw new Error('Arcade source terminator was not found.');
 
-    // BECOME: orthogonal worlds → social maximin → compact rapid entry →
-    // experiential objectives → mandatory “Imagine that you/you're” scene opening.
     const completeSource = `${baseSource.slice(0, closeIndex)}\n${roleLogicSource}\n${perceiveSource}\n${becomeSource}\n${baseSource.slice(closeIndex)}`;
     Function(completeSource)();
+    window.dispatchEvent(new CustomEvent('dreamunity:arcade-ready'));
   }).catch((error) => {
     console.error(error);
     const hint = document.getElementById('hint');
-    if (hint) hint.textContent = 'ARCADE COULD NOT INITIALISE';
+    if (hint) hint.textContent = 'THE WORLD COULD NOT INITIALISE';
+    window.dispatchEvent(new CustomEvent('dreamunity:arcade-error', { detail: { message: String(error?.message || error) } }));
   });
 })();
