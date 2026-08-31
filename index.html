@@ -13,7 +13,7 @@
 </head>
 <body>
   <main id="app" aria-label="Dream Unity interactive simulation">
-    <canvas id="world" aria-label="Interactive Dream Unity field. Drag any part of the complete 3D form to orbit it."></canvas>
+    <canvas id="world" aria-label="Interactive Dream Unity field. Drag any emblem or any part of the complete 3D form to orbit it."></canvas>
     <audio id="scoreAudio" src="./assets/i-remember-tomorrow.mp3" preload="auto" autoplay loop></audio>
     <div class="vignette" aria-hidden="true"></div>
     <div class="brand"><i></i><span>DREAM UNITY</span><small>SOVEREIGN RESONANCE</small></div>
@@ -35,9 +35,9 @@
     </aside>
     <button class="back" id="back" type="button" aria-label="Return to Dream Unity overview"><span>←</span><b>UNITY</b></button>
     <div class="detail-title" id="detailTitle" aria-live="polite"><small id="detailNumber">01</small><strong id="detailName">DREAM MACHINE</strong></div>
-    <button class="world-label" id="label-machine" data-world="machine" type="button"><span class="world-index">01</span><span class="world-copy"><strong>DREAM MACHINE</strong><small>PERCEIVE · MODEL · PREDICT</small></span><i aria-hidden="true"></i></button>
-    <button class="world-label" id="label-maker" data-world="maker" type="button"><span class="world-index">02</span><span class="world-copy"><strong>DREAM MAKER</strong><small>INTEND · ACT · BECOME</small></span><i aria-hidden="true"></i></button>
-    <button class="world-label" id="label-reality" data-world="reality" type="button"><span class="world-index">03</span><span class="world-copy"><strong>DREAM WORLD</strong><small>MATTER · STRUCTURE · EMERGE</small></span><i aria-hidden="true"></i></button>
+    <button class="world-label" id="label-machine" data-world="machine" type="button" aria-label="Dream Machine — Perceive, Model, Predict"><span class="world-index">01</span><span class="world-copy"><strong>DREAM MACHINE</strong><small>PERCEIVE · MODEL · PREDICT</small></span><i aria-hidden="true"></i></button>
+    <button class="world-label" id="label-maker" data-world="maker" type="button" aria-label="Dream Maker — Intend, Act, Become"><span class="world-index">02</span><span class="world-copy"><strong>DREAM MAKER</strong><small>INTEND · ACT · BECOME</small></span><i aria-hidden="true"></i></button>
+    <button class="world-label" id="label-reality" data-world="reality" type="button" aria-label="Dream World — Matter, Structure, Emerge"><span class="world-index">03</span><span class="world-copy"><strong>DREAM WORLD</strong><small>MATTER · STRUCTURE · EMERGE</small></span><i aria-hidden="true"></i></button>
     <div class="unity-label" id="unityLabel" aria-hidden="true">
       <span></span>
       <b>UNITY</b>
@@ -46,7 +46,7 @@
     <button class="sub-label" id="sub-0" type="button"><strong>PERCEIVE</strong></button>
     <button class="sub-label" id="sub-1" type="button"><strong>MODEL</strong></button>
     <button class="sub-label" id="sub-2" type="button"><strong>PREDICT</strong></button>
-    <div class="hint" id="hint">DRAG ANY PART OF THE WHOLE FORM · TRACKPAD SWIPE TO ORBIT · PINCH TO ZOOM</div>
+    <div class="hint" id="hint">DRAG ANY EMBLEM OR THE WHOLE FORM · TRACKPAD SWIPE TO ORBIT · PINCH TO ZOOM</div>
     <div class="loading" id="loading"><span></span></div>
     <section class="arcade" id="arcade" aria-hidden="true" aria-label="Dream Unity arcade">
       <canvas id="gameCanvas" aria-label="Playable Dream Unity game"></canvas>
@@ -70,7 +70,7 @@
   <script>window.setTimeout(function(){var el=document.getElementById('loading');if(el)el.classList.add('hide');},1800);</script>
   <script src="./light-theme.js?v=20260830-awaken-true-war-3"></script>
   <script src="./unity-ui.js?v=20260830-awaken-true-war-2"></script>
-  <script src="./main.js?v=20260830-awaken-true-war-2&amp;sr=21&amp;ir=25c"></script>
+  <script src="./main.js?v=20260830-awaken-true-war-2&amp;sr=21&amp;ir=25c&amp;em=26"></script>
   <script src="./arcade.js?v=20260827-fighter-jet-performance-20"></script>
 </body>
 </html>

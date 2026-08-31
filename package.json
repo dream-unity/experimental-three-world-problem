@@ -3,12 +3,13 @@
   "version": "1.26.0",
   "private": true,
   "type": "module",
-  "description": "Dream Unity Sovereign Return: one connected white Stage Coral world-cycle with whole-field orbit, visible game controls and nine compatible games.",
+  "description": "Dream Unity Sovereign Return: one connected white Stage Coral world-cycle with whole-field orbit, enlarged internal world emblems, visible game controls and nine compatible games.",
   "scripts": {
     "test": "node tests/remembered-tomorrow.test.mjs && node tests/role-drift.test.mjs && node tests/validate-imagine-17.mjs && node tests/voice-disabled.test.mjs && node tests/voice-runtime.test.mjs && node tests/backend-runtime.test.mjs",
     "test:browser": "node tests/browser-regression.mjs",
     "test:interactions": "node tests/interaction-recovery.test.mjs",
-    "test:all": "npm test && npm run test:interactions && npm run test:browser"
+    "test:emblems": "node tests/world-emblems.test.mjs",
+    "test:all": "npm test && npm run test:interactions && npm run test:emblems && npm run test:browser"
   },
   "devDependencies": {
     "playwright": "^1.62.1"

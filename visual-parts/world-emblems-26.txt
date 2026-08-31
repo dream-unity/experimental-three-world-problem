@@ -1,0 +1,321 @@
+  // World Emblems 26 — enlarge the three portal symbols and fuse each title
+  // into its own projected 3D emblem. The DOM buttons remain accessible and
+  // draggable, but no longer sit outside or visually detach from the symbols.
+  const WE_RELEASE = '20260831-world-emblems-26';
+  const WE_SCALE = {
+    machine: 1.025,
+    maker: 0.985,
+    reality: 1.045,
+  };
+  const WE_RGB = {
+    machine: '0,189,232',
+    maker: '0,201,131',
+    reality: '116,72,255',
+  };
+
+  const weBaseOverviewPositions = overviewPositions;
+  const weBaseUpdateLabels = updateLabels;
+  const weBaseDrawNode = rtDrawNode;
+
+  function weRadius(point, key) {
+    const responsive = width < 520 ? 0.106 : width < 860 ? 0.104 : width < 1280 ? 0.109 : 0.114;
+    const minimum = width < 760 ? 36 : 64;
+    const maximum = width < 760 ? 61 : 112;
+    return clamp(unit * responsive * point.f * WE_SCALE[key], minimum, maximum);
+  }
+
+  overviewPositions = function worldEmblemPositions(t) {
+    const positions = weBaseOverviewPositions(t);
+    worldKeys.forEach((key) => {
+      const point = positions[key];
+      if (!point) return;
+      point.r = weRadius(point, key);
+    });
+    return positions;
+  };
+
+  function weDrawChassis(position, kind, t, alpha, focus) {
+    const radius = position.r * (1 + focus * 0.045);
+    const color = WORLD[kind].rgb;
+    const motion = reduced ? 0 : t;
+    ctx.save();
+    ctx.translate(position.x, position.y);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    const aura = ctx.createRadialGradient(0, 0, radius * 0.18, 0, 0, radius * 1.08);
+    aura.addColorStop(0, rgba(RT_WHITE, alpha * 0.50));
+    aura.addColorStop(0.54, rgba(color, alpha * (0.035 + focus * 0.025)));
+    aura.addColorStop(0.79, rgba(color, alpha * (0.018 + focus * 0.018)));
+    aura.addColorStop(1, rgba(color, 0));
+    ctx.fillStyle = aura;
+    ctx.beginPath();
+    ctx.arc(0, 0, radius * 1.08, 0, TAU);
+    ctx.fill();
+
+    for (let ring = 0; ring < 3; ring += 1) {
+      const rr = radius * (0.81 + ring * 0.085);
+      const start = motion * (0.012 + ring * 0.006) + ring * 1.74;
+      const span = Math.PI * (0.56 + ring * 0.10);
+      ctx.strokeStyle = rgba(ring === 1 ? RT_GOLD : color, alpha * (0.17 + focus * 0.10 - ring * 0.025));
+      ctx.lineWidth = ring === 1 ? 0.86 + focus * 0.25 : 0.58 + focus * 0.18;
+      ctx.beginPath();
+      ctx.arc(0, 0, rr, start, start + span);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(0, 0, rr, start + Math.PI, start + Math.PI + span * 0.72);
+      ctx.stroke();
+    }
+
+    for (let index = 0; index < 8; index += 1) {
+      const angle = index / 8 * TAU + (kind === 'maker' ? motion * 0.009 : 0);
+      const inner = radius * (index % 2 ? 0.90 : 0.94);
+      const outer = radius * (index % 2 ? 0.97 : 1.025);
+      ctx.strokeStyle = rgba(index % 3 === 1 ? RT_GOLD : color, alpha * (0.22 + focus * 0.10));
+      ctx.lineWidth = index % 2 ? 0.52 : 0.78;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(angle) * inner, Math.sin(angle) * inner);
+      ctx.lineTo(Math.cos(angle) * outer, Math.sin(angle) * outer);
+      ctx.stroke();
+    }
+
+    if (kind === 'machine') {
+      ctx.strokeStyle = rgba(color, alpha * (0.20 + focus * 0.08));
+      ctx.lineWidth = 0.60;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, radius * 0.91, radius * 0.25, 0.38 + motion * 0.012, 0, TAU);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.ellipse(0, 0, radius * 0.91, radius * 0.25, -0.38 - motion * 0.009, 0, TAU);
+      ctx.stroke();
+    } else if (kind === 'maker') {
+      for (let index = 0; index < 3; index += 1) {
+        const start = motion * 0.024 + index * TAU / 3;
+        ctx.strokeStyle = rgba(index === 2 ? RT_GOLD : color, alpha * (0.19 + focus * 0.08));
+        ctx.lineWidth = index === 1 ? 0.86 : 0.56;
+        ctx.beginPath();
+        ctx.arc(0, 0, radius * (0.78 + index * 0.055), start, start + Math.PI * 0.72);
+        ctx.stroke();
+      }
+    } else {
+      ctx.strokeStyle = rgba(color, alpha * (0.22 + focus * 0.08));
+      ctx.lineWidth = 0.68;
+      ctx.beginPath();
+      for (let index = 0; index <= 6; index += 1) {
+        const angle = -Math.PI / 2 + index / 6 * TAU;
+        const x = Math.cos(angle) * radius * 0.90;
+        const y = Math.sin(angle) * radius * 0.90;
+        index ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+      }
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  rtDrawNode = function worldEmblemNode(position, kind, t, alpha = 1, focus = 0) {
+    if (!position || position.r <= 1 || alpha <= 0.002) return;
+    weDrawChassis(position, kind, t, alpha, focus);
+    weBaseDrawNode(position, kind, t, alpha, focus);
+
+    const radius = position.r * (1 + focus * 0.045);
+    const color = WORLD[kind].rgb;
+    ctx.save();
+    ctx.translate(position.x, position.y);
+    ctx.strokeStyle = rgba(color, alpha * (0.36 + focus * 0.18));
+    ctx.lineWidth = 0.74 + focus * 0.28;
+    ctx.setLineDash([radius * 0.055, radius * 0.032]);
+    ctx.beginPath();
+    ctx.arc(0, 0, radius * 0.985, -Math.PI * 0.44, Math.PI * 0.42);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = rgba(RT_GOLD, alpha * (0.70 + focus * 0.18));
+    ctx.save();
+    ctx.rotate(Math.PI / 4);
+    ctx.fillRect(-1.65, -1.65 - radius * 0.985, 3.3, 3.3);
+    ctx.restore();
+    ctx.restore();
+  };
+
+  function weInstallLabelStyle() {
+    if (document.querySelector('style[data-world-emblems]')) return;
+    const style = document.createElement('style');
+    style.dataset.worldEmblems = WE_RELEASE;
+    style.textContent = `
+      .world-label.world-emblem-label{
+        width:var(--we-diameter)!important;
+        height:var(--we-diameter)!important;
+        min-width:0!important;
+        min-height:0!important;
+        padding:0!important;
+        display:block!important;
+        border:0!important;
+        border-left:0!important;
+        border-radius:50%!important;
+        background:transparent!important;
+        box-shadow:none!important;
+        overflow:visible!important;
+        text-align:center!important;
+        transform:translate(-50%,-50%)!important;
+        transform-origin:50% 50%!important;
+        isolation:isolate;
+      }
+      .world-label.world-emblem-label::before{
+        content:"";
+        position:absolute;
+        z-index:-1;
+        inset:11%;
+        border-radius:50%;
+        pointer-events:none;
+        background:radial-gradient(circle at 50% 44%,rgba(255,255,255,.96) 0 22%,rgba(255,255,255,.79) 48%,rgba(var(--we-rgb),.055) 70%,rgba(255,255,255,0) 100%);
+        box-shadow:inset 0 0 0 1px rgba(var(--we-rgb),.11),0 10px 32px rgba(11,16,32,.025);
+      }
+      .world-label.world-emblem-label::after{
+        content:""!important;
+        position:absolute!important;
+        inset:2.7%!important;
+        border:1px solid rgba(var(--we-rgb),.16)!important;
+        border-radius:50%!important;
+        pointer-events:none!important;
+        transition:border-color .18s ease,transform .18s ease!important;
+      }
+      .world-label.world-emblem-label>.world-index{
+        position:absolute;
+        left:50%;
+        top:20%;
+        width:auto;
+        transform:translateX(-50%);
+        color:rgba(11,16,32,.53)!important;
+        font:700 var(--we-index-size)/1 ui-monospace,SFMono-Regular,Menlo,monospace!important;
+        letter-spacing:.26em!important;
+        text-indent:.26em;
+      }
+      .world-label.world-emblem-label>.world-index::after{
+        content:" · PORTAL";
+        color:rgba(var(--we-rgb),.74);
+        font-weight:750;
+      }
+      .world-label.world-emblem-label>.world-copy{
+        position:absolute;
+        left:50%;
+        top:55%;
+        width:82%;
+        min-width:0;
+        display:flex!important;
+        flex-direction:column!important;
+        align-items:center!important;
+        gap:var(--we-gap)!important;
+        transform:translate(-50%,-50%);
+      }
+      .world-label.world-emblem-label>.world-copy strong{
+        position:relative;
+        display:block;
+        width:100%;
+        padding:var(--we-title-pad) 2px;
+        overflow:visible;
+        color:#0b1020!important;
+        background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.94) 15%,rgba(255,255,255,.97) 50%,rgba(255,255,255,.94) 85%,rgba(255,255,255,0));
+        border-top:1px solid rgba(var(--we-rgb),.20);
+        border-bottom:1px solid rgba(var(--we-rgb),.20);
+        font-size:var(--we-title-size)!important;
+        font-weight:900!important;
+        line-height:1.1!important;
+        letter-spacing:.17em!important;
+        text-indent:.17em;
+        white-space:nowrap!important;
+        text-shadow:0 1px 0 rgba(255,255,255,.96),0 0 12px rgba(255,255,255,.88);
+      }
+      .world-label.world-emblem-label>.world-copy small{
+        display:block!important;
+        max-width:94%;
+        overflow:hidden;
+        color:rgba(11,16,32,.58)!important;
+        font:650 var(--we-subtitle-size)/1.15 ui-monospace,SFMono-Regular,Menlo,monospace!important;
+        letter-spacing:.105em!important;
+        text-indent:.105em;
+        white-space:nowrap!important;
+        text-overflow:clip;
+        text-shadow:0 1px 0 #fff,0 0 8px #fff;
+      }
+      .world-label.world-emblem-label>i{display:none!important}
+      .world-label.world-emblem-label:hover,
+      .world-label.world-emblem-label:focus-visible,
+      .world-label.world-emblem-label.dragging{
+        background:transparent!important;
+        transform:translate(-50%,-50%) scale(1.028)!important;
+        outline:none!important;
+      }
+      .world-label.world-emblem-label:hover::after,
+      .world-label.world-emblem-label:focus-visible::after,
+      .world-label.world-emblem-label.dragging::after{
+        border-color:rgba(var(--we-rgb),.56)!important;
+        transform:scale(1.025);
+      }
+      .world-label.world-emblem-label:focus-visible>.world-copy strong{
+        box-shadow:0 0 0 2px rgba(var(--we-rgb),.28);
+      }
+      @media(max-width:760px){
+        .world-label.world-emblem-label>.world-index::after{content:""}
+        .world-label.world-emblem-label>.world-copy{width:86%;top:56%}
+        .world-label.world-emblem-label>.world-copy strong{letter-spacing:.11em!important;text-indent:.11em}
+        .world-label.world-emblem-label>.world-copy small{letter-spacing:.035em!important;text-indent:.035em}
+      }
+      @media(prefers-reduced-motion:reduce){
+        .world-label.world-emblem-label,.world-label.world-emblem-label::after{transition:none!important}
+      }
+    `;
+    document.head.append(style);
+  }
+
+  weInstallLabelStyle();
+  worldKeys.forEach((key) => labels[key]?.classList.add('world-emblem-label'));
+
+  updateLabels = function worldEmblemLabels() {
+    weBaseUpdateLabels();
+    const overviewAlpha = clamp(1 - ease(viewMix) * 1.42, 0, 1);
+    worldKeys.forEach((key) => {
+      const element = labels[key];
+      const point = worldScreen[key];
+      if (!element || !point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) return;
+      const diameter = clamp(point.r * 1.52, width < 760 ? 57 : 98, width < 760 ? 92 : 170);
+      element.classList.add('world-emblem-label');
+      element.style.left = `${point.x}px`;
+      element.style.top = `${point.y}px`;
+      element.style.setProperty('--we-diameter', `${diameter}px`);
+      element.style.setProperty('--we-rgb', WE_RGB[key]);
+      element.style.setProperty('--we-title-size', `${clamp(diameter * 0.064, width < 760 ? 5.8 : 7.2, 10.2)}px`);
+      element.style.setProperty('--we-subtitle-size', `${clamp(diameter * 0.0305, 3.8, 5.35)}px`);
+      element.style.setProperty('--we-index-size', `${clamp(diameter * 0.033, 4.0, 5.8)}px`);
+      element.style.setProperty('--we-gap', `${clamp(diameter * 0.047, 3, 7)}px`);
+      element.style.setProperty('--we-title-pad', `${clamp(diameter * 0.020, 1.5, 3.2)}px`);
+      element.style.opacity = `${overviewAlpha}`;
+      element.style.visibility = overviewAlpha > 0.015 ? 'visible' : 'hidden';
+      element.style.pointerEvents = !activeWorld && viewMix < 0.28 ? 'auto' : 'none';
+      element.style.zIndex = `${Math.round(31 + clamp(point.z, -4, 4) * 2)}`;
+    });
+  };
+
+  function weMetrics() {
+    return Object.fromEntries(worldKeys.map((key) => {
+      const point = worldScreen[key];
+      const element = labels[key];
+      const rect = element?.getBoundingClientRect?.();
+      const title = element?.querySelector?.('strong')?.getBoundingClientRect?.();
+      return [key, {
+        radius: Number(point?.r) || 0,
+        world: { x: Number(point?.x) || 0, y: Number(point?.y) || 0 },
+        label: rect ? { x: rect.x + rect.width * 0.5, y: rect.y + rect.height * 0.5, width: rect.width, height: rect.height } : null,
+        title: title ? { x: title.x + title.width * 0.5, y: title.y + title.height * 0.5, width: title.width, height: title.height } : null,
+      }];
+    }));
+  }
+
+  app.dataset.worldEmblems = 'true';
+  app.dataset.worldEmblemVersion = WE_RELEASE;
+  window.__dreamUnityWorldEmblems = Object.freeze({
+    version: WE_RELEASE,
+    ready: true,
+    titlesInside: true,
+    largerSymbols: true,
+    metrics: weMetrics,
+  });
+  updateLabels();

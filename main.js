@@ -5,6 +5,7 @@
   const SOVEREIGN_RETURN_VERSION = '20260831-sovereign-return-21';
   const INTERACTION_RECOVERY_VERSION = '20260831-fluid-whole-field-orbit-25';
   const FLUID_RESPONSE_VERSION = '20260831-fluid-response-hold-25c';
+  const WORLD_EMBLEM_VERSION = '20260831-world-emblems-26';
   const baseParts = Array.from({ length: 6 }, (_, index) => {
     const part = String(index + 1).padStart(2, '0');
     const cacheVersion = index >= 4 ? BASE_INTERACTION_VERSION : VERSION;
@@ -15,6 +16,7 @@
     ...[1, 2, 3].map((part) => `./visual-parts/sovereign-return-21-${String(part).padStart(2, '0')}.txt?v=${SOVEREIGN_RETURN_VERSION}`),
     `./visual-parts/interaction-recovery-22.txt?v=${INTERACTION_RECOVERY_VERSION}`,
     `./visual-parts/fluid-response-25.txt?v=${FLUID_RESPONSE_VERSION}`,
+    `./visual-parts/world-emblems-26.txt?v=${WORLD_EMBLEM_VERSION}`,
   ];
   const parts = [...baseParts, ...overridePaths];
   const loader = document.getElementById('loading');

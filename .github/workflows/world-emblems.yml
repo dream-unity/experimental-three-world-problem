@@ -1,0 +1,130 @@
+name: Validate enlarged world emblems and embedded titles
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - index.html
+      - main.js
+      - visual-parts/world-emblems-26.txt
+      - tests/world-emblems.test.mjs
+      - package.json
+      - .github/workflows/world-emblems.yml
+  push:
+    branches: [main]
+    paths:
+      - index.html
+      - main.js
+      - visual-parts/world-emblems-26.txt
+      - tests/world-emblems.test.mjs
+      - package.json
+      - .github/workflows/world-emblems.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: world-emblems-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+
+      - name: Use Node
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.19.0'
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Validate enlarged symbols, embedded titles and rigid whole-field drag
+        env:
+          DU_EMBLEM_SCREENSHOT_DIR: emblem-artifacts
+        run: npm run test:emblems
+
+      - name: Publish desktop and mobile emblem evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dream-unity-world-emblems-${{ github.sha }}
+          path: emblem-artifacts
+          if-no-files-found: warn
+          retention-days: 14
+
+  verify-live:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - name: Checkout validated source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Use Node
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.19.0'
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Wait for GitHub Pages emblem source
+        shell: bash
+        env:
+          PAGE_URL: https://dream-unity.github.io/experimental-three-world-problem
+        run: |
+          set -euo pipefail
+          files=(index.html main.js visual-parts/world-emblems-26.txt)
+          live_dir=$(mktemp -d)
+          trap 'rm -rf "$live_dir"' EXIT
+          mkdir -p "$live_dir/visual-parts"
+          matched=false
+          for attempt in $(seq 1 60); do
+            matched=true
+            for path in "${files[@]}"; do
+              if ! curl --fail --location --silent --show-error \
+                --connect-timeout 10 --max-time 30 --retry 2 --retry-all-errors --retry-delay 2 \
+                "$PAGE_URL/$path?source=${GITHUB_SHA}&attempt=$attempt" --output "$live_dir/$path"; then
+                matched=false
+                break
+              fi
+              if ! cmp --silent "$path" "$live_dir/$path"; then
+                matched=false
+                break
+              fi
+            done
+            if [ "$matched" = true ]; then break; fi
+            echo "World Emblems have not propagated yet: attempt $attempt of 60"
+            sleep 5
+          done
+          test "$matched" = true
+          grep -q 'em=26' "$live_dir/index.html"
+          grep -q "WORLD_EMBLEM_VERSION = '20260831-world-emblems-26'" "$live_dir/main.js"
+          grep -q "WE_RELEASE = '20260831-world-emblems-26'" "$live_dir/visual-parts/world-emblems-26.txt"
+          grep -q 'titlesInside: true' "$live_dir/visual-parts/world-emblems-26.txt"
+          grep -q 'largerSymbols: true' "$live_dir/visual-parts/world-emblems-26.txt"
+
+      - name: Exercise enlarged emblems on live GitHub Pages
+        env:
+          DU_EMBLEM_BASE_URL: https://dream-unity.github.io/experimental-three-world-problem/?source=${{ github.sha }}
+        run: npm run test:emblems
