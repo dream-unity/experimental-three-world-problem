@@ -1,0 +1,59 @@
+name: God's Eye View Cloud Run smoke test
+
+on:
+  push:
+    branches:
+      - cloudrun-gods-eye-view
+    paths:
+      - 'cloudrun-gods-eye-view/**'
+      - '.github/workflows/gev-cloudrun-smoke.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out deployment wrapper
+        uses: actions/checkout@v4
+
+      - name: Build the Cloud Run image
+        run: docker build --pull --tag gev-cloudrun ./cloudrun-gods-eye-view
+
+      - name: Start the container
+        run: |
+          docker run --detach --name gev-cloudrun-test \
+            --publish 8080:8080 \
+            --env PORT=8080 \
+            gev-cloudrun
+
+      - name: Wait for the real app server
+        run: |
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent http://127.0.0.1:8080/ > /tmp/gev-index.html; then
+              break
+            fi
+            if ! docker inspect --format='{{.State.Running}}' gev-cloudrun-test | grep -q true; then
+              docker logs gev-cloudrun-test
+              exit 1
+            fi
+            sleep 2
+          done
+          grep -q "God's Eye View" /tmp/gev-index.html
+
+      - name: Confirm a server-side live-data route exists
+        run: |
+          status=$(curl --silent --output /tmp/gev-proxy-response --write-out '%{http_code}' \
+            'http://127.0.0.1:8080/api/opensky/states/all')
+          test "$status" != "404"
+
+      - name: Show diagnostics on failure
+        if: failure()
+        run: docker logs gev-cloudrun-test || true
+
+      - name: Stop container
+        if: always()
+        run: docker rm --force gev-cloudrun-test || true
