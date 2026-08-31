@@ -9,12 +9,13 @@
     wthStyle.dataset.worldTitleHierarchy = WTH_RELEASE;
     wthStyle.textContent = `
       .world-label.world-emblem-label>.world-copy{
-        width:91%!important;
+        width:88%!important;
         top:54.5%!important;
         gap:var(--wth-gap)!important;
       }
       .world-label.world-emblem-label>.world-copy strong{
         width:100%!important;
+        box-sizing:border-box!important;
         padding:var(--wth-title-pad) 1px!important;
         overflow:visible!important;
         color:#060914!important;
@@ -68,7 +69,7 @@
       }
       @media(max-width:760px){
         .world-label.world-emblem-label>.world-copy{
-          width:94%!important;
+          width:91%!important;
           top:55%!important;
           gap:var(--wth-gap)!important;
         }
