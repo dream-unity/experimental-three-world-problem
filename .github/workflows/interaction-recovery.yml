@@ -12,6 +12,7 @@ on:
       - visual-parts/interaction-recovery-22.txt
       - visual-parts/fluid-response-25.txt
       - tests/interaction-recovery.test.mjs
+      - tests/rotation-stability.test.mjs
       - package.json
       - package-lock.json
       - .github/workflows/interaction-recovery.yml
@@ -26,6 +27,7 @@ on:
       - visual-parts/interaction-recovery-22.txt
       - visual-parts/fluid-response-25.txt
       - tests/interaction-recovery.test.mjs
+      - tests/rotation-stability.test.mjs
       - package.json
       - package-lock.json
       - .github/workflows/interaction-recovery.yml
@@ -56,8 +58,10 @@ jobs:
         run: npm ci
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
-      - name: Validate fluid touchpad, touch and pointer orbit plus all game controls
-        run: npm run test:interactions
+      - name: Validate fluid controls and strictly decaying rotation
+        run: |
+          npm run test:interactions
+          node tests/rotation-stability.test.mjs
 
   verify-live:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -79,7 +83,7 @@ jobs:
         run: npm ci
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
-      - name: Wait for GitHub Pages fluid whole-field source
+      - name: Wait for GitHub Pages stable-rotation source
         shell: bash
         env:
           PAGE_URL: https://dream-unity.github.io/experimental-three-world-problem
@@ -110,25 +114,27 @@ jobs:
               if [ "$matched" = false ]; then break; fi
             done
             if [ "$matched" = true ]; then break; fi
-            echo "Fluid Whole-Field Orbit has not propagated yet: attempt $attempt of 60"
+            echo "Stable rotation source has not propagated yet: attempt $attempt of 60"
             sleep 5
           done
           test "$matched" = true
-          grep -q 'main.js?v=20260830-awaken-true-war-2&amp;sr=21&amp;ir=25c' "$live_dir/index.html"
-          grep -q "BASE_INTERACTION_VERSION = '20260831-fluid-base-interaction-25c'" "$live_dir/main.js"
-          grep -q "INTERACTION_RECOVERY_VERSION = '20260831-fluid-whole-field-orbit-25'" "$live_dir/main.js"
-          grep -q "FLUID_RESPONSE_VERSION = '20260831-fluid-response-hold-25c'" "$live_dir/main.js"
+          grep -q 'rot=29b' "$live_dir/index.html"
+          grep -q "FLUID_RESPONSE_VERSION = '20260831-stable-rotation-29b'" "$live_dir/main.js"
           grep -q "IR_RELEASE = '20260831-fluid-whole-field-orbit-25'" "$live_dir/visual-parts/interaction-recovery-22.txt"
-          grep -q "id: 'fluid-whole-field-orbit'" "$live_dir/visual-parts/interaction-recovery-22.txt"
-          grep -q "IR_FLUID_RESPONSE_RELEASE = '20260831-fluid-response-hold-25c'" "$live_dir/visual-parts/fluid-response-25.txt"
-          grep -q 'clearsLegacyPointerRegistry: true' "$live_dir/visual-parts/fluid-response-25.txt"
+          grep -q "IR_FLUID_RESPONSE_RELEASE = '20260831-stable-rotation-29'" "$live_dir/visual-parts/fluid-response-25.txt"
+          grep -q 'IR_INERTIA_DECAY = 3.25' "$live_dir/visual-parts/fluid-response-25.txt"
+          grep -q 'acceleratesAfterRelease: false' "$live_dir/visual-parts/fluid-response-25.txt"
+          grep -q 'autonomousRotation: false' "$live_dir/visual-parts/fluid-response-25.txt"
+          ! grep -q 'Math.exp(dt \* 2.95)' "$live_dir/visual-parts/fluid-response-25.txt"
+          ! grep -q 'irBaseUpdateMotion(dt)' "$live_dir/visual-parts/fluid-response-25.txt"
           grep -q 'overviewPitch = clamp(overviewPitch - dy \* pitchGain, -1.46, 1.46)' "$live_dir/visual-parts/part-06.txt"
-          grep -q 'const decay = Math.exp(-dt \* 2.15)' "$live_dir/visual-parts/part-06.txt"
           grep -q 'overviewPitch = clamp(pinchState.overviewPitch - midDy \* 0.0088, -1.46, 1.46)' "$live_dir/visual-parts/part-05.txt"
           grep -q 'trackpadYaw: 0.0072' "$live_dir/visual-parts/interaction-recovery-22.txt"
           ! grep -Eq 'irDeformations|connectedWorldCatmull|PATH BENDING WITH WORLD' "$live_dir/visual-parts/interaction-recovery-22.txt"
           grep -q 'z-index:10000!important' "$live_dir/interaction-recovery.css"
-      - name: Exercise touchpad, touch, every whole-field handle and all nine games on live Pages
+      - name: Exercise controls and prove rotation never accelerates on live Pages
         env:
           DU_INTERACTION_BASE_URL: https://dream-unity.github.io/experimental-three-world-problem/?source=${{ github.sha }}
-        run: npm run test:interactions
+        run: |
+          npm run test:interactions
+          node tests/rotation-stability.test.mjs
