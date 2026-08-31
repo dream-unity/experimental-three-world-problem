@@ -58,6 +58,11 @@ await page.waitForFunction(() => window.__dreamUnityInteractions?.ready === true
 await page.waitForFunction(() => window.__interactionArcadeReady === true);
 await page.waitForFunction(() => document.querySelector('#label-machine')?.offsetWidth > 0);
 await page.waitForFunction(() => window.__dreamUnityInteractions.screen().machine.r > 20);
+await page.waitForFunction(() => {
+  const loader = document.querySelector('#loading');
+  const style = loader ? getComputedStyle(loader) : null;
+  return !loader || (loader.classList.contains('hide') && style?.visibility === 'hidden' && Number.parseFloat(style.opacity || '1') <= 0.01);
+});
 
 const readLabels = () => page.evaluate(() => Object.fromEntries(
   ['machine', 'maker', 'reality'].map(key => {
