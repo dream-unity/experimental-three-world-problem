@@ -54,7 +54,7 @@ jobs:
             --output /tmp/flight-body \
             'http://127.0.0.1:8080/api/opensky?lat=-37.8136&lon=144.9631'
           grep -qi '^X-Flight-Source: adsb.lol' /tmp/flight-headers
-          node -e "const d=require('/tmp/flight-body'); if(!Array.isArray(d.states)) process.exit(1)"
+          node -e "const fs=require('fs'); const d=JSON.parse(fs.readFileSync('/tmp/flight-body','utf8')); if(!Array.isArray(d.states)) process.exit(1); console.log('Melbourne live aircraft:', d.states.length)"
 
       - name: Soak live aircraft across four regions
         run: |
@@ -68,7 +68,7 @@ jobs:
             curl --fail --silent --show-error \
               "http://127.0.0.1:8080/api/opensky?lat=${lat}&lon=${lon}" \
               > /tmp/region.json
-            node -e "const d=require('/tmp/region.json'); if(!Array.isArray(d.states)) process.exit(1)"
+            LAT="$lat" LON="$lon" node -e "const fs=require('fs'); const d=JSON.parse(fs.readFileSync('/tmp/region.json','utf8')); if(!Array.isArray(d.states)) process.exit(1); console.log(process.env.LAT+','+process.env.LON+': '+d.states.length+' live aircraft')"
             sleep 2
           done
           test "$(docker inspect --format='{{.State.Running}}' gev-free-test)" = true
