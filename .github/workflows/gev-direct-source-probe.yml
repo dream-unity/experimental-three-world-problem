@@ -1,0 +1,63 @@
+name: Probe direct God's Eye View sources
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/gev-direct-source-probe.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.19.0'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Probe public feeds from Dream Unity origin
+        env:
+          PAGE_URL: https://dream-unity.github.io/experimental-three-world-problem/gods-eye-view/
+        run: |
+          node <<'NODE'
+          const { chromium } = require('playwright');
+          (async () => {
+            const browser = await chromium.launch({ headless: true });
+            const page = await browser.newPage();
+            await page.goto(process.env.PAGE_URL, { waitUntil: 'domcontentloaded', timeout: 90000 });
+            const sources = {
+              radio: 'https://de1.api.radio-browser.info/json/stations/search?hidebroken=true&limit=20&order=clickcount&reverse=true&has_geo_info=true',
+              aircraft: 'https://api.adsb.lol/v2/lat/-37.8136/lon/144.9631/dist/250',
+              earthquakes: 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson',
+              weather: 'https://api.open-meteo.com/v1/forecast?latitude=-37.8136&longitude=144.9631&current=temperature_2m,wind_speed_10m',
+              geocode: 'https://nominatim.openstreetmap.org/search?q=Melbourne&format=json&limit=3',
+              launches: 'https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=5',
+              satellites: 'https://www.orbicentral.net/gp.php?GROUP=STATIONS&FORMAT=TLE',
+            };
+            for (const [name, url] of Object.entries(sources)) {
+              const result = await page.evaluate(async ({ name, url }) => {
+                try {
+                  const controller = new AbortController();
+                  const timer = setTimeout(() => controller.abort(), 20000);
+                  const response = await fetch(url, { cache: 'no-store', signal: controller.signal });
+                  clearTimeout(timer);
+                  const text = await response.text();
+                  return { name, ok: response.ok, status: response.status, bytes: text.length, sample: text.slice(0, 120) };
+                } catch (error) {
+                  return { name, ok: false, error: String(error) };
+                }
+              }, { name, url });
+              console.log('SOURCE', JSON.stringify(result));
+            }
+            await browser.close();
+          })().catch(error => { console.error(error); process.exit(1); });
+          NODE
