@@ -1,12 +1,15 @@
 (() => {
   'use strict';
   const VERSION = '20260830-awaken-true-war-2';
+  const BASE_INTERACTION_VERSION = '20260831-fluid-base-interaction-25c';
   const SOVEREIGN_RETURN_VERSION = '20260831-sovereign-return-21';
   const INTERACTION_RECOVERY_VERSION = '20260831-fluid-whole-field-orbit-25';
-  const FLUID_RESPONSE_VERSION = '20260831-fluid-response-hold-25b';
-  const baseParts = Array.from({ length: 6 }, (_, index) =>
-    `./visual-parts/part-${String(index + 1).padStart(2, '0')}.txt?v=${VERSION}`
-  );
+  const FLUID_RESPONSE_VERSION = '20260831-fluid-response-hold-25c';
+  const baseParts = Array.from({ length: 6 }, (_, index) => {
+    const part = String(index + 1).padStart(2, '0');
+    const cacheVersion = index >= 4 ? BASE_INTERACTION_VERSION : VERSION;
+    return `./visual-parts/part-${part}.txt?v=${cacheVersion}`;
+  });
   const overridePaths = [
     `./visual-parts/remembered-tomorrow-10.txt?v=${VERSION}`,
     ...[1, 2, 3].map((part) => `./visual-parts/sovereign-return-21-${String(part).padStart(2, '0')}.txt?v=${SOVEREIGN_RETURN_VERSION}`),

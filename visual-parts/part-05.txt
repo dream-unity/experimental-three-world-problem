@@ -185,10 +185,12 @@
         detailYaw = pinchState.detailYaw - midDx * 0.0032;
         detailPitch = clamp(pinchState.detailPitch - midDy * 0.0032, -0.314, 0.314);
       } else {
-        overviewZoom = clamp(pinchState.overviewZoom * ratio, 0.88, 1.12);
-        overviewRoll = clamp(pinchState.overviewRoll + rotationDelta, -0.122, 0.122);
-        overviewYaw = pinchState.overviewYaw - midDx * 0.0035;
-        overviewPitch = clamp(pinchState.overviewPitch - midDy * 0.0035, -0.314, 0.314);
+        // Wide, touchpad-friendly whole-field range. A two-finger drag or touch
+        // pinch manipulates the complete rigid instrument rather than a node.
+        overviewZoom = clamp(pinchState.overviewZoom * ratio, 0.68, 1.52);
+        overviewRoll = clamp(pinchState.overviewRoll + rotationDelta * 0.82, -1.18, 1.18);
+        overviewYaw = pinchState.overviewYaw - midDx * 0.0098;
+        overviewPitch = clamp(pinchState.overviewPitch - midDy * 0.0088, -1.46, 1.46);
       }
       gestureHadPinch = true;
       canvas.style.cursor = 'grabbing';

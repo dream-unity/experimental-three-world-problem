@@ -1,8 +1,8 @@
-  // Fluid Response Hold 25b — keep the score-driven temporal double aligned
+  // Fluid Response Hold 25c — keep the score-driven temporal double aligned
   // with the hand for a short release window while inertia continues to move
-  // the rigid instrument. This removes the perceptual "rubber band" that made
-  // touchpad motion feel weaker than the actual overview yaw/pitch change.
-  const IR_FLUID_RESPONSE_RELEASE = '20260831-fluid-response-hold-25b';
+  // the rigid instrument. Also reconcile the original canvas pointer registry
+  // when the newer capture controller completes a gesture.
+  const IR_FLUID_RESPONSE_RELEASE = '20260831-fluid-response-hold-25c';
   const irResponseBaseMarkDirect = irMarkDirect;
   irMarkDirect = function fluidResponseMarkDirect(duration = 120) {
     return irResponseBaseMarkDirect(Math.max(220, Number(duration) || 120));
@@ -12,6 +12,20 @@
   irFinishPointer = function fluidResponseFinishPointer(event, cancelled = false) {
     const wasActive = irGesture.active && irPointers.has(event.pointerId);
     irResponseBaseFinishPointer(event, cancelled);
+
+    // The legacy canvas listener is registered before this override and sees
+    // pointerdown first. Our window-capture pointerup intentionally prevents
+    // its second handler from running, so explicitly clear that registry here.
+    pointers.delete(event.pointerId);
+    if (pointers.size >= 2) beginPinch();
+    else pinchState = null;
+    if (pointers.size === 1) {
+      const remaining = [...pointers.values()][0];
+      remaining.startX = remaining.lastX = remaining.x;
+      remaining.startY = remaining.lastY = remaining.y;
+      remaining.lastTime = performance.now();
+    }
+
     if (wasActive && !irGesture.active) {
       irDirectUntil = Math.max(irDirectUntil, performance.now() + 520);
       irSyncVisualTransform();
@@ -45,6 +59,7 @@
     version: IR_FLUID_RESPONSE_RELEASE,
     visualHoldMs: 520,
     minimumDirectSyncMs: 220,
+    clearsLegacyPointerRegistry: true,
     inertiaWhileAligned: true,
   });
   app.dataset.fluidResponseHold = 'true';
