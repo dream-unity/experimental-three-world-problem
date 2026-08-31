@@ -1,5 +1,5 @@
   function srGlow(x, y, radius, color, alpha) {
-    if (alpha <= 0.001 || radius <= 0) return;
+    if (![x, y, radius, alpha].every(Number.isFinite) || alpha <= 0.001 || radius <= 0) return;
     const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
     gradient.addColorStop(0, rgba(color, alpha));
     gradient.addColorStop(0.28, rgba(color, alpha * 0.34));
@@ -9,7 +9,7 @@
   }
 
   function srLine(a, b, color, alpha, lineWidth = 1) {
-    if (!a || !b || alpha <= 0.001) return;
+    if (!srPointFinite(a) || !srPointFinite(b) || !Number.isFinite(alpha) || alpha <= 0.001) return;
     ctx.strokeStyle = rgba(color, alpha);
     ctx.lineWidth = lineWidth;
     ctx.beginPath();
@@ -19,15 +19,15 @@
   }
 
   function srDrawAuthorityGeometry(score, alpha) {
-    if (alpha <= 0.002) return;
-    const pressure = clamp(score.pressure || 0);
-    const bloom = clamp(score.bloom || 0);
-    const release = clamp(score.release || 0);
-    const beat = clamp(score.beat || 0);
+    if (!Number.isFinite(alpha) || alpha <= 0.002) return;
+    const pressure = clamp(srFinite(score?.pressure, 0));
+    const bloom = clamp(srFinite(score?.bloom, 0));
+    const release = clamp(srFinite(score?.release, 0));
+    const beat = clamp(srFinite(score?.beat, 0));
     const strain = clamp((
-      Math.abs(rtLivingYaw - rtGhostYaw) +
-      Math.abs(rtLivingPitch - rtGhostPitch) +
-      Math.abs(rtLivingRoll - rtGhostRoll)
+      Math.abs(srFinite(rtLivingYaw, 0) - srFinite(rtGhostYaw, 0)) +
+      Math.abs(srFinite(rtLivingPitch, 0) - srFinite(rtGhostPitch, 0)) +
+      Math.abs(srFinite(rtLivingRoll, 0) - srFinite(rtGhostRoll, 0))
     ) * 0.72);
 
     ctx.save();
