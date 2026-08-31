@@ -1,0 +1,163 @@
+  // Minimal Stage 28 — Dream Unity becomes the page. Centre the complete rigid
+  // instrument, spend the reclaimed whitespace on its 3D form, and give the
+  // three-world living thread enough weight to read as one continuous organism.
+  const MS_RELEASE = '20260831-minimal-stage-28';
+  const msFinite = (value, fallback = 0) => Number.isFinite(value) ? value : fallback;
+  const msBaseProject = rtProject;
+  const msBaseLivingPath = rtDrawLivingPath;
+
+  rtCenter = function minimalStageCenter() {
+    return { x: width * 0.5, y: height * 0.5 };
+  };
+
+  rtProject = function minimalStageProject(point, scale = 1, cameraZ = 12.9, center = rtCenter()) {
+    const model = {
+      x: msFinite(point?.x, 0),
+      y: msFinite(point?.y, 0),
+      z: msFinite(point?.z, 0),
+    };
+    const safeCenter = {
+      x: msFinite(center?.x, width * 0.5),
+      y: msFinite(center?.y, height * 0.5),
+    };
+    const safeCameraZ = Math.max(3.36, msFinite(cameraZ, 12.9));
+    const safeScale = Math.max(0.01, msFinite(scale, 1));
+    const depth = safeCameraZ - model.z;
+    const perspective = safeScale * safeCameraZ / Math.max(3.35, msFinite(depth, safeCameraZ));
+
+    // Overview uses the newly freed horizontal stage aggressively. Detail/game
+    // projections keep their established geometry by retaining the old camera.
+    if (safeCameraZ >= 12.35) {
+      const xSpread = width >= 1180 ? 0.170 : width >= 760 ? 0.148 : 0.112;
+      const ySpread = width >= 1180 ? 0.121 : width >= 760 ? 0.118 : 0.105;
+      return {
+        x: msFinite(safeCenter.x + model.x * unit * xSpread * perspective, safeCenter.x),
+        y: msFinite(safeCenter.y - model.y * unit * ySpread * perspective, safeCenter.y),
+        f: msFinite(perspective, 1),
+        z: model.z,
+        depth: msFinite(depth, safeCameraZ),
+      };
+    }
+    return msBaseProject(model, safeScale, safeCameraZ, safeCenter);
+  };
+
+  function msThreadWidth(segment, score) {
+    const material = segment.s > 0.50 && segment.s < 0.72;
+    const junction = Math.max(
+      Math.exp(-Math.pow((segment.s - RT_PHASE.machine) / 0.032, 2)),
+      Math.exp(-Math.pow((segment.s - RT_PHASE.maker) / 0.032, 2)),
+      Math.exp(-Math.pow((segment.s - RT_PHASE.reality) / 0.032, 2)),
+    );
+    return (material ? 4.25 : 2.75) + score.low * 0.55 + score.beat * 0.55 + junction * 1.15;
+  }
+
+  rtDrawLivingPath = function minimalStageLivingThread(alpha) {
+    // Preserve the original membrane/path anatomy underneath the new primary
+    // conductor so no functionality or score response is lost.
+    msBaseLivingPath(alpha);
+    const score = rtScoreState;
+    const count = lowCPU || coarse ? 118 : 190;
+    const segments = [];
+    for (let index = 0; index < count; index += 1) {
+      const s = index / count;
+      const next = (index + 1) / count;
+      const a = rtRotateProject(rtCatmull(s));
+      const b = rtRotateProject(rtCatmull(next));
+      segments.push({ s, a, b, z: (a.z + b.z) * 0.5, color: rtColorAt(s) });
+    }
+    segments.sort((a, b) => a.z - b.z);
+    segments.forEach((segment) => {
+      const depth = clamp(0.70 + segment.z * 0.065, 0.44, 1);
+      const widthValue = msThreadWidth(segment, score) * clamp(segment.a.f, 0.74, 1.32);
+      // Pale chromatic shoulder makes each world-thread leg distinct against the
+      // white stage; saturated inner conductor carries the actual continuity.
+      rtLine(segment.a, segment.b, segment.color, alpha * depth * 0.105, widthValue * 2.35);
+      rtLine(segment.a, segment.b, RT_WHITE, alpha * depth * 0.82, widthValue * 1.34);
+      rtLine(segment.a, segment.b, segment.color, alpha * depth * (0.76 + score.energy * 0.13), widthValue);
+    });
+  };
+
+  if (!document.querySelector('style[data-minimal-stage]')) {
+    const msStyle = document.createElement('style');
+    msStyle.dataset.minimalStage = MS_RELEASE;
+    msStyle.textContent = `
+      /* Main-screen hierarchy: simulation + one brand + one music control. */
+      #app:not(.detail):not(.game-open) .live,
+      #app:not(.detail):not(.game-open) .manifesto,
+      #app:not(.detail):not(.game-open) .cycle-index,
+      #app:not(.detail):not(.game-open) .hint{
+        display:none!important;
+      }
+      #app:not(.detail):not(.game-open) .brand>small{display:none!important}
+      #app:not(.detail):not(.game-open) .brand{
+        left:clamp(20px,3.15vw,48px)!important;
+        top:clamp(18px,3.05vh,30px)!important;
+        gap:11px!important;
+        font-size:10px!important;
+        letter-spacing:.245em!important;
+      }
+      #app:not(.detail):not(.game-open) .brand>i{width:33px!important}
+      #app:not(.detail):not(.game-open) .score-control{
+        top:clamp(14px,2.4vh,23px)!important;
+        right:clamp(16px,2.6vw,40px)!important;
+        width:96px!important;
+        height:42px!important;
+        padding:0 13px!important;
+        display:grid!important;
+        grid-template-columns:1fr auto!important;
+        grid-template-rows:1fr!important;
+        column-gap:9px!important;
+        align-items:center!important;
+        border-color:rgba(11,16,32,.22)!important;
+        background:rgba(255,255,255,.96)!important;
+        box-shadow:0 6px 22px rgba(11,16,32,.035)!important;
+      }
+      #app:not(.detail):not(.game-open) .score-control .score-mark{display:none!important}
+      #app:not(.detail):not(.game-open) .score-control small{
+        grid-column:1!important;grid-row:1!important;align-self:center!important;
+        font-size:6.5px!important;letter-spacing:.19em!important;color:#737b89!important;
+      }
+      #app:not(.detail):not(.game-open) .score-control b{
+        grid-column:2!important;grid-row:1!important;align-self:center!important;margin:0!important;
+        font-size:7.5px!important;letter-spacing:.14em!important;color:#0b1020!important;
+      }
+      @media(max-width:680px){
+        #app:not(.detail):not(.game-open) .brand{left:14px!important;top:max(14px,env(safe-area-inset-top))!important}
+        #app:not(.detail):not(.game-open) .score-control{right:10px!important;top:max(8px,env(safe-area-inset-top))!important;width:88px!important;height:38px!important;padding:0 10px!important}
+      }
+    `;
+    document.head.append(msStyle);
+  }
+
+  function msMetrics() {
+    const samples = [];
+    for (let index = 0; index < 120; index += 1) samples.push(rtRotateProject(rtCatmull(index / 120)));
+    const xs = samples.map((point) => point.x);
+    const ys = samples.map((point) => point.y);
+    const bounds = {
+      left: Math.min(...xs), right: Math.max(...xs),
+      top: Math.min(...ys), bottom: Math.max(...ys),
+    };
+    bounds.width = bounds.right - bounds.left;
+    bounds.height = bounds.bottom - bounds.top;
+    bounds.cx = (bounds.left + bounds.right) * 0.5;
+    bounds.cy = (bounds.top + bounds.bottom) * 0.5;
+    return {
+      center: rtCenter(),
+      bounds,
+      viewport: { width, height },
+      thread: { outerMultiplier: 2.35, coreMinimum: 2.75 },
+    };
+  }
+
+  app.dataset.minimalStage = 'true';
+  app.dataset.minimalStageVersion = MS_RELEASE;
+  window.__dreamUnityMinimalStage = Object.freeze({
+    version: MS_RELEASE,
+    ready: true,
+    centered: true,
+    peripheralCopyRemoved: true,
+    widerOverview: true,
+    thickerLivingThread: true,
+    metrics: msMetrics,
+  });
