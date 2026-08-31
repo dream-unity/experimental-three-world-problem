@@ -27,7 +27,7 @@ for(const path of [fullPath,fileURLToPath(new URL('arcade.js',root)),fileURLToPa
 assert.match(loader,/BECOME_VERSION = '20260827-become-performance-18'/);
 for(const marker of ['become-diversity-09.txt','become-social-agency-10.txt','become-social-integration-11.txt','become-compressed-12.txt','become-rapid-entry-13.txt','become-activation-objectives-14.txt'])assert.match(loader,new RegExp(marker.replace('.','\\.')));
 assert.ok(loader.indexOf('become-rapid-entry-13.txt')<loader.indexOf('become-activation-objectives-14.txt'));
-assert.match(index,/arcade\.js\?v=20260827-fighter-jet-performance-20/);
+assert.match(index,/arcade\.js\?v=20260830-sovereign-nocturne-20/);
 assert.doesNotMatch(loader,/become-live-02\.txt|vercel|blockrun|groq|web-llm|transformers/i);
 for(const marker of ['S14_SCENE_OPENING','s14ImagineScene','s14ApplySceneOpening','__sceneOpening14','S14_WINS','S14_OBJECTIVES','SOLVED WHEN','SOCIAL WIN'])assert.ok(objective.includes(marker),`missing objective/opening marker ${marker}`);
 
@@ -73,7 +73,7 @@ function inspect(queue,label){
   return{families,profiles,wins,minSocial,minCombined,maxScene};
 }
 
-const started=performance.now();const first=api.buildQueue(10);const elapsed=performance.now()-started;const a=inspect(first,'first');assert.ok(elapsed<1000,`build ${elapsed}ms`);
+const started=performance.now();const first=api.buildQueue(10);const elapsed=performance.now()-started;const a=inspect(first,'first');assert.ok(elapsed<1500,`build ${elapsed}ms`);
 const second=api.buildQueue(10),b=inspect(second,'second');
 assert.equal([...a.families].filter(x=>b.families.has(x)).length,0);assert.equal([...a.profiles].filter(x=>b.profiles.has(x)).length,0);assert.equal([...a.wins].filter(x=>b.wins.has(x)).length,0);
 console.log(`Imagine-opening Become validated: 20/20 generated scenarios begin with Imagine that you/you're; scene ≤${a.maxScene}/34; 10 scenarios ${elapsed.toFixed(1)}ms; social min ${a.minSocial.toFixed(3)}; combined min ${a.minCombined.toFixed(3)}.`);

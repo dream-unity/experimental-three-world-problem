@@ -1,40 +1,64 @@
 (() => {
   'use strict';
-  const VERSION = '20260830-bearing-mirror-1';
-  const baseParts = Array.from({ length: 6 }, (_, index) =>
-    `./visual-parts/part-${String(index + 1).padStart(2, '0')}.txt?v=${VERSION}`
-  );
-  const overridePaths = [
-    `./visual-parts/sovereign-resonator-11.txt?v=${VERSION}`,
-    `./visual-parts/bearing-mirror-12.txt?v=${VERSION}`,
-  ];
-  const parts = [...baseParts, ...overridePaths];
+
+  const VERSION = '20260830-sovereign-nocturne-20';
+  const source = `./visual-parts/sovereign-nocturne-20.js?v=${VERSION}`;
+  const app = document.getElementById('app');
   const loader = document.getElementById('loading');
   const hint = document.getElementById('hint');
-  const release = () => loader?.classList.add('hide');
+  const plate = document.querySelector('#materialPlate img');
 
-  async function fetchParts(cache) {
-    return Promise.all(parts.map(async (path) => {
-      const response = await fetch(path, { cache });
-      if (!response.ok) throw new Error(`Visual engine part failed: ${response.status} ${path}`);
-      return response.text();
-    }));
+  let rendererSettled = false;
+  let plateSettled = !plate;
+  let released = false;
+
+  const maybeRelease = () => {
+    if (released || !rendererSettled || !plateSettled) return;
+    released = true;
+    loader?.classList.add('hide');
+  };
+  const settleRenderer = () => {
+    rendererSettled = true;
+    maybeRelease();
+  };
+  const settlePlate = (status) => {
+    if (plateSettled) return;
+    plateSettled = true;
+    if (status === true) app?.setAttribute('data-plate-ready', 'true');
+    if (status === false) app?.classList.add('plate-error');
+    maybeRelease();
+  };
+
+  window.__dreamUnityRelease = settleRenderer;
+
+  if (plate) {
+    const ready = async () => {
+      if (typeof plate.decode === 'function') {
+        try { await plate.decode(); } catch {}
+      }
+      settlePlate(plate.naturalWidth > 0);
+    };
+    if (plate.complete) ready();
+    else {
+      plate.addEventListener('load', ready, { once: true });
+      plate.addEventListener('error', () => settlePlate(false), { once: true });
+    }
   }
 
-  fetchParts('force-cache')
-    .catch(() => new Promise((resolve) => setTimeout(resolve, 180)).then(() => fetchParts('no-store')))
-    .then((source) => {
-      const baseSource = source.slice(0, baseParts.length).join('');
-      const overrideSource = source.slice(baseParts.length).join('\n');
-      const closeIndex = baseSource.lastIndexOf('})();');
-      if (closeIndex < 0) throw new Error('Visual engine terminator was not found.');
-      Function(`${baseSource.slice(0, closeIndex)}\n${overrideSource}\n${baseSource.slice(closeIndex)}`)();
-    })
-    .catch((error) => {
-      console.error(error);
-      release();
-      if (hint) hint.textContent = 'VISUAL FIELD COULD NOT INITIALISE';
-    });
+  const script = document.createElement('script');
+  script.src = source;
+  script.async = false;
+  script.dataset.dreamUnityRenderer = VERSION;
+  script.addEventListener('load', settleRenderer, { once: true });
+  script.addEventListener('error', () => {
+    settleRenderer();
+    if (hint) hint.textContent = 'VISUAL FIELD COULD NOT INITIALISE';
+  }, { once: true });
+  document.head.append(script);
 
-  window.setTimeout(release, 1800);
+  // Bound the opening curtain without treating a merely slow image as broken.
+  window.setTimeout(() => {
+    settleRenderer();
+    if (!plateSettled) settlePlate(null);
+  }, 2200);
 })();

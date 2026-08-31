@@ -35,44 +35,52 @@ jobs:
       - name: Install browser regression runtime
         run: npx playwright install --with-deps chromium
       - name: Validate source and browser behavior
+        env:
+          DREAM_UNITY_SCREENSHOT_DIR: ${{ runner.temp }}/sovereign-nocturne-visuals
         run: |
           npm test
           npm run test:browser
-      - name: Validate the Bearing Mirror and paused Unity voice
+      - name: Upload Sovereign Nocturne visual evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: sovereign-nocturne-visuals
+          path: ${{ runner.temp }}/sovereign-nocturne-visuals
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Validate Sovereign Nocturne release and paused Unity voice
         shell: bash
         run: |
           set -euo pipefail
-          grep -q "VERSION = '20260830-bearing-mirror-1'" main.js
-          grep -q 'sovereign-resonator-11.txt' main.js
-          grep -q 'bearing-mirror-12.txt' main.js
-          grep -q "ctx.fillStyle = '#ffffff'" visual-parts/bearing-mirror-12.txt
-          grep -q 'render = function bmRender' visual-parts/bearing-mirror-12.txt
-          grep -q 'drawOverview = function bmOverview' visual-parts/bearing-mirror-12.txt
-          grep -q 'drawDetail = function bmDetail' visual-parts/bearing-mirror-12.txt
-          grep -q 'function bmOverviewGhost' visual-parts/bearing-mirror-12.txt
-          grep -q 'function bmMotionScore' visual-parts/bearing-mirror-12.txt
-          grep -q 'function bmAddTeeth' visual-parts/bearing-mirror-12.txt
-          grep -q 'function bmReturnFibres' visual-parts/bearing-mirror-12.txt
-          grep -q 'function bmMachineGeometry' visual-parts/bearing-mirror-12.txt
-          grep -q 'function bmMakerGeometry' visual-parts/bearing-mirror-12.txt
-          grep -q 'function bmWorldGeometry' visual-parts/bearing-mirror-12.txt
+          renderer=visual-parts/sovereign-nocturne-20.js
+          release=20260830-sovereign-nocturne-20
+          test -s "$renderer"
+          grep -Eq "VERSION[[:space:]]*=[[:space:]]*['\"]${release}['\"]" main.js
+          grep -q 'visual-parts/sovereign-nocturne-20.js' main.js
+          ! grep -Eqi 'bearing-mirror|sovereign-resonator|visual-parts/part-0[1-6]\.txt' main.js
+          grep -q 'webgl2' "$renderer"
+          grep -q 'canvas2d-fallback' "$renderer"
+          grep -q 'webglcontextlost' "$renderer"
+          grep -q 'webglcontextrestored' "$renderer"
+          grep -q 'dreamunity:renderer-ready' "$renderer"
+          grep -q 'dreamunity:launch-game' "$renderer"
+          grep -q 'prefers-reduced-motion' "$renderer"
+          grep -q '__dreamUnityRenderer' "$renderer"
+          ! grep -Eqi '\.mp3|AudioContext|createMediaElementSource|decodeAudioData' "$renderer"
           grep -q 'AWAKEN THE TRUE WAR' index.html
           grep -q 'Somewhere out in the universe' index.html
-          grep -q 'Light pierces through me' index.html
+          grep -q 'Light pierces' index.html
+          grep -q 'through me' index.html
           grep -q 'THE GHOST IN THE MIRROR' index.html
-          grep -q 'AWARENESS' index.html
-          grep -q 'MUST BEAR' index.html
-          grep -q 'THE BEARING MIRROR' index.html
           grep -q 'assets/i-remember-tomorrow.mp3' index.html
-          grep -q 'styles.css?v=20260830-bearing-mirror-1' index.html
-          grep -q 'unity-cycle.css?v=20260830-bearing-mirror-1' index.html
-          grep -q 'light-theme.js?v=20260830-bearing-mirror-1' index.html
-          grep -q 'unity-ui.js?v=20260830-bearing-mirror-1' index.html
-          grep -q 'main.js?v=20260830-bearing-mirror-1' index.html
+          grep -q "styles.css?v=${release}" index.html
+          grep -q "become.css?v=${release}" index.html
+          grep -q "unity-cycle.css?v=${release}" index.html
+          grep -q "unity-ui.js?v=${release}" index.html
+          grep -q "main.js?v=${release}" index.html
+          grep -q "arcade.js?v=${release}" index.html
           grep -q '__dreamUnityScore' unity-ui.js
           grep -q 'createMediaElementSource' unity-ui.js
-          grep -q "this.id === 'gameCanvas'" light-theme.js
-          grep -q 'silentClockOrigin' unity-ui.js
           grep -q '<div class="unity-label" id="unityLabel" aria-hidden="true">' index.html
           ! grep -Eqi 'data-voice|duVoice|du-voice|voice\.css|voice\.js|js\.puter\.com|dream-unity-voice-live\.vercel\.app' index.html
           test -s voice.js
@@ -82,15 +90,20 @@ jobs:
           test -s api/realtime-session.js
           grep -q "API_RELEASE = '20260829-unity-backend-paused-1'" api/realtime-session.js
           grep -q "code: 'VOICE_DISABLED'" api/realtime-session.js
-          grep -q "WORLD.machine.css = '#00CFFF'" visual-parts/sovereign-resonator-11.txt
-          grep -q "WORLD.maker.css = '#00D88A'" visual-parts/sovereign-resonator-11.txt
-          grep -q "WORLD.reality.css = '#6633F5'" visual-parts/sovereign-resonator-11.txt
-          grep -q -- '--paper:#fff' unity-cycle.css
+          grep -Eqi -- '--void[[:space:]]*:[[:space:]]*#050505' unity-cycle.css
+          grep -Eqi -- '--basalt[[:space:]]*:[[:space:]]*#111010' unity-cycle.css
+          grep -Eqi -- '--bone[[:space:]]*:[[:space:]]*#e9e3d6' unity-cycle.css
+          grep -Eqi -- '--coral-hot[[:space:]]*:[[:space:]]*#ff4e57' unity-cycle.css
+          grep -Eqi -- '--coral[[:space:]]*:[[:space:]]*#ff765f' unity-cycle.css
           test -s assets/i-remember-tomorrow.mp3
+          test -s assets/pressure-becomes-weather-landscape-v20.png
+          test -s assets/pressure-becomes-weather-portrait-v20.png
+          grep -q 'pressure-becomes-weather-landscape-v20.png' index.html
+          grep -q 'pressure-becomes-weather-portrait-v20.png' index.html
           mapfile -t published_mp3 < <(git ls-files '*.mp3')
           test "${#published_mp3[@]}" -eq 1
           test "${published_mp3[0]}" = 'assets/i-remember-tomorrow.mp3'
-          grep -q "dreamunity:launch-game" visual-parts/part-05.txt
+          ! printf '%s\n' "${published_mp3[@]}" | grep -Eqi 'awaken[ _-]*the[ _-]*true[ _-]*war|\(2\)'
 
   verify-live:
     if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
@@ -107,13 +120,13 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Wait for GitHub Pages to match the score-driven source
+      - name: Wait for GitHub Pages to match the Sovereign Nocturne source
         shell: bash
         env:
           PAGE_URL: https://dream-unity.github.io/experimental-three-world-problem
         run: |
           set -euo pipefail
-          files=(index.html styles.css become.css unity-cycle.css light-theme.js unity-ui.js main.js arcade.js assets/i-remember-tomorrow.mp3 visual-parts/part-01.txt visual-parts/part-02.txt visual-parts/part-03.txt visual-parts/part-04.txt visual-parts/part-05.txt visual-parts/part-06.txt visual-parts/sovereign-resonator-11.txt visual-parts/bearing-mirror-12.txt arcade-parts/part-01.txt arcade-parts/part-02.txt arcade-parts/part-03.txt arcade-parts/part-04.txt arcade-parts/part-05.txt arcade-parts/perceive-role-logic.txt arcade-parts/perceive-aerial-01.txt arcade-parts/perceive-aerial-02.txt arcade-parts/perceive-aerial-03.txt arcade-parts/perceive-aerial-04.txt arcade-parts/perceive-aerial-05.txt arcade-parts/perceive-aerial-06.txt arcade-parts/perceive-aerial-07.txt arcade-parts/perceive-aerial-08.txt arcade-parts/become-lab-01.txt arcade-parts/become-diversity-09.txt arcade-parts/become-social-agency-10.txt arcade-parts/become-social-integration-11.txt arcade-parts/become-compressed-12.txt arcade-parts/become-rapid-entry-13.txt arcade-parts/become-activation-objectives-14.txt)
+          files=(index.html styles.css become.css unity-cycle.css unity-ui.js main.js arcade.js assets/i-remember-tomorrow.mp3 assets/pressure-becomes-weather-landscape-v20.png assets/pressure-becomes-weather-portrait-v20.png visual-parts/sovereign-nocturne-20.js arcade-parts/part-01.txt arcade-parts/part-02.txt arcade-parts/part-03.txt arcade-parts/part-04.txt arcade-parts/part-05.txt arcade-parts/perceive-role-logic.txt arcade-parts/perceive-aerial-01.txt arcade-parts/perceive-aerial-02.txt arcade-parts/perceive-aerial-03.txt arcade-parts/perceive-aerial-04.txt arcade-parts/perceive-aerial-05.txt arcade-parts/perceive-aerial-06.txt arcade-parts/perceive-aerial-07.txt arcade-parts/perceive-aerial-08.txt arcade-parts/become-lab-01.txt arcade-parts/become-diversity-09.txt arcade-parts/become-social-agency-10.txt arcade-parts/become-social-integration-11.txt arcade-parts/become-compressed-12.txt arcade-parts/become-rapid-entry-13.txt arcade-parts/become-activation-objectives-14.txt)
           live_dir=$(mktemp -d)
           trap 'rm -rf "$live_dir"' EXIT
           mkdir -p "$live_dir/arcade-parts" "$live_dir/visual-parts" "$live_dir/assets"
@@ -130,30 +143,32 @@ jobs:
           done
           test "$matched" = true
 
-          grep -q 'main.js?v=20260830-bearing-mirror-1' "$live_dir/index.html"
-          grep -q 'unity-cycle.css?v=20260830-bearing-mirror-1' "$live_dir/index.html"
-          grep -q 'styles.css?v=20260830-bearing-mirror-1' "$live_dir/index.html"
-          grep -q 'light-theme.js?v=20260830-bearing-mirror-1' "$live_dir/index.html"
-          grep -q 'unity-ui.js?v=20260830-bearing-mirror-1' "$live_dir/index.html"
+          release=20260830-sovereign-nocturne-20
+          renderer="$live_dir/visual-parts/sovereign-nocturne-20.js"
+          grep -q "main.js?v=${release}" "$live_dir/index.html"
+          grep -q "unity-cycle.css?v=${release}" "$live_dir/index.html"
+          grep -q "styles.css?v=${release}" "$live_dir/index.html"
+          grep -q "become.css?v=${release}" "$live_dir/index.html"
+          grep -q "unity-ui.js?v=${release}" "$live_dir/index.html"
+          grep -q "arcade.js?v=${release}" "$live_dir/index.html"
           grep -q '<div class="unity-label" id="unityLabel" aria-hidden="true">' "$live_dir/index.html"
           ! grep -Eqi 'data-voice|duVoice|du-voice|voice\.css|voice\.js|js\.puter\.com|dream-unity-voice-live\.vercel\.app' "$live_dir/index.html"
-          grep -q 'sovereign-resonator-11.txt' "$live_dir/main.js"
-          grep -q 'bearing-mirror-12.txt' "$live_dir/main.js"
-          grep -q "ctx.fillStyle = '#ffffff'" "$live_dir/visual-parts/bearing-mirror-12.txt"
-          grep -q 'function bmOverviewGhost' "$live_dir/visual-parts/bearing-mirror-12.txt"
-          grep -q 'function bmMotionScore' "$live_dir/visual-parts/bearing-mirror-12.txt"
-          grep -q 'function bmAddTeeth' "$live_dir/visual-parts/bearing-mirror-12.txt"
-          grep -q 'function bmReturnFibres' "$live_dir/visual-parts/bearing-mirror-12.txt"
-          grep -q 'function bmMakerGeometry' "$live_dir/visual-parts/bearing-mirror-12.txt"
+          grep -q 'visual-parts/sovereign-nocturne-20.js' "$live_dir/main.js"
+          ! grep -Eqi 'bearing-mirror|sovereign-resonator|visual-parts/part-0[1-6]\.txt' "$live_dir/main.js"
+          grep -q 'webgl2' "$renderer"
+          grep -q 'canvas2d-fallback' "$renderer"
+          grep -q 'webglcontextlost' "$renderer"
+          grep -q 'webglcontextrestored' "$renderer"
+          grep -q 'dreamunity:renderer-ready' "$renderer"
+          grep -q 'dreamunity:launch-game' "$renderer"
+          grep -q 'prefers-reduced-motion' "$renderer"
+          ! grep -Eqi '\.mp3|AudioContext|createMediaElementSource|decodeAudioData' "$renderer"
           grep -q 'AWAKEN THE TRUE WAR' "$live_dir/index.html"
           grep -q 'assets/i-remember-tomorrow.mp3' "$live_dir/index.html"
           grep -q '__dreamUnityScore' "$live_dir/unity-ui.js"
-          grep -q "this.id === 'gameCanvas'" "$live_dir/light-theme.js"
-          grep -q "WORLD.machine.css = '#00CFFF'" "$live_dir/visual-parts/sovereign-resonator-11.txt"
-          grep -q "WORLD.maker.css = '#00D88A'" "$live_dir/visual-parts/sovereign-resonator-11.txt"
-          grep -q "WORLD.reality.css = '#6633F5'" "$live_dir/visual-parts/sovereign-resonator-11.txt"
-          grep -q 'dreamunity:launch-game' "$live_dir/visual-parts/part-05.txt"
-          grep -q 'arcade.js?v=20260827-fighter-jet-performance-20' "$live_dir/index.html"
+          grep -Eqi -- '--void[[:space:]]*:[[:space:]]*#050505' "$live_dir/unity-cycle.css"
+          grep -Eqi -- '--bone[[:space:]]*:[[:space:]]*#e9e3d6' "$live_dir/unity-cycle.css"
+          grep -Eqi -- '--coral-hot[[:space:]]*:[[:space:]]*#ff4e57' "$live_dir/unity-cycle.css"
           grep -q 'become-activation-objectives-14.txt' "$live_dir/arcade.js"
           grep -q "S14_VERSION='20260826-activation-objectives-2'" "$live_dir/arcade-parts/become-activation-objectives-14.txt"
           grep -q 'SOCIAL WIN' "$live_dir/arcade-parts/become-activation-objectives-14.txt"
@@ -229,7 +244,7 @@ jobs:
           git fetch --no-tags origin main
           test "$(git rev-parse origin/main)" = "$SOURCE_SHA"
           checksum_file="$RUNNER_TEMP/dream-unity-source-checksums.txt"
-          sha256sum index.html styles.css become.css unity-cycle.css unity-ui.js main.js arcade.js voice.css voice.js api/realtime-session.js assets/* visual-parts/*.txt arcade-parts/*.txt > "$checksum_file"
+          sha256sum index.html styles.css become.css unity-cycle.css unity-ui.js main.js arcade.js voice.css voice.js api/realtime-session.js assets/* visual-parts/* arcade-parts/*.txt > "$checksum_file"
           export CHECKSUM_FILE="$checksum_file"
           python3 - <<'PY'
           from datetime import datetime, timezone
@@ -245,24 +260,48 @@ jobs:
             'page_url':os.environ['PAGE_URL'],
             'nine_portal_compatibility':'validated',
             'overview':{
-              'theme':'stage_coral_bearing_mirror',
-              'canvas_background':'#FFFFFF',
+              'theme':'stage_coral_sovereign_nocturne',
+              'canvas_background':'#050505',
+              'material_palette':{
+                'void':'#050505',
+                'basalt':'#111010',
+                'bone':'#E9E3D6',
+                'living_coral':'#FF4E57',
+                'furnace_coral':'#FF765F',
+                'machine':'#00C9E8',
+                'maker':'#14C98B',
+                'reality':'#6840FF'
+              },
+              'renderer_id':'sovereign-nocturne',
+              'renderer_entrypoint':'visual-parts/sovereign-nocturne-20.js',
+              'renderer_api':'webgl2',
+              'canvas2d_fallback':True,
+              'renderer_ready_contract':True,
+              'webgl_context_recovery':True,
+              'reduced_motion_resolved_pose':True,
+              'silent_cycle_seconds':40,
               'legacy_render_vignette_active':False,
               'nebula_fog_active':False,
-              'world_palette':{'machine':'#00CFFF','maker':'#00D88A','reality':'#6633F5','unity':'#ECA71F'},
-              'connected_instrument':True,
-              'distinct_world_geometries':True,
-              'temporal_ghost_field':True,
-              'dimensionless_score_choreography':True,
-              'bearing_force_count':3,
-              'structural_tension_count':9,
-              'pressure_tooth_count':9,
-              'central_membrane_cut_count':9,
-              'full_scale_ghost_during_subtraction':True,
-              'faceted_snap_reconstitution':True,
-              'load_bearing_billet':True,
+              'connected_mineral_membrane':True,
+              'asymmetrical_low_anchor':True,
+              'interior_materials':['coral','bone'],
+              'delayed_desaturated_reflection':True,
+              'sparse_memory_fibres':True,
+              'three_world_portal_glints':True,
+              'world_count':3,
+              'game_count':9,
+              'forbidden_motifs':{
+                'gear':False,
+                'block':False,
+                'frame':False,
+                'leader_card':False,
+                'loop':False,
+                'ribbon':False
+              },
               'ether_compression_matter_return_cycle':True,
-              'generated_core_asset':None,
+              'external_runtime_dependencies':False,
+              'private_reference_audio_published':False,
+              'private_reference_audio_requested':False,
               'homepage_score':'assets/i-remember-tomorrow.mp3',
               'voice_interface_active':False,
               'voice_archive':{
@@ -273,9 +312,7 @@ jobs:
                 'backend_status':'paused',
                 'backend_release':backend_release
               },
-              'renderer_bridge':'visual-parts/sovereign-resonator-11.txt',
-              'renderer_override':'visual-parts/bearing-mirror-12.txt',
-              'main_cache_version':'20260830-bearing-mirror-1'
+              'main_cache_version':'20260830-sovereign-nocturne-20'
             },
             'become':{
               'scenario_source':'instant_objective_driven_social_agency_maximin_synthesis',
@@ -300,7 +337,7 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add DEPLOYMENT_STATUS.json
           git diff --cached --quiet && exit 0
-          git commit -m 'Record Bearing Mirror deployment [skip ci]'
+          git commit -m 'Record Sovereign Nocturne deployment [skip ci]'
           git config --local credential.helper '!f() { if [ "$1" = get ]; then echo "username=x-access-token"; echo "password=$GITHUB_TOKEN"; fi; }; f'
           trap 'git config --local --unset-all credential.helper >/dev/null 2>&1 || true' EXIT
           git push origin HEAD:main
