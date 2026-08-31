@@ -72,6 +72,26 @@ jobs:
             sleep 2
           done
           test "$(docker inspect --format='{{.State.Running}}' gev-free-test)" = true
+
+      - name: Verify live satellite catalog
+        run: |
+          curl --fail --silent --show-error \
+            'http://127.0.0.1:8080/api/celestrak/stations' \
+            > /tmp/stations.tle
+          test -s /tmp/stations.tle
+          grep -qi 'ISS' /tmp/stations.tle
+
+      - name: Verify world radio directory
+        run: |
+          curl --fail --silent --show-error \
+            'http://127.0.0.1:8080/api/radio/stations' \
+            > /tmp/radio.json
+          node -e "const fs=require('fs'); JSON.parse(fs.readFileSync('/tmp/radio.json','utf8'));"
+          test "$(wc -c < /tmp/radio.json)" -gt 100
+
+      - name: Confirm free-host memory headroom
+        run: |
+          test "$(docker inspect --format='{{.State.Running}}' gev-free-test)" = true
           docker stats --no-stream gev-free-test
 
       - name: Show diagnostics on failure
