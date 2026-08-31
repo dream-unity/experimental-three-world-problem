@@ -7,7 +7,7 @@
   const FLUID_RESPONSE_VERSION = '20260831-fluid-response-hold-25c';
   const WORLD_EMBLEM_VERSION = '20260831-world-emblems-26';
   const WORLD_EMBLEM_POLISH_VERSION = '20260831-world-emblems-polish-26b';
-  const WORLD_TITLE_VERSION = '20260831-world-title-hierarchy-27';
+  const WORLD_TITLE_VERSION = '20260831-world-title-hierarchy-27b';
   const baseParts = Array.from({ length: 6 }, (_, index) => {
     const part = String(index + 1).padStart(2, '0');
     const cacheVersion = index >= 4 ? BASE_INTERACTION_VERSION : VERSION;
