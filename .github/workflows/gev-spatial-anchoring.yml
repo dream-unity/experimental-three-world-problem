@@ -1,0 +1,88 @@
+name: Verify God's Eye View spatial anchoring
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'gods-eye-view/**'
+      - '.github/workflows/gev-spatial-anchoring.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gev-spatial-anchoring-main
+  cancel-in-progress: true
+
+jobs:
+  verify-live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+      - name: Use Node
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.19.0'
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Wait for earth-fixed page deployment
+        shell: bash
+        env:
+          PAGE_URL: https://dream-unity.github.io/experimental-three-world-problem/gods-eye-view/
+        run: |
+          set -euo pipefail
+          ready=false
+          for attempt in $(seq 1 48); do
+            if curl --fail --location --silent --show-error --connect-timeout 8 --max-time 20 \
+              "$PAGE_URL?spatial=${GITHUB_SHA}" | grep -q '20260831-earth-fixed-1'; then
+              ready=true
+              break
+            fi
+            echo "Spatial page not propagated yet ($attempt/48)."
+            sleep 5
+          done
+          test "$ready" = true
+      - name: Verify live radio markers use Earth occlusion
+        shell: bash
+        env:
+          PAGE_URL: https://dream-unity.github.io/experimental-three-world-problem/gods-eye-view/
+        run: |
+          node <<'NODE'
+          const { chromium } = require('playwright');
+          (async () => {
+            const browser = await chromium.launch({ headless: true });
+            const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+            const errors = [];
+            page.on('pageerror', error => errors.push(String(error)));
+            await page.goto(`${process.env.PAGE_URL}?spatial=${process.env.GITHUB_SHA}`, {
+              waitUntil: 'domcontentloaded',
+              timeout: 90000,
+            });
+            await page.waitForFunction(() => window.__dreamUnityGeoAnchoring?.version === '20260831-earth-fixed-1', null, { timeout: 30000 });
+            if (await page.locator('iframe').count()) throw new Error('Gods Eye View must be native, not an iframe');
+            await page.locator('[data-layer="radio"]').click();
+            await page.waitForFunction(() => {
+              const count = Number(document.getElementById('count-radio')?.textContent || 0);
+              return count > 0 && window.__dreamUnityGeoAnchoring?.patchedRadio > 0;
+            }, null, { timeout: 60000 });
+            const result = await page.evaluate(() => ({
+              report: window.__dreamUnityGeoAnchoring,
+              count: Number(document.getElementById('count-radio')?.textContent || 0),
+              status: document.getElementById('statusText')?.textContent || '',
+            }));
+            if (result.report.patchedRadio !== result.count) {
+              throw new Error(`Expected every radio marker depth-tested; patched=${result.report.patchedRadio}, count=${result.count}`);
+            }
+            if (errors.length) throw new Error(`Page errors: ${errors.join(' | ')}`);
+            console.log(JSON.stringify(result, null, 2));
+            await browser.close();
+          })().catch(error => { console.error(error); process.exit(1); });
+          NODE
