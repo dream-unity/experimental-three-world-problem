@@ -1,4 +1,4 @@
-name: Validate connected world rig and verify live controls
+name: Validate whole-field orbit and verify live controls
 
 on:
   pull_request:
@@ -27,7 +27,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: connected-world-rig-${{ github.event.pull_request.number || github.ref }}
+  group: whole-field-orbit-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -48,7 +48,7 @@ jobs:
         run: npm ci
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
-      - name: Validate connected world deformation and all game controls
+      - name: Validate whole-field orbit from every world body and name plus all game controls
         run: npm run test:interactions
 
   verify-live:
@@ -71,7 +71,7 @@ jobs:
         run: npm ci
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
-      - name: Wait for GitHub Pages connected-world source
+      - name: Wait for GitHub Pages whole-field source
         shell: bash
         env:
           PAGE_URL: https://dream-unity.github.io/experimental-three-world-problem
@@ -99,18 +99,20 @@ jobs:
               if [ "$matched" = false ]; then break; fi
             done
             if [ "$matched" = true ]; then break; fi
-            echo "Connected World Rig has not propagated yet: attempt $attempt of 60"
+            echo "Whole Field Orbit has not propagated yet: attempt $attempt of 60"
             sleep 5
           done
           test "$matched" = true
-          grep -q 'main.js?v=20260830-awaken-true-war-2&amp;sr=21&amp;ir=23' "$live_dir/index.html"
-          grep -q "INTERACTION_RECOVERY_VERSION = '20260831-connected-world-rig-23'" "$live_dir/main.js"
-          grep -q 'connected-world-rig' "$live_dir/visual-parts/interaction-recovery-22.txt"
-          grep -q 'rtCatmull = function connectedWorldCatmull' "$live_dir/visual-parts/interaction-recovery-22.txt"
-          grep -q 'PATH BENDING WITH WORLD' "$live_dir/visual-parts/interaction-recovery-22.txt"
-          ! grep -q 'point.x + offset.x \* unit' "$live_dir/visual-parts/interaction-recovery-22.txt"
+          grep -q 'main.js?v=20260830-awaken-true-war-2&amp;sr=21&amp;ir=24' "$live_dir/index.html"
+          grep -q "INTERACTION_RECOVERY_VERSION = '20260831-whole-field-orbit-24'" "$live_dir/main.js"
+          grep -q "id: 'whole-field-orbit'" "$live_dir/visual-parts/interaction-recovery-22.txt"
+          grep -q 'wholeField: true' "$live_dir/visual-parts/interaction-recovery-22.txt"
+          grep -q 'independent: false' "$live_dir/visual-parts/interaction-recovery-22.txt"
+          grep -q 'ORBITING THE WHOLE FORM' "$live_dir/visual-parts/interaction-recovery-22.txt"
+          ! grep -q 'rtCatmull = function connectedWorldCatmull' "$live_dir/visual-parts/interaction-recovery-22.txt"
+          ! grep -q 'PATH BENDING WITH WORLD' "$live_dir/visual-parts/interaction-recovery-22.txt"
           grep -q 'z-index:10000!important' "$live_dir/interaction-recovery.css"
-      - name: Exercise the connected rig and all nine games on live Pages
+      - name: Exercise every whole-field handle and all nine games on live Pages
         env:
           DU_INTERACTION_BASE_URL: https://dream-unity.github.io/experimental-three-world-problem/?source=${{ github.sha }}
         run: npm run test:interactions

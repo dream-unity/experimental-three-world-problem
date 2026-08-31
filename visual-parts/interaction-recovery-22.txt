@@ -1,65 +1,31 @@
-  // Connected World Rig 23 — the three worlds remain anchor organs of one
-  // continuous 3D body. Dragging a world deforms its coloured path in model
-  // space; it never becomes a detached screen-space sprite.
-  const IR_RELEASE = '20260831-connected-world-rig-23';
-  const irDeformations = {
-    machine: { x: 0, y: 0, z: 0 },
-    maker: { x: 0, y: 0, z: 0 },
-    reality: { x: 0, y: 0, z: 0 },
-  };
-  const irInfluenceRadius = {
-    machine: 0.14,
-    maker: 0.16,
-    reality: 0.15,
-  };
-  const irDrag = {
+  // Whole Field Orbit 24 — Dream Machine, Dream Maker and Dream World are
+  // handles on one rigid 3D instrument. Dragging any body or name rotates the
+  // entire simulation exactly as dragging empty space does; no world, thread,
+  // membrane or label is translated independently.
+  const IR_RELEASE = '20260831-whole-field-orbit-24';
+  const irLabelDrag = {
     pointerId: null,
     key: null,
-    source: null,
     target: null,
     lastX: 0,
     lastY: 0,
     startX: 0,
     startY: 0,
+    lastTime: 0,
     moved: false,
+    yawVelocity: 0,
+    pitchVelocity: 0,
   };
   let irSuppressClickKey = null;
   let irSuppressClickUntil = 0;
 
-  const irBaseCatmull = rtCatmull;
   const irBaseOverviewPositions = overviewPositions;
   const irBaseUpdateLabels = updateLabels;
 
-  function irCycleDistance(value, phase) {
-    const delta = ((value - phase + 0.5) % 1 + 1) % 1 - 0.5;
-    return Math.abs(delta);
-  }
-
-  function irInfluence(value, key) {
-    const distance = irCycleDistance(value, RT_PHASE[key]);
-    const radius = irInfluenceRadius[key];
-    if (distance >= radius) return 0;
-    const amount = clamp(1 - distance / radius, 0, 1);
-    return amount * amount * amount * (amount * (amount * 6 - 15) + 10);
-  }
-
-  rtCatmull = function connectedWorldCatmull(value) {
-    const point = irBaseCatmull(value);
-    const deformed = { x: point.x, y: point.y, z: point.z };
-    worldKeys.forEach((key) => {
-      const weight = irInfluence(value, key);
-      if (weight <= 0) return;
-      const displacement = irDeformations[key];
-      deformed.x += displacement.x * weight;
-      deformed.y += displacement.y * weight;
-      deformed.z += displacement.z * weight;
-    });
-    return deformed;
-  };
-
-  // Eliminate the old independent node breathing offset. The centre of every
-  // world is now mathematically the same point as its path anchor every frame.
-  overviewPositions = function connectedWorldPositions(t) {
+  // Keep each world centre mathematically on its coloured thread. The complete
+  // path remains the original undeformed Catmull–Rom body and is transformed
+  // only by the shared overview yaw, pitch, roll and zoom.
+  overviewPositions = function wholeFieldPositions(t) {
     const positions = irBaseOverviewPositions(t);
     worldKeys.forEach((key) => {
       const projected = rtRotateProject(rtCatmull(RT_PHASE[key]));
@@ -73,7 +39,7 @@
     return positions;
   };
 
-  updateLabels = function connectedWorldLabels() {
+  updateLabels = function wholeFieldLabels() {
     irBaseUpdateLabels();
     const clampControl = (element, horizontalPadding, topPadding, bottomPadding) => {
       if (!element || element.style.visibility === 'hidden') return;
@@ -104,6 +70,36 @@
         z: Number(point?.z) || 0,
       }];
     }));
+  }
+
+  function irModelSnapshot() {
+    return Object.fromEntries(worldKeys.map((key) => {
+      const point = rtCatmull(RT_PHASE[key]);
+      return [key, { x: point.x, y: point.y, z: point.z }];
+    }));
+  }
+
+  function irShapeSignature() {
+    const model = irModelSnapshot();
+    const pair = (a, b) => Math.hypot(
+      model[a].x - model[b].x,
+      model[a].y - model[b].y,
+      model[a].z - model[b].z,
+    );
+    return {
+      machineMaker: pair('machine', 'maker'),
+      makerReality: pair('maker', 'reality'),
+      realityMachine: pair('reality', 'machine'),
+    };
+  }
+
+  function irOrientationSnapshot() {
+    return {
+      yaw: Number(overviewYaw) || 0,
+      pitch: Number(overviewPitch) || 0,
+      roll: Number(overviewRoll) || 0,
+      zoom: Number(overviewZoom) || 1,
+    };
   }
 
   function irAnchorSnapshot() {
@@ -146,132 +142,12 @@
     }
     return {
       connected: worldKeys.every((key) => anchors[key].distance < 1),
+      rigid: true,
       allFinite,
       maxSegmentGap,
       anchors,
+      shape: irShapeSignature(),
     };
-  }
-
-  function irWorldAt(clientX, clientY) {
-    if (activeWorld || viewMix > 0.28 || window.__dreamUnityGameActive) return null;
-    const ordered = [...worldKeys].sort((a, b) => worldScreen[b].z - worldScreen[a].z);
-    for (const key of ordered) {
-      const point = worldScreen[key];
-      if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) continue;
-      const radius = Math.max(31, point.r * 1.42);
-      if (Math.hypot(clientX - point.x, clientY - point.y) <= radius) return key;
-    }
-    return null;
-  }
-
-  function irBegin(event, key, source, target) {
-    if (!irDeformations[key] || activeWorld || viewMix > 0.28 || window.__dreamUnityGameActive) return false;
-    irDrag.pointerId = event.pointerId;
-    irDrag.key = key;
-    irDrag.source = source;
-    irDrag.target = target || event.currentTarget || event.target;
-    irDrag.lastX = irDrag.startX = event.clientX;
-    irDrag.lastY = irDrag.startY = event.clientY;
-    irDrag.moved = false;
-    overviewYawVelocity = 0;
-    overviewPitchVelocity = 0;
-    overviewRollVelocity = 0;
-    overviewLastInput = time;
-    app.dataset.draggingWorld = key;
-    labels[key]?.classList.add('dragging');
-    try { irDrag.target?.setPointerCapture?.(event.pointerId); } catch {}
-    return true;
-  }
-
-  function irScreenDeltaToModel(key, screenX, screenY) {
-    const model = rtCatmull(RT_PHASE[key]);
-    const origin = rtRotateProject(model);
-    const epsilon = 0.035;
-    const basis = ['x', 'y', 'z'].map((axis) => {
-      const next = { ...model, [axis]: model[axis] + epsilon };
-      const projected = rtRotateProject(next);
-      return {
-        x: (projected.x - origin.x) / epsilon,
-        y: (projected.y - origin.y) / epsilon,
-      };
-    });
-    const rowX = basis.map((entry) => entry.x);
-    const rowY = basis.map((entry) => entry.y);
-    const a00 = rowX.reduce((sum, value) => sum + value * value, 0) + 0.0001;
-    const a01 = rowX.reduce((sum, value, index) => sum + value * rowY[index], 0);
-    const a11 = rowY.reduce((sum, value) => sum + value * value, 0) + 0.0001;
-    const determinant = a00 * a11 - a01 * a01;
-    if (!Number.isFinite(determinant) || Math.abs(determinant) < 0.000001) return { x: 0, y: 0, z: 0 };
-    const lambdaX = (a11 * screenX - a01 * screenY) / determinant;
-    const lambdaY = (-a01 * screenX + a00 * screenY) / determinant;
-    const delta = {
-      x: rowX[0] * lambdaX + rowY[0] * lambdaY,
-      y: rowX[1] * lambdaX + rowY[1] * lambdaY,
-      z: rowX[2] * lambdaX + rowY[2] * lambdaY,
-    };
-    const magnitude = Math.hypot(delta.x, delta.y, delta.z);
-    if (!Number.isFinite(magnitude) || magnitude === 0) return { x: 0, y: 0, z: 0 };
-    const maximumStep = 0.34;
-    const scale = magnitude > maximumStep ? maximumStep / magnitude : 1;
-    return { x: delta.x * scale, y: delta.y * scale, z: delta.z * scale };
-  }
-
-  function irLimitedDisplacement(value) {
-    const limited = {
-      x: clamp(value.x, -1.95, 1.95),
-      y: clamp(value.y, -1.62, 1.62),
-      z: clamp(value.z, -1.35, 1.35),
-    };
-    const maximum = width < 760 ? 1.72 : 2.28;
-    const magnitude = Math.hypot(limited.x, limited.y, limited.z);
-    if (magnitude > maximum) {
-      const scale = maximum / magnitude;
-      limited.x *= scale;
-      limited.y *= scale;
-      limited.z *= scale;
-    }
-    return limited;
-  }
-
-  function irPlacementFits(key) {
-    const point = overviewPositions(time)[key];
-    if (!point || ![point.x, point.y, point.r].every(Number.isFinite)) return false;
-    const marginX = Math.max(36, point.r * 0.88);
-    const marginTop = Math.max(80, point.r * 0.82);
-    const marginBottom = Math.max(64, point.r * 0.78);
-    return point.x >= marginX && point.x <= width - marginX
-      && point.y >= marginTop && point.y <= height - marginBottom;
-  }
-
-  function irApplyDelta(key, delta) {
-    const displacement = irDeformations[key];
-    const before = { ...displacement };
-    const target = irLimitedDisplacement({
-      x: displacement.x + delta.x,
-      y: displacement.y + delta.y,
-      z: displacement.z + delta.z,
-    });
-    Object.assign(displacement, target);
-    if (irPlacementFits(key)) return;
-    let low = 0;
-    let high = 1;
-    let accepted = before;
-    for (let iteration = 0; iteration < 9; iteration += 1) {
-      const amount = (low + high) * 0.5;
-      const candidate = {
-        x: lerp(before.x, target.x, amount),
-        y: lerp(before.y, target.y, amount),
-        z: lerp(before.z, target.z, amount),
-      };
-      Object.assign(displacement, candidate);
-      if (irPlacementFits(key)) {
-        accepted = candidate;
-        low = amount;
-      } else {
-        high = amount;
-      }
-    }
-    Object.assign(displacement, accepted);
   }
 
   function irRedrawNow() {
@@ -279,82 +155,105 @@
     render(time);
   }
 
-  function irMove(event) {
-    if (irDrag.pointerId === null || event.pointerId !== irDrag.pointerId || !irDrag.key) return;
-    const dx = event.clientX - irDrag.lastX;
-    const dy = event.clientY - irDrag.lastY;
-    irDrag.lastX = event.clientX;
-    irDrag.lastY = event.clientY;
-    if (Math.hypot(event.clientX - irDrag.startX, event.clientY - irDrag.startY) > 6) irDrag.moved = true;
-    irApplyDelta(irDrag.key, irScreenDeltaToModel(irDrag.key, dx, dy));
+  function irApplyWholeFieldOrbit(dx, dy, dt = 1 / 60) {
+    const safeDt = Math.max(0.008, Number(dt) || 1 / 60);
+    overviewYaw -= dx * 0.0065;
+    overviewPitch = clamp(overviewPitch - dy * 0.0055, -1.18, 1.18);
     overviewLastInput = time;
-    app.dataset.worldDragDistance = Math.hypot(
-      event.clientX - irDrag.startX,
-      event.clientY - irDrag.startY,
-    ).toFixed(2);
-    if (hint) hint.textContent = `${WORLD[irDrag.key].name} · PATH BENDING WITH WORLD`;
+    return {
+      yawVelocity: clamp(-dx * 0.0065 / safeDt, -9, 9),
+      pitchVelocity: clamp(-dy * 0.0055 / safeDt, -8, 8),
+    };
+  }
+
+  function irBeginLabelDrag(event, key, element) {
+    if (!WORLD[key] || activeWorld || viewMix > 0.28 || window.__dreamUnityGameActive) return;
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    irLabelDrag.pointerId = event.pointerId;
+    irLabelDrag.key = key;
+    irLabelDrag.target = element;
+    irLabelDrag.lastX = irLabelDrag.startX = event.clientX;
+    irLabelDrag.lastY = irLabelDrag.startY = event.clientY;
+    irLabelDrag.lastTime = performance.now();
+    irLabelDrag.moved = false;
+    irLabelDrag.yawVelocity = 0;
+    irLabelDrag.pitchVelocity = 0;
+    overviewYawVelocity = 0;
+    overviewPitchVelocity = 0;
+    overviewRollVelocity = 0;
+    overviewLastInput = time;
+    app.dataset.draggingWholeField = 'true';
+    app.dataset.wholeFieldHandle = key;
+    element.classList.add('dragging');
+    try { element.setPointerCapture?.(event.pointerId); } catch {}
+    if (hint) hint.textContent = `${WORLD[key].name} · ORBITING THE WHOLE FORM`;
+    event.stopPropagation();
+  }
+
+  function irMoveLabelDrag(event) {
+    if (irLabelDrag.pointerId === null || event.pointerId !== irLabelDrag.pointerId || !irLabelDrag.key) return;
+    const now = performance.now();
+    const dx = event.clientX - irLabelDrag.lastX;
+    const dy = event.clientY - irLabelDrag.lastY;
+    const dt = Math.max(0.008, (now - irLabelDrag.lastTime) / 1000);
+    irLabelDrag.lastX = event.clientX;
+    irLabelDrag.lastY = event.clientY;
+    irLabelDrag.lastTime = now;
+    if (Math.hypot(event.clientX - irLabelDrag.startX, event.clientY - irLabelDrag.startY) > 6) irLabelDrag.moved = true;
+    const velocity = irApplyWholeFieldOrbit(dx, dy, dt);
+    irLabelDrag.yawVelocity = velocity.yawVelocity;
+    irLabelDrag.pitchVelocity = velocity.pitchVelocity;
+    // The normal inertia integrator sees no canvas pointer during a label drag,
+    // so hold global velocity at zero until release to avoid double motion.
+    overviewYawVelocity = 0;
+    overviewPitchVelocity = 0;
+    overviewRollVelocity = 0;
     irRedrawNow();
     event.preventDefault();
     event.stopImmediatePropagation();
   }
 
-  function irFinish(event, cancelled = false) {
-    if (irDrag.pointerId === null || event.pointerId !== irDrag.pointerId || !irDrag.key) return;
-    const key = irDrag.key;
-    const source = irDrag.source;
-    const moved = irDrag.moved || cancelled;
-    try { irDrag.target?.releasePointerCapture?.(event.pointerId); } catch {}
-    labels[key]?.classList.remove('dragging');
-    delete app.dataset.draggingWorld;
-    irDrag.pointerId = null;
-    irDrag.key = null;
-    irDrag.source = null;
-    irDrag.target = null;
-    irDrag.moved = false;
+  function irFinishLabelDrag(event, cancelled = false) {
+    if (irLabelDrag.pointerId === null || event.pointerId !== irLabelDrag.pointerId || !irLabelDrag.key) return;
+    const key = irLabelDrag.key;
+    const element = irLabelDrag.target;
+    const moved = irLabelDrag.moved || cancelled;
+    const yawVelocity = irLabelDrag.yawVelocity;
+    const pitchVelocity = irLabelDrag.pitchVelocity;
+    try { element?.releasePointerCapture?.(event.pointerId); } catch {}
+    element?.classList.remove('dragging');
+    delete app.dataset.draggingWholeField;
+    delete app.dataset.wholeFieldHandle;
+    irLabelDrag.pointerId = null;
+    irLabelDrag.key = null;
+    irLabelDrag.target = null;
+    irLabelDrag.moved = false;
+    irLabelDrag.yawVelocity = 0;
+    irLabelDrag.pitchVelocity = 0;
 
-    if (!cancelled && !moved && source === 'canvas') enterWorld(key);
-    if (moved && source === 'label') {
+    if (moved) {
+      overviewYawVelocity = cancelled || reduced ? 0 : yawVelocity;
+      overviewPitchVelocity = cancelled || reduced ? 0 : pitchVelocity;
+      overviewRollVelocity = 0;
       irSuppressClickKey = key;
       irSuppressClickUntil = performance.now() + 520;
-    }
-    irRedrawNow();
-    if (hint && !activeWorld) hint.textContent = coarse
-      ? 'DRAG A WORLD WITH ITS THREAD · PINCH EMPTY SPACE · TAP TO ENTER'
-      : 'DRAG A WORLD WITH ITS THREAD · DRAG EMPTY SPACE TO ORBIT · TAP TO ENTER';
-    window.dispatchEvent(new CustomEvent('dreamunity:world-positioned', {
-      detail: { world: key, deformation: { ...irDeformations[key] }, moved: !cancelled && moved, connected: true },
-    }));
-    if (source === 'canvas' || moved) {
+      window.dispatchEvent(new CustomEvent('dreamunity:whole-field-orbited', {
+        detail: { handle: key, orientation: irOrientationSnapshot(), connected: true, rigid: true },
+      }));
       event.preventDefault();
       event.stopImmediatePropagation();
     }
+    irRedrawNow();
+    if (hint && !activeWorld) hint.textContent = coarse
+      ? 'DRAG ANY WORLD OR EMPTY SPACE TO ORBIT · PINCH TO ZOOM · TAP TO ENTER'
+      : 'DRAG ANY WORLD, NAME OR EMPTY SPACE TO ORBIT THE WHOLE FORM · TAP TO ENTER';
   }
-
-  canvas.addEventListener('pointerdown', (event) => {
-    if (event.pointerType === 'mouse' && event.button !== 0) return;
-    const key = irWorldAt(event.clientX, event.clientY);
-    if (!key || !irBegin(event, key, 'canvas', canvas)) return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
-  }, { capture: true, passive: false });
-
-  document.addEventListener('pointerdown', (event) => {
-    if (event.pointerType === 'mouse' && event.button !== 0) return;
-    const label = event.target instanceof Element
-      ? event.target.closest('.world-label[data-world]')
-      : null;
-    const key = label?.dataset.world;
-    if (!key || irDrag.pointerId !== null) return;
-    irBegin(event, key, 'label', label);
-  }, { capture: true, passive: true });
-
-  window.addEventListener('pointermove', irMove, { capture: true, passive: false });
-  window.addEventListener('pointerup', (event) => irFinish(event, false), { capture: true, passive: false });
-  window.addEventListener('pointercancel', (event) => irFinish(event, true), { capture: true, passive: false });
 
   Object.entries(labels).forEach(([key, element]) => {
     if (!element) return;
     element.style.touchAction = 'none';
+    element.style.userSelect = 'none';
+    element.addEventListener('pointerdown', (event) => irBeginLabelDrag(event, key, element), { passive: false });
     element.addEventListener('click', (event) => {
       if (irSuppressClickKey !== key || performance.now() > irSuppressClickUntil) return;
       irSuppressClickKey = null;
@@ -363,40 +262,54 @@
     }, { capture: true });
   });
 
+  window.addEventListener('pointermove', irMoveLabelDrag, { capture: true, passive: false });
+  window.addEventListener('pointerup', (event) => irFinishLabelDrag(event, false), { capture: true, passive: false });
+  window.addEventListener('pointercancel', (event) => irFinishLabelDrag(event, true), { capture: true, passive: false });
+
   const irBaseSetHint = setHint;
-  setHint = function connectedWorldHint() {
+  setHint = function wholeFieldHint() {
     irBaseSetHint();
-    if (!activeWorld && hint && irDrag.pointerId === null) hint.textContent = coarse
-      ? 'DRAG A WORLD WITH ITS THREAD · PINCH EMPTY SPACE · TAP TO ENTER'
-      : 'DRAG A WORLD WITH ITS THREAD · DRAG EMPTY SPACE TO ORBIT · TAP TO ENTER';
+    if (!activeWorld && hint && irLabelDrag.pointerId === null) hint.textContent = coarse
+      ? 'DRAG ANY WORLD OR EMPTY SPACE TO ORBIT · PINCH TO ZOOM · TAP TO ENTER'
+      : 'DRAG ANY WORLD, NAME OR EMPTY SPACE TO ORBIT THE WHOLE FORM · TAP TO ENTER';
   };
 
   window.__dreamUnityInteractions = Object.freeze({
-    id: 'connected-world-rig',
+    id: 'whole-field-orbit',
     version: IR_RELEASE,
     ready: true,
     connected: true,
-    offsets: () => Object.fromEntries(worldKeys.map((key) => [key, { ...irDeformations[key] }])),
-    deformations: () => Object.fromEntries(worldKeys.map((key) => [key, { ...irDeformations[key] }])),
+    wholeField: true,
+    independent: false,
     screen: irScreenSnapshot,
+    model: irModelSnapshot,
+    shape: irShapeSignature,
+    orientation: irOrientationSnapshot,
     anchors: irAnchorSnapshot,
     threadSamples: irThreadSamples,
     integrity: irIntegritySnapshot,
-    reset(world) {
-      if (world && irDeformations[world]) {
-        irDeformations[world].x = 0;
-        irDeformations[world].y = 0;
-        irDeformations[world].z = 0;
-      } else {
-        worldKeys.forEach((key) => {
-          irDeformations[key].x = 0;
-          irDeformations[key].y = 0;
-          irDeformations[key].z = 0;
-        });
-      }
+    orbitBy(dx, dy) {
+      overviewYawVelocity = 0;
+      overviewPitchVelocity = 0;
+      overviewRollVelocity = 0;
+      irApplyWholeFieldOrbit(Number(dx) || 0, Number(dy) || 0, 1 / 60);
       irRedrawNow();
+      return irOrientationSnapshot();
+    },
+    reset() {
+      overviewYaw = 0.18;
+      overviewPitch = -0.06;
+      overviewRoll = 0;
+      overviewZoom = 1;
+      overviewYawVelocity = 0;
+      overviewPitchVelocity = 0;
+      overviewRollVelocity = 0;
+      overviewLastInput = time;
+      irRedrawNow();
+      return irOrientationSnapshot();
     },
   });
-  app.dataset.independentWorlds = 'true';
+  app.dataset.independentWorlds = 'false';
   app.dataset.connectedWorldRig = 'true';
+  app.dataset.wholeFieldOrbit = 'true';
   setHint();

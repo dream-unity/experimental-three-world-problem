@@ -60,7 +60,8 @@ const targetUrl = new URL(baseUrl);
 targetUrl.searchParams.set('interaction-check', String(Date.now()));
 await page.goto(targetUrl.href, { waitUntil: 'domcontentloaded' });
 await page.waitForFunction(() => window.__dreamUnityInteractions?.ready === true);
-await page.waitForFunction(() => window.__dreamUnityInteractions?.connected === true);
+await page.waitForFunction(() => window.__dreamUnityInteractions?.wholeField === true);
+await page.waitForFunction(() => window.__dreamUnityInteractions?.independent === false);
 await page.waitForFunction(() => window.__interactionArcadeReady === true);
 await page.waitForFunction(() => document.querySelector('#label-machine')?.offsetWidth > 0);
 await page.waitForFunction(() => window.__dreamUnityInteractions.screen().machine.r > 20);
@@ -70,24 +71,72 @@ await page.waitForFunction(() => {
   return !loader || (loader.classList.contains('hide') && style?.visibility === 'hidden' && Number.parseFloat(style.opacity || '1') <= 0.01);
 });
 
+const worldKeys = ['machine', 'maker', 'reality'];
 const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+const orientationDistance = (a, b) => Math.hypot(a.yaw - b.yaw, a.pitch - b.pitch, a.roll - b.roll);
 const readLabels = () => page.evaluate(() => Object.fromEntries(
   ['machine', 'maker', 'reality'].map(key => {
     const rect = document.querySelector(`#label-${key}`).getBoundingClientRect();
-    return [key, { x: rect.x, y: rect.y, width: rect.width, height: rect.height }];
+    return [key, {
+      x: rect.left + rect.width * 0.5,
+      y: rect.top + rect.height * 0.5,
+      width: rect.width,
+      height: rect.height,
+    }];
   })
 ));
 const readRig = () => page.evaluate(() => ({
   screen: window.__dreamUnityInteractions.screen(),
   anchors: window.__dreamUnityInteractions.anchors(),
-  deformations: window.__dreamUnityInteractions.deformations(),
+  orientation: window.__dreamUnityInteractions.orientation(),
+  shape: window.__dreamUnityInteractions.shape(),
   integrity: window.__dreamUnityInteractions.integrity(),
+  samples: window.__dreamUnityInteractions.threadSamples(96),
 }));
 
-async function dragConnectedWorld(key, dx, dy) {
+function assertRigidShape(before, after, handle) {
+  for (const key of Object.keys(before.shape)) {
+    assert.ok(Math.abs(after.shape[key] - before.shape[key]) < 1e-10, `${handle}: rigid shape changed at ${key}`);
+  }
+  assert.equal(after.integrity.connected, true, `${handle}: a world separated from its thread`);
+  assert.equal(after.integrity.rigid, true, `${handle}: field is not marked rigid`);
+  assert.equal(after.integrity.allFinite, true, `${handle}: invalid path geometry appeared`);
+  assert.ok(after.integrity.maxSegmentGap < 48, `${handle}: path opened a ${after.integrity.maxSegmentGap.toFixed(1)}px gap`);
+  for (const key of worldKeys) {
+    assert.ok(after.anchors[key].distance < 0.75, `${handle}: ${key} separated from its coloured thread by ${after.anchors[key].distance.toFixed(2)}px`);
+  }
+}
+
+function assertWholeFieldMoved(before, after, handle, primaryKey = null) {
+  const orientationMoved = orientationDistance(before.orientation, after.orientation);
+  assert.ok(orientationMoved > 0.24, `${handle}: whole-field orientation changed only ${orientationMoved.toFixed(3)} radians`);
+
+  const bodyMoves = Object.fromEntries(worldKeys.map(key => [key, distance(before.screen[key], after.screen[key])]));
+  if (primaryKey) assert.ok(bodyMoves[primaryKey] > 28, `${handle}: grabbed world moved only ${bodyMoves[primaryKey].toFixed(1)}px`);
+  for (const key of worldKeys) {
+    assert.ok(bodyMoves[key] > 6, `${handle}: ${key} did not travel with the whole 3D form (${bodyMoves[key].toFixed(1)}px)`);
+  }
+  const otherMovement = worldKeys
+    .filter(key => key !== primaryKey)
+    .reduce((sum, key) => sum + bodyMoves[key], 0);
+  assert.ok(otherMovement > 34, `${handle}: the rest of the 3D visualisation barely moved (${otherMovement.toFixed(1)}px combined)`);
+
+  let movedSamples = 0;
+  for (let index = 0; index < Math.min(before.samples.length, after.samples.length); index += 1) {
+    if (distance(before.samples[index], after.samples[index]) > 6) movedSamples += 1;
+  }
+  const ratio = movedSamples / Math.min(before.samples.length, after.samples.length);
+  assert.ok(ratio > 0.72, `${handle}: only ${(ratio * 100).toFixed(1)}% of the complete thread moved`);
+  assertRigidShape(before, after, handle);
+}
+
+async function resetField() {
   await page.evaluate(() => window.__dreamUnityInteractions.reset());
-  await page.waitForTimeout(70);
-  const beforeLabels = await readLabels();
+  await page.waitForTimeout(80);
+}
+
+async function dragWorldBody(key, dx, dy) {
+  await resetField();
   const before = await readRig();
   const world = before.screen[key];
   const topElement = await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.id || '', world);
@@ -97,48 +146,62 @@ async function dragConnectedWorld(key, dx, dy) {
   await page.mouse.down();
   await page.mouse.move(world.x + dx, world.y + dy, { steps: 10 });
   await page.mouse.up();
-  await page.waitForFunction(worldKey => {
-    const value = window.__dreamUnityInteractions.deformations()[worldKey];
-    return Math.hypot(value.x, value.y, value.z) > 0.25;
-  }, key);
-  await page.waitForTimeout(90);
+  await page.waitForFunction(previous => {
+    const current = window.__dreamUnityInteractions.orientation();
+    return Math.hypot(current.yaw - previous.yaw, current.pitch - previous.pitch, current.roll - previous.roll) > 0.24;
+  }, before.orientation);
+  await page.waitForTimeout(70);
 
-  const afterLabels = await readLabels();
   const after = await readRig();
-  const moved = distance(after.screen[key], before.screen[key]);
-  const threadMoved = distance(after.anchors[key].thread, before.anchors[key].thread);
-  const leadingThreadMoved = distance(after.anchors[key].before, before.anchors[key].before);
-  const trailingThreadMoved = distance(after.anchors[key].after, before.anchors[key].after);
-  const labelMoved = distance(afterLabels[key], beforeLabels[key]);
-  const deformation = after.deformations[key];
-
-  assert.ok(Math.hypot(deformation.x, deformation.y, deformation.z) > 0.25, `${key} deformation was not recorded`);
-  assert.ok(moved > 45, `${key} body did not move (${moved.toFixed(1)}px)`);
-  assert.ok(threadMoved > 45, `${key} path anchor did not move with its world (${threadMoved.toFixed(1)}px)`);
-  assert.ok(leadingThreadMoved > 28, `${key} leading coloured thread did not bend with its world (${leadingThreadMoved.toFixed(1)}px)`);
-  assert.ok(trailingThreadMoved > 28, `${key} trailing coloured thread did not bend with its world (${trailingThreadMoved.toFixed(1)}px)`);
-  assert.ok(labelMoved > 30, `${key} label did not follow its connected world (${labelMoved.toFixed(1)}px)`);
-  assert.ok(after.anchors[key].distance < 0.75, `${key} separated from its thread by ${after.anchors[key].distance.toFixed(2)}px`);
-  assert.equal(after.integrity.connected, true, `${key} broke the connected-world rig`);
-  assert.equal(after.integrity.allFinite, true, `${key} introduced invalid thread geometry`);
-  assert.ok(after.integrity.maxSegmentGap < 48, `continuous path opened a ${after.integrity.maxSegmentGap.toFixed(1)}px gap`);
-
-  for (const other of ['machine', 'maker', 'reality'].filter(value => value !== key)) {
-    const bodyDrift = distance(after.screen[other], before.screen[other]);
-    const anchorDrift = distance(after.anchors[other].thread, before.anchors[other].thread);
-    assert.ok(bodyDrift < 16, `${other} body drifted while dragging ${key} (${bodyDrift.toFixed(1)}px)`);
-    assert.ok(anchorDrift < 16, `${other} path anchor drifted while dragging ${key} (${anchorDrift.toFixed(1)}px)`);
-    assert.ok(after.anchors[other].distance < 0.75, `${other} is not attached to its thread`);
-  }
+  assertWholeFieldMoved(before, after, `${key} body handle`, key);
+  assert.equal(await page.locator('#app').getAttribute('data-whole-field-orbit'), 'true');
+  assert.equal(await page.locator('#app').getAttribute('data-independent-worlds'), 'false');
+  assert.equal(await page.locator('#app').evaluate(node => node.classList.contains('detail')), false, `${key} drag incorrectly entered its world`);
 }
 
-await dragConnectedWorld('machine', 112, 58);
-await dragConnectedWorld('maker', -94, 62);
-await dragConnectedWorld('reality', -86, -72);
-assert.equal(await page.locator('#app').getAttribute('data-independent-worlds'), 'true');
-assert.equal(await page.locator('#app').getAttribute('data-connected-world-rig'), 'true');
+async function dragWorldName(key, dx, dy) {
+  await resetField();
+  const labelsBefore = await readLabels();
+  const before = await readRig();
+  const label = labelsBefore[key];
+  const topElement = await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.id || '', label);
+  assert.equal(topElement, `label-${key}`, `${key} name was obstructed by ${topElement || 'an unknown element'}`);
 
-await page.evaluate(() => window.__dreamUnityInteractions.reset());
+  await page.mouse.move(label.x, label.y);
+  await page.mouse.down();
+  await page.mouse.move(label.x + dx, label.y + dy, { steps: 10 });
+  await page.mouse.up();
+  await page.waitForFunction(previous => {
+    const current = window.__dreamUnityInteractions.orientation();
+    return Math.hypot(current.yaw - previous.yaw, current.pitch - previous.pitch, current.roll - previous.roll) > 0.24;
+  }, before.orientation);
+  await page.waitForTimeout(70);
+
+  const after = await readRig();
+  const labelsAfter = await readLabels();
+  assertWholeFieldMoved(before, after, `${key} name handle`, key);
+  assert.ok(distance(labelsBefore[key], labelsAfter[key]) > 8, `${key} name did not follow the rotating whole form`);
+  assert.equal(await page.locator('#app').evaluate(node => node.classList.contains('detail')), false, `${key} name drag incorrectly entered its world`);
+}
+
+await dragWorldBody('machine', 116, 58);
+await dragWorldBody('maker', -104, 68);
+await dragWorldBody('reality', 96, -76);
+await dragWorldName('machine', 108, 54);
+await dragWorldName('maker', -98, 64);
+await dragWorldName('reality', 92, -70);
+
+await resetField();
+const emptyBefore = await readRig();
+await page.mouse.move(640, 116);
+await page.mouse.down();
+await page.mouse.move(742, 178, { steps: 10 });
+await page.mouse.up();
+await page.waitForTimeout(80);
+const emptyAfter = await readRig();
+assertWholeFieldMoved(emptyBefore, emptyAfter, 'empty-space handle');
+
+await resetField();
 await page.locator('#label-maker').click();
 await page.waitForFunction(() => document.querySelector('#app')?.classList.contains('detail'));
 await page.waitForFunction(() => [...document.querySelectorAll('.sub-label')].every(node => {
@@ -210,4 +273,4 @@ assert.deepEqual(errors, []);
 await context.close();
 await browser.close();
 if (server) await new Promise(resolve => server.close(resolve));
-console.log(`Connected World Rig validated${process.env.DU_INTERACTION_BASE_URL ? ' live' : ''}: all three worlds deform their attached paths and all nine game control sets remain operable.`);
+console.log(`Whole Field Orbit validated${process.env.DU_INTERACTION_BASE_URL ? ' live' : ''}: every world body and name moves the complete rigid 3D visualisation, and all nine games remain operable.`);
