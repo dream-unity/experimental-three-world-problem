@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: gods-eye-view-live
+    runtime: docker
+    plan: free
+    region: singapore
+    branch: cloudrun-gods-eye-view
+    rootDir: cloudrun-gods-eye-view
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    autoDeploy: false
+    healthCheckPath: /
+    envVars:
+      - key: OPENSKY_AUTH_MODE
+        value: anon
+      - key: NODE_ENV
+        value: development
