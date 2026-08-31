@@ -9,7 +9,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     NODE_ENV=development \
     OPENSKY_AUTH_MODE=anon \
     GEV_LOW_MEMORY=1 \
-    NODE_OPTIONS=--max-old-space-size=224 \
+    NODE_OPTIONS=--max-old-space-size=352 \
     PORT=8080
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
