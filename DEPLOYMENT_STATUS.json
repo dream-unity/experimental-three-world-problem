@@ -1,7 +1,7 @@
 {
   "project": "Dream Unity \u2014 Experimental Three-World Problem",
   "deployment": "verified-live",
-  "source_sha": "5317a92cd68115901767fac759f2b996699c8da7",
+  "source_sha": "4f6f89d510f54ae3c4ab6490ac7a7a6b9c801bf8",
   "page_url": "https://dream-unity.github.io/experimental-three-world-problem/",
   "nine_portal_compatibility": "validated",
   "overview": {
@@ -74,7 +74,7 @@
     "91e82bccfa261a7486b40cd54712eff72065cd46ef39ffe8af3f98cc60998ccf  assets/sovereign-countermirror-mobile.webp",
     "91e82bccfa261a7486b40cd54712eff72065cd46ef39ffe8af3f98cc60998ccf  assets/sovereign-countermirror.webp",
     "57d8e4137ee7c59464b1fd5c4d289f0c36a2cdef997dcefc73ff633b8bf07869  visual-parts/bearing-mirror-12.txt",
-    "c27dde11cd3144789ae79415a59e40d796811d99e41ae6bb1298e37b8f13677d  visual-parts/interaction-recovery-22.txt",
+    "811646b4dd8d33dcceb0f111ba18b08bc80fdc68bd867ecc79ae71d06f4967e3  visual-parts/interaction-recovery-22.txt",
     "a65931a912def7af8e6d79dd1d642f871e5727b7623dee19d7f725bb69c2d433  visual-parts/light-overview-07.txt",
     "8ca363f1b9c5cf33946aa01b9273b7cfd724795757dcaad7af9d0dec21f66162  visual-parts/mirror-forge-08.txt",
     "56721366312283387c98c07da9086f9a7b4b68e6d349ede5080d53159673236b  visual-parts/part-01.txt",
@@ -113,5 +113,5 @@
     "c5a8ea262274f0a64821aae3c304e7410293b66ac1c1665c38ca44eae0ed7488  arcade-parts/perceive-aerial-08.txt",
     "6545873de0d833976a46ffa52666c6629e94e6fdda4f30c3a1720f738cb3b892  arcade-parts/perceive-role-logic.txt"
   ],
-  "verified_at": "2026-08-31T07:08:58.443794+00:00"
+  "verified_at": "2026-08-31T07:14:36.598618+00:00"
 }
