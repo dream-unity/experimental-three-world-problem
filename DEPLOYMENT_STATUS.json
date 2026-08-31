@@ -1,7 +1,7 @@
 {
   "project": "Dream Unity \u2014 Experimental Three-World Problem",
   "deployment": "verified-live",
-  "source_sha": "360b632c3d1958d3af3089471933b6e935a6c3b8",
+  "source_sha": "da5939c2d46ebe009d75fd605d4cb381777679fb",
   "page_url": "https://dream-unity.github.io/experimental-three-world-problem/",
   "nine_portal_compatibility": "validated",
   "overview": {
@@ -116,5 +116,5 @@
     "c5a8ea262274f0a64821aae3c304e7410293b66ac1c1665c38ca44eae0ed7488  arcade-parts/perceive-aerial-08.txt",
     "6545873de0d833976a46ffa52666c6629e94e6fdda4f30c3a1720f738cb3b892  arcade-parts/perceive-role-logic.txt"
   ],
-  "verified_at": "2026-08-31T10:19:52.715009+00:00"
+  "verified_at": "2026-08-31T10:24:19.631532+00:00"
 }
