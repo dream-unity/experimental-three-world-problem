@@ -1,55 +1,30 @@
 {
   "project": "Dream Unity \u2014 Experimental Three-World Problem",
   "deployment": "verified-live",
-  "source_sha": "9e558a6871dcc593e8f22a2c1826f9803a5b1bf0",
+  "source_sha": "df54cd550d3728b0a82bfc842048bf13333c751a",
   "page_url": "https://dream-unity.github.io/experimental-three-world-problem/",
   "nine_portal_compatibility": "validated",
   "overview": {
-    "theme": "stage_coral_sovereign_nocturne",
-    "canvas_background": "#050505",
-    "material_palette": {
-      "void": "#050505",
-      "basalt": "#111010",
-      "bone": "#E9E3D6",
-      "living_coral": "#FF4E57",
-      "furnace_coral": "#FF765F",
-      "machine": "#00C9E8",
-      "maker": "#14C98B",
-      "reality": "#6840FF"
-    },
-    "renderer_id": "sovereign-nocturne",
-    "renderer_entrypoint": "visual-parts/sovereign-nocturne-20.js",
-    "renderer_api": "webgl2",
-    "canvas2d_fallback": true,
-    "renderer_ready_contract": true,
-    "webgl_context_recovery": true,
-    "reduced_motion_resolved_pose": true,
-    "silent_cycle_seconds": 40,
+    "theme": "stage_coral_sovereign_resonance",
+    "canvas_background": "#FFFFFF",
     "legacy_render_vignette_active": false,
     "nebula_fog_active": false,
-    "connected_mineral_membrane": true,
-    "asymmetrical_low_anchor": true,
-    "interior_materials": [
-      "coral",
-      "bone"
-    ],
-    "delayed_desaturated_reflection": true,
-    "sparse_memory_fibres": true,
-    "three_world_portal_glints": true,
-    "world_count": 3,
-    "game_count": 9,
-    "forbidden_motifs": {
-      "gear": false,
-      "block": false,
-      "frame": false,
-      "leader_card": false,
-      "loop": false,
-      "ribbon": false
+    "world_palette": {
+      "machine": "#00BDE8",
+      "maker": "#00C983",
+      "reality": "#7448FF",
+      "unity": "#E7A429"
     },
+    "connected_instrument": true,
+    "distinct_world_geometries": true,
+    "temporal_ghost_field": true,
+    "causality_reversal_at_seconds": 276.8,
+    "score_driven_material_states": true,
+    "sovereign_fold_shell": true,
+    "load_bearing_bone_interlude": true,
+    "plural_remembered_futures": true,
     "ether_compression_matter_return_cycle": true,
-    "external_runtime_dependencies": false,
-    "private_reference_audio_published": false,
-    "private_reference_audio_requested": false,
+    "generated_core_asset": null,
     "homepage_score": "assets/i-remember-tomorrow.mp3",
     "voice_interface_active": false,
     "voice_archive": {
@@ -60,7 +35,8 @@
       "backend_status": "paused",
       "backend_release": "20260829-unity-backend-paused-1"
     },
-    "main_cache_version": "20260830-sovereign-nocturne-20"
+    "renderer_override": "visual-parts/remembered-tomorrow-10.txt",
+    "main_cache_version": "20260830-awaken-true-war-2"
   },
   "become": {
     "scenario_source": "instant_objective_driven_social_agency_maximin_synthesis",
@@ -80,13 +56,13 @@
     "original_scenario_bank_used_as_fallback": false
   },
   "source_sha256": [
-    "19b37d38b0d19b4eb72e1468a2ba70e0e83cb88a1d44626551b6dbd9d0449b1d  index.html",
+    "e85362967e638c82e549628369b454be7760d13bfc4c6fcce24db70140aaf1b5  index.html",
     "6850f499f7f393c52d1f2b50b8fe862c30172ca93b37c1bed6ce689acd76ab37  styles.css",
     "ad8dc6788a87c34201b132b88d8e5eb3ed439a0644f54a9610d2398d1b877536  become.css",
-    "c9711f3968e9b1b5e9d26132c5aa57e253d41145c0c932504dc9cf0066285315  unity-cycle.css",
+    "f65aaeffd785cf3df93b324e25a4e5ac766535dcaf8288115639e4789ef58f56  unity-cycle.css",
     "68b4429c362a7b246ccab75d841db0dc760594a45f34522e21005f515c08c841  unity-ui.js",
-    "d060e67461501e1eea6c78ce31148b12aa90af1d69ecfae61357d28df4918998  main.js",
-    "4e4dbd47aa1483e6c302ef83fd4f79107d3a31f55548672cb2547a4f7dbadb41  arcade.js",
+    "4fb4c0ba1e07cd17498000dc9e718a9e640746c15f4b639776cf010ce7b58004  main.js",
+    "ae3962f60d36963b7b308b360caf8945b83788e117c7af89066b5ab3464ca2ff  arcade.js",
     "4c65c2590ea3840da26767b561b5f49b698e0a63c6f28419a8854c3122a7e610  voice.css",
     "8b2b8864217845789a3ca094622bebd94a6e156ec020ae58a968c7c578b5cfc2  voice.js",
     "e340afc85ac9e036d5d99540145c85e13c1a5fb92349612214e1082eee115ef3  api/realtime-session.js",
@@ -95,6 +71,8 @@
     "a323bead6049a23cf4683f341ef2ae9244e257781812981b92aec87bc36481f8  assets/mirror-forge-core.png",
     "4e5c28b404300ea2a1abe29fe08780c670f9b01ec4d88670bbad577a25b10b0b  assets/pressure-becomes-weather-landscape-v20.png",
     "0d264992d704e0d3244e9c341b9ee305345a948d481f6301dda95d9ae8aec8c9  assets/pressure-becomes-weather-portrait-v20.png",
+    "91e82bccfa261a7486b40cd54712eff72065cd46ef39ffe8af3f98cc60998ccf  assets/sovereign-countermirror-mobile.webp",
+    "91e82bccfa261a7486b40cd54712eff72065cd46ef39ffe8af3f98cc60998ccf  assets/sovereign-countermirror.webp",
     "57d8e4137ee7c59464b1fd5c4d289f0c36a2cdef997dcefc73ff633b8bf07869  visual-parts/bearing-mirror-12.txt",
     "a65931a912def7af8e6d79dd1d642f871e5727b7623dee19d7f725bb69c2d433  visual-parts/light-overview-07.txt",
     "8ca363f1b9c5cf33946aa01b9273b7cfd724795757dcaad7af9d0dec21f66162  visual-parts/mirror-forge-08.txt",
@@ -106,8 +84,10 @@
     "c436aec9acb62da413e3f69d251258f923ecdbd40881ce939c87080f9e03db29  visual-parts/part-06.txt",
     "08d9506349225c613a11fc53bd3e3c3b37a250f7cdefd09dbdc07664bf11ee8c  visual-parts/remembered-tomorrow-10.txt",
     "3f36cd3a11671bdc77a770405f8bcf4623c1f6766219d4483fbddfbc4a72ccc9  visual-parts/sovereign-coral-09.txt",
-    "89fdaf05f6d7d96a0ccbb81f41405a1368dc0e29d1e98c87ec066e57a527a0a2  visual-parts/sovereign-nocturne-20.js",
     "c5435d29e826c3bc7799ab41abc17829674e5c53716a32437922b0da6a1f1271  visual-parts/sovereign-resonator-11.txt",
+    "3a43521e58880bca87fae3f767346ac2c0a974a9c54ddfa8dfcc7ab45af198c2  visual-parts/sovereign-return-21-01.txt",
+    "d2cca20e3f12355047146147d40f5e4364c509c05c964c3aba6051aef799d6ba  visual-parts/sovereign-return-21-02.txt",
+    "f8c22d6e19065439e3e76f7de141f8e4105cd50f87c4735b998226b09f9ede1e  visual-parts/sovereign-return-21-03.txt",
     "ad5bb93ac121c585cfec3db4e1e3c2914e2ed8b8a0459d98781bcd8e8a462df1  arcade-parts/become-activation-objectives-14.txt",
     "53b6481086fa2be2aba90a9570c78162e8e3b0bfa856632d3cbfb62b9f317c7a  arcade-parts/become-compressed-12.txt",
     "ddc1eae5b9d4b4d92c6b2548be18a77a9ae944a84890c1c4bf6a9d788f054848  arcade-parts/become-diversity-09.txt",
@@ -132,5 +112,5 @@
     "c5a8ea262274f0a64821aae3c304e7410293b66ac1c1665c38ca44eae0ed7488  arcade-parts/perceive-aerial-08.txt",
     "6545873de0d833976a46ffa52666c6629e94e6fdda4f30c3a1720f738cb3b892  arcade-parts/perceive-role-logic.txt"
   ],
-  "verified_at": "2026-08-31T02:13:24.303345+00:00"
+  "verified_at": "2026-08-31T06:36:18.790546+00:00"
 }
