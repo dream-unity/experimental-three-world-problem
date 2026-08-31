@@ -1,0 +1,186 @@
+  // Interaction Recovery 22 — each world is again a directly movable body.
+  // Empty-space gestures continue to orbit the complete Dream Unity instrument.
+  const IR_RELEASE = '20260831-interaction-recovery-22';
+  const irOffsets = {
+    machine: { x: 0, y: 0 },
+    maker: { x: 0, y: 0 },
+    reality: { x: 0, y: 0 },
+  };
+  const irDrag = {
+    pointerId: null,
+    key: null,
+    source: null,
+    target: null,
+    lastX: 0,
+    lastY: 0,
+    startX: 0,
+    startY: 0,
+    moved: false,
+  };
+  let irSuppressClickKey = null;
+  let irSuppressClickUntil = 0;
+
+  const irOriginalOverviewPositions = overviewPositions;
+  overviewPositions = function interactionRecoveryPositions(t) {
+    const positions = irOriginalOverviewPositions(t);
+    worldKeys.forEach((key) => {
+      const point = positions[key];
+      const offset = irOffsets[key];
+      if (!point || !offset) return;
+      const marginX = Math.max(26, point.r * 0.78);
+      const marginTop = Math.max(72, point.r * 0.74);
+      const marginBottom = Math.max(58, point.r * 0.72);
+      point.x = clamp(point.x + offset.x * unit, marginX, width - marginX);
+      point.y = clamp(point.y + offset.y * unit, marginTop, height - marginBottom);
+    });
+    return positions;
+  };
+
+  const irOriginalUpdateLabels = updateLabels;
+  updateLabels = function interactionRecoveryLabels() {
+    irOriginalUpdateLabels();
+    if (!activeWorld || viewMix <= 0.18 || window.__dreamUnityGameActive) return;
+    subLabels.forEach((element) => {
+      if (!element) return;
+      const left = Number.parseFloat(element.style.left);
+      const top = Number.parseFloat(element.style.top);
+      if (Number.isFinite(left)) element.style.left = `${clamp(left, 64, width - 64)}px`;
+      if (Number.isFinite(top)) element.style.top = `${clamp(top, 82, height - 54)}px`;
+      element.style.visibility = 'visible';
+      element.style.zIndex = '14';
+    });
+  };
+
+  function irWorldAt(clientX, clientY) {
+    if (activeWorld || viewMix > 0.28 || window.__dreamUnityGameActive) return null;
+    const ordered = [...worldKeys].sort((a, b) => worldScreen[b].z - worldScreen[a].z);
+    for (const key of ordered) {
+      const point = worldScreen[key];
+      if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) continue;
+      const radius = Math.max(31, point.r * 1.42);
+      if (Math.hypot(clientX - point.x, clientY - point.y) <= radius) return key;
+    }
+    return null;
+  }
+
+  function irBegin(event, key, source, target) {
+    if (!irOffsets[key] || activeWorld || viewMix > 0.28 || window.__dreamUnityGameActive) return false;
+    irDrag.pointerId = event.pointerId;
+    irDrag.key = key;
+    irDrag.source = source;
+    irDrag.target = target || event.currentTarget || event.target;
+    irDrag.lastX = irDrag.startX = event.clientX;
+    irDrag.lastY = irDrag.startY = event.clientY;
+    irDrag.moved = false;
+    overviewYawVelocity = 0;
+    overviewPitchVelocity = 0;
+    overviewRollVelocity = 0;
+    overviewLastInput = time;
+    app.dataset.draggingWorld = key;
+    labels[key]?.classList.add('dragging');
+    try { irDrag.target?.setPointerCapture?.(event.pointerId); } catch {}
+    return true;
+  }
+
+  function irMove(event) {
+    if (irDrag.pointerId === null || event.pointerId !== irDrag.pointerId || !irDrag.key) return;
+    const dx = event.clientX - irDrag.lastX;
+    const dy = event.clientY - irDrag.lastY;
+    irDrag.lastX = event.clientX;
+    irDrag.lastY = event.clientY;
+    if (Math.hypot(event.clientX - irDrag.startX, event.clientY - irDrag.startY) > 6) irDrag.moved = true;
+    const scale = Math.max(320, unit);
+    const offset = irOffsets[irDrag.key];
+    offset.x = clamp(offset.x + dx / scale, -0.56, 0.56);
+    offset.y = clamp(offset.y + dy / scale, -0.46, 0.46);
+    overviewLastInput = time;
+    if (hint) hint.textContent = `${WORLD[irDrag.key].name} · RELEASE TO PLACE`;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  }
+
+  function irFinish(event, cancelled = false) {
+    if (irDrag.pointerId === null || event.pointerId !== irDrag.pointerId || !irDrag.key) return;
+    const key = irDrag.key;
+    const source = irDrag.source;
+    const moved = irDrag.moved || cancelled;
+    try { irDrag.target?.releasePointerCapture?.(event.pointerId); } catch {}
+    labels[key]?.classList.remove('dragging');
+    delete app.dataset.draggingWorld;
+    irDrag.pointerId = null;
+    irDrag.key = null;
+    irDrag.source = null;
+    irDrag.target = null;
+    irDrag.moved = false;
+
+    if (!cancelled && !moved && source === 'canvas') enterWorld(key);
+    if (moved && source === 'label') {
+      irSuppressClickKey = key;
+      irSuppressClickUntil = performance.now() + 520;
+    }
+    if (hint && !activeWorld) hint.textContent = coarse
+      ? 'DRAG A WORLD · PINCH EMPTY SPACE · TAP TO ENTER'
+      : 'DRAG A WORLD · DRAG EMPTY SPACE TO ORBIT · TAP TO ENTER';
+    window.dispatchEvent(new CustomEvent('dreamunity:world-positioned', {
+      detail: { world: key, offset: { ...irOffsets[key] }, moved: !cancelled && moved },
+    }));
+    if (source === 'canvas' || moved) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }
+  }
+
+  canvas.addEventListener('pointerdown', (event) => {
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    const key = irWorldAt(event.clientX, event.clientY);
+    if (!key || !irBegin(event, key, 'canvas', canvas)) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  }, { capture: true, passive: false });
+
+  addEventListener('pointermove', irMove, { capture: true, passive: false });
+  addEventListener('pointerup', (event) => irFinish(event, false), { capture: true, passive: false });
+  addEventListener('pointercancel', (event) => irFinish(event, true), { capture: true, passive: false });
+
+  Object.entries(labels).forEach(([key, element]) => {
+    if (!element) return;
+    element.style.touchAction = 'none';
+    element.addEventListener('pointerdown', (event) => {
+      if (event.pointerType === 'mouse' && event.button !== 0) return;
+      irBegin(event, key, 'label', element);
+    }, { capture: true, passive: true });
+    element.addEventListener('click', (event) => {
+      if (irSuppressClickKey !== key || performance.now() > irSuppressClickUntil) return;
+      irSuppressClickKey = null;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }, { capture: true });
+  });
+
+  const irOriginalSetHint = setHint;
+  setHint = function interactionRecoveryHint() {
+    irOriginalSetHint();
+    if (!activeWorld && hint && irDrag.pointerId === null) hint.textContent = coarse
+      ? 'DRAG A WORLD · PINCH EMPTY SPACE · TAP TO ENTER'
+      : 'DRAG A WORLD · DRAG EMPTY SPACE TO ORBIT · TAP TO ENTER';
+  };
+
+  window.__dreamUnityInteractions = Object.freeze({
+    id: 'independent-world-drag',
+    version: IR_RELEASE,
+    ready: true,
+    offsets: () => Object.fromEntries(worldKeys.map((key) => [key, { ...irOffsets[key] }])),
+    reset(world) {
+      if (world && irOffsets[world]) {
+        irOffsets[world].x = 0;
+        irOffsets[world].y = 0;
+      } else {
+        worldKeys.forEach((key) => {
+          irOffsets[key].x = 0;
+          irOffsets[key].y = 0;
+        });
+      }
+    },
+  });
+  app.dataset.independentWorlds = 'true';
+  setHint();

@@ -1,0 +1,179 @@
+/* Interaction Recovery 22
+   Restore independent world manipulation and make every game control
+   unmistakably visible above the live canvas. */
+
+#world{touch-action:none}
+.world-label{touch-action:none;user-select:none}
+.world-label.dragging{
+  cursor:grabbing!important;
+  background:#fff!important;
+  outline:1px solid rgba(11,16,32,.36);
+  outline-offset:5px;
+}
+
+/* Keep the three game portals inside the viewport in every world detail. */
+#app.detail:not(.game-open) .sub-label{
+  visibility:visible;
+  z-index:14;
+  min-width:104px;
+  border-color:rgba(11,16,32,.34);
+  background:rgba(255,255,255,.97);
+  box-shadow:0 6px 20px rgba(11,16,32,.06);
+}
+
+/* The canvas may never occlude its controls. */
+#app.game-open .arcade.open{
+  opacity:1!important;
+  visibility:visible!important;
+  pointer-events:auto!important;
+}
+.arcade.open #gameCanvas{
+  z-index:0!important;
+}
+.arcade.open .game-vignette{
+  z-index:1!important;
+}
+.arcade.open .game-bar{
+  position:absolute!important;
+  z-index:10000!important;
+  top:max(10px,env(safe-area-inset-top))!important;
+  left:max(10px,env(safe-area-inset-left))!important;
+  right:max(10px,env(safe-area-inset-right))!important;
+  display:flex!important;
+  align-items:center!important;
+  min-height:60px!important;
+  height:60px!important;
+  padding:7px 9px!important;
+  opacity:1!important;
+  visibility:visible!important;
+  pointer-events:auto!important;
+  overflow:visible!important;
+  color:#0b1020!important;
+  background:rgba(255,255,255,.985)!important;
+  border:1px solid rgba(11,16,32,.44)!important;
+  border-radius:0!important;
+  box-shadow:0 10px 34px rgba(11,16,32,.11)!important;
+  backdrop-filter:blur(14px)!important;
+}
+.arcade.open .game-bar,
+.arcade.open .game-bar *{
+  visibility:visible!important;
+}
+.arcade.open .game-heading{
+  display:flex!important;
+  opacity:1!important;
+  min-width:104px;
+  color:#0b1020!important;
+}
+.arcade.open .game-heading small{
+  color:#667085!important;
+  font-size:7px!important;
+}
+.arcade.open .game-heading strong{
+  color:var(--game)!important;
+  font-size:11px!important;
+}
+.arcade.open .game-readout{
+  display:flex!important;
+  opacity:1!important;
+  color:#0b1020!important;
+}
+.arcade.open .game-readout small{color:#667085!important}
+.arcade.open .game-readout b{color:#0b1020!important}
+.arcade.open .game-metric b{color:var(--game)!important}
+.arcade.open .game-icon{
+  position:relative!important;
+  z-index:10001!important;
+  display:grid!important;
+  place-items:center!important;
+  width:44px!important;
+  min-width:44px!important;
+  height:44px!important;
+  flex:0 0 44px!important;
+  opacity:1!important;
+  visibility:visible!important;
+  pointer-events:auto!important;
+  color:#0b1020!important;
+  background:#fff!important;
+  border:1px solid rgba(11,16,32,.48)!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  font-size:16px!important;
+}
+.arcade.open .game-icon:hover,
+.arcade.open .game-icon:focus-visible{
+  outline:2px solid var(--game)!important;
+  outline-offset:2px!important;
+  border-color:#0b1020!important;
+}
+.arcade.open #gameBack,
+.arcade.open #gameSound,
+.arcade.open #gamePause,
+.arcade.open #gameRestart{
+  display:grid!important;
+}
+.arcade.open .game-card,
+.arcade.open .game-state{
+  z-index:10002!important;
+}
+.arcade.ready .game-card,
+.arcade.paused .game-state,
+.arcade.over .game-state{
+  visibility:visible!important;
+  opacity:1!important;
+}
+.arcade.open .game-toast,
+.arcade.open .game-hint{
+  z-index:10003!important;
+}
+
+@media(max-width:760px){
+  #app.detail:not(.game-open) .sub-label{
+    min-width:90px;
+    min-height:38px;
+  }
+  .arcade.open .game-bar{
+    min-height:54px!important;
+    height:54px!important;
+    gap:5px!important;
+    padding:5px 6px!important;
+  }
+  .arcade.open .game-icon{
+    width:38px!important;
+    min-width:38px!important;
+    height:38px!important;
+    flex-basis:38px!important;
+    font-size:14px!important;
+  }
+  .arcade.open .game-heading{min-width:76px;max-width:105px}
+  .arcade.open .game-heading small{font-size:5.5px!important}
+  .arcade.open .game-heading strong{font-size:8px!important}
+  .arcade.open .game-readout{gap:5px!important;padding:0 2px!important}
+  .arcade.open .game-readout span{min-width:34px!important}
+}
+
+@media(max-width:470px){
+  .arcade.open .game-bar{
+    left:5px!important;
+    right:5px!important;
+    top:max(5px,env(safe-area-inset-top))!important;
+    gap:3px!important;
+    padding:4px!important;
+  }
+  .arcade.open .game-icon{
+    width:34px!important;
+    min-width:34px!important;
+    height:34px!important;
+    flex-basis:34px!important;
+  }
+  .arcade.open .game-heading{min-width:58px;max-width:76px}
+  .arcade.open .game-heading small{display:none!important}
+  .arcade.open .game-heading strong{font-size:7px!important}
+  .arcade.open .game-readout span:nth-child(2),
+  .arcade.open .game-metric{display:none!important}
+  .arcade.open #gameSound{display:grid!important}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .world-label.dragging,.arcade.open .game-bar,.arcade.open .game-icon{transition:none!important}
+}

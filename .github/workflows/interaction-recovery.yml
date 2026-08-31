@@ -1,0 +1,100 @@
+name: Validate interaction recovery and verify live controls
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - index.html
+      - main.js
+      - interaction-recovery.css
+      - visual-parts/interaction-recovery-22.txt
+      - tests/interaction-recovery.test.mjs
+      - package.json
+      - .github/workflows/interaction-recovery.yml
+  push:
+    branches: [main]
+    paths:
+      - index.html
+      - main.js
+      - interaction-recovery.css
+      - visual-parts/interaction-recovery-22.txt
+      - tests/interaction-recovery.test.mjs
+      - package.json
+      - .github/workflows/interaction-recovery.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: interaction-recovery-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+      - name: Use Node
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24.19.0'
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Validate independent worlds and visible game controls
+        run: npm run test:interactions
+
+  verify-live:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout validated source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Wait for GitHub Pages interaction recovery
+        shell: bash
+        env:
+          PAGE_URL: https://dream-unity.github.io/experimental-three-world-problem
+        run: |
+          set -euo pipefail
+          files=(
+            index.html
+            main.js
+            interaction-recovery.css
+            visual-parts/interaction-recovery-22.txt
+          )
+          live_dir=$(mktemp -d)
+          trap 'rm -rf "$live_dir"' EXIT
+          mkdir -p "$live_dir/visual-parts"
+          matched=false
+          for attempt in $(seq 1 60); do
+            matched=true
+            for path in "${files[@]}"; do
+              curl --fail --location --silent --show-error \
+                --connect-timeout 10 --max-time 30 --retry 2 --retry-all-errors --retry-delay 2 \
+                "$PAGE_URL/$path?source=${GITHUB_SHA}&attempt=$attempt" \
+                --output "$live_dir/$path" || matched=false
+              if [ "$matched" = false ]; then break; fi
+              cmp --silent "$path" "$live_dir/$path" || matched=false
+              if [ "$matched" = false ]; then break; fi
+            done
+            if [ "$matched" = true ]; then break; fi
+            echo "Interaction recovery has not propagated yet: attempt $attempt of 60"
+            sleep 5
+          done
+          test "$matched" = true
+          grep -q 'interaction-recovery.css?v=20260831-interaction-recovery-22' "$live_dir/index.html"
+          grep -q 'interaction-recovery-22.txt' "$live_dir/main.js"
+          grep -q 'independent-world-drag' "$live_dir/visual-parts/interaction-recovery-22.txt"
+          grep -q 'z-index:10000!important' "$live_dir/interaction-recovery.css"
